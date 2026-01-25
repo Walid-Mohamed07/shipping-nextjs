@@ -1,0 +1,74 @@
+{
+  "vehicles": [
+    {
+      "id": "VEH-001",
+      "name": "Box Truck A",
+      "type": "Box Truck",
+      "capacity": "5000 kg",
+      "plateNumber": "ABC-1234",
+      "status": "available",
+      "country": "United States",
+      "createdAt": "2024-01-01T08:00:00Z"
+    },
+    {
+      "id": "VEH-002",
+      "name": "Box Truck B",
+      "type": "Box Truck",
+      "capacity": "5000 kg",
+      "plateNumber": "DEF-5678",
+      "status": "available",
+      "country": "Canada",
+      "createdAt": "2024-01-01T08:00:00Z"
+    },
+    {
+      "id": "VEH-003",
+      "name": "Cargo Van C",
+      "type": "Cargo Van",
+      "capacity": "2000 kg",
+      "plateNumber": "GHI-9012",
+      "status": "In Use",
+      "country": "Germany",
+      "createdAt": "2024-01-01T08:00:00Z"
+    },
+    {
+      "id": "VEH-004",
+      "name": "Cargo Van D",
+      "type": "Cargo Van",
+      "capacity": "2000 kg",
+      "plateNumber": "JKL-3456",
+      "status": "available",
+      "country": "France",
+      "createdAt": "2024-01-01T08:00:00Z"
+    },
+    {
+      "id": "vehicle-egypt-001",
+      "type": "Truck",
+      "model": "Mercedes Actros",
+      "name": "Mercedes Actros",
+      "plateNumber": "EGY1234",
+      "capacity": "20 tons",
+      "country": "Egypt",
+      "status": "available"
+    },
+    {
+      "id": "vehicle-egypt-002",
+      "type": "Van",
+      "model": "Toyota Hiace",
+      "name": "Toyota Hiace",
+      "plateNumber": "EGY5678",
+      "capacity": "3 tons",
+      "country": "Egypt",
+      "status": "available"
+    },
+    {
+      "id": "vehicle-egypt-003",
+      "type": "Pickup",
+      "model": "Nissan Navara",
+      "name": "Nissan Navara",
+      "plateNumber": "EGY9012",
+      "capacity": "1 ton",
+      "country": "Egypt",
+      "status": "available"
+    }
+  ]
+}

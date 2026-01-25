@@ -1,0 +1,306 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "john@example.com",
+      "password": "hashed_password_123",
+      "name": "John Doe",
+      "role": "client",
+      "locations": [
+        {
+          "country": "United States",
+          "countryCode": "+1",
+          "fullName": "John Doe",
+          "mobile": "+12345678901",
+          "street": "123 Main St",
+          "building": "",
+          "city": "New York",
+          "district": "Manhattan",
+          "governorate": "New York",
+          "postalCode": "10001",
+          "landmark": "Central Park",
+          "addressType": "Home",
+          "deliveryInstructions": "Leave at the door",
+          "primary": true
+        }
+      ],
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "2",
+      "email": "jane@example.com",
+      "password": "hashed_password_456",
+      "name": "Jane Smith",
+      "role": "client",
+      "locations": [
+        {
+          "country": "Canada",
+          "countryCode": "+1",
+          "fullName": "Jane Smith",
+          "mobile": "+14165551234",
+          "street": "456 Queen St",
+          "building": "",
+          "city": "Toronto",
+          "district": "Old Toronto",
+          "governorate": "Ontario",
+          "postalCode": "M5V2B6",
+          "landmark": "CN Tower",
+          "addressType": "Home",
+          "deliveryInstructions": "Call on arrival",
+          "primary": true
+        }
+      ],
+      "createdAt": "2024-01-16T14:20:00Z"
+    },
+    {
+      "id": "admin-001",
+      "email": "admin@example.com",
+      "password": "admin_password_123",
+      "name": "Admin User",
+      "role": "admin",
+      "locations": [
+        {
+          "country": "United Kingdom",
+          "countryCode": "+44",
+          "fullName": "Admin User",
+          "mobile": "+447911123456",
+          "street": "789 Admin Rd",
+          "building": "",
+          "city": "London",
+          "district": "Westminster",
+          "governorate": "London",
+          "postalCode": "SW1A1AA",
+          "landmark": "Big Ben",
+          "addressType": "Office",
+          "deliveryInstructions": "Reception desk",
+          "primary": true
+        }
+      ],
+      "createdAt": "2024-01-10T08:00:00Z"
+    },
+    {
+      "id": "driver-001",
+      "email": "driver1@example.com",
+      "password": "driver_password_123",
+      "name": "Mike Johnson",
+      "role": "driver",
+      "locations": [
+        {
+          "country": "United States",
+          "countryCode": "+1",
+          "fullName": "Mike Johnson",
+          "mobile": "+13235556789",
+          "street": "321 Driver Ave",
+          "building": "",
+          "city": "Los Angeles",
+          "district": "Central LA",
+          "governorate": "California",
+          "postalCode": "90001",
+          "landmark": "Staples Center",
+          "addressType": "Home",
+          "deliveryInstructions": "Ring bell twice",
+          "primary": true
+        }
+      ],
+      "createdAt": "2024-01-12T10:00:00Z"
+    },
+    {
+      "id": "driver-002",
+      "email": "driver2@example.com",
+      "password": "driver_password_456",
+      "name": "Sarah Williams",
+      "role": "driver",
+      "locations": [
+        {
+          "country": "Canada",
+          "countryCode": "+1",
+          "fullName": "Sarah Williams",
+          "mobile": "+16045551234",
+          "street": "654 Maple Rd",
+          "building": "",
+          "city": "Vancouver",
+          "district": "Downtown",
+          "governorate": "British Columbia",
+          "postalCode": "V5K0A1",
+          "landmark": "Stanley Park",
+          "addressType": "Home",
+          "deliveryInstructions": "Leave with concierge",
+          "primary": true
+        }
+      ],
+      "createdAt": "2024-01-13T14:00:00Z"
+    },
+    {
+      "id": "driver-003",
+      "email": "driver3@example.com",
+      "password": "driver_password_789",
+      "name": "Marcus Schmidt",
+      "role": "driver",
+      "locations": [
+        {
+          "country": "Germany",
+          "countryCode": "+49",
+          "fullName": "Marcus Schmidt",
+          "mobile": "+4915112345678",
+          "street": "987 Fahrer Str",
+          "building": "",
+          "city": "Berlin",
+          "district": "Mitte",
+          "governorate": "Berlin",
+          "postalCode": "10115",
+          "landmark": "Brandenburg Gate",
+          "addressType": "Home",
+          "deliveryInstructions": "Call before arrival",
+          "primary": true
+        }
+      ],
+      "createdAt": "2024-01-14T09:00:00Z"
+    },
+    {
+      "id": "driver-004",
+      "email": "driver4@example.com",
+      "password": "driver_password_012",
+      "name": "Pierre Dupont",
+      "role": "driver",
+      "locations": [
+        {
+          "country": "France",
+          "countryCode": "+33",
+          "fullName": "Pierre Dupont",
+          "mobile": "+33612345678",
+          "street": "159 Rue de Paris",
+          "building": "",
+          "city": "Paris",
+          "district": "1st arrondissement",
+          "governorate": "Île-de-France",
+          "postalCode": "75001",
+          "landmark": "Louvre Museum",
+          "addressType": "Home",
+          "deliveryInstructions": "Leave at security",
+          "primary": true
+        }
+      ],
+      "createdAt": "2024-01-15T11:00:00Z"
+    },
+    {
+      "id": "1769075647206",
+      "email": "walid@cepac-eg.com",
+      "password": "Walid132",
+      "name": "Walid Mohamed",
+      "role": "client",
+      "locations": [
+        {
+          "country": "Egypt",
+          "countryCode": "+20",
+          "fullName": "Walid Mohamed",
+          "mobile": "+201001234567",
+          "street": "10 Nile St",
+          "building": "",
+          "city": "Cairo",
+          "district": "El Nozha",
+          "governorate": "Cairo",
+          "postalCode": "11511",
+          "landmark": "Cairo festival city",
+          "addressType": "Home",
+          "deliveryInstructions": "Call on arrival",
+          "primary": true
+        }
+      ],
+      "createdAt": "2026-01-22T09:54:07.206Z"
+    },
+    {
+      "id": "walid-client-001",
+      "email": "walid.client@cepac-eg.com",
+      "password": "WalidClient123",
+      "name": "Walid Mohamed",
+      "role": "client",
+      "locations": [
+        {
+          "country": "Egypt",
+          "countryCode": "+20",
+          "fullName": "Walid Mohamed",
+          "mobile": "+201112223334",
+          "street": "20 Client St",
+          "building": "",
+          "city": "Alexandria",
+          "district": "Montaza",
+          "governorate": "Alexandria",
+          "postalCode": "21532",
+          "landmark": "Stanley Bridge",
+          "addressType": "Home",
+          "deliveryInstructions": "Ring bell",
+          "primary": false
+        },
+        {
+          "country": "Egypt",
+          "countryCode": "",
+          "fullName": "Walid Mohamed",
+          "mobile": "123456",
+          "street": "El Ensherah st",
+          "building": "",
+          "city": "Cairo",
+          "district": "",
+          "governorate": "",
+          "postalCode": "123",
+          "landmark": "Taha Hussein axis",
+          "addressType": "Home",
+          "deliveryInstructions": "",
+          "primary": true
+        }
+      ],
+      "createdAt": "2026-01-22T10:00:00Z"
+    },
+    {
+      "id": "walid-admin-001",
+      "email": "walid.admin@cepac-eg.com",
+      "password": "WalidAdmin123",
+      "name": "Walid Mohamed",
+      "role": "admin",
+      "locations": [
+        {
+          "country": "Egypt",
+          "countryCode": "+20",
+          "fullName": "Walid Mohamed",
+          "mobile": "+201223344556",
+          "street": "30 Admin Ave",
+          "building": "",
+          "city": "Giza",
+          "district": "Dokki",
+          "governorate": "Giza",
+          "postalCode": "12511",
+          "landmark": "Giza Zoo",
+          "addressType": "Office",
+          "deliveryInstructions": "Reception desk",
+          "primary": true
+        }
+      ],
+      "createdAt": "2026-01-22T10:01:00Z"
+    },
+    {
+      "id": "walid-driver-001",
+      "email": "walid.driver@cepac-eg.com",
+      "password": "WalidDriver123",
+      "name": "Walid Mohamed",
+      "role": "driver",
+      "locations": [
+        {
+          "country": "Egypt",
+          "countryCode": "+20",
+          "fullName": "Walid Mohamed",
+          "mobile": "+201334455667",
+          "street": "40 Driver Blvd",
+          "building": "",
+          "city": "Mansoura",
+          "district": "El Gamaa",
+          "governorate": "Dakahlia",
+          "postalCode": "35511",
+          "landmark": "Mansoura University",
+          "addressType": "Home",
+          "deliveryInstructions": "Call before arrival",
+          "primary": true
+        }
+      ],
+      "createdAt": "2026-01-22T10:02:00Z"
+    }
+  ]
+}

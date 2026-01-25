@@ -1,0 +1,62 @@
+[
+    {
+        "id": "wh-001",
+        "name": "Cairo Main Warehouse",
+        "code": "CAI-MAIN",
+        "country": "Egypt",
+        "state": "Cairo",
+        "location": "10 Nile St, Cairo",
+        "capacity": 10000,
+        "currentStock": 4500,
+        "manager": "Ahmed Fathy",
+        "contact": "+201234567890",
+        "status": "active",
+        "createdAt": "2026-01-24T09:00:00Z",
+        "stockType": "all"
+    },
+    {
+        "id": "wh-002",
+        "name": "Alexandria Port Warehouse",
+        "code": "ALX-PORT",
+        "country": "Egypt",
+        "state": "Alexandria",
+        "location": "Port Area, Alexandria",
+        "capacity": 8000,
+        "currentStock": 3200,
+        "manager": "Mona Samir",
+        "contact": "+201112223344",
+        "status": "active",
+        "createdAt": "2026-01-24T09:10:00Z",
+        "stockType": "all"
+    },
+    {
+        "id": "wh-003",
+        "name": "Giza Distribution Center",
+        "code": "GIZ-DC",
+        "country": "Egypt",
+        "state": "Giza",
+        "location": "30 Admin Ave, Giza",
+        "capacity": 6000,
+        "currentStock": 1500,
+        "manager": "Walid Mohamed",
+        "contact": "+201223344556",
+        "status": "active",
+        "createdAt": "2026-01-24T09:20:00Z",
+        "stockType": "all"
+    },
+    {
+        "id": "wh-004",
+        "name": "Dubai Freezone Warehouse",
+        "code": "DXB-FZ",
+        "country": "UAE",
+        "state": "Dubai",
+        "location": "Jebel Ali Freezone, Dubai",
+        "capacity": 12000,
+        "currentStock": 7000,
+        "manager": "Fatima Al Mansoori",
+        "contact": "+971501234567",
+        "status": "active",
+        "createdAt": "2026-01-24T09:30:00Z",
+        "stockType": "all"
+    }
+]

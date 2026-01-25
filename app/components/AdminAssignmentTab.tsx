@@ -1,0 +1,349 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Truck, User } from "lucide-react";
+
+interface Order {
+  id: string;
+  from: string;
+  to: string;
+  item: string;
+  category: string;
+  orderStatus: string;
+}
+
+interface Vehicle {
+  id: string;
+  name: string;
+  type: string;
+  capacity: string;
+  plateNumber: string;
+  status: string;
+  country: string;
+}
+
+interface Driver {
+  id: string;
+  name: string;
+  email: string;
+  country: string;
+}
+
+interface AdminAssignmentTabProps {
+  acceptedOrderIds: string[];
+}
+
+export function AdminAssignmentTab({
+  acceptedOrderIds,
+}: AdminAssignmentTabProps) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<string>("");
+  const [selectedFromCountry, setSelectedFromCountry] = useState<string>("");
+  const [selectedToCountry, setSelectedToCountry] = useState<string>("");
+  const [selectedDriver, setSelectedDriver] = useState<string>("");
+  const [selectedVehicle, setSelectedVehicle] = useState<string>("");
+  const [estimatedDelivery, setEstimatedDelivery] = useState<string>("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [ordersRes, resourcesRes, assignmentsRes] = await Promise.all([
+          fetch("/api/admin/orders"),
+          fetch("/api/admin/resources"),
+          fetch("/api/admin/assign"),
+        ]);
+
+        const ordersData = await ordersRes.json();
+        const resourcesData = await resourcesRes.json();
+        const assignmentsData = await assignmentsRes.json();
+
+        setOrders(
+          ordersData.requests.filter(
+            (o: Order) => o.orderStatus === "Accepted",
+          ),
+        );
+        setVehicles(
+          resourcesData.vehicles.filter(
+            (v: Vehicle) => v.status === "available",
+          ),
+        );
+        setDrivers(resourcesData.drivers);
+        setAssignments(assignmentsData.assignments);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleAssign = async () => {
+    if (
+      !selectedOrder ||
+      !selectedFromCountry ||
+      !selectedToCountry ||
+      !selectedDriver ||
+      !selectedVehicle ||
+      !estimatedDelivery
+    ) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: selectedOrder,
+          driverId: selectedDriver,
+          vehicleId: selectedVehicle,
+          estimatedDelivery,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAssignments([...assignments, data.assignment]);
+        // Remove the assigned order from the list
+        setOrders(orders.filter((o) => o.id !== selectedOrder));
+        setSelectedOrder("");
+        setSelectedFromCountry("");
+        setSelectedToCountry("");
+        setSelectedDriver("");
+        setSelectedVehicle("");
+        setEstimatedDelivery("");
+      }
+    } catch (error) {
+      console.error("Failed to create assignment:", error);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-4">Loading...</div>;
+  }
+
+  const unassignedOrders = orders.filter(
+    (o) => !assignments.some((a) => a.requestId === o.id),
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Assign Orders</h3>
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Select Order
+              </label>
+              <select
+                value={selectedOrder}
+                onChange={(e) => setSelectedOrder(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+              >
+                <option value="">Choose an order...</option>
+                {unassignedOrders.map((order) => (
+                  <option key={order.id} value={order.id}>
+                    {order.id} - {order.from} → {order.to}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Route From (Country)
+                </label>
+                <select
+                  value={selectedFromCountry}
+                  onChange={(e) => {
+                    setSelectedFromCountry(e.target.value);
+                    setSelectedDriver("");
+                    setSelectedVehicle("");
+                  }}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                >
+                  <option value="">Choose origin country...</option>
+                  {[...new Set(unassignedOrders.map((o) => o.from))].map(
+                    (country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Route To (Country)
+                </label>
+                <select
+                  value={selectedToCountry}
+                  onChange={(e) => setSelectedToCountry(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                >
+                  <option value="">Choose destination country...</option>
+                  {[...new Set(unassignedOrders.map((o) => o.to))].map(
+                    (country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Select Driver
+                </label>
+                <select
+                  value={selectedDriver}
+                  onChange={(e) => setSelectedDriver(e.target.value)}
+                  disabled={!selectedFromCountry}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                >
+                  <option value="">
+                    {selectedFromCountry
+                      ? "Choose a driver..."
+                      : "Select origin country first..."}
+                  </option>
+                  {drivers
+                    .filter((driver) => driver.country === selectedFromCountry)
+                    .map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.name} ({driver.country})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Select Vehicle
+                </label>
+                <select
+                  value={selectedVehicle}
+                  onChange={(e) => setSelectedVehicle(e.target.value)}
+                  disabled={!selectedFromCountry}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                >
+                  <option value="">
+                    {selectedFromCountry
+                      ? "Choose a vehicle..."
+                      : "Select origin country first..."}
+                  </option>
+                  {vehicles
+                    .filter(
+                      (vehicle) =>
+                        vehicle.country === selectedFromCountry &&
+                        vehicle.status === "available",
+                    )
+                    .map((vehicle) => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.name} - {vehicle.type} ({vehicle.country})
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Estimated Delivery
+              </label>
+              <input
+                type="datetime-local"
+                value={estimatedDelivery}
+                onChange={(e) => setEstimatedDelivery(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+              />
+            </div>
+
+            <Button
+              onClick={handleAssign}
+              className="w-full cursor-pointer"
+              disabled={
+                !selectedOrder ||
+                !selectedFromCountry ||
+                !selectedToCountry ||
+                !selectedDriver ||
+                !selectedVehicle ||
+                !estimatedDelivery
+              }
+            >
+              Assign Order
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-4">
+          Active Assignments ({assignments.length})
+        </h3>
+        <div className="space-y-3">
+          {assignments.length === 0 ? (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">No active assignments</p>
+            </Card>
+          ) : (
+            assignments.map((assignment) => (
+              <Card key={assignment.id} className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-foreground mb-2">
+                      {assignment.requestId}
+                    </p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Route:</span>
+                        <span>
+                          {assignment.from} → {assignment.to}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-primary" />
+                        <span>{assignment.driverName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-primary" />
+                        <span>{assignment.vehicleName}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground mb-2">
+                      Estimated Delivery
+                    </p>
+                    <p className="font-medium">
+                      {new Date(
+                        assignment.estimatedDelivery,
+                      ).toLocaleDateString()}
+                    </p>
+                    <span className="inline-block mt-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                      {assignment.status}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

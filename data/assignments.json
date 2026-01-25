@@ -1,0 +1,58 @@
+{
+  "assignments": [
+    {
+      "id": "ASSIGN-001",
+      "requestId": "REQ-001",
+      "driverId": "driver-001",
+      "vehicleId": "VEH-003",
+      "status": "Assigned",
+      "assignedAt": "2024-01-19T14:30:00Z",
+      "estimatedDelivery": "2024-01-22T10:00:00Z"
+    },
+    {
+      "id": "ASSIGN-1769085294812",
+      "requestId": "REQ-1769084747231",
+      "driverId": "driver-002",
+      "vehicleId": "VEH-002",
+      "status": "Assigned",
+      "assignedAt": "2026-01-22T12:34:54.812Z",
+      "estimatedDelivery": "2026-01-23T14:34"
+    },
+    {
+      "id": "ASSIGN-1769085334914",
+      "requestId": "REQ-003",
+      "driverId": "driver-002",
+      "vehicleId": "VEH-002",
+      "status": "Assigned",
+      "assignedAt": "2026-01-22T12:35:34.914Z",
+      "estimatedDelivery": "2026-01-24T14:35"
+    },
+    {
+      "id": "ASSIGN-1769091834308",
+      "requestId": "REQ-1769089999382",
+      "driverId": "walid-driver-001",
+      "vehicleId": "vehicle-egypt-001",
+      "status": "Assigned",
+      "assignedAt": "2026-01-22T14:23:54.308Z",
+      "estimatedDelivery": "2026-01-23T16:23"
+    },
+    {
+      "id": "ASSIGN-1769163685017",
+      "requestId": "REQ-1769163348165",
+      "driverId": "walid-driver-001",
+      "vehicleId": "vehicle-egypt-001",
+      "status": "Assigned",
+      "assignedAt": "2026-01-23T10:21:25.017Z",
+      "estimatedDelivery": "2026-01-26T12:20"
+    },
+    {
+      "id": "ASSIGN-1769245890995",
+      "requestId": "REQ-1769245388942",
+      "driverId": "walid-driver-001",
+      "vehicleId": "vehicle-egypt-001",
+      "status": "Assigned",
+      "assignedAt": "2026-01-24T09:11:30.995Z",
+      "estimatedDelivery": "2026-01-25T11:11"
+    }
+  ]
+}
