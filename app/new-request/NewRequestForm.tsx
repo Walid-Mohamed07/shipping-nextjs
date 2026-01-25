@@ -295,559 +295,200 @@ export default function NewRequestForm() {
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Source (From) Section */}
+              {/* Source (Origin) Section - Radio Group */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Source (Origin)
                 </label>
-                <div className="flex gap-4 mb-2">
-                  <label className="flex items-center gap-2">
+                <div role="radiogroup" className="space-y-2">
+                  {userLocations.map((loc, idx) => (
+                    <label
+                      key={idx}
+                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground"
+                    >
+                      <input
+                        type="radio"
+                        name="sourceAddress"
+                        value={idx}
+                        checked={fromAddressIdx === idx}
+                        onChange={() => {
+                          setFromAddressIdx(idx);
+                          setSourceType("my");
+                          setFrom(userLocations[idx]?.country || "");
+                          setFromAddress(userLocations[idx]?.street || "");
+                          setFromPostalCode(
+                            userLocations[idx]?.postalCode || "",
+                          );
+                        }}
+                        disabled={isLoading}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="font-medium">{loc.fullName}</span> -{" "}
+                        {loc.street}, {loc.city} ({loc.country})<br />
+                        {loc.postalCode} - {loc.mobile} - {loc.addressType}
+                        <br />
+                        {loc.landmark && (
+                          <>
+                            <span className="text-xs">
+                              Landmark: {loc.landmark}
+                            </span>
+                            <br />
+                          </>
+                        )}
+                        {loc.deliveryInstructions && (
+                          <>
+                            <span className="text-xs">
+                              Instructions: {loc.deliveryInstructions}
+                            </span>
+                            <br />
+                          </>
+                        )}
+                        {loc.building && (
+                          <>
+                            <span className="text-xs">
+                              Building: {loc.building}
+                            </span>
+                            <br />
+                          </>
+                        )}
+                        {loc.primary && (
+                          <span className="text-xs">(Primary Address)</span>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                  <label className="flex items-center gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground">
                     <input
                       type="radio"
-                      name="sourceType"
-                      value="my"
-                      checked={sourceType === "my"}
+                      name="sourceAddress"
+                      value="add"
+                      checked={fromAddressIdx === -1}
                       onChange={() => {
-                        setSourceType("my");
-                        setFrom(userLocations[fromAddressIdx]?.country || "");
-                        setFromAddress(
-                          userLocations[fromAddressIdx]?.street || "",
-                        );
-                        setFromPostalCode(
-                          userLocations[fromAddressIdx]?.postalCode || "",
-                        );
-                        if (destType === "my") setDestType("other");
-                      }}
-                      disabled={isLoading || destType === "my"}
-                    />
-                    My Address
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="sourceType"
-                      value="other"
-                      checked={sourceType === "other"}
-                      onChange={() => {
+                        setIsEditingAddress(false);
+                        setEditAddressIdx(null);
+                        setAddressForm({
+                          country: "",
+                          countryCode: "",
+                          fullName: user?.name || "",
+                          mobile: "",
+                          street: "",
+                          building: "",
+                          city: "",
+                          district: "",
+                          governorate: "",
+                          postalCode: "",
+                          landmark: "",
+                          addressType: "Home",
+                          deliveryInstructions: "",
+                          primary: false,
+                        });
+                        setFromAddressIdx(-1);
                         setSourceType("other");
-                        setFrom("");
-                        setFromAddress("");
-                        setFromPostalCode("");
+                        setShowAddAddress(true);
                       }}
                       disabled={isLoading}
+                      className="mt-1"
                     />
-                    Other
+                    <span>Add new address</span>
                   </label>
-                  {sourceType === "my" && (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="ml-4"
-                        onClick={() => setShowSelectAddress(true)}
-                        disabled={isLoading}
-                      >
-                        Select Address
-                      </Button>
-                      <Dialog.Root
-                        open={!!showSelectAddress}
-                        onOpenChange={setShowSelectAddress}
-                      >
-                        <Dialog.Portal>
-                          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-50" />
-                          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
-                            <Dialog.Title className="text-lg font-bold mb-4">
-                              Select Destination Address
-                            </Dialog.Title>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
-                              {userLocations.length === 0 && (
-                                <div className="text-muted-foreground text-sm">
-                                  No saved addresses.
-                                </div>
-                              )}
-                              {userLocations.map((loc, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`border rounded p-3 mb-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition ${
-                                    toAddressIdx === idx
-                                      ? "border-primary bg-card"
-                                      : "border-border"
-                                  }`}
-                                  onClick={() => {
-                                    setToAddressIdx(idx);
-                                    setTo(loc.country || "");
-                                    setToAddress(loc.street || "");
-                                    setToPostalCode(loc.postalCode || "");
-                                    setShowSelectAddress(false);
-                                  }}
-                                >
-                                  <div className="font-medium">
-                                    {loc.fullName}
-                                    {<br />}
-                                    {loc.street}, {loc.city}
-                                  </div>
-                                  <div className="text-xs">
-                                    {loc.country} • {loc.postalCode} •{" "}
-                                    {loc.addressType}
-                                    {loc.primary ? " [Primary]" : ""}
-                                  </div>
-                                  <div className="text-xs">{loc.mobile}</div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex justify-end mt-4">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowSelectAddress(false)}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </Dialog.Content>
-                        </Dialog.Portal>
-                      </Dialog.Root>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="ml-2"
-                        onClick={() => {
-                          setIsEditingAddress(false);
-                          setEditAddressIdx(null);
-                          setAddressForm({
-                            country: "",
-                            countryCode: "",
-                            fullName: user?.name || "",
-                            mobile: "",
-                            street: "",
-                            building: "",
-                            city: "",
-                            district: "",
-                            governorate: "",
-                            postalCode: "",
-                            landmark: "",
-                            addressType: "Home",
-                            deliveryInstructions: "",
-                            primary: false,
-                          });
-                          setShowAddAddress(true);
-                        }}
-                      >
-                        Add new address
-                      </Button>
-                    </>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-foreground mb-1">
-                      Country
-                    </label>
-                    <Select
-                      value={from}
-                      onValueChange={setFrom}
-                      disabled={isLoading || sourceType === "my"}
-                    >
-                      <SelectTrigger style={{ maxWidth: "100%" }}>
-                        <SelectValue placeholder="Select origin country" />
-                      </SelectTrigger>
-                      <SelectContent>{countryOptions}</SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-foreground mb-1">
-                      Address
-                    </label>
-                    <Input
-                      id="fromAddress"
-                      type="text"
-                      placeholder="Origin address"
-                      value={fromAddress}
-                      onChange={(e) => setFromAddress(e.target.value)}
-                      disabled={isLoading || sourceType === "my"}
-                      required
-                      style={{ maxWidth: "100%" }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-foreground mb-1">
-                      Postal Code
-                    </label>
-                    <Input
-                      id="fromPostalCode"
-                      type="text"
-                      placeholder="Origin postal code"
-                      value={fromPostalCode}
-                      onChange={(e) => setFromPostalCode(e.target.value)}
-                      disabled={isLoading || sourceType === "my"}
-                      required
-                      style={{ maxWidth: "100%" }}
-                    />
-                  </div>
                 </div>
               </div>
-              {/* Destination (To) Section */}
+              {/* Destination (To) Section - Radio Group */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Destination
                 </label>
-                <div className="flex gap-4 mb-2">
-                  <label className="flex items-center gap-2">
+                <div role="radiogroup" className="space-y-2">
+                  {userLocations.map((loc, idx) => (
+                    <label
+                      key={idx}
+                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground"
+                    >
+                      <input
+                        type="radio"
+                        name="destinationAddress"
+                        value={idx}
+                        checked={toAddressIdx === idx}
+                        onChange={() => {
+                          setToAddressIdx(idx);
+                          setDestType("my");
+                          setTo(userLocations[idx]?.country || "");
+                          setToAddress(userLocations[idx]?.street || "");
+                          setToPostalCode(userLocations[idx]?.postalCode || "");
+                        }}
+                        disabled={isLoading}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="font-medium">{loc.fullName}</span> -{" "}
+                        {loc.street}, {loc.city} ({loc.country})<br />
+                        {loc.postalCode} - {loc.mobile} - {loc.addressType}
+                        <br />
+                        {loc.landmark && (
+                          <>
+                            <span className="text-xs">
+                              Landmark: {loc.landmark}
+                            </span>
+                            <br />
+                          </>
+                        )}
+                        {loc.deliveryInstructions && (
+                          <>
+                            <span className="text-xs">
+                              Instructions: {loc.deliveryInstructions}
+                            </span>
+                            <br />
+                          </>
+                        )}
+                        {loc.building && (
+                          <>
+                            <span className="text-xs">
+                              Building: {loc.building}
+                            </span>
+                            <br />
+                          </>
+                        )}
+                        {loc.primary && (
+                          <span className="text-xs">(Primary Address)</span>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                  <label className="flex items-center gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground">
                     <input
                       type="radio"
-                      name="destType"
-                      value="my"
-                      checked={destType === "my"}
+                      name="destinationAddress"
+                      value="add"
+                      checked={toAddressIdx === -1}
                       onChange={() => {
-                        setDestType("my");
-                        setTo(userLocations[toAddressIdx]?.country || "");
-                        setToAddress(userLocations[toAddressIdx]?.street || "");
-                        setToPostalCode(
-                          userLocations[toAddressIdx]?.postalCode || "",
-                        );
-                        if (sourceType === "my") setSourceType("other");
-                      }}
-                      disabled={isLoading || sourceType === "my"}
-                    />
-                    My Address
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="destType"
-                      value="other"
-                      checked={destType === "other"}
-                      onChange={() => {
+                        setIsEditingAddress(false);
+                        setEditAddressIdx(null);
+                        setAddressForm({
+                          country: "",
+                          countryCode: "",
+                          fullName: user?.name || "",
+                          mobile: "",
+                          street: "",
+                          building: "",
+                          city: "",
+                          district: "",
+                          governorate: "",
+                          postalCode: "",
+                          landmark: "",
+                          addressType: "Home",
+                          deliveryInstructions: "",
+                          primary: false,
+                        });
+                        setToAddressIdx(-1);
                         setDestType("other");
-                        setTo("");
-                        setToAddress("");
-                        setToPostalCode("");
+                        setShowAddAddress(true);
                       }}
                       disabled={isLoading}
+                      className="mt-1"
                     />
-                    Other
+                    <span>Add new address</span>
                   </label>
-                  {destType === "my" && (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="ml-4"
-                        onClick={() => setShowSelectAddress(true)}
-                        disabled={isLoading}
-                      >
-                        Select Address
-                      </Button>
-                      <Dialog.Root
-                        open={!!showSelectAddress}
-                        onOpenChange={setShowSelectAddress}
-                      >
-                        <Dialog.Portal>
-                          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-50" />
-                          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
-                            <Dialog.Title className="text-lg font-bold mb-4">
-                              Select Destination Address
-                            </Dialog.Title>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
-                              {userLocations.length === 0 && (
-                                <div className="text-muted-foreground text-sm">
-                                  No saved addresses.
-                                </div>
-                              )}
-                              {userLocations.map((loc, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`border rounded p-3 mb-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition ${
-                                    toAddressIdx === idx
-                                      ? "border-primary bg-card"
-                                      : "border-border"
-                                  }`}
-                                  onClick={() => {
-                                    setToAddressIdx(idx);
-                                    setTo(loc.country || "");
-                                    setToAddress(loc.street || "");
-                                    setToPostalCode(loc.postalCode || "");
-                                    setShowSelectAddress(false);
-                                  }}
-                                >
-                                  <div className="font-medium">
-                                    {loc.fullName}
-                                    {<br />}
-                                    {loc.street}, {loc.city}
-                                  </div>
-                                  <div className="text-xs">
-                                    {loc.country} • {loc.postalCode} •{" "}
-                                    {loc.addressType}
-                                    {loc.primary ? " [Primary]" : ""}
-                                  </div>
-                                  <div className="text-xs">{loc.mobile}</div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex justify-end mt-4">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowSelectAddress(false)}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </Dialog.Content>
-                        </Dialog.Portal>
-                      </Dialog.Root>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="ml-2"
-                        onClick={() => {
-                          setIsEditingAddress(false);
-                          setEditAddressIdx(null);
-                          setAddressForm({
-                            country: "",
-                            countryCode: "",
-                            fullName: user?.name || "",
-                            mobile: "",
-                            street: "",
-                            building: "",
-                            city: "",
-                            district: "",
-                            governorate: "",
-                            postalCode: "",
-                            landmark: "",
-                            addressType: "Home",
-                            deliveryInstructions: "",
-                            primary: false,
-                          });
-                          setShowAddAddress(true);
-                        }}
-                      >
-                        Add new address
-                      </Button>
-                    </>
-                  )}
-                </div>
-                {/* Add/Edit Address Modal */}
-                <Dialog.Root
-                  open={showAddAddress}
-                  onOpenChange={setShowAddAddress}
-                >
-                  <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 bg-black/30 z-50" />
-                    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg">
-                      <Dialog.Title className="text-lg font-bold mb-4">
-                        {isEditingAddress ? "Edit Address" : "Add Address"}
-                      </Dialog.Title>
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          setAddressLoading(true);
-                          try {
-                            const method = isEditingAddress ? "PUT" : "POST";
-                            const payload = {
-                              userId: user?.id,
-                              address: addressForm,
-                            };
-                            const res = await fetch("/api/user/addresses", {
-                              method,
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify(payload),
-                            });
-                            const data = await res.json();
-                            if (!res.ok)
-                              throw new Error(
-                                data.error || "Failed to save address",
-                              );
-                            // Update user context (localStorage and state)
-                            const updatedUser = {
-                              ...user,
-                              locations: data.locations,
-                            };
-                            localStorage.setItem(
-                              "user",
-                              JSON.stringify(updatedUser),
-                            );
-                            window.dispatchEvent(new Event("storage"));
-                            setShowAddAddress(false);
-                          } catch (err: any) {
-                            alert(err.message || "Failed to save address");
-                          } finally {
-                            setAddressLoading(false);
-                          }
-                        }}
-                        className="space-y-3"
-                      >
-                        <Input
-                          placeholder="Full Name"
-                          value={addressForm.fullName}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              fullName: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                        <Input
-                          placeholder="Mobile"
-                          value={addressForm.mobile}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              mobile: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                        <Input
-                          placeholder="Country"
-                          value={addressForm.country}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              country: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                        <Input
-                          placeholder="City"
-                          value={addressForm.city}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              city: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                        <Input
-                          placeholder="Street"
-                          value={addressForm.street}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              street: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                        <Input
-                          placeholder="Postal Code"
-                          value={addressForm.postalCode}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              postalCode: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                        <Input
-                          placeholder="Landmark"
-                          value={addressForm.landmark}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              landmark: e.target.value,
-                            }))
-                          }
-                        />
-                        <Input
-                          placeholder="Delivery Instructions"
-                          value={addressForm.deliveryInstructions}
-                          onChange={(e) =>
-                            setAddressForm((f) => ({
-                              ...f,
-                              deliveryInstructions: e.target.value,
-                            }))
-                          }
-                        />
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={addressForm.primary}
-                            onChange={(e) =>
-                              setAddressForm((f) => ({
-                                ...f,
-                                primary: e.target.checked,
-                              }))
-                            }
-                            id="primaryAddress"
-                          />
-                          <label htmlFor="primaryAddress">Set as primary</label>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            type="submit"
-                            disabled={addressLoading}
-                            className="flex-1"
-                          >
-                            {addressLoading
-                              ? "Saving..."
-                              : isEditingAddress
-                                ? "Save Changes"
-                                : "Add Address"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setShowAddAddress(false)}
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </form>
-                    </Dialog.Content>
-                  </Dialog.Portal>
-                </Dialog.Root>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-foreground mb-1">
-                      Country
-                    </label>
-                    <Select
-                      value={to}
-                      onValueChange={setTo}
-                      disabled={isLoading || destType === "my"}
-                    >
-                      <SelectTrigger style={{ width: "100%" }}>
-                        <SelectValue placeholder="Select destination country" />
-                      </SelectTrigger>
-                      <SelectContent>{countryOptions}</SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-foreground mb-1 max-w-full">
-                      Address
-                    </label>
-                    <Input
-                      id="toAddress"
-                      type="text"
-                      placeholder="Destination address"
-                      value={toAddress}
-                      onChange={(e) => setToAddress(e.target.value)}
-                      disabled={isLoading || destType === "my"}
-                      required
-                      style={{ maxWidth: "100%" }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-foreground mb-1">
-                      Postal Code
-                    </label>
-                    <Input
-                      id="toPostalCode"
-                      type="text"
-                      placeholder="Destination postal code"
-                      value={toPostalCode}
-                      onChange={(e) => setToPostalCode(e.target.value)}
-                      disabled={isLoading || destType === "my"}
-                      required
-                      style={{ maxWidth: "100%" }}
-                    />
-                  </div>
                 </div>
               </div>
               {/* Mobile Number */}
