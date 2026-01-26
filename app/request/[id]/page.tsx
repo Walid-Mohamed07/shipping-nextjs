@@ -19,11 +19,19 @@ import {
   Banknote,
 } from "lucide-react";
 
+interface Location {
+  label?: string;
+  address?: string;
+  country?: string;
+  city?: string;
+  [key: string]: any;
+}
+
 interface ShippingRequest {
   id: string;
   userId: string;
-  from: string;
-  to: string;
+  from: Location;
+  to: Location;
   item: string;
   category: string;
   estimatedTime: string;
@@ -36,6 +44,19 @@ interface ShippingRequest {
   createdAt: string;
   updatedAt: string;
 }
+// Helper to format a location object for display
+const formatLocation = (loc: Location) => {
+  if (!loc) return "-";
+  if (loc.label) return loc.label;
+  if (loc.address && loc.city && loc.country) {
+    return `${loc.address}, ${loc.city}, ${loc.country}`;
+  }
+  if (loc.address) return loc.address;
+  if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
+  if (loc.city) return loc.city;
+  if (loc.country) return loc.country;
+  return "-";
+};
 
 const statusSteps = [
   { name: "Pending", icon: Clock },
@@ -53,7 +74,7 @@ export default function RequestDetailsPage() {
   const requestId = params.id as string;
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.id) {
       router.push("/login");
       return;
     }
@@ -79,7 +100,7 @@ export default function RequestDetailsPage() {
     };
 
     fetchRequest();
-  }, [user, router, requestId]);
+  }, [user?.id, requestId]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -202,8 +223,8 @@ export default function RequestDetailsPage() {
           {/* Live Tracking Map - Only show when In Transit */}
           {request.deliveryStatus === "In Transit" && (
             <LiveTrackingMap
-              from={request.from}
-              to={request.to}
+              from={request.from!.country!}
+              to={request.to!.country!}
               isInTransit={true}
             />
           )}
@@ -271,14 +292,14 @@ export default function RequestDetailsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">From</p>
                   <p className="text-lg font-medium text-foreground">
-                    {request.from}
+                    {formatLocation(request.from)}
                   </p>
                 </div>
                 <div className="border-l-2 border-primary h-8" />
                 <div>
                   <p className="text-sm text-muted-foreground">To</p>
                   <p className="text-lg font-medium text-foreground">
-                    {request.to}
+                    {formatLocation(request.to)}
                   </p>
                 </div>
               </div>

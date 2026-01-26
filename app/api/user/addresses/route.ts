@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   const usersData = getUsersData();
+  console.log({ usersData });
+
   const user = usersData.users.find((u: any) => u.id === userId);
+  console.log({ user });
   if (!user)
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   if (address.primary) {

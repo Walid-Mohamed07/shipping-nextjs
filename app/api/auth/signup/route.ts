@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import jwt from "jsonwebtoken";
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,6 +42,15 @@ export async function POST(request: NextRequest) {
     fs.writeFileSync(usersPath, JSON.stringify(usersData, null, 2));
 
     const primaryLocation = newUser.locations[0];
+    // Generate JWT token with user context
+    const JWT_SECRET = process.env.JWT_SECRET || "demo_secret";
+    const token = jwt.sign({
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      locations: newUser.locations,
+      role: newUser.role,
+    }, JWT_SECRET, { expiresIn: "7d" });
     return NextResponse.json(
       {
         success: true,
@@ -51,6 +61,7 @@ export async function POST(request: NextRequest) {
           locations: newUser.locations,
           role: newUser.role,
         },
+        token,
       },
       { status: 201 },
     );

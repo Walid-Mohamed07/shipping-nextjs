@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useRef, useState, useMemo } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import React, { useRef, useState, useMemo, useEffect } from "react";
+import AddAddressDialog from "./AddAddressDialog";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,20 @@ import { countries } from "@/constants/countries";
 import { categories } from "@/constants/categories";
 
 export default function NewRequestForm() {
+  // Warehouses state
+  const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [selectedWarehouse, setSelectedWarehouse] = useState("");
+  const [pickupMode, setPickupMode] = useState("Self");
+
+  // ...existing code...
+
+  // Fetch warehouses on mount
+  useEffect(() => {
+    fetch("/api/admin/warehouse")
+      .then((res) => res.json())
+      .then((data) => setWarehouses(data || []));
+  }, []);
+
   const { user } = useAuth();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
@@ -44,7 +58,19 @@ export default function NewRequestForm() {
   const [sourceType, setSourceType] = useState("my");
   const [destType, setDestType] = useState("other");
   // Get user's locations (addresses)
-  const userLocations = user?.locations || [];
+  const [userLocations, setUserLocations] = useState(user?.locations || []);
+  // Fetch latest locations from API
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`/api/user/addresses?userId=${user.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data.locations)) setUserLocations(data.locations);
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   const primaryLocation =
     userLocations.find((loc) => loc.primary) || userLocations[0] || {};
 
@@ -56,6 +82,12 @@ export default function NewRequestForm() {
     primaryLocation.postalCode || "",
   );
 
+  // Filter warehouses by selected source country
+  const filteredWarehouses = useMemo(
+    () => warehouses.filter((w) => w.country === from),
+    [warehouses, from],
+  );
+
   // Destination address state
   const [toAddressIdx, setToAddressIdx] = useState(-1); // -1 means not using saved address
   const [to, setTo] = useState("");
@@ -64,6 +96,9 @@ export default function NewRequestForm() {
 
   // Modal state for adding/editing address
   const [showAddAddress, setShowAddAddress] = useState(false);
+  const [addAddressType, setAddAddressType] = useState<
+    "source" | "destination"
+  >("source");
   const [item, setItem] = useState("");
   const [category, setCategory] = useState("");
   const [dimensions, setDimensions] = useState("");
@@ -189,7 +224,8 @@ export default function NewRequestForm() {
       !dimensions ||
       !weight ||
       !quantity ||
-      !mobile
+      !mobile ||
+      !selectedWarehouse
     ) {
       setError("Please fill in all fields");
       return;
@@ -210,33 +246,40 @@ export default function NewRequestForm() {
     }
     setIsLoading(true);
     try {
+      // Build the request object with all relevant fields
+      const requestBody = {
+        userId: user?.id,
+        from: selectedSourceLoc,
+        to: selectedDestLoc,
+        item,
+        category,
+        dimensions,
+        weight,
+        quantity,
+        address: destAddress,
+        country: destCountry,
+        postalCode: destPostalCode,
+        mobile,
+        estimatedCost,
+        orderStatus: "Pending",
+        deliveryStatus: "Pending",
+        estimatedTime,
+        sourceAddress,
+        sourcePostalCode,
+        warehouseId: selectedWarehouse,
+        pickupMode,
+        // Add any additional fields here as needed
+      };
       const response = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          from: sourceCountry,
-          to: destCountry,
-          item,
-          category,
-          dimensions,
-          weight,
-          quantity,
-          address: destAddress,
-          country: destCountry,
-          postalCode: destPostalCode,
-          mobile,
-          estimatedCost,
-          orderStatus: "Pending",
-          deliveryStatus: "Pending",
-          estimatedTime,
-          sourceAddress,
-          sourcePostalCode,
-        }),
+        body: JSON.stringify(requestBody),
       });
       if (!response.ok) {
-        throw new Error("Failed to create request");
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to create request");
       }
+      // Optionally, handle the returned request object
       setSuccess(true);
       setTimeout(() => {
         router.push("/my-requests");
@@ -304,7 +347,7 @@ export default function NewRequestForm() {
                   {userLocations.map((loc, idx) => (
                     <label
                       key={idx}
-                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground"
+                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground transition-all duration-300"
                     >
                       <input
                         type="radio"
@@ -358,40 +401,20 @@ export default function NewRequestForm() {
                       </span>
                     </label>
                   ))}
-                  <label className="flex items-center gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground">
-                    <input
-                      type="radio"
-                      name="sourceAddress"
-                      value="add"
-                      checked={fromAddressIdx === -1}
-                      onChange={() => {
-                        setIsEditingAddress(false);
-                        setEditAddressIdx(null);
-                        setAddressForm({
-                          country: "",
-                          countryCode: "",
-                          fullName: user?.name || "",
-                          mobile: "",
-                          street: "",
-                          building: "",
-                          city: "",
-                          district: "",
-                          governorate: "",
-                          postalCode: "",
-                          landmark: "",
-                          addressType: "Home",
-                          deliveryInstructions: "",
-                          primary: false,
-                        });
-                        setFromAddressIdx(-1);
-                        setSourceType("other");
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setAddAddressType("source");
                         setShowAddAddress(true);
                       }}
                       disabled={isLoading}
-                      className="mt-1"
-                    />
-                    <span>Add new address</span>
-                  </label>
+                      className="w-full cursor-pointer"
+                    >
+                      + Add new address
+                    </Button>
+                  </div>
                 </div>
               </div>
               {/* Destination (To) Section - Radio Group */}
@@ -403,7 +426,7 @@ export default function NewRequestForm() {
                   {userLocations.map((loc, idx) => (
                     <label
                       key={idx}
-                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground"
+                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground transition-all duration-300"
                     >
                       <input
                         type="radio"
@@ -455,42 +478,109 @@ export default function NewRequestForm() {
                       </span>
                     </label>
                   ))}
-                  <label className="flex items-center gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground">
-                    <input
-                      type="radio"
-                      name="destinationAddress"
-                      value="add"
-                      checked={toAddressIdx === -1}
-                      onChange={() => {
-                        setIsEditingAddress(false);
-                        setEditAddressIdx(null);
-                        setAddressForm({
-                          country: "",
-                          countryCode: "",
-                          fullName: user?.name || "",
-                          mobile: "",
-                          street: "",
-                          building: "",
-                          city: "",
-                          district: "",
-                          governorate: "",
-                          postalCode: "",
-                          landmark: "",
-                          addressType: "Home",
-                          deliveryInstructions: "",
-                          primary: false,
-                        });
-                        setToAddressIdx(-1);
-                        setDestType("other");
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setAddAddressType("destination");
                         setShowAddAddress(true);
                       }}
                       disabled={isLoading}
-                      className="mt-1"
-                    />
-                    <span>Add new address</span>
-                  </label>
+                      className="w-full cursor-pointer"
+                    >
+                      + Add new address
+                    </Button>
+                  </div>
+                  {/* Add Address Dialog Popup */}
+                  <AddAddressDialog
+                    open={showAddAddress}
+                    onOpenChange={(open) => setShowAddAddress(open)}
+                    onSave={async (address) => {
+                      // After saving, fetch latest locations from API
+                      if (user?.id) {
+                        const res = await fetch(
+                          `/api/user/addresses?userId=${user.id}`,
+                        );
+                        const data = await res.json();
+                        if (Array.isArray(data.locations)) {
+                          setUserLocations(data.locations);
+                          // Find the new address index
+                          const idx = data.locations.findIndex(
+                            (loc) =>
+                              loc.street === address.street &&
+                              loc.postalCode === address.postalCode,
+                          );
+                          if (addAddressType === "source") {
+                            setFromAddressIdx(
+                              idx !== -1 ? idx : data.locations.length - 1,
+                            );
+                            setSourceType("my");
+                            setFrom(address.country);
+                            setFromAddress(address.street);
+                            setFromPostalCode(address.postalCode);
+                          } else {
+                            setToAddressIdx(
+                              idx !== -1 ? idx : data.locations.length - 1,
+                            );
+                            setDestType("my");
+                            setTo(address.country);
+                            setToAddress(address.street);
+                            setToPostalCode(address.postalCode);
+                          }
+                        }
+                      }
+                    }}
+                    type={addAddressType}
+                    userName={user?.name || ""}
+                    userId={user?.id || ""}
+                  />
                 </div>
               </div>
+              {/* Available Warehouses */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Available Warehouses
+                </label>
+                <select
+                  className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={selectedWarehouse}
+                  onChange={(e) => setSelectedWarehouse(e.target.value)}
+                  disabled={isLoading || filteredWarehouses.length === 0}
+                  required
+                >
+                  <option value="" disabled>
+                    {filteredWarehouses.length === 0
+                      ? "No warehouses available"
+                      : "Select a warehouse"}
+                  </option>
+                  {filteredWarehouses.map((w) => (
+                    <option
+                      key={w.id}
+                      value={w.id}
+                      className="bg-background text-foreground"
+                    >
+                      {w.name || w.id} ({w.city || w.country})
+                    </option>
+                  ))}
+                </select>
+              </div>
+                {/* Pickup Mode */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Pickup Mode
+                  </label>
+                  <select
+                    className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={pickupMode}
+                    onChange={(e) => setPickupMode(e.target.value)}
+                    disabled={isLoading}
+                    required
+                  >
+                    <option value="Self">Self</option>
+                    <option value="Delegate">Delegate</option>
+                  </select>
+                </div>
               {/* Mobile Number */}
               <div>
                 <label

@@ -5,19 +5,41 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Check, X } from "lucide-react";
 
+interface Address {
+  country: string;
+  countryCode?: string;
+  fullName: string;
+  mobile: string;
+  street: string;
+  building?: string;
+  city: string;
+  district?: string;
+  governorate?: string;
+  postalCode: string;
+  landmark?: string;
+  addressType: string;
+  deliveryInstructions?: string;
+  primary?: boolean;
+}
+
 interface Order {
   id: string;
   userId: string;
   userName: string;
   userEmail: string;
-  from: string;
-  to: string;
+  from: Address;
+  to: Address;
   item: string;
   category: string;
+  dimensions?: string;
+  weight?: string;
+  quantity?: number;
   estimatedTime: string;
+  estimatedCost?: string;
   orderStatus: "Pending" | "Accepted" | "Rejected";
   deliveryStatus: string;
-  createdAt: string;
+  sourceAddress?: string;
+  address?: string;
 }
 
 interface AdminOrdersTabProps {
@@ -126,11 +148,11 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">From:</span>{" "}
-                      <span className="font-medium">{order.from}</span>
+                      <span className="font-medium">{order.from.city}, {order.from.country}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">To:</span>{" "}
-                      <span className="font-medium">{order.to}</span>
+                      <span className="font-medium">{order.to.city}, {order.to.country}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Item:</span>{" "}
@@ -140,6 +162,18 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                       <span className="text-muted-foreground">Category:</span>{" "}
                       <span className="font-medium">{order.category}</span>
                     </div>
+                    {order.weight && (
+                      <div>
+                        <span className="text-muted-foreground">Weight:</span>{" "}
+                        <span className="font-medium">{order.weight} kg</span>
+                      </div>
+                    )}
+                    {order.quantity && (
+                      <div>
+                        <span className="text-muted-foreground">Quantity:</span>{" "}
+                        <span className="font-medium">{order.quantity}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2 ml-4">
@@ -178,7 +212,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
               <div className="flex-1">
                 <p className="font-medium">{order.id}</p>
                 <p className="text-sm text-muted-foreground">
-                  {order.from} → {order.to}
+                  {order.from.city}, {order.from.country} → {order.to.city}, {order.to.country}
                 </p>
               </div>
               <div className="flex items-center gap-2">
