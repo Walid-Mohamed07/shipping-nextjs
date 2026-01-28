@@ -112,19 +112,6 @@ export default function LoginPage() {
                 Sign up here
               </Link>
             </div>
-
-            {/* Demo Credentials */}
-            <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                Demo Credentials:
-              </p>
-              <p className="text-xs text-blue-800 dark:text-blue-400">
-                Email: john@example.com
-              </p>
-              <p className="text-xs text-blue-800 dark:text-blue-400">
-                Password: hashed_password_123
-              </p>
-            </div>
           </div>
         </div>
       </div>
