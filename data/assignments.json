@@ -53,6 +53,14 @@
       "status": "Assigned",
       "assignedAt": "2026-01-24T09:11:30.995Z",
       "estimatedDelivery": "2026-01-25T11:11"
+    },
+    {
+      "id": "ASSIGN-1769517295892",
+      "requestId": "REQ-1769419731959",
+      "driverId": "walid-driver-001",
+      "vehicleId": "vehicle-egypt-001",
+      "status": "Assigned",
+      "assignedAt": "2026-01-27T12:34:55.892Z"
     }
   ]
 }

@@ -14,37 +14,16 @@ import {
   Tag,
   Banknote,
 } from "lucide-react";
+import { Request, Address } from "@/types";
 
-interface Location {
-  label?: string;
-  address?: string;
-  country?: string;
-  city?: string;
-  [key: string]: any;
-}
-
-interface ShippingRequest {
-  id: string;
-  userId: string;
-  from: Location;
-  to: Location;
-  item: string;
-  category: string;
-  estimatedCost: string;
-  estimatedTime: string;
-  orderStatus: string;
-  deliveryStatus: string;
-  createdAt: string;
-  updatedAt: string;
-}
 // Helper to format a location object for display
-const formatLocation = (loc: Location) => {
+const formatLocation = (loc: Address) => {
   if (!loc) return "-";
-  if (loc.label) return loc.label;
-  if (loc.address && loc.city && loc.country) {
-    return `${loc.address}, ${loc.city}, ${loc.country}`;
+  if (loc.landmark) return loc.landmark;
+  if (loc.street && loc.city && loc.country) {
+    return `${loc.street}, ${loc.city}, ${loc.country}`;
   }
-  if (loc.address) return loc.address;
+  if (loc.street) return loc.street;
   if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
   if (loc.city) return loc.city;
   if (loc.country) return loc.country;
@@ -52,7 +31,7 @@ const formatLocation = (loc: Location) => {
 };
 
 export default function MyRequestsPage() {
-  const [requests, setRequests] = useState<ShippingRequest[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const { user } = useAuth();
@@ -181,8 +160,7 @@ export default function MyRequestsPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
                       <span>
-                        {formatLocation(request.from)} →{" "}
-                        {formatLocation(request.to)}
+                        {request.from.street} → {request.to.street}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

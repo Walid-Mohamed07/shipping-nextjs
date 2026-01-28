@@ -30,7 +30,7 @@ export default function NewRequestForm() {
   useEffect(() => {
     fetch("/api/admin/warehouse")
       .then((res) => res.json())
-      .then((data) => setWarehouses(data || []));
+      .then((data) => setWarehouses(data.warehouses || []));
   }, []);
 
   const { user } = useAuth();

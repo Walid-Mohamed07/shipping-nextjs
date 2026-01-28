@@ -3,23 +3,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { countries } from "@/constants/countries";
-
-interface Address {
-  country: string;
-  countryCode: string;
-  fullName: string;
-  mobile: string;
-  street: string;
-  building: string;
-  city: string;
-  district: string;
-  governorate: string;
-  postalCode: string;
-  landmark: string;
-  addressType: string;
-  deliveryInstructions: string;
-  primary: boolean;
-}
+import { Address } from "@/types";
 
 interface AddAddressDialogProps {
   open: boolean;

@@ -1,0 +1,31 @@
+{
+    "logs": [
+        {
+            "id": "LOG-001",
+            "timestamp": "2024-01-20T10:30:00Z",
+            "userId": "admin-001",
+            "userName": "Admin User",
+            "action": "ORDER_ACCEPTED",
+            "description": "Accepted order REQ-001",
+            "resourceId": "REQ-001",
+            "resourceType": "Order",
+            "changes": {
+                "orderStatus": "Pending -> Accepted"
+            }
+        },
+        {
+            "id": "LOG-002",
+            "timestamp": "2024-01-20T11:15:00Z",
+            "userId": "admin-001",
+            "userName": "Admin User",
+            "action": "ASSIGNMENT_CREATED",
+            "description": "Created assignment for REQ-001 to driver-001",
+            "resourceId": "ASSIGN-001",
+            "resourceType": "Assignment",
+            "changes": {
+                "driverId": "driver-001",
+                "vehicleId": "VEH-003"
+            }
+        }
+    ]
+}

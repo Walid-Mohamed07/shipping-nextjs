@@ -4,46 +4,15 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Truck, User } from "lucide-react";
+import { Request, Warehouse, Address, Vehicle, User as AppUser } from "@/types";
 
-interface Warehouse {
-  id: string;
-  name: string;
-  country: string;
-  state?: string;
-  location?: string;
-}
-
-interface Location {
-  country?: string;
-  countryCode: string;
-  fullName: string;
-  mobile: string;
-  street: string;
-  building: string;
-  city: string;
-  district: string;
-  governorate: string;
-  postalCode: string;
-  landmark: string;
-  addressType: string;
-  deliveryInstructions: string;
+interface Location extends Address {
   label?: string;
   address?: string;
   [key: string]: any;
 }
 
-interface Order {
-  id: string;
-  from: Location;
-  to: Location;
-  item: string;
-  category: string;
-  warehouseId?: string;
-  orderStatus: string;
-  pickupMode: string;
-  estimatedCost?: string;
-  estimatedTime?: string;
-}
+interface Order extends Request {}
 // Helper to format a location object for display
 const formatLocation = (loc: Location) => {
   if (!loc) return "-";
@@ -57,33 +26,6 @@ const formatLocation = (loc: Location) => {
   if (loc.country) return loc.country;
   return "-";
 };
-
-interface Address {
-  country: string;
-  countryCode?: string;
-  fullName: string;
-  mobile: string;
-  street: string;
-  building?: string;
-  city: string;
-  district?: string;
-  governorate?: string;
-  postalCode: string;
-  landmark?: string;
-  addressType: string;
-  deliveryInstructions?: string;
-  primary?: boolean;
-}
-
-interface Vehicle {
-  id: string;
-  name: string;
-  type: string;
-  capacity: string;
-  plateNumber: string;
-  status: string;
-  country: string;
-}
 
 interface Driver {
   id: string;
@@ -111,7 +53,7 @@ export function AdminAssignmentTab({
   const [selectedTo, setSelectedTo] = useState<string>("");
   const [selectedDriver, setSelectedDriver] = useState<string>("");
   const [selectedVehicle, setSelectedVehicle] = useState<string>("");
-  // const [estimatedDelivery, setEstimatedDelivery] = useState<string>("");
+  const [estimatedDelivery, setEstimatedDelivery] = useState<string>("");
 
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("");
@@ -129,6 +71,9 @@ export function AdminAssignmentTab({
         const ordersData = await ordersRes.json();
         const resourcesData = await resourcesRes.json();
         const assignmentsData = await assignmentsRes.json();
+        console.log({ resourcesData });
+        console.log({ assignmentsData });
+
         const warehousesData = await (
           await fetch("/api/admin/warehouse")
         ).json();
@@ -145,7 +90,7 @@ export function AdminAssignmentTab({
         );
         setDrivers(resourcesData.drivers);
         setAssignments(assignmentsData.assignments);
-        setWarehouses(warehousesData);
+        setWarehouses(warehousesData.warehouses || []);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -165,6 +110,7 @@ export function AdminAssignmentTab({
       setSelectedFrom("");
       setSelectedTo("");
       setSelectedDriver("");
+      setEstimatedDelivery("");
       return;
     }
     const order = orders.find((o) => o.id === selectedOrder);
@@ -202,6 +148,7 @@ export function AdminAssignmentTab({
       setSelectedFrom("");
       setSelectedTo("");
       setSelectedDriver("");
+      setEstimatedDelivery("");
     }
   }, [selectedOrder, orders, warehouses]);
 
@@ -213,7 +160,9 @@ export function AdminAssignmentTab({
       !selectedFrom ||
       !selectedTo ||
       !selectedDriver ||
-      !selectedVehicle
+      !selectedVehicle ||
+      !selectedWarehouse ||
+      !estimatedDelivery
     ) {
       alert("Please fill in all fields");
       return;
@@ -227,7 +176,7 @@ export function AdminAssignmentTab({
           requestId: selectedOrder,
           driverId: selectedDriver,
           vehicleId: selectedVehicle,
-          // estimatedDelivery,
+          estimatedDelivery,
         }),
       });
 
@@ -241,6 +190,7 @@ export function AdminAssignmentTab({
         setSelectedToCountry("");
         setSelectedDriver("");
         setSelectedVehicle("");
+        setEstimatedDelivery("");
       }
     } catch (error) {
       console.error("Failed to create assignment:", error);
@@ -459,7 +409,7 @@ export function AdminAssignmentTab({
               </div>
             </div>
 
-            {/* <div>
+            <div>
               <label className="block text-sm font-medium mb-2">
                 Estimated Delivery
               </label>
@@ -469,7 +419,7 @@ export function AdminAssignmentTab({
                 onChange={(e) => setEstimatedDelivery(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
               />
-            </div> */}
+            </div>
 
             <Button
               onClick={handleAssign}
@@ -479,7 +429,8 @@ export function AdminAssignmentTab({
                 !selectedFromCountry ||
                 !selectedToCountry ||
                 !selectedDriver ||
-                !selectedVehicle
+                !selectedVehicle ||
+                !estimatedDelivery
               }
             >
               Assign Order
@@ -523,7 +474,7 @@ export function AdminAssignmentTab({
                       </div>
                     </div>
                   </div>
-                  {/* <div className="text-sm">
+                  <div className="text-sm">
                     <p className="text-muted-foreground mb-2">
                       Estimated Delivery
                     </p>
@@ -535,7 +486,7 @@ export function AdminAssignmentTab({
                     <span className="inline-block mt-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
                       {assignment.status}
                     </span>
-                  </div> */}
+                  </div>
                 </div>
               </Card>
             ))

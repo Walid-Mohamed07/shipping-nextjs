@@ -51,13 +51,16 @@ export default function SignupPage() {
 
     try {
       // Pass new fields to signup (update your context/backend as needed)
-      await signup(email, password, name, {
+      await signup(
+        email,
+        password,
+        name,
         address,
         country,
         countryCode,
         postalCode,
         mobile,
-      });
+      );
       router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");

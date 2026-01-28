@@ -4,42 +4,11 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Check, X } from "lucide-react";
+import { Request, Address } from "@/types";
 
-interface Address {
-  country: string;
-  countryCode?: string;
-  fullName: string;
-  mobile: string;
-  street: string;
-  building?: string;
-  city: string;
-  district?: string;
-  governorate?: string;
-  postalCode: string;
-  landmark?: string;
-  addressType: string;
-  deliveryInstructions?: string;
-  primary?: boolean;
-}
-
-interface Order {
-  id: string;
-  userId: string;
+interface Order extends Request {
   userName: string;
   userEmail: string;
-  from: Address;
-  to: Address;
-  item: string;
-  category: string;
-  dimensions?: string;
-  weight?: string;
-  quantity?: number;
-  estimatedTime: string;
-  estimatedCost?: string;
-  orderStatus: "Pending" | "Accepted" | "Rejected";
-  deliveryStatus: string;
-  sourceAddress?: string;
-  address?: string;
 }
 
 interface AdminOrdersTabProps {

@@ -18,40 +18,16 @@ import {
   ArrowLeft,
   Banknote,
 } from "lucide-react";
+import { Request, Address } from "@/types";
 
-interface Location {
-  label?: string;
-  address?: string;
-  country?: string;
-  city?: string;
-  [key: string]: any;
-}
-
-interface ShippingRequest {
-  id: string;
-  userId: string;
-  from: Location;
-  to: Location;
-  item: string;
-  category: string;
-  estimatedTime: string;
-  estimatedCost: string;
-  dimensions: string;
-  weight: string;
-  quantity: number;
-  orderStatus: string;
-  deliveryStatus: string;
-  createdAt: string;
-  updatedAt: string;
-}
 // Helper to format a location object for display
-const formatLocation = (loc: Location) => {
+const formatLocation = (loc: Address) => {
   if (!loc) return "-";
-  if (loc.label) return loc.label;
-  if (loc.address && loc.city && loc.country) {
-    return `${loc.address}, ${loc.city}, ${loc.country}`;
+  if (loc.street && loc.city && loc.country) {
+    return `${loc.street}, ${loc.city}, ${loc.country}`;
   }
-  if (loc.address) return loc.address;
+  if (loc.landmark) return loc.landmark;
+  if (loc.street) return loc.street;
   if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
   if (loc.city) return loc.city;
   if (loc.country) return loc.country;
@@ -65,7 +41,7 @@ const statusSteps = [
 ];
 
 export default function RequestDetailsPage() {
-  const [request, setRequest] = useState<ShippingRequest | null>(null);
+  const [request, setRequest] = useState<Request | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const { user } = useAuth();
