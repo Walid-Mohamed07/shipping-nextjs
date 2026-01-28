@@ -1,6 +1,37 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
+// Cookie utility functions
+// Simple Bearer token generator (for demo; use backend in production)
+// JWT secret for demo (in production, use backend secret)
+// No client-side JWT generation; token comes from backend
+
+function decodeJWT(token: string): User | null {
+  try {
+    return jwtDecode<User>(token);
+  } catch {
+    return null;
+  }
+}
+function setCookie(name: string, value: string, days: number) {
+  if (typeof window === "undefined") return;
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
+
+function getCookie(name: string) {
+  if (typeof window === "undefined") return undefined;
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(name + "="))
+    ?.split("=")[1];
+}
+
+function removeCookie(name: string) {
+  if (typeof window === "undefined") return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
 
 export interface AddressLocation {
   country: string;
@@ -31,7 +62,16 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    name: string,
+    address: string,
+    country: string,
+    countryCode: string,
+    postalCode: string,
+    mobile: string
+  ) => Promise<void>;
   logout: () => void;
 }
 
@@ -42,12 +82,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    // Only run on client
+    if (typeof window !== "undefined") {
+      const token = getCookie("user_token");
+      if (token) {
+        const decoded = decodeJWT(token);
+        if (decoded) {
+          setUser(decoded);
+        }
+      }
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
+
+  // Only render children after hydration
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
 
   const login = async (email: string, password: string) => {
     const response = await fetch("/api/auth/login", {
@@ -63,14 +114,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await response.json();
     setUser(data.user);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    // Store backend JWT in cookie
+    if (data.token) {
+      setCookie("user_token", data.token, 7);
+    }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (
+    email: string,
+    password: string,
+    name: string,
+    address: string,
+    country: string,
+    countryCode: string,
+    postalCode: string,
+    mobile: string
+  ) => {
     const response = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        address,
+        country,
+        countryCode,
+        postalCode,
+        mobile,
+      }),
     });
 
     if (!response.ok) {
@@ -80,12 +152,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await response.json();
     setUser(data.user);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    // Store backend JWT in cookie
+    if (data.token) {
+      setCookie("user_token", data.token, 7);
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    removeCookie("user_token");
   };
 
   return (
@@ -100,5 +176,12 @@ export function useAuth() {
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  // Get JWT from cookie and decode user context
+  const token = getCookie("user_token");
+  let jwtUser: User | null = null;
+  if (token) {
+    jwtUser = decodeJWT(token);
+  }
+  // Return context with user from JWT if available
+  return { ...context, user: jwtUser ?? context.user };
 }

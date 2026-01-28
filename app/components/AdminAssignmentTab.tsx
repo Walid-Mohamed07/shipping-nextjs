@@ -4,31 +4,34 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Truck, User } from "lucide-react";
+import { Request, Warehouse, Address, Vehicle, User as AppUser } from "@/types";
 
-interface Order {
-  id: string;
-  from: string;
-  to: string;
-  item: string;
-  category: string;
-  orderStatus: string;
+interface Location extends Address {
+  label?: string;
+  address?: string;
+  [key: string]: any;
 }
 
-interface Vehicle {
-  id: string;
-  name: string;
-  type: string;
-  capacity: string;
-  plateNumber: string;
-  status: string;
-  country: string;
-}
+interface Order extends Request {}
+// Helper to format a location object for display
+const formatLocation = (loc: Location) => {
+  if (!loc) return "-";
+  if (loc.label) return loc.label;
+  if (loc.address && loc.city && loc.country) {
+    return `${loc.address}, ${loc.city}, ${loc.country}`;
+  }
+  if (loc.address) return loc.address;
+  if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
+  if (loc.city) return loc.city;
+  if (loc.country) return loc.country;
+  return "-";
+};
 
 interface Driver {
   id: string;
   name: string;
   email: string;
-  country: string;
+  locations: Address[];
 }
 
 interface AdminAssignmentTabProps {
@@ -46,9 +49,14 @@ export function AdminAssignmentTab({
   const [selectedOrder, setSelectedOrder] = useState<string>("");
   const [selectedFromCountry, setSelectedFromCountry] = useState<string>("");
   const [selectedToCountry, setSelectedToCountry] = useState<string>("");
+  const [selectedFrom, setSelectedFrom] = useState<string>("");
+  const [selectedTo, setSelectedTo] = useState<string>("");
   const [selectedDriver, setSelectedDriver] = useState<string>("");
   const [selectedVehicle, setSelectedVehicle] = useState<string>("");
   const [estimatedDelivery, setEstimatedDelivery] = useState<string>("");
+
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,11 +65,18 @@ export function AdminAssignmentTab({
           fetch("/api/admin/orders"),
           fetch("/api/admin/resources"),
           fetch("/api/admin/assign"),
+          fetch("/api/admin/warehouse"),
         ]);
 
         const ordersData = await ordersRes.json();
         const resourcesData = await resourcesRes.json();
         const assignmentsData = await assignmentsRes.json();
+        console.log({ resourcesData });
+        console.log({ assignmentsData });
+
+        const warehousesData = await (
+          await fetch("/api/admin/warehouse")
+        ).json();
 
         setOrders(
           ordersData.requests.filter(
@@ -75,6 +90,7 @@ export function AdminAssignmentTab({
         );
         setDrivers(resourcesData.drivers);
         setAssignments(assignmentsData.assignments);
+        setWarehouses(warehousesData.warehouses || []);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -85,13 +101,67 @@ export function AdminAssignmentTab({
     fetchData();
   }, []);
 
+  // When order changes, set warehouse selection
+  useEffect(() => {
+    if (!selectedOrder) {
+      setSelectedWarehouse("");
+      setSelectedFromCountry("");
+      setSelectedToCountry("");
+      setSelectedFrom("");
+      setSelectedTo("");
+      setSelectedDriver("");
+      setEstimatedDelivery("");
+      return;
+    }
+    const order = orders.find((o) => o.id === selectedOrder);
+    if (order && order.from && order.from.country) {
+      setSelectedFromCountry(order.from.country);
+      setSelectedToCountry(order.to?.country || "");
+      setSelectedTo(
+        `${order.to.building}, ${order.to.street}, ${order.to.city} - ${order.from.country}`,
+      );
+      setSelectedFrom(
+        `${order.from.building}, ${order.from.street}, ${order.from.city} - ${order.from.country}`,
+      );
+      // Filter warehouses by country
+      const filtered = warehouses.filter(
+        (w) => w.country === order.from.country,
+      );
+      // Set initial value from order.warehouseId if present
+      // @ts-ignore
+      if (
+        order.warehouseId &&
+        filtered.some((w) => w.id === order.warehouseId)
+      ) {
+        // @ts-ignore
+        setSelectedWarehouse(order.warehouseId);
+      } else if (filtered.length > 0) {
+        setSelectedWarehouse(filtered[0].id);
+      } else {
+        setSelectedWarehouse("");
+      }
+      setSelectedDriver(""); // reset driver when order changes
+    } else {
+      setSelectedWarehouse("");
+      setSelectedFromCountry("");
+      setSelectedToCountry("");
+      setSelectedFrom("");
+      setSelectedTo("");
+      setSelectedDriver("");
+      setEstimatedDelivery("");
+    }
+  }, [selectedOrder, orders, warehouses]);
+
   const handleAssign = async () => {
     if (
       !selectedOrder ||
       !selectedFromCountry ||
       !selectedToCountry ||
+      !selectedFrom ||
+      !selectedTo ||
       !selectedDriver ||
       !selectedVehicle ||
+      !selectedWarehouse ||
       !estimatedDelivery
     ) {
       alert("Please fill in all fields");
@@ -153,59 +223,92 @@ export function AdminAssignmentTab({
                 <option value="">Choose an order...</option>
                 {unassignedOrders.map((order) => (
                   <option key={order.id} value={order.id}>
-                    {order.id} - {order.from} → {order.to}
+                    {order.id} - {formatLocation(order.from)} →{" "}
+                    {formatLocation(order.to)} - {order.item} - {order.category}{" "}
+                    - {order.from.fullName} → {order.to.fullName}
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Route From and Route To are now readonly input fields set from order */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Route From (Country)
+                  Route From
                 </label>
-                <select
-                  value={selectedFromCountry}
-                  onChange={(e) => {
-                    setSelectedFromCountry(e.target.value);
-                    setSelectedDriver("");
-                    setSelectedVehicle("");
-                  }}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
-                >
-                  <option value="">Choose origin country...</option>
-                  {[...new Set(unassignedOrders.map((o) => o.from))].map(
-                    (country) => (
-                      <option key={country} value={country}>
-                        {country}
-                      </option>
-                    ),
-                  )}
-                </select>
+                <input
+                  type="text"
+                  value={selectedOrder ? selectedFrom : ""}
+                  placeholder={selectedOrder ? undefined : "Choose order first"}
+                  readOnly
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Route To (Country)
+                  Route To
                 </label>
-                <select
-                  value={selectedToCountry}
-                  onChange={(e) => setSelectedToCountry(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
-                >
-                  <option value="">Choose destination country...</option>
-                  {[...new Set(unassignedOrders.map((o) => o.to))].map(
-                    (country) => (
-                      <option key={country} value={country}>
-                        {country}
-                      </option>
-                    ),
-                  )}
-                </select>
+                <input
+                  type="text"
+                  value={selectedOrder ? selectedTo : ""}
+                  placeholder={selectedOrder ? undefined : "Choose order first"}
+                  readOnly
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Selected Warehouse Field */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Selected Warehouse
+                </label>
+                <select
+                  value={selectedWarehouse}
+                  onChange={(e) => setSelectedWarehouse(e.target.value)}
+                  disabled={!selectedOrder}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                >
+                  <option value="">
+                    {selectedOrder
+                      ? "Choose a warehouse..."
+                      : "Select order first..."}
+                  </option>
+                  {(() => {
+                    const order = orders.find((o) => o.id === selectedOrder);
+                    if (!order || !order.from || !order.from.country)
+                      return null;
+                    return warehouses
+                      .filter((w) => w.country === order.from.country)
+                      .map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name} ({w.state || w.country})
+                        </option>
+                      ));
+                  })()}
+                </select>
+              </div>
+
+              {/* Pickup Mode Field */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Pickup Mode
+                </label>
+                <input
+                  type="text"
+                  value={(() => {
+                    const order = orders.find((o) => o.id === selectedOrder);
+                    return order?.pickupMode || "";
+                  })()}
+                  readOnly
+                  placeholder={selectedOrder ? undefined : "Select order first"}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Select Driver
@@ -213,19 +316,30 @@ export function AdminAssignmentTab({
                 <select
                   value={selectedDriver}
                   onChange={(e) => setSelectedDriver(e.target.value)}
-                  disabled={!selectedFromCountry}
+                  disabled={!selectedOrder || !selectedFromCountry}
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
                 >
                   <option value="">
-                    {selectedFromCountry
+                    {selectedOrder && selectedFromCountry
                       ? "Choose a driver..."
-                      : "Select origin country first..."}
+                      : "Select order first..."}
                   </option>
                   {drivers
-                    .filter((driver) => driver.country === selectedFromCountry)
+                    .filter((driver) =>
+                      driver.locations.some(
+                        (location) => location.country === selectedFromCountry,
+                      ),
+                    )
                     .map((driver) => (
                       <option key={driver.id} value={driver.id}>
-                        {driver.name} ({driver.country})
+                        {driver.name} (
+                        {
+                          driver.locations.find(
+                            (location) =>
+                              location.country === selectedFromCountry,
+                          )?.country
+                        }
+                        )
                       </option>
                     ))}
                 </select>
@@ -258,6 +372,40 @@ export function AdminAssignmentTab({
                       </option>
                     ))}
                 </select>
+              </div>
+
+              {/* Estimated Cost Field */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Estimated Cost
+                </label>
+                <input
+                  type="text"
+                  value={(() => {
+                    const order = orders.find((o) => o.id === selectedOrder);
+                    return order?.estimatedCost || "";
+                  })()}
+                  readOnly
+                  placeholder={selectedOrder ? undefined : "Select order first"}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                />
+              </div>
+
+              {/* Estimated Time Field */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Estimated Delivery Time
+                </label>
+                <input
+                  type="text"
+                  value={(() => {
+                    const order = orders.find((o) => o.id === selectedOrder);
+                    return order?.estimatedTime || "";
+                  })()}
+                  readOnly
+                  placeholder={selectedOrder ? undefined : "Select order first"}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
+                />
               </div>
             </div>
 
@@ -312,7 +460,8 @@ export function AdminAssignmentTab({
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground">Route:</span>
                         <span>
-                          {assignment.from} → {assignment.to}
+                          {formatLocation(assignment.from)} →{" "}
+                          {formatLocation(assignment.to)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

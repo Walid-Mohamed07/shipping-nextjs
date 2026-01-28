@@ -18,24 +18,21 @@ import {
   ArrowLeft,
   Banknote,
 } from "lucide-react";
+import { Request, Address } from "@/types";
 
-interface ShippingRequest {
-  id: string;
-  userId: string;
-  from: string;
-  to: string;
-  item: string;
-  category: string;
-  estimatedTime: string;
-  estimatedCost: string;
-  dimensions: string;
-  weight: string;
-  quantity: number;
-  orderStatus: string;
-  deliveryStatus: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Helper to format a location object for display
+const formatLocation = (loc: Address) => {
+  if (!loc) return "-";
+  if (loc.street && loc.city && loc.country) {
+    return `${loc.street}, ${loc.city}, ${loc.country}`;
+  }
+  if (loc.landmark) return loc.landmark;
+  if (loc.street) return loc.street;
+  if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
+  if (loc.city) return loc.city;
+  if (loc.country) return loc.country;
+  return "-";
+};
 
 const statusSteps = [
   { name: "Pending", icon: Clock },
@@ -44,7 +41,7 @@ const statusSteps = [
 ];
 
 export default function RequestDetailsPage() {
-  const [request, setRequest] = useState<ShippingRequest | null>(null);
+  const [request, setRequest] = useState<Request | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const { user } = useAuth();
@@ -53,7 +50,7 @@ export default function RequestDetailsPage() {
   const requestId = params.id as string;
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.id) {
       router.push("/login");
       return;
     }
@@ -79,7 +76,7 @@ export default function RequestDetailsPage() {
     };
 
     fetchRequest();
-  }, [user, router, requestId]);
+  }, [user?.id, requestId]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -202,8 +199,8 @@ export default function RequestDetailsPage() {
           {/* Live Tracking Map - Only show when In Transit */}
           {request.deliveryStatus === "In Transit" && (
             <LiveTrackingMap
-              from={request.from}
-              to={request.to}
+              from={request.from!.country!}
+              to={request.to!.country!}
               isInTransit={true}
             />
           )}
@@ -271,14 +268,14 @@ export default function RequestDetailsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">From</p>
                   <p className="text-lg font-medium text-foreground">
-                    {request.from}
+                    {formatLocation(request.from)}
                   </p>
                 </div>
                 <div className="border-l-2 border-primary h-8" />
                 <div>
                   <p className="text-sm text-muted-foreground">To</p>
                   <p className="text-lg font-medium text-foreground">
-                    {request.to}
+                    {formatLocation(request.to)}
                   </p>
                 </div>
               </div>

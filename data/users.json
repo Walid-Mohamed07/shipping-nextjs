@@ -246,6 +246,38 @@
           "addressType": "Home",
           "deliveryInstructions": "",
           "primary": true
+        },
+        {
+          "country": "Kuwait",
+          "countryCode": "",
+          "fullName": "Walid Mohamed",
+          "mobile": "4635345234324",
+          "street": "AD st",
+          "building": "2",
+          "city": "Abo Dabi",
+          "district": "",
+          "governorate": "",
+          "postalCode": "23244",
+          "landmark": "Near Diamond Mall",
+          "addressType": "Home",
+          "deliveryInstructions": "Call on arrival",
+          "primary": false
+        },
+        {
+          "country": "Saudi Arabia",
+          "countryCode": "",
+          "fullName": "Walid Mohamed",
+          "mobile": "43657546345345",
+          "street": "45 st",
+          "building": "31",
+          "city": "Riyadh",
+          "district": "",
+          "governorate": "",
+          "postalCode": "45462",
+          "landmark": "Before Riyadh club",
+          "addressType": "Office",
+          "deliveryInstructions": "",
+          "primary": false
         }
       ],
       "createdAt": "2026-01-22T10:00:00Z"
