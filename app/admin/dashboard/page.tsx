@@ -1,21 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { Header } from "@/app/components/Header";
 import { AdminOrdersTab } from "@/app/components/AdminOrdersTab";
 import { AdminAssignmentTab } from "@/app/components/AdminAssignmentTab";
+import { WarehouseManagementTab } from "@/app/components/AdminWarehouseManagementTab";
+import { AdminVehicleRulesTab } from "@/app/components/AdminVehicleRulesTab";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { AdminVehicleManagementTab } from "@/app/components/AdminVehicleManagementTab";
+import { AdminShipmentsMapTab } from "@/app/components/AdminShipmentsMapTab";
+import { AdminOverrideAssignmentsTab } from "@/app/components/AdminOverrideAssignmentsTab";
+import { AdminPerformanceMetricsTab } from "@/app/components/AdminPerformanceMetricsTab";
+import { AdminAuditLogsTab } from "@/app/components/AdminAuditLogsTab";
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"orders" | "assignments">(
-    "orders",
-  );
+  const [activeTab, setActiveTab] = useState<
+    | "warehouses"
+    | "orders"
+    | "assignments"
+    | "vehicle-rules"
+    | "vehicles"
+    | "map"
+    | "override"
+    | "metrics"
+    | "audit"
+  >("orders");
   const [acceptedOrderIds, setAcceptedOrderIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== "admin")) {
+      router.push("/");
+    }
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -26,7 +47,6 @@ export default function AdminDashboard() {
   }
 
   if (!user || user.role !== "admin") {
-    router.push("/");
     return null;
   }
 
@@ -44,30 +64,83 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <Button
+            onClick={() => setActiveTab("warehouses")}
+            variant={activeTab === "warehouses" ? "default" : "outline"}
+            className={activeTab === "warehouses" ? "" : "bg-transparent"}
+            size="sm"
+          >
+            Warehouses
+          </Button>
           <Button
             onClick={() => setActiveTab("orders")}
             variant={activeTab === "orders" ? "default" : "outline"}
-            className={
-              "cursor-pointer" +
-              (activeTab === "orders" ? "" : " bg-transparent")
-            }
+            className={activeTab === "orders" ? "" : "bg-transparent"}
+            size="sm"
           >
-            Order Management
+            Orders
           </Button>
           <Button
             onClick={() => setActiveTab("assignments")}
             variant={activeTab === "assignments" ? "default" : "outline"}
-            className={
-              "cursor-pointer" +
-              (activeTab === "assignments" ? "" : " bg-transparent")
-            }
+            className={activeTab === "assignments" ? "" : "bg-transparent"}
+            size="sm"
           >
-            Assign Orders
+            Assignments
+          </Button>
+          <Button
+            onClick={() => setActiveTab("vehicles")}
+            variant={activeTab === "vehicles" ? "default" : "outline"}
+            className={activeTab === "vehicles" ? "" : "bg-transparent"}
+            size="sm"
+          >
+            Vehicles
+          </Button>
+          <Button
+            onClick={() => setActiveTab("vehicle-rules")}
+            variant={activeTab === "vehicle-rules" ? "default" : "outline"}
+            className={activeTab === "vehicle-rules" ? "" : "bg-transparent"}
+            size="sm"
+          >
+            Rules
+          </Button>
+          <Button
+            onClick={() => setActiveTab("map")}
+            variant={activeTab === "map" ? "default" : "outline"}
+            className={activeTab === "map" ? "" : "bg-transparent"}
+            size="sm"
+          >
+            Map
+          </Button>
+          <Button
+            onClick={() => setActiveTab("override")}
+            variant={activeTab === "override" ? "default" : "outline"}
+            className={activeTab === "override" ? "" : "bg-transparent"}
+            size="sm"
+          >
+            Override
+          </Button>
+          <Button
+            onClick={() => setActiveTab("metrics")}
+            variant={activeTab === "metrics" ? "default" : "outline"}
+            className={activeTab === "metrics" ? "" : "bg-transparent"}
+            size="sm"
+          >
+            Metrics
+          </Button>
+          <Button
+            onClick={() => setActiveTab("audit")}
+            variant={activeTab === "audit" ? "default" : "outline"}
+            className={activeTab === "audit" ? "" : "bg-transparent"}
+            size="sm"
+          >
+            Audit
           </Button>
         </div>
 
         <Card className="p-6">
+          {activeTab === "warehouses" && <WarehouseManagementTab />}
           {activeTab === "orders" && (
             <AdminOrdersTab
               onOrderAccepted={(orderId) => {
@@ -78,6 +151,12 @@ export default function AdminDashboard() {
           {activeTab === "assignments" && (
             <AdminAssignmentTab acceptedOrderIds={acceptedOrderIds} />
           )}
+          {activeTab === "vehicles" && <AdminVehicleManagementTab />}
+          {activeTab === "vehicle-rules" && <AdminVehicleRulesTab />}
+          {activeTab === "map" && <AdminShipmentsMapTab />}
+          {activeTab === "override" && <AdminOverrideAssignmentsTab />}
+          {activeTab === "metrics" && <AdminPerformanceMetricsTab />}
+          {activeTab === "audit" && <AdminAuditLogsTab />}
         </Card>
       </main>
     </div>

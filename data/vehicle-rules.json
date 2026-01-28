@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "id": "RULE-1769439365151",
+      "vehicleId": "vehicle-egypt-001",
+      "vehicleName": "Mercedes Actros",
+      "maxWeight": 4000,
+      "maxDimensions": "300x200x150",
+      "allowedCategories": [
+        "Fragile",
+        "Office",
+        "Furniture"
+      ],
+      "minDeliveryDays": 1,
+      "maxDeliveryDays": 7,
+      "createdAt": "2026-01-26T14:56:05.151Z"
+    }
+  ]
+}

@@ -14,24 +14,24 @@ import {
   Tag,
   Banknote,
 } from "lucide-react";
+import { Request, Address } from "@/types";
 
-interface ShippingRequest {
-  id: string;
-  userId: string;
-  from: string;
-  to: string;
-  item: string;
-  category: string;
-  estimatedCost: string;
-  estimatedTime: string;
-  orderStatus: string;
-  deliveryStatus: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Helper to format a location object for display
+const formatLocation = (loc: Address) => {
+  if (!loc) return "-";
+  if (loc.landmark) return loc.landmark;
+  if (loc.street && loc.city && loc.country) {
+    return `${loc.street}, ${loc.city}, ${loc.country}`;
+  }
+  if (loc.street) return loc.street;
+  if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
+  if (loc.city) return loc.city;
+  if (loc.country) return loc.country;
+  return "-";
+};
 
 export default function MyRequestsPage() {
-  const [requests, setRequests] = useState<ShippingRequest[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const { user } = useAuth();
@@ -39,8 +39,12 @@ export default function MyRequestsPage() {
 
   useEffect(() => {
     // Wait for user to be defined (not undefined)
-    if (typeof user === "undefined") return;
-    if (!user) {
+    // if (typeof user === "undefined") return;
+    // if (!user) {
+    //   router.push("/login");
+    //   return;
+    // }
+    if (!user || !user.id) {
       router.push("/login");
       return;
     }
@@ -61,7 +65,7 @@ export default function MyRequestsPage() {
     };
 
     fetchRequests();
-  }, [user, router]);
+  }, [user?.id]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -156,7 +160,7 @@ export default function MyRequestsPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
                       <span>
-                        {request.from} → {request.to}
+                        {request.from.street} → {request.to.street}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

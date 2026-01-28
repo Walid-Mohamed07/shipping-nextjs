@@ -26,10 +26,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    // Accept all fields, including new structure
+    // 'from' and 'to' are now full location/address objects, not just country strings
     const {
       userId,
-      from,
-      to,
+      from, // full location object
+      to,   // full location object
       item,
       category,
       dimensions,
@@ -37,6 +39,17 @@ export async function POST(request: NextRequest) {
       quantity,
       estimatedCost,
       estimatedTime,
+      orderStatus,
+      deliveryStatus,
+      sourceAddress,
+      sourcePostalCode,
+      address,
+      country,
+      postalCode,
+      mobile,
+      warehouseId,
+      pickupMode,
+      ...rest
     } = body;
 
     const requestsPath = path.join(process.cwd(), "data", "requests.json");
@@ -45,8 +58,8 @@ export async function POST(request: NextRequest) {
     const newRequest = {
       id: `REQ-${Date.now()}`,
       userId,
-      from,
-      to,
+      from, // full object
+      to, // full object
       item,
       category,
       dimensions,
@@ -54,8 +67,17 @@ export async function POST(request: NextRequest) {
       quantity,
       estimatedCost,
       estimatedTime,
-      orderStatus: "Pending",
-      deliveryStatus: "Pending",
+      orderStatus: orderStatus || "Pending",
+      deliveryStatus: deliveryStatus || "Pending",
+      sourceAddress,
+      sourcePostalCode,
+      address,
+      country,
+      postalCode,
+      mobile,
+      warehouseId,
+      pickupMode,
+      ...rest,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

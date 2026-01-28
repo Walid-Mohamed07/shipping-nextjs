@@ -1,0 +1,66 @@
+{
+    "rules": [
+        {
+            "id": "RULE-001",
+            "vehicleId": "VEH-001",
+            "vehicleName": "Box Truck A",
+            "maxWeight": 5000,
+            "maxDimensions": "300x200x150",
+            "allowedCategories": [
+                "Electronics",
+                "Books",
+                "Office",
+                "Furniture"
+            ],
+            "minDeliveryDays": 5,
+            "maxDeliveryDays": 7,
+            "createdAt": "2024-01-01T08:00:00Z"
+        },
+        {
+            "id": "RULE-002",
+            "vehicleId": "VEH-002",
+            "vehicleName": "Box Truck B",
+            "maxWeight": 5000,
+            "maxDimensions": "300x200x150",
+            "allowedCategories": [
+                "Electronics",
+                "Books",
+                "Clothing",
+                "Office"
+            ],
+            "minDeliveryDays": 3,
+            "maxDeliveryDays": 5,
+            "createdAt": "2024-01-01T08:00:00Z"
+        },
+        {
+            "id": "RULE-003",
+            "vehicleId": "VEH-003",
+            "vehicleName": "Cargo Van C",
+            "maxWeight": 2000,
+            "maxDimensions": "200x150x100",
+            "allowedCategories": [
+                "Clothing",
+                "Books",
+                "Office"
+            ],
+            "minDeliveryDays": 2,
+            "maxDeliveryDays": 3,
+            "createdAt": "2024-01-01T08:00:00Z"
+        },
+        {
+            "id": "RULE-004",
+            "vehicleId": "VEH-004",
+            "vehicleName": "Cargo Van D",
+            "maxWeight": 2000,
+            "maxDimensions": "200x150x100",
+            "allowedCategories": [
+                "Food",
+                "Fragile",
+                "Office"
+            ],
+            "minDeliveryDays": 1,
+            "maxDeliveryDays": 2,
+            "createdAt": "2024-01-01T08:00:00Z"
+        }
+    ]
+}
