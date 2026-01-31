@@ -333,6 +333,40 @@
         }
       ],
       "createdAt": "2026-01-22T10:02:00Z"
+    },
+    {
+      "id": "1769861366877",
+      "email": "Mohamed@yahoo.com",
+      "password": "Mohamed1234",
+      "name": "Mohamed Ahmed ",
+      "locations": [
+        {
+          "address": "27spain ,Madrid next to Valverde ",
+          "country": "Spain",
+          "countryCode": "+34",
+          "postalCode": "28000",
+          "mobile": "01006591234",
+          "primary": false
+        },
+        {
+          "country": "Egypt",
+          "countryCode": "",
+          "fullName": "Mohamed Ahmed ",
+          "mobile": "+20221931041",
+          "street": "almadinat almunawara",
+          "building": "7",
+          "city": "Cairo",
+          "district": "",
+          "governorate": "",
+          "postalCode": "12345",
+          "landmark": "near to walid ",
+          "addressType": "Home",
+          "deliveryInstructions": "total gas station ",
+          "primary": true
+        }
+      ],
+      "role": "client",
+      "createdAt": "2026-01-31T12:09:26.877Z"
     }
   ]
 }
