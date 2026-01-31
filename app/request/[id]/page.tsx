@@ -10,15 +10,18 @@ import Link from "next/link";
 import {
   Package,
   MapPin,
-  Tag,
   Calendar,
   Clock,
   CheckCircle2,
   AlertCircle,
   ArrowLeft,
   Banknote,
+  Warehouse,
+  Navigation,
+  MapPinned,
 } from "lucide-react";
-import { Request, Address } from "@/types";
+import { Request, Address, Warehouse as WarehouseType } from "@/types";
+import { getDistanceKm } from "@/lib/utils";
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -40,14 +43,87 @@ const statusSteps = [
   { name: "Delivered", icon: CheckCircle2 },
 ];
 
+const NEARBY_RADIUS_KM = 50;
+
 export default function RequestDetailsPage() {
   const [request, setRequest] = useState<Request | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [nearbyWarehouses, setNearbyWarehouses] = useState<
+    (WarehouseType & { distanceKm: number })[]
+  >([]);
+  const [locationChecked, setLocationChecked] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
   const requestId = params.id as string;
+
+  const findNearbyWarehouses = () => {
+    setShowLocationPrompt(true);
+  };
+
+  const handleLocationConfirm = () => {
+    setShowLocationPrompt(false);
+    setLocationError("");
+    setLocationLoading(true);
+    setLocationChecked(true);
+
+    if (!navigator.geolocation) {
+      setLocationError("Location is not supported by your browser.");
+      setLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setUserLocation({ lat, lng });
+        try {
+          const res = await fetch("/api/warehouses");
+          const data = await res.json();
+          const warehouses: WarehouseType[] = data.warehouses || [];
+          const withCoords = warehouses.filter(
+            (w) =>
+              w.latitude != null &&
+              w.longitude != null &&
+              w.status === "active"
+          );
+          const withDistance = withCoords
+            .map((w) => ({
+              ...w,
+              distanceKm: getDistanceKm(lat, lng, w.latitude!, w.longitude!),
+            }))
+            .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
+            .sort((a, b) => a.distanceKm - b.distanceKm);
+          setNearbyWarehouses(withDistance);
+        } catch {
+          setLocationError("Failed to load warehouses.");
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (err) => {
+        setLocationError(
+          err.code === 1
+            ? "Location permission was denied."
+            : "Could not get your location. Please try again."
+        );
+        setLocationLoading(false);
+      }
+    );
+  };
+
+  const handleLocationDecline = () => {
+    setShowLocationPrompt(false);
+  };
 
   useEffect(() => {
     if (!user || !user.id) {
@@ -177,7 +253,7 @@ export default function RequestDetailsPage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {request.item}
+                  {request.items && request.items.length > 0 ? request.items[0].item : "-"}
                 </h1>
                 <p className="text-muted-foreground text-lg">{request.id}</p>
               </div>
@@ -197,13 +273,145 @@ export default function RequestDetailsPage() {
           </div>
 
           {/* Live Tracking Map - Only show when In Transit */}
-          {request.deliveryStatus === "In Transit" && (
+          {request.deliveryStatus === "In Transit" && request.source && request.destination && (
             <LiveTrackingMap
-              from={request.from!.country!}
-              to={request.to!.country!}
+              from={request.source.country}
+              to={request.destination.country}
               isInTransit={true}
             />
           )}
+
+          {/* Location permission dialog - ask before sharing */}
+          {showLocationPrompt && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6">
+                <div className="flex gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <MapPinned className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground text-lg">
+                      Share your location?
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      ShipHub would like to use your location to find warehouses
+                      within {NEARBY_RADIUS_KM} km of you. Your location is never
+                      stored or shared.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleLocationConfirm}
+                    className="flex-1 cursor-pointer"
+                  >
+                    Allow
+                  </Button>
+                  <Button
+                    onClick={handleLocationDecline}
+                    variant="outline"
+                    className="flex-1 bg-transparent cursor-pointer"
+                  >
+                    Not now
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Nearby Warehouses */}
+          <div className="bg-card rounded-lg border border-border p-6">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Warehouse className="w-5 h-5 text-primary" />
+              Nearby Warehouses
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Find warehouses within {NEARBY_RADIUS_KM} km of your location for
+              pickup or drop-off.
+            </p>
+
+            {!locationChecked && (
+              <Button
+                onClick={findNearbyWarehouses}
+                className="gap-2 cursor-pointer"
+              >
+                <Navigation className="w-4 h-4" />
+                Find Warehouses Near Me
+              </Button>
+            )}
+
+            {locationLoading && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <span>Getting your location...</span>
+              </div>
+            )}
+
+            {locationError && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span>{locationError}</span>
+              </div>
+            )}
+
+            {locationChecked && !locationLoading && !locationError && (
+              <>
+                {nearbyWarehouses.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-foreground">
+                      {nearbyWarehouses.length} warehouse
+                      {nearbyWarehouses.length !== 1 ? "s" : ""} within{" "}
+                      {NEARBY_RADIUS_KM} km
+                    </p>
+                    <div className="space-y-2">
+                      {nearbyWarehouses.map((wh) => (
+                        <div
+                          key={wh.id}
+                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border"
+                        >
+                          <Warehouse className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground">
+                              {wh.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {wh.location}
+                            </p>
+                            <p className="text-xs text-primary font-medium mt-1">
+                              {wh.distanceKm.toFixed(1)} km away
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                    <MapPinned className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-amber-800 dark:text-amber-300">
+                        You&apos;re outside our service zone
+                      </p>
+                      <p className="text-sm text-amber-700 dark:text-amber-400/90">
+                        No warehouses within {NEARBY_RADIUS_KM} km. We may not
+                        deliver to your area yet—please contact support for
+                        options.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <Button
+                  onClick={findNearbyWarehouses}
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 gap-2 bg-transparent cursor-pointer"
+                >
+                  <Navigation className="w-4 h-4" />
+                  Search again
+                </Button>
+              </>
+            )}
+          </div>
 
           {/* Status Timeline */}
           <div className="bg-card rounded-lg border border-border p-8">
@@ -268,14 +476,14 @@ export default function RequestDetailsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">From</p>
                   <p className="text-lg font-medium text-foreground">
-                    {formatLocation(request.from)}
+                    {formatLocation(request.source)}
                   </p>
                 </div>
                 <div className="border-l-2 border-primary h-8" />
                 <div>
                   <p className="text-sm text-muted-foreground">To</p>
                   <p className="text-lg font-medium text-foreground">
-                    {formatLocation(request.to)}
+                    {formatLocation(request.destination)}
                   </p>
                 </div>
               </div>
@@ -288,36 +496,40 @@ export default function RequestDetailsPage() {
                 Package Details
               </h3>
               <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Category</p>
-                  <p className="text-base font-medium text-foreground">
-                    {request.category}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Item</p>
-                  <p className="text-base font-medium text-foreground">
-                    {request.item}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Dimensions</p>
-                  <p className="text-base font-medium text-foreground">
-                    {request.dimensions}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Weight</p>
-                  <p className="text-base font-medium text-foreground">
-                    {request.weight}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Quantity</p>
-                  <p className="text-base font-medium text-foreground">
-                    {request.quantity}
-                  </p>
-                </div>
+                {request.items && request.items.length > 0 && (
+                  <>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Category</p>
+                      <p className="text-base font-medium text-foreground">
+                        {request.items[0].category}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Item</p>
+                      <p className="text-base font-medium text-foreground">
+                        {request.items[0].item}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Dimensions</p>
+                      <p className="text-base font-medium text-foreground">
+                        {request.items[0].dimensions}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Weight</p>
+                      <p className="text-base font-medium text-foreground">
+                        {request.items[0].weight}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Quantity</p>
+                      <p className="text-base font-medium text-foreground">
+                        {request.items[0].quantity}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -330,17 +542,17 @@ export default function RequestDetailsPage() {
                 Requested Date
               </h3>
               <p className="text-sm text-muted-foreground">
-                {new Date(request.createdAt).toLocaleDateString("en-US", {
+                {request.createdAt ? new Date(request.createdAt).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                })}
+                }) : "-"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {new Date(request.createdAt).toLocaleTimeString("en-US", {
+                {request.createdAt ? new Date(request.createdAt).toLocaleTimeString("en-US", {
                   hour: "2-digit",
                   minute: "2-digit",
-                })}
+                }) : "-"}
               </p>
             </div>
 
@@ -370,17 +582,17 @@ export default function RequestDetailsPage() {
                 Last Updated
               </h3>
               <p className="text-sm text-muted-foreground">
-                {new Date(request.updatedAt).toLocaleDateString("en-US", {
+                {request.updatedAt ? new Date(request.updatedAt).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                })}
+                }) : "-"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {new Date(request.updatedAt).toLocaleTimeString("en-US", {
+                {request.updatedAt ? new Date(request.updatedAt).toLocaleTimeString("en-US", {
                   hour: "2-digit",
                   minute: "2-digit",
-                })}
+                }) : "-"}
               </p>
             </div>
           </div>

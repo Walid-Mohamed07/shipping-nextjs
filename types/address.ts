@@ -1,5 +1,10 @@
 export type AddressType = "Home" | "Office" | "Other";
 
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
 export interface Address {
   country: string;
   countryCode: string;
@@ -14,5 +19,8 @@ export interface Address {
   landmark: string;
   addressType: AddressType;
   deliveryInstructions: string;
-  primary: boolean;
+  primary?: boolean;
+  warehouseId?: string;
+  pickupMode?: string;
+  coordinates?: Coordinates;
 }

@@ -37,17 +37,82 @@ export default function AddAddressDialog({
     addressType: "Home",
     deliveryInstructions: "",
     primary: false,
+    warehouseId: "",
+    pickupMode: "Self",
+    coordinates: { latitude: '', longitude: '' },
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type: inputType, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: inputType === "checkbox" ? checked : value,
-    }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target as HTMLInputElement | HTMLSelectElement;
+    const { name, value, type: inputType } = target;
+    const checked = (target as HTMLInputElement).checked;
+    if (name === "latitude" || name === "longitude") {
+      setForm((prev) => ({
+        ...prev,
+        coordinates: {
+          ...prev.coordinates,
+          [name]: value,
+        },
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: inputType === "checkbox" ? checked : value,
+      }));
+    }
   };
+            {/* Extra fields for new structure */}
+            <>
+              {/* Warehouse ID */}
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Warehouse ID
+              </label>
+              <Input
+                name="warehouseId"
+                placeholder="e.g., wh-001"
+                value={form.warehouseId}
+                onChange={handleChange}
+              />
+
+              {/* Pickup Mode */}
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Pickup Mode
+              </label>
+              <select
+                name="pickupMode"
+                value={form.pickupMode}
+                onChange={handleChange}
+                className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="Self">Self</option>
+                <option value="Delegate">Delegate</option>
+              </select>
+
+              {/* Coordinates */}
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Coordinates
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  name="latitude"
+                  placeholder="Latitude"
+                  value={form.coordinates.latitude}
+                  onChange={handleChange}
+                  type="number"
+                  step="any"
+                />
+                <Input
+                  name="longitude"
+                  placeholder="Longitude"
+                  value={form.coordinates.longitude}
+                  onChange={handleChange}
+                  type="number"
+                  step="any"
+                />
+              </div>
+            </>
 
   const handleSave = async () => {
     // Basic validation
