@@ -19,8 +19,10 @@ import {
   Warehouse,
   Navigation,
   MapPinned,
+  Truck,
+  Box,
 } from "lucide-react";
-import { Request, Address, Warehouse as WarehouseType } from "@/types";
+import { Request, Address, Warehouse as WarehouseType, RequestDeliveryStatus } from "@/types";
 import { getDistanceKm } from "@/lib/utils";
 
 // Helper to format a location object for display
@@ -38,9 +40,13 @@ const formatLocation = (loc: Address) => {
 };
 
 const statusSteps = [
-  { name: "Pending", icon: Clock },
-  { name: "In Transit", icon: Package },
-  { name: "Delivered", icon: CheckCircle2 },
+  { name: RequestDeliveryStatus.PENDING, icon: Clock },
+  { name: RequestDeliveryStatus.PICKED_UP_SOURCE, icon: MapPin },
+  { name: RequestDeliveryStatus.WAREHOUSE_SOURCE_RECEIVED, icon: Warehouse },
+  { name: RequestDeliveryStatus.IN_TRANSIT, icon: Truck },
+  { name: RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED, icon: Warehouse },
+  { name: RequestDeliveryStatus.PICKED_UP_DESTINATION, icon: MapPin },
+  { name: RequestDeliveryStatus.DELIVERED, icon: CheckCircle2 },
 ];
 
 const NEARBY_RADIUS_KM = 50;
@@ -156,12 +162,20 @@ export default function RequestDetailsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending":
+      case RequestDeliveryStatus.PENDING:
         return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-800";
-      case "In Transit":
+      case RequestDeliveryStatus.PICKED_UP_SOURCE:
+      case RequestDeliveryStatus.WAREHOUSE_SOURCE_RECEIVED:
         return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border border-blue-300 dark:border-blue-800";
-      case "Delivered":
+      case RequestDeliveryStatus.IN_TRANSIT:
+        return "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-800";
+      case RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED:
+      case RequestDeliveryStatus.PICKED_UP_DESTINATION:
+        return "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border border-purple-300 dark:border-purple-800";
+      case RequestDeliveryStatus.DELIVERED:
         return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-300 dark:border-green-800";
+      case RequestDeliveryStatus.FAILED:
+        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-300 dark:border-red-800";
       case "Cancelled":
         return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-300 dark:border-red-800";
       default:
@@ -170,7 +184,8 @@ export default function RequestDetailsPage() {
   };
 
   const getCurrentStatusIndex = (status: string) => {
-    return statusSteps.findIndex((step) => step.name === status);
+    const index = statusSteps.findIndex((step) => step.name === status);
+    return index !== -1 ? index : statusSteps.length - 1;
   };
 
   const getOrderStatusBadgeColor = (status: string) => {
@@ -258,22 +273,20 @@ export default function RequestDetailsPage() {
                 <p className="text-muted-foreground text-lg">{request.id}</p>
               </div>
               <div className="flex gap-2">
-                <span
+                   <span
                   className={`px-4 py-2 rounded-full text-sm font-semibold ${getOrderStatusBadgeColor(request.orderStatus)}`}
                 >
                   Order: {request.orderStatus}
-                </span>
-                <span
-                  className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(request.deliveryStatus)}`}
-                >
-                  {request.deliveryStatus}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Live Tracking Map - Only show when In Transit */}
-          {request.deliveryStatus === "In Transit" && request.source && request.destination && (
+          {/* Live Tracking Map - Only show when In Transit or later */}
+          {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT || 
+            request.deliveryStatus === RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
+            request.deliveryStatus === RequestDeliveryStatus.PICKED_UP_DESTINATION) && 
+            request.source && request.destination && (
             <LiveTrackingMap
               from={request.source.country}
               to={request.destination.country}
@@ -319,148 +332,146 @@ export default function RequestDetailsPage() {
             </div>
           )}
 
-          {/* Nearby Warehouses */}
-          <div className="bg-card rounded-lg border border-border p-6">
-            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Warehouse className="w-5 h-5 text-primary" />
-              Nearby Warehouses
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Find warehouses within {NEARBY_RADIUS_KM} km of your location for
-              pickup or drop-off.
-            </p>
-
-            {!locationChecked && (
-              <Button
-                onClick={findNearbyWarehouses}
-                className="gap-2 cursor-pointer"
-              >
-                <Navigation className="w-4 h-4" />
-                Find Warehouses Near Me
-              </Button>
-            )}
-
-            {locationLoading && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <span>Getting your location...</span>
-              </div>
-            )}
-
-            {locationError && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span>{locationError}</span>
-              </div>
-            )}
-
-            {locationChecked && !locationLoading && !locationError && (
-              <>
-                {nearbyWarehouses.length > 0 ? (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-foreground">
-                      {nearbyWarehouses.length} warehouse
-                      {nearbyWarehouses.length !== 1 ? "s" : ""} within{" "}
-                      {NEARBY_RADIUS_KM} km
-                    </p>
-                    <div className="space-y-2">
-                      {nearbyWarehouses.map((wh) => (
-                        <div
-                          key={wh.id}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border"
-                        >
-                          <Warehouse className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground">
-                              {wh.name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {wh.location}
-                            </p>
-                            <p className="text-xs text-primary font-medium mt-1">
-                              {wh.distanceKm.toFixed(1)} km away
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                    <MapPinned className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-amber-800 dark:text-amber-300">
-                        You&apos;re outside our service zone
-                      </p>
-                      <p className="text-sm text-amber-700 dark:text-amber-400/90">
-                        No warehouses within {NEARBY_RADIUS_KM} km. We may not
-                        deliver to your area yet—please contact support for
-                        options.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <Button
-                  onClick={findNearbyWarehouses}
-                  variant="outline"
-                  size="sm"
-                  className="mt-4 gap-2 bg-transparent cursor-pointer"
-                >
-                  <Navigation className="w-4 h-4" />
-                  Search again
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* Status Timeline */}
+          {/* Status Timeline - Redesigned */}
           <div className="bg-card rounded-lg border border-border p-8">
-            <h2 className="text-xl font-semibold text-foreground mb-6">
+            <h2 className="text-xl font-semibold text-foreground mb-8">
               Shipment Progress
             </h2>
-            <div className="flex items-center justify-between">
-              {statusSteps.map((step, index) => {
-                const Icon = step.icon;
-                const currentIndex = getCurrentStatusIndex(
-                  request.deliveryStatus,
-                );
-                const isCompleted = index <= currentIndex;
-                const isCurrent = index === currentIndex;
+            
+            {/* Timeline Container */}
+            <div className="relative">
+              {/* Desktop: Horizontal Timeline */}
+              <div className="hidden md:block">
+                {/* Progress Bar Background */}
+                <div className="absolute top-6 left-0 right-0 h-1 bg-muted rounded-full" />
+                
+                {/* Progress Bar Fill */}
+                <div 
+                  className="absolute top-6 left-0 h-1 bg-primary rounded-full transition-all duration-500"
+                  style={{
+                    width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`
+                  }}
+                />
+                
+                {/* Steps */}
+                <div className="flex justify-between relative z-10">
+                  {statusSteps.map((step, index) => {
+                    const Icon = step.icon;
+                    const currentIndex = getCurrentStatusIndex(request.deliveryStatus);
+                    const isCompleted = index <= currentIndex;
+                    const isCurrent = index === currentIndex;
 
-                return (
-                  <div key={step.name} className="flex items-center flex-1">
-                    <div className="flex flex-col items-center flex-1">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
-                          isCompleted
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        <Icon className="w-6 h-6" />
+                    return (
+                      <div key={step.name} className="flex flex-col items-center">
+                        <div
+                          className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-all border-2 ${
+                            isCompleted
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-muted-foreground border-muted"
+                          } ${isCurrent ? "ring-4 ring-primary/30" : ""}`}
+                        >
+                          <Icon className="w-7 h-7" />
+                        </div>
+                        <span
+                          className={`text-xs font-semibold text-center max-w-[100px] transition-colors ${
+                            isCurrent
+                              ? "text-primary"
+                              : isCompleted
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          {step.name}
+                        </span>
                       </div>
-                      <span
-                        className={`text-sm font-medium ${
-                          isCurrent
-                            ? "text-primary"
-                            : isCompleted
-                              ? "text-foreground"
-                              : "text-muted-foreground"
-                        }`}
-                      >
-                        {step.name}
-                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mobile: Vertical Timeline */}
+              <div className="md:hidden space-y-6">
+                {statusSteps.map((step, index) => {
+                  const Icon = step.icon;
+                  const currentIndex = getCurrentStatusIndex(request.deliveryStatus);
+                  const isCompleted = index <= currentIndex;
+                  const isCurrent = index === currentIndex;
+
+                  return (
+                    <div key={step.name} className="flex gap-4">
+                      {/* Timeline Line and Dot */}
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all border-2 flex-shrink-0 ${
+                            isCompleted
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-muted-foreground border-muted"
+                          } ${isCurrent ? "ring-4 ring-primary/30" : ""}`}
+                        >
+                          <Icon className="w-6 h-6" />
+                        </div>
+                        {index < statusSteps.length - 1 && (
+                          <div
+                            className={`w-1 h-16 my-2 transition-colors ${
+                              isCompleted ? "bg-primary" : "bg-muted"
+                            }`}
+                          />
+                        )}
+                      </div>
+
+                      {/* Status Content */}
+                      <div className="pb-4 flex-1">
+                        <h4
+                          className={`font-semibold transition-colors ${
+                            isCurrent
+                              ? "text-primary"
+                              : isCompleted
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          {step.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {isCurrent ? "Current step" : isCompleted ? "Completed" : "Pending"}
+                        </p>
+                      </div>
                     </div>
-                    {index < statusSteps.length - 1 && (
-                      <div
-                        className={`h-1 flex-1 mx-2 ${
-                          isCompleted ? "bg-primary" : "bg-muted"
-                        }`}
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Status Summary Card */}
+            <div className="mt-8 pt-6 border-t border-border">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-primary/5 rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground mb-1">Current Status</p>
+                  <p className="text-sm font-semibold text-foreground">{request.deliveryStatus}</p>
+                </div>
+                <div className="bg-primary/5 rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground mb-1">Progress</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all"
+                        style={{
+                          width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`
+                        }}
                       />
-                    )}
+                    </div>
+                    <span className="text-xs font-medium text-foreground ml-2">
+                      {Math.round((getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100)}%
+                    </span>
                   </div>
-                );
-              })}
+                </div>
+                <div className="bg-primary/5 rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground mb-1">Steps Remaining</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {Math.max(0, statusSteps.length - 1 - getCurrentStatusIndex(request.deliveryStatus))} of {statusSteps.length - 1}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -559,7 +570,7 @@ export default function RequestDetailsPage() {
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-primary" />
-                Estimated Time
+                Actual Time
               </h3>
               <p className="text-base font-medium text-foreground">
                 {request.estimatedTime}
@@ -569,7 +580,7 @@ export default function RequestDetailsPage() {
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                 <Banknote className="w-5 h-5 text-primary" />
-                Estimated Cost
+                Actual Cost
               </h3>
               <p className="text-base font-medium text-foreground">
                 {request.estimatedCost}

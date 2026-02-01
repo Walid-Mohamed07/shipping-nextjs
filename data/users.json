@@ -405,6 +405,28 @@
             "latitude": 24.65237975270708,
             "longitude": 46.71020505018533
           }
+        },
+        {
+          "country": "Egypt",
+          "countryCode": "",
+          "fullName": "Mohamed Ahmed ",
+          "mobile": "+20221931041",
+          "street": "Doctor Hassn Al Sherif Street",
+          "building": "7",
+          "city": "Nasr City",
+          "district": "Nasr City",
+          "governorate": "Cairo",
+          "postalCode": "11765",
+          "landmark": "near to kuwait",
+          "addressType": "Home",
+          "deliveryInstructions": "total gas station ",
+          "primary": false,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 30.04849233085502,
+            "longitude": 31.356522743494423
+          }
         }
       ],
       "role": "admin",

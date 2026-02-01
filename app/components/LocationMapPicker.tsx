@@ -9,6 +9,7 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
 import { Pencil, Loader2, AlertCircle, RefreshCw, Navigation } from "lucide-react";
 
@@ -336,37 +337,44 @@ export function LocationMapPicker({
         className="rounded-lg overflow-hidden border border-border"
         style={{ height }}
       >
-        <MapContainer
-          center={[center.lat, center.lng]}
-          zoom={zoom}
-          className="h-full w-full"
-          scrollWheelZoom={true}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <MapClickHandler
-            editable={editable}
-            onPositionChange={handlePositionChange}
-          />
-          {position && (
-            <MapViewUpdater center={[position.lat, position.lng]} />
-          )}
-          {position && (
-            <Marker
-              position={[position.lat, position.lng]}
-              eventHandlers={{
-                dragend: (e) => {
-                  const marker = e.target;
-                  const { lat, lng } = marker.getLatLng();
-                  handlePositionChange(lat, lng);
-                },
-              }}
-              draggable={editable}
+        {isClient ? (
+          <MapContainer
+            key="leaflet-map"
+            center={[center.lat, center.lng]}
+            zoom={zoom}
+            className="h-full w-full"
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-          )}
-        </MapContainer>
+            <MapClickHandler
+              editable={editable}
+              onPositionChange={handlePositionChange}
+            />
+            {position && (
+              <MapViewUpdater center={[position.lat, position.lng]} />
+            )}
+            {position && (
+              <Marker
+                position={[position.lat, position.lng]}
+                eventHandlers={{
+                  dragend: (e) => {
+                    const marker = e.target;
+                    const { lat, lng } = marker.getLatLng();
+                    handlePositionChange(lat, lng);
+                  },
+                }}
+                draggable={editable}
+              />
+            )}
+          </MapContainer>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-muted/50">
+            <p className="text-muted-foreground text-sm">Loading map...</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import {
   AlertCircle,
   CheckCircle,
+  ImagePlus,
   Loader2,
   MapPinned,
   Navigation,
@@ -34,6 +35,7 @@ import {
   Plus,
   Trash2,
   Warehouse,
+  X,
 } from "lucide-react";
 import { countries } from "@/constants/countries";
 import { categories } from "@/constants/categories";
@@ -46,20 +48,6 @@ import type { AddressData } from "@/app/components/LocationMapPicker";
 const NEARBY_RADIUS_KM = 50;
 
 export default function NewRequestForm() {
-  // Warehouses state
-  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
-  const [selectedSourceWarehouse, setSelectedSourceWarehouse] = useState("");
-  const [selectedDestWarehouse, setSelectedDestWarehouse] = useState("");
-  const [sourcePickupMode, setSourcePickupMode] = useState("Self");
-  const [destPickupMode, setDestPickupMode] = useState("Self");
-
-  // Fetch warehouses on mount
-  useEffect(() => {
-    fetch("/api/warehouses")
-      .then((res) => res.json())
-      .then((data) => setWarehouses(data.warehouses || []));
-  }, []);
-
   const { user } = useAuth();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
@@ -140,112 +128,47 @@ export default function NewRequestForm() {
     return null;
   }, [userLocations, toAddressIdx, addressForm.coordinates]);
 
-  // Source warehouses: near source address (or filter by country)
-  const sourceWarehouses = useMemo(() => {
-    const withCoords = warehouses.filter(
-      (w) => w.latitude != null && w.longitude != null && w.status === "active"
-    );
-    if (sourceCoords) {
-      return withCoords
-        .map((w) => ({ ...w, distanceKm: getDistanceKm(sourceCoords.lat, sourceCoords.lng, w.latitude!, w.longitude!) }))
-        .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
-        .sort((a, b) => a.distanceKm - b.distanceKm);
-    }
-    return warehouses.filter((w) => w.country === from && w.status === "active");
-  }, [warehouses, sourceCoords, from]);
-
-  // Dest warehouses: near dest address (or filter by country)
-  const destWarehouses = useMemo(() => {
-    const withCoords = warehouses.filter(
-      (w) => w.latitude != null && w.longitude != null && w.status === "active"
-    );
-    if (destCoords) {
-      return withCoords
-        .map((w) => ({ ...w, distanceKm: getDistanceKm(destCoords.lat, destCoords.lng, w.latitude!, w.longitude!) }))
-        .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
-        .sort((a, b) => a.distanceKm - b.distanceKm);
-    }
-    return warehouses.filter((w) => w.country === to && w.status === "active");
-  }, [warehouses, destCoords, to]);
-
-  useEffect(() => {
-    if (selectedSourceWarehouse && !sourceWarehouses.some((w) => w.id === selectedSourceWarehouse)) {
-      setSelectedSourceWarehouse("");
-    }
-  }, [sourceWarehouses, selectedSourceWarehouse]);
-
-  useEffect(() => {
-    if (selectedDestWarehouse && !destWarehouses.some((w) => w.id === selectedDestWarehouse)) {
-      setSelectedDestWarehouse("");
-    }
-  }, [destWarehouses, selectedDestWarehouse]);
-
-  // "Warehouses near me" (current GPS location)
-  const [myLocationCoords, setMyLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [myLocationLoading, setMyLocationLoading] = useState(false);
-  const [myLocationError, setMyLocationError] = useState<string | null>(null);
-
-  // Warehouses near current GPS position
-  const warehousesNearMe = useMemo(() => {
-    if (!myLocationCoords) return [];
-    const withCoords = warehouses.filter(
-      (w) => w.latitude != null && w.longitude != null && w.status === "active"
-    );
-    return withCoords
-      .map((w) => ({
-        ...w,
-        distanceKm: getDistanceKm(myLocationCoords.lat, myLocationCoords.lng, w.latitude!, w.longitude!),
-      }))
-      .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
-      .sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [warehouses, myLocationCoords]);
-
-  const handleFindWarehousesNearMe = () => {
-    if (!navigator.geolocation) {
-      setMyLocationError("Geolocation is not supported");
-      return;
-    }
-    setMyLocationLoading(true);
-    setMyLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setMyLocationCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setMyLocationLoading(false);
-      },
-      () => {
-        setMyLocationError("Could not get your location");
-        setMyLocationLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
-  };
+  // Pickup modes
+  const [sourcePickupMode, setSourcePickupMode] = useState("Self");
+  const [destPickupMode, setDestPickupMode] = useState("Self");
 
   // Modal state for adding/editing address
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [addAddressType, setAddAddressType] = useState<
     "source" | "destination"
   >("source");
-  const [items, setItems] = useState([
-    { item: "", category: "", dimensions: "", weight: "", quantity: 1 },
-  ]);
-  // For new item input fields
+  const [items, setItems] = useState<
+    { item: string; category: string; dimensions: string; weight: string; quantity: number; note?: string }[]
+  >([{ item: "", category: "", dimensions: "", weight: "", quantity: 1 }]);
+  // For new item input fields: note (optional), media (up to 4 images, preview only)
   const [newItem, setNewItem] = useState({
     item: "",
     category: "",
     dimensions: "",
     weight: "",
     quantity: 1,
+    note: "",
+    mediaFiles: [] as File[],
+    mediaPreviews: [] as string[],
   });
+  // Delivery type: Normal (base cost) or Fast (+15% dummy surcharge)
+  const [deliveryType, setDeliveryType] = useState<"Normal" | "Fast">("Normal");
   // Mobile is now per address location, so default to primary location's mobile
   const [mobile, setMobile] = useState(primaryLocation.mobile || "");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
+  // Editable cost and time after auto-calculation
+  const [customCost, setCustomCost] = useState("");
+  const [customTime, setCustomTime] = useState("");
+  // Comments
+  const [comments, setComments] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  // ——— Dummy cost logic: base rate by category × weight × quantity × distance ———
   const calculateCost = (
     category: string,
     weight: string,
@@ -253,7 +176,7 @@ export default function NewRequestForm() {
     from: string,
     to: string,
   ) => {
-    const baseRates = {
+    const baseRates: Record<string, number> = {
       Electronics: 20,
       Clothing: 10,
       Books: 8,
@@ -264,11 +187,16 @@ export default function NewRequestForm() {
       Documents: 5,
       Other: 10,
     };
-    const base = baseRates[category as keyof typeof baseRates] || 10;
+    const base = baseRates[category] ?? 10;
     const weightNum = parseFloat(weight) || 1;
     const distanceMultiplier = from === to ? 1 : 1.5;
-    return (base * weightNum * quantity * distanceMultiplier).toFixed(2);
+    return base * weightNum * quantity * distanceMultiplier;
   };
+
+  // Apply delivery type surcharge: Fast = +15% on base cost
+  const FAST_DELIVERY_SURCHARGE = 1.15;
+  const applyDeliverySurcharge = (baseCost: number) =>
+    deliveryType === "Fast" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
 
   const calculateDeliveryTime = (
     from: string,
@@ -289,14 +217,17 @@ export default function NewRequestForm() {
     return `${min}-${max} days`;
   };
 
+  // Primary cost = base cost × delivery surcharge (Fast +15%); recalc when from, to, items, or deliveryType change
   React.useEffect(() => {
     if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current as any);
+      clearTimeout(debounceTimeout.current as ReturnType<typeof setTimeout>);
     }
     debounceTimeout.current = setTimeout(() => {
       const firstItem = items[0] || { category: "", weight: "", quantity: 1 };
       if (from && to && firstItem.category && firstItem.weight && firstItem.quantity) {
-        setEstimatedCost(calculateCost(firstItem.category, firstItem.weight, firstItem.quantity, from, to));
+        const base = calculateCost(firstItem.category, firstItem.weight, firstItem.quantity, from, to);
+        const primaryCost = applyDeliverySurcharge(base);
+        setEstimatedCost(primaryCost.toFixed(2));
         setEstimatedTime(calculateDeliveryTime(from, to, firstItem.category));
       } else {
         setEstimatedCost("");
@@ -304,11 +235,54 @@ export default function NewRequestForm() {
       }
     }, 250);
     return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current as any);
-      }
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     };
-  }, [from, to, items]);
+  }, [from, to, items, deliveryType]);
+
+  // Format estimated time as ETA: "Today 3:00 PM", "Tomorrow 10:30 AM", or "Mon, Jan 15 10:30 AM"
+  const formatWhenToStart = (estimatedTimeStr: string): string => {
+    if (!estimatedTimeStr) return "";
+    const match = estimatedTimeStr.match(/^(\d+)-(\d+)\s*days?$/i);
+    if (!match) return estimatedTimeStr;
+    const minDays = parseInt(match[1], 10) || 0;
+    const maxDays = parseInt(match[2], 10) || minDays;
+    const daysFromNow = Math.round((minDays + maxDays) / 2);
+    const eta = new Date();
+    eta.setDate(eta.getDate() + daysFromNow);
+    eta.setHours(10, 30, 0, 0);
+    const today = new Date();
+    const isToday = eta.toDateString() === today.toDateString();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = eta.toDateString() === tomorrow.toDateString();
+    const timeStr = eta.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    if (isToday) return `Today ${timeStr}`;
+    if (isTomorrow) return `Tomorrow ${timeStr}`;
+    return `${eta.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} ${timeStr}`;
+  };
+
+  // ——— Media upload: max 4 images, accept image only; revoke object URLs on cleanup ———
+  const MAX_MEDIA_FILES = 4;
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    const current = newItem.mediaFiles.length;
+    const toAdd = imageFiles.slice(0, MAX_MEDIA_FILES - current);
+    if (toAdd.length === 0) return;
+    const newFiles = [...newItem.mediaFiles, ...toAdd].slice(0, MAX_MEDIA_FILES);
+    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+    // Revoke previous preview URLs to avoid memory leaks
+    newItem.mediaPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setNewItem((prev) => ({ ...prev, mediaFiles: newFiles, mediaPreviews: newPreviews }));
+    e.target.value = "";
+  };
+  const removeMediaAt = (index: number) => {
+    const newFiles = newItem.mediaFiles.filter((_, i) => i !== index);
+    const urlToRevoke = newItem.mediaPreviews[index];
+    if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
+    const newPreviews = newItem.mediaPreviews.filter((_, i) => i !== index);
+    setNewItem((prev) => ({ ...prev, mediaFiles: newFiles, mediaPreviews: newPreviews }));
+  };
 
   const countryOptions = useMemo(
     () =>
@@ -383,18 +357,14 @@ export default function NewRequestForm() {
     const selectedDestLoc = userLocations[toAddressIdx] || {};
     // Build source and destination objects
     const source: any = sourceType === "my"
-      ? { ...selectedSourceLoc, warehouseId: selectedSourceWarehouse, pickupMode: sourcePickupMode }
-      : { ...addressForm, warehouseId: selectedSourceWarehouse, pickupMode: sourcePickupMode };
+      ? { ...selectedSourceLoc, pickupMode: sourcePickupMode }
+      : { ...addressForm, pickupMode: sourcePickupMode };
     const destination: any = destType === "my"
-      ? { ...selectedDestLoc, warehouseId: selectedDestWarehouse, pickupMode: destPickupMode }
-      : { ...addressForm, warehouseId: selectedDestWarehouse, pickupMode: destPickupMode };
+      ? { ...selectedDestLoc, pickupMode: destPickupMode }
+      : { ...addressForm, pickupMode: destPickupMode };
     // Validation
     if (!source || !destination || items.length === 0 || !estimatedCost || !estimatedTime) {
       setError("Please fill in all fields and add at least one item");
-      return;
-    }
-    if (!selectedSourceWarehouse || !selectedDestWarehouse) {
-      setError("Please select both source and destination warehouses");
       return;
     }
     setIsLoading(true);
@@ -406,6 +376,7 @@ export default function NewRequestForm() {
         items,
         estimatedCost,
         estimatedTime,
+        deliveryType,
         orderStatus: "Pending",
         deliveryStatus: "Pending",
       };
@@ -737,81 +708,23 @@ export default function NewRequestForm() {
                 )}
               </section>
 
-              {/* ——— Section 4: Pickup & Warehouses ——— */}
+              {/* ——— Section 4: Pickup Modes ——— */}
               <section className="space-y-4 rounded-lg border border-primary/20 p-4 bg-primary/5">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                    <Warehouse className="w-4 h-4" />
+                    <Package className="w-4 h-4" />
                   </span>
-                  Pickup & Warehouses
+                  Pickup Options
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  Warehouses are filtered by proximity to selected addresses
-                </p>
-
-                {/* Warehouses near me (current GPS) */}
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-foreground">Warehouses near me</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleFindWarehousesNearMe}
-                      disabled={myLocationLoading}
-                      className="gap-1.5 cursor-pointer border-primary/50 text-primary hover:bg-primary/10"
-                    >
-                      {myLocationLoading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Navigation className="w-3.5 h-3.5" />
-                      )}
-                      Find warehouses near me
-                    </Button>
-                  </div>
-                  {myLocationError && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      {myLocationError}
-                    </p>
-                  )}
-                  {myLocationCoords && warehousesNearMe.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Within {NEARBY_RADIUS_KM} km of your current location:
-                      </p>
-                      <ul className="space-y-1 max-h-32 overflow-y-auto">
-                        {warehousesNearMe.map((w) => (
-                          <li
-                            key={w.id}
-                            className="border rounded p-2 flex flex-col text-sm"
-                          >
-                            <span className="font-medium">{w.name || w.id}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {w.state || ""} {w.country || ""}
-                              {"distanceKm" in w &&
-                                ` · ${(w as { distanceKm: number }).distanceKm.toFixed(1)} km`}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {myLocationCoords && warehousesNearMe.length === 0 && !myLocationError && (
-                    <p className="text-xs text-muted-foreground">
-                      No warehouses within {NEARBY_RADIUS_KM} km of your location.
-                    </p>
-                  )}
-                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Source Pickup Mode
                     </label>
-                  <select
-                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
-                    value={sourcePickupMode}
+                    <select
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                      value={sourcePickupMode}
                       onChange={(e) => setSourcePickupMode(e.target.value)}
                       disabled={isLoading}
                       required
@@ -825,8 +738,8 @@ export default function NewRequestForm() {
                       Destination Pickup Mode
                     </label>
                     <select
-                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
-                    value={destPickupMode}
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                      value={destPickupMode}
                       onChange={(e) => setDestPickupMode(e.target.value)}
                       disabled={isLoading}
                       required
@@ -836,123 +749,7 @@ export default function NewRequestForm() {
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Source Warehouse (near origin)
-                  </label>
-                  <select
-                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
-                    value={selectedSourceWarehouse}
-                    onChange={(e) => setSelectedSourceWarehouse(e.target.value)}
-                    disabled={isLoading || sourceWarehouses.length === 0}
-                    required
-                  >
-                    <option value="" disabled>
-                      {sourceWarehouses.length === 0
-                        ? from
-                          ? "No warehouses near source"
-                          : "Select source address first"
-                        : "Select source warehouse"}
-                    </option>
-                    {sourceWarehouses.map((w) => (
-                      <option key={w.id} value={w.id} className="bg-background text-foreground">
-                        {w.name || w.id} ({w.state || w.country})
-                        {"distanceKm" in w
-                          ? ` — ${(w as { distanceKm: number }).distanceKm.toFixed(1)} km`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {sourceCoords && sourceWarehouses.length > 0 && (
-                    <div className="mt-2">
-                      <div className="text-xs text-muted-foreground mb-1">Warehouses within 50km:</div>
-                      <ul className="space-y-1">
-                        {sourceWarehouses.map((w) => (
-                          <li key={w.id} className="border border-border rounded-lg p-2 flex flex-col bg-card">
-                            <span className="font-medium">{w.name || w.id}</span>
-                            <span className="text-xs">{w.state || ''} {w.country || ''}</span>
-                            {"distanceKm" in w && (
-                              <span className="text-xs">Distance: {(w as { distanceKm: number }).distanceKm.toFixed(1)} km</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Destination Warehouse (near destination)
-                  </label>
-                  <select
-                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
-                    value={selectedDestWarehouse}
-                    onChange={(e) => setSelectedDestWarehouse(e.target.value)}
-                    disabled={isLoading || destWarehouses.length === 0}
-                    required
-                  >
-                    <option value="" disabled>
-                      {destWarehouses.length === 0
-                        ? to
-                          ? "No warehouses near destination"
-                          : "Select destination address first"
-                        : "Select destination warehouse"}
-                    </option>
-                    {destWarehouses.map((w) => (
-                      <option key={w.id} value={w.id} className="bg-background text-foreground">
-                        {w.name || w.id} ({w.state || w.country})
-                        {"distanceKm" in w
-                          ? ` — ${(w as { distanceKm: number }).distanceKm.toFixed(1)} km`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {destCoords && destWarehouses.length > 0 && (
-                    <div className="mt-2">
-                      <div className="text-xs text-muted-foreground mb-1">Warehouses within 50km:</div>
-                      <ul className="space-y-1">
-                        {destWarehouses.map((w) => (
-                          <li key={w.id} className="border border-border rounded-lg p-2 flex flex-col bg-card">
-                            <span className="font-medium">{w.name || w.id}</span>
-                            <span className="text-xs">{w.state || ''} {w.country || ''}</span>
-                            {"distanceKm" in w && (
-                              <span className="text-xs">Distance: {(w as { distanceKm: number }).distanceKm.toFixed(1)} km</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
               </section>
-
-              {/* ——— Section 4b: Route Map ——— */}
-              {(sourceCoords || destCoords) && selectedSourceWarehouse && selectedDestWarehouse && (
-                <section className="space-y-3 rounded-lg border border-primary/20 p-4 bg-primary/5">
-                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                      <MapPinned className="w-4 h-4" />
-                    </span>
-                    Route Overview
-                  </h2>
-                  <RouteMap
-                    source={sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng } : null}
-                    sourceWarehouse={(() => {
-                      const wh = warehouses.find((w) => w.id === selectedSourceWarehouse);
-                      return wh?.latitude != null && wh?.longitude != null
-                        ? { lat: wh.latitude, lng: wh.longitude }
-                        : null;
-                    })()}
-                    destWarehouse={(() => {
-                      const wh = warehouses.find((w) => w.id === selectedDestWarehouse);
-                      return wh?.latitude != null && wh?.longitude != null
-                        ? { lat: wh.latitude, lng: wh.longitude }
-                        : null;
-                    })()}
-                    destination={destCoords ? { lat: destCoords.lat, lng: destCoords.lng } : null}
-                  />
-                </section>
-              )}
 
               {/* ——— Section 5: Contact ——— */}
               <section className="rounded-lg border border-border bg-muted/20 p-4">
@@ -1028,6 +825,9 @@ export default function NewRequestForm() {
                             <span className="mx-1.5">·</span>
                             ×{itm.quantity}
                           </p>
+                          {itm.note && (
+                            <p className="mt-1 text-xs text-muted-foreground italic">Note: {itm.note}</p>
+                          )}
                         </div>
                         <Button
                           type="button"
@@ -1133,6 +933,56 @@ export default function NewRequestForm() {
                           disabled={isLoading}
                         />
                       </div>
+                      {/* Note (optional, multiline) */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Note <span className="text-muted-foreground/70">(optional)</span>
+                        </label>
+                        <textarea
+                          placeholder="e.g. Handle with care, leave at reception"
+                          value={newItem.note}
+                          onChange={(e) => setNewItem({ ...newItem, note: e.target.value })}
+                          disabled={isLoading}
+                          rows={3}
+                          className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 disabled:opacity-50 resize-y min-h-[80px]"
+                        />
+                      </div>
+                      {/* Media upload: up to 4 images, previews shown */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Media <span className="text-muted-foreground/70">(optional, max 4 images)</span>
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {newItem.mediaPreviews.map((url, idx) => (
+                            <div
+                              key={url}
+                              className="relative w-20 h-20 rounded-lg border border-border overflow-hidden bg-muted flex-shrink-0 group"
+                            >
+                              <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeMediaAt(idx)}
+                                className="absolute top-0.5 right-0.5 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                aria-label="Remove image"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                          {newItem.mediaPreviews.length < MAX_MEDIA_FILES && (
+                            <label className="w-20 h-20 rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors flex-shrink-0">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleMediaChange}
+                                className="sr-only"
+                              />
+                              <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                            </label>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <Button
                       type="button"
@@ -1145,13 +995,29 @@ export default function NewRequestForm() {
                           !newItem.quantity
                         )
                           return;
-                        setItems([...items, newItem]);
+                        // Add item with optional note; media is preview-only and not persisted to items
+                        setItems([
+                          ...items,
+                          {
+                            item: newItem.item,
+                            category: newItem.category,
+                            dimensions: newItem.dimensions,
+                            weight: newItem.weight,
+                            quantity: newItem.quantity,
+                            ...(newItem.note.trim() ? { note: newItem.note.trim() } : {}),
+                          },
+                        ]);
+                        // Revoke object URLs before reset to avoid memory leaks
+                        newItem.mediaPreviews.forEach((url) => URL.revokeObjectURL(url));
                         setNewItem({
                           item: "",
                           category: "",
                           dimensions: "",
                           weight: "",
                           quantity: 1,
+                          note: "",
+                          mediaFiles: [],
+                          mediaPreviews: [],
                         });
                       }}
                       disabled={isLoading}
@@ -1164,59 +1030,99 @@ export default function NewRequestForm() {
                 </Card>
               </section>
 
-              {/* ——— Section 7: Summary & Submit ——— */}
+              {/* ——— Section 7: Order Summary & Submit ——— */}
               <section className="space-y-4 pt-6 border-t-2 border-primary/20 rounded-lg bg-primary/5 p-4">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">4</span>
-                  Summary
+                  cost & time
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Delivery Type at the top */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Delivery Type
+                    </label>
+                    <select
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                      value={deliveryType}
+                      onChange={(e) => setDeliveryType(e.target.value as "Normal" | "Fast")}
+                      disabled={isLoading}
+                    >
+                      <option value="Normal" className="bg-background text-foreground">Normal</option>
+                      <option value="Fast" className="bg-background text-foreground">Fast (+15%)</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Fast delivery adds a 15% surcharge to Primary Cost.
+                    </p>
+                  </div>
+                  {/* Primary Cost - Editable */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Estimated Cost
+                      Primary Cost
                     </label>
                     <Input
-                      id="estimatedCost"
                       type="text"
-                      value={estimatedCost ? `$${estimatedCost}` : ""}
-                      disabled
-                      placeholder="Auto-calculated"
+                      value={customCost || (estimatedCost ? `$${estimatedCost}` : "")}
+                      onChange={(e) => setCustomCost(e.target.value)}
+                      placeholder={estimatedCost ? `$${estimatedCost}` : "Auto-calculated"}
+                      disabled={isLoading}
+                      style={{ maxWidth: "100%" }}
+                    />
+                    {deliveryType === "Fast" && estimatedCost && (
+                      <p className="text-xs text-muted-foreground mt-1">Includes Fast delivery (+15%)</p>
+                    )}
+                  </div>
+                  {/* When to Start - Editable */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      When to Start
+                    </label>
+                    <Input
+                      type="text"
+                      value={customTime || formatWhenToStart(estimatedTime)}
+                      onChange={(e) => setCustomTime(e.target.value)}
+                      placeholder={formatWhenToStart(estimatedTime) || "Auto-calculated"}
+                      disabled={isLoading}
                       style={{ maxWidth: "100%" }}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Estimated Delivery Time
-                    </label>
-                    <Input
-                      id="estimatedTime"
-                      type="text"
-                      value={estimatedTime}
-                      disabled
-                      placeholder="Auto-calculated"
-                      style={{ maxWidth: "100%" }}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <Button
-                    type="submit"
-                    disabled={isLoading || success}
-                    className="flex-1 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                  >
-                    {isLoading ? "Creating..." : "Request Order"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.back()}
-                    disabled={isLoading}
-                    className="flex-1 cursor-pointer border-primary/50 text-primary hover:bg-primary/10"
-                  >
-                    Cancel
-                  </Button>
                 </div>
               </section>
+
+              {/* ——— Comments Section ——— */}
+              <section className="space-y-4 mt-4">
+                <label className="block text-sm font-medium text-foreground">
+                  Comments <span className="text-muted-foreground/70">(optional)</span>
+                </label>
+                <textarea
+                  placeholder="Add any additional comments or special instructions"
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                  disabled={isLoading}
+                  rows={3}
+                  className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 disabled:opacity-50 resize-y min-h-[80px]"
+                />
+              </section>
+
+              {/* ——— Buttons: Outside section ——— */}
+              <div className="flex gap-4 mt-4">
+                <Button
+                  type="submit"
+                  disabled={isLoading || success}
+                  className="flex-1 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                >
+                  {isLoading ? "Creating..." : "Request Order"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={isLoading}
+                  className="flex-1 cursor-pointer border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  Cancel
+                </Button>
+              </div>
             </form>
             </div>
 

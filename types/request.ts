@@ -1,7 +1,19 @@
 import { Address } from "./address";
 
 export type OrderStatus = "Accepted" | "Pending" | "Rejected" | "Cancelled";
-export type DeliveryStatus = "Pending" | "In Transit" | "Delivered" | "Failed";
+
+export enum RequestDeliveryStatus {
+  PENDING = 'Pending',
+  PICKED_UP_SOURCE = 'Picked Up Source',
+  WAREHOUSE_SOURCE_RECEIVED = 'Warehouse Source Received',
+  IN_TRANSIT = 'In Transit',
+  WAREHOUSE_DESTINATION_RECEIVED = 'Warehouse Destination Received',
+  PICKED_UP_DESTINATION = 'Picked Up Destination',
+  DELIVERED = 'Delivered',
+  FAILED = 'Failed',
+}
+
+export type DeliveryStatus = RequestDeliveryStatus | "Pending" | "In Transit" | "Delivered" | "Failed";
 export type PickupMode = "Delegate" | "Direct" | "Scheduled";
 
 
