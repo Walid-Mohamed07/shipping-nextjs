@@ -1,9 +1,20 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { countries } from "@/constants/countries";
 import { Address } from "@/types";
+import { MapPinned, Navigation } from "lucide-react";
+import type { AddressData } from "@/app/components/LocationMapPicker";
+
+const LocationMapPicker = dynamic(
+  () =>
+    import("@/app/components/LocationMapPicker").then((m) => m.LocationMapPicker),
+  { ssr: false }
+);
 
 interface AddAddressDialogProps {
   open: boolean;
@@ -39,22 +50,31 @@ export default function AddAddressDialog({
     primary: false,
     warehouseId: "",
     pickupMode: "Self",
-    coordinates: { latitude: '', longitude: '' },
+    coordinates: undefined as { latitude: number; longitude: number } | undefined,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showMap, setShowMap] = useState(false);
+  const [mapEditable, setMapEditable] = useState(true);
+
+  useEffect(() => {
+    if (!open) {
+      setShowMap(false);
+      setForm((f) => ({ ...f, coordinates: undefined }));
+    }
+  }, [open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement;
     const { name, value, type: inputType } = target;
     const checked = (target as HTMLInputElement).checked;
     if (name === "latitude" || name === "longitude") {
+      const num = parseFloat(value);
       setForm((prev) => ({
         ...prev,
-        coordinates: {
-          ...prev.coordinates,
-          [name]: value,
-        },
+        coordinates: prev.coordinates
+          ? { ...prev.coordinates, [name]: num }
+          : { latitude: 0, longitude: 0, [name]: num },
       }));
     } else {
       setForm((prev) => ({
@@ -63,56 +83,6 @@ export default function AddAddressDialog({
       }));
     }
   };
-            {/* Extra fields for new structure */}
-            <>
-              {/* Warehouse ID */}
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Warehouse ID
-              </label>
-              <Input
-                name="warehouseId"
-                placeholder="e.g., wh-001"
-                value={form.warehouseId}
-                onChange={handleChange}
-              />
-
-              {/* Pickup Mode */}
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Pickup Mode
-              </label>
-              <select
-                name="pickupMode"
-                value={form.pickupMode}
-                onChange={handleChange}
-                className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="Self">Self</option>
-                <option value="Delegate">Delegate</option>
-              </select>
-
-              {/* Coordinates */}
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Coordinates
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  name="latitude"
-                  placeholder="Latitude"
-                  value={form.coordinates.latitude}
-                  onChange={handleChange}
-                  type="number"
-                  step="any"
-                />
-                <Input
-                  name="longitude"
-                  placeholder="Longitude"
-                  value={form.coordinates.longitude}
-                  onChange={handleChange}
-                  type="number"
-                  step="any"
-                />
-              </div>
-            </>
 
   const handleSave = async () => {
     // Basic validation
@@ -124,16 +94,23 @@ export default function AddAddressDialog({
     }
     setLoading(true);
     try {
+      const addressToSave = {
+        ...form,
+        coordinates: form.coordinates?.latitude != null && form.coordinates?.longitude != null
+          ? form.coordinates
+          : undefined,
+      };
       const response = await fetch("/api/user/addresses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, address: form }),
+        body: JSON.stringify({ userId, address: addressToSave }),
       });
       if (!response.ok) {
         throw new Error("Failed to save address");
       }
-      const savedAddress = await response.json();
-      onSave(savedAddress);
+      const resData = await response.json();
+      const savedAddress = resData.locations?.[resData.locations.length - 1] ?? addressToSave;
+      onSave(savedAddress as Address);
       setLoading(false);
       onOpenChange(false);
     } catch (err) {
@@ -153,7 +130,97 @@ export default function AddAddressDialog({
           <Dialog.Title className="text-lg font-bold mb-4">
             Add New Address ({type === "source" ? "Source" : "Destination"})
           </Dialog.Title>
-          {error && <div className="mb-2 text-red-600 text-sm">{error}</div>}
+          {error && <div className="mb-2 text-red-600 dark:text-red-400 text-sm">{error}</div>}
+
+          {/* Location capture - store lat/long for map display */}
+          <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30">
+            <p className="text-sm font-medium text-foreground mb-2">
+              Set location (stored for map display)
+            </p>
+            {!showMap ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          setForm((f) => ({
+                            ...f,
+                            coordinates: {
+                              latitude: pos.coords.latitude,
+                              longitude: pos.coords.longitude,
+                            },
+                          }));
+                          setShowMap(true);
+                        },
+                        () => setError("Could not get location"),
+                      );
+                    } else {
+                      setError("Geolocation not supported");
+                    }
+                  }}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Navigation className="w-4 h-4" />
+                  Use my location
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowMap(true);
+                    setMapEditable(true);
+                  }}
+                  className="gap-2 cursor-pointer"
+                >
+                  <MapPinned className="w-4 h-4" />
+                  Pick on map
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <LocationMapPicker
+                  position={
+                    form.coordinates
+                      ? { lat: form.coordinates.latitude, lng: form.coordinates.longitude }
+                      : null
+                  }
+                  onPositionChange={(lat, lng) =>
+                    setForm((f) => ({ ...f, coordinates: { latitude: lat, longitude: lng } }))
+                  }
+                  onAddressData={(addressData: AddressData) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      street: addressData.street ?? prev.street,
+                      city: addressData.city ?? prev.city,
+                      district: addressData.district ?? prev.district,
+                      governorate: addressData.governorate ?? prev.governorate,
+                      country: addressData.country ?? prev.country,
+                      postalCode: addressData.postalCode ?? prev.postalCode,
+                    }));
+                  }}
+                  editable={mapEditable}
+                  onEditableChange={setMapEditable}
+                  height={180}
+                  showUseMyLocation
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMap(false)}
+                  className="text-muted-foreground cursor-pointer"
+                >
+                  Hide map
+                </Button>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 gap-3 mb-4">
             {/* Country Select */}
             <label className="block text-sm font-medium text-foreground mb-1">

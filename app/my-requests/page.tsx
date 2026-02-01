@@ -160,7 +160,7 @@ export default function MyRequestsPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
                       <span>
-                        {request.from.street} → {request.to.street}
+                        {formatLocation(request.from ?? request.source)} → {formatLocation(request.to ?? request.destination)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

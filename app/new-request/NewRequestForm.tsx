@@ -10,6 +10,10 @@ const LocationMapPicker = dynamic(
     import("@/app/components/LocationMapPicker").then((m) => m.LocationMapPicker),
   { ssr: false, loading: () => <div className="h-[280px] rounded-lg border border-border bg-muted/50 animate-pulse" /> }
 );
+const RouteMap = dynamic(
+  () => import("@/app/components/RouteMap").then((m) => m.RouteMap),
+  { ssr: false, loading: () => <div className="h-[320px] rounded-lg border border-border bg-muted/50 animate-pulse" /> }
+);
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,6 +27,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import {
   AlertCircle,
   CheckCircle,
+  Loader2,
   MapPinned,
   Navigation,
   Package,
@@ -36,30 +41,17 @@ import { Warehouse as WarehouseType } from "@/types";
 import { getDistanceKm } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import type { AddressData } from "@/app/components/LocationMapPicker";
 
 const NEARBY_RADIUS_KM = 50;
 
 export default function NewRequestForm() {
   // Warehouses state
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
-  const [selectedWarehouse, setSelectedWarehouse] = useState("");
-  const [pickupMode, setPickupMode] = useState("Self");
-
-  // Location / nearby warehouses state
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState("");
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  const [mapEditable, setMapEditable] = useState(false);
-  const [showMapPicker, setShowMapPicker] = useState(false);
-  const [nearbyWarehouses, setNearbyWarehouses] = useState<
-    (WarehouseType & { distanceKm: number })[]
-  >([]);
-  const [locationChecked, setLocationChecked] = useState(false);
-  const [outOfZone, setOutOfZone] = useState(false);
+  const [selectedSourceWarehouse, setSelectedSourceWarehouse] = useState("");
+  const [selectedDestWarehouse, setSelectedDestWarehouse] = useState("");
+  const [sourcePickupMode, setSourcePickupMode] = useState("Self");
+  const [destPickupMode, setDestPickupMode] = useState("Self");
 
   // Fetch warehouses on mount
   useEffect(() => {
@@ -67,74 +59,6 @@ export default function NewRequestForm() {
       .then((res) => res.json())
       .then((data) => setWarehouses(data.warehouses || []));
   }, []);
-
-  const fetchNearbyWarehouses = async (lat: number, lng: number) => {
-    try {
-      const res = await fetch("/api/warehouses");
-      const data = await res.json();
-      const all: WarehouseType[] = data.warehouses || [];
-      const withCoords = all.filter(
-        (w) =>
-          w.latitude != null && w.longitude != null && w.status === "active"
-      );
-      const withDistance = withCoords
-        .map((w) => ({
-          ...w,
-          distanceKm: getDistanceKm(lat, lng, w.latitude!, w.longitude!),
-        }))
-        .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
-        .sort((a, b) => a.distanceKm - b.distanceKm);
-      setNearbyWarehouses(withDistance);
-      setOutOfZone(withDistance.length === 0);
-    } catch {
-      setLocationError("Failed to load warehouses.");
-    }
-  };
-
-  const handlePositionChange = (lat: number, lng: number) => {
-    setUserLocation({ lat, lng });
-    setLocationError("");
-    fetchNearbyWarehouses(lat, lng);
-  };
-
-  const findNearbyWarehouses = () => setShowLocationPrompt(true);
-
-  const handleLocationConfirm = () => {
-    setShowLocationPrompt(false);
-    setLocationError("");
-    setLocationLoading(true);
-    setLocationChecked(true);
-    setOutOfZone(false);
-
-    if (!navigator.geolocation) {
-      setLocationError("Location is not supported by your browser.");
-      setLocationLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setUserLocation({ lat, lng });
-        try {
-          await fetchNearbyWarehouses(lat, lng);
-        } finally {
-          setLocationLoading(false);
-        }
-      },
-      (err) => {
-        setLocationError(
-          err.code === 1
-            ? "Location permission was denied."
-            : "Could not get your location. Please try again."
-        );
-        setLocationLoading(false);
-      }
-    );
-  };
-
-  const handleLocationDecline = () => setShowLocationPrompt(false);
 
   const { user } = useAuth();
   // State for showing the select address dialog
@@ -154,6 +78,7 @@ export default function NewRequestForm() {
     addressType: "Home",
     deliveryInstructions: "",
     primary: false,
+    coordinates: undefined as { latitude: number; longitude: number } | undefined,
   });
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [editAddressIdx, setEditAddressIdx] = useState<number | null>(null);
@@ -185,29 +110,115 @@ export default function NewRequestForm() {
     primaryLocation.postalCode || "",
   );
 
-  // Use nearby warehouses if available, else filter by source country
-  const filteredWarehouses = useMemo(() => {
-    if (locationChecked && nearbyWarehouses.length > 0) {
-      return nearbyWarehouses;
-    }
-    return warehouses.filter((w) => w.country === from);
-  }, [warehouses, from, locationChecked, nearbyWarehouses]);
-
-  // Clear selected warehouse if it's no longer in the filtered list
-  useEffect(() => {
-    if (
-      selectedWarehouse &&
-      !filteredWarehouses.some((w) => w.id === selectedWarehouse)
-    ) {
-      setSelectedWarehouse("");
-    }
-  }, [filteredWarehouses, selectedWarehouse]);
-
   // Destination address state
   const [toAddressIdx, setToAddressIdx] = useState(-1); // -1 means not using saved address
   const [to, setTo] = useState("");
   const [toAddress, setToAddress] = useState("");
   const [toPostalCode, setToPostalCode] = useState("");
+
+  // Helper to get coords from address (supports Address with coordinates)
+  const getCoords = (loc: { coordinates?: { latitude?: number; longitude?: number } } | null) => {
+    if (!loc?.coordinates || loc.coordinates.latitude == null || loc.coordinates.longitude == null) return null;
+    return { lat: loc.coordinates.latitude, lng: loc.coordinates.longitude };
+  };
+
+  // Source address coords (from saved address with coordinates)
+  const sourceCoords = useMemo(
+    () => getCoords(userLocations[fromAddressIdx] as { coordinates?: { latitude?: number; longitude?: number } }),
+    [userLocations, fromAddressIdx]
+  );
+
+  // Dest address coords: from selected saved address or from manual addressForm (when toAddressIdx === -1)
+  const destCoords = useMemo(() => {
+    if (toAddressIdx >= 0) {
+      return getCoords(userLocations[toAddressIdx] as { coordinates?: { latitude?: number; longitude?: number } });
+    }
+    const coords = addressForm.coordinates;
+    if (coords?.latitude != null && coords?.longitude != null) {
+      return { lat: coords.latitude, lng: coords.longitude };
+    }
+    return null;
+  }, [userLocations, toAddressIdx, addressForm.coordinates]);
+
+  // Source warehouses: near source address (or filter by country)
+  const sourceWarehouses = useMemo(() => {
+    const withCoords = warehouses.filter(
+      (w) => w.latitude != null && w.longitude != null && w.status === "active"
+    );
+    if (sourceCoords) {
+      return withCoords
+        .map((w) => ({ ...w, distanceKm: getDistanceKm(sourceCoords.lat, sourceCoords.lng, w.latitude!, w.longitude!) }))
+        .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
+        .sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+    return warehouses.filter((w) => w.country === from && w.status === "active");
+  }, [warehouses, sourceCoords, from]);
+
+  // Dest warehouses: near dest address (or filter by country)
+  const destWarehouses = useMemo(() => {
+    const withCoords = warehouses.filter(
+      (w) => w.latitude != null && w.longitude != null && w.status === "active"
+    );
+    if (destCoords) {
+      return withCoords
+        .map((w) => ({ ...w, distanceKm: getDistanceKm(destCoords.lat, destCoords.lng, w.latitude!, w.longitude!) }))
+        .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
+        .sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+    return warehouses.filter((w) => w.country === to && w.status === "active");
+  }, [warehouses, destCoords, to]);
+
+  useEffect(() => {
+    if (selectedSourceWarehouse && !sourceWarehouses.some((w) => w.id === selectedSourceWarehouse)) {
+      setSelectedSourceWarehouse("");
+    }
+  }, [sourceWarehouses, selectedSourceWarehouse]);
+
+  useEffect(() => {
+    if (selectedDestWarehouse && !destWarehouses.some((w) => w.id === selectedDestWarehouse)) {
+      setSelectedDestWarehouse("");
+    }
+  }, [destWarehouses, selectedDestWarehouse]);
+
+  // "Warehouses near me" (current GPS location)
+  const [myLocationCoords, setMyLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [myLocationLoading, setMyLocationLoading] = useState(false);
+  const [myLocationError, setMyLocationError] = useState<string | null>(null);
+
+  // Warehouses near current GPS position
+  const warehousesNearMe = useMemo(() => {
+    if (!myLocationCoords) return [];
+    const withCoords = warehouses.filter(
+      (w) => w.latitude != null && w.longitude != null && w.status === "active"
+    );
+    return withCoords
+      .map((w) => ({
+        ...w,
+        distanceKm: getDistanceKm(myLocationCoords.lat, myLocationCoords.lng, w.latitude!, w.longitude!),
+      }))
+      .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [warehouses, myLocationCoords]);
+
+  const handleFindWarehousesNearMe = () => {
+    if (!navigator.geolocation) {
+      setMyLocationError("Geolocation is not supported");
+      return;
+    }
+    setMyLocationLoading(true);
+    setMyLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setMyLocationCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setMyLocationLoading(false);
+      },
+      () => {
+        setMyLocationError("Could not get your location");
+        setMyLocationLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   // Modal state for adding/editing address
   const [showAddAddress, setShowAddAddress] = useState(false);
@@ -318,6 +329,52 @@ export default function NewRequestForm() {
     [],
   );
 
+  const handleDeleteAddress = async (
+    addr: { street?: string; postalCode?: string },
+    context: "source" | "destination"
+  ) => {
+    if (!user?.id || !addr.street || !addr.postalCode) return;
+    if (!confirm("Delete this address?")) return;
+    const deletedIdx = userLocations.findIndex(
+      (l: { street?: string; postalCode?: string }) =>
+        l.street === addr.street && l.postalCode === addr.postalCode
+    );
+    try {
+      const res = await fetch("/api/user/addresses", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, address: addr }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      const data = await res.json();
+      if (Array.isArray(data.locations)) {
+        const newLocs = data.locations;
+        setUserLocations(newLocs);
+        if (context === "source") {
+          let newFromIdx = fromAddressIdx;
+          if (deletedIdx === fromAddressIdx) newFromIdx = 0;
+          else if (deletedIdx < fromAddressIdx) newFromIdx = fromAddressIdx - 1;
+          setFromAddressIdx(Math.max(0, newFromIdx));
+          const sel = newLocs[Math.max(0, newFromIdx)];
+          setFrom(sel?.country || "");
+          setFromAddress(sel?.street || "");
+          setFromPostalCode(sel?.postalCode || "");
+        } else {
+          let newToIdx = toAddressIdx;
+          if (deletedIdx === toAddressIdx) newToIdx = -1;
+          else if (deletedIdx < toAddressIdx) newToIdx = toAddressIdx - 1;
+          setToAddressIdx(newToIdx);
+          const sel = newToIdx >= 0 ? newLocs[newToIdx] : null;
+          setTo(sel?.country || "");
+          setToAddress(sel?.street || "");
+          setToPostalCode(sel?.postalCode || "");
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete address");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -325,19 +382,19 @@ export default function NewRequestForm() {
     const selectedSourceLoc = userLocations[fromAddressIdx] || {};
     const selectedDestLoc = userLocations[toAddressIdx] || {};
     // Build source and destination objects
-    const source: any = sourceType === "my" ? selectedSourceLoc : {
-      ...addressForm,
-      warehouseId: selectedWarehouse,
-      pickupMode,
-    };
-    const destination: any = destType === "my" ? selectedDestLoc : {
-      ...addressForm,
-      warehouseId: selectedWarehouse,
-      pickupMode,
-    };
+    const source: any = sourceType === "my"
+      ? { ...selectedSourceLoc, warehouseId: selectedSourceWarehouse, pickupMode: sourcePickupMode }
+      : { ...addressForm, warehouseId: selectedSourceWarehouse, pickupMode: sourcePickupMode };
+    const destination: any = destType === "my"
+      ? { ...selectedDestLoc, warehouseId: selectedDestWarehouse, pickupMode: destPickupMode }
+      : { ...addressForm, warehouseId: selectedDestWarehouse, pickupMode: destPickupMode };
     // Validation
     if (!source || !destination || items.length === 0 || !estimatedCost || !estimatedTime) {
       setError("Please fill in all fields and add at least one item");
+      return;
+    }
+    if (!selectedSourceWarehouse || !selectedDestWarehouse) {
+      setError("Please select both source and destination warehouses");
       return;
     }
     setIsLoading(true);
@@ -390,155 +447,42 @@ export default function NewRequestForm() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-card rounded-lg border border-border p-8 shadow-sm">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Create Shipping Request
-            </h1>
-            <p className="text-muted-foreground mb-8">
-              Fill in the details below to request a shipment
-            </p>
+          <div className="bg-card rounded-xl border border-border shadow-md overflow-hidden">
+            <div className="border-l-4 border-primary bg-primary/5 px-8 pt-8 pb-4">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Create Shipping Request
+              </h1>
+              <p className="text-muted-foreground">
+                Fill in the details below to request a shipment
+              </p>
+            </div>
+            <div className="p-8 pt-6">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 dark:text-red-400">
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">
                   {error}
                 </p>
               </div>
             )}
             {success && (
-              <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+              <div className="mb-6 p-4 bg-primary/10 border border-primary/30 rounded-lg flex gap-3">
+                <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                  <p className="text-sm font-medium text-primary">
                     Request created successfully!
                   </p>
-                  <p className="text-xs text-green-600 dark:text-green-500">
+                  <p className="text-xs text-muted-foreground">
                     Redirecting to My Requests...
                   </p>
                 </div>
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* ——— Section 1: Check Service Availability (Location) ——— */}
-              <section className="space-y-4 rounded-lg border border-border p-4 bg-muted/30">
-                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <MapPinned className="w-5 h-5 text-primary" />
-                  Check Service Availability
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Share your location to find warehouses within{" "}
-                  {NEARBY_RADIUS_KM} km. Your location is never stored.
-                </p>
-
-                {!locationChecked && !showMapPicker && (
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={findNearbyWarehouses}
-                      className="gap-2 cursor-pointer"
-                    >
-                      <Navigation className="w-4 h-4" />
-                      Use my location
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowMapPicker(true);
-                        setLocationChecked(true);
-                        setLocationError("");
-                        setMapEditable(true);
-                      }}
-                      className="gap-2 cursor-pointer"
-                    >
-                      <MapPinned className="w-4 h-4" />
-                      Pick on map
-                    </Button>
-                  </div>
-                )}
-
-                {locationLoading && (
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    Getting your location...
-                  </div>
-                )}
-
-                {locationError && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400 text-sm">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                    {locationError}
-                  </div>
-                )}
-
-                {locationChecked && !locationLoading && !locationError && (
-                  <div className="space-y-4">
-                    {/* Map - show when we have location OR user is picking on map */}
-                    {(userLocation || showMapPicker) && (
-                      <LocationMapPicker
-                        position={userLocation}
-                        onPositionChange={(lat, lng) => {
-                          handlePositionChange(lat, lng);
-                          setShowMapPicker(false);
-                        }}
-                        editable={mapEditable}
-                        onEditableChange={setMapEditable}
-                        height={280}
-                      />
-                    )}
-                    {nearbyWarehouses.length > 0 ? (
-                      <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                        {nearbyWarehouses.length} warehouse
-                        {nearbyWarehouses.length !== 1 ? "s" : ""} within{" "}
-                        {NEARBY_RADIUS_KM} km — select below
-                      </p>
-                    ) : outOfZone ? (
-                      <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                        <MapPinned className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-amber-800 dark:text-amber-300 text-sm">
-                            You&apos;re outside our service zone
-                          </p>
-                          <p className="text-xs text-amber-700 dark:text-amber-400/90">
-                            No warehouses within {NEARBY_RADIUS_KM} km. You can
-                            still proceed by selecting a source country below.
-                          </p>
-                        </div>
-                      </div>
-                    ) : null}
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={findNearbyWarehouses}
-                        className="gap-2 text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        <Navigation className="w-4 h-4" />
-                        Use my location
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowMapPicker(true);
-                          setMapEditable(true);
-                        }}
-                        className="gap-2 text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        <MapPinned className="w-4 h-4" />
-                        Pick on map
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              {/* ——— Section 2: Source (Origin) ——— */}
-              <section className="space-y-3">
-                <h2 className="text-lg font-semibold text-foreground">
+              {/* ——— Section 1: Source (Origin) ——— */}
+              <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">1</span>
                   Source (Origin)
                 </h2>
                 <label className="block text-sm font-medium text-muted-foreground">
@@ -546,28 +490,29 @@ export default function NewRequestForm() {
                 </label>
                 <div role="radiogroup" className="space-y-2">
                   {userLocations.map((loc, idx) => (
-                    <label
+                    <div
                       key={idx}
-                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground transition-all duration-300"
+                      className={`flex items-start gap-2 border rounded-lg p-3 transition-all ${fromAddressIdx === idx ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
                     >
-                      <input
-                        type="radio"
-                        name="sourceAddress"
-                        value={idx}
-                        checked={fromAddressIdx === idx}
-                        onChange={() => {
-                          setFromAddressIdx(idx);
-                          setSourceType("my");
-                          setFrom(userLocations[idx]?.country || "");
-                          setFromAddress(userLocations[idx]?.street || "");
-                          setFromPostalCode(
-                            userLocations[idx]?.postalCode || "",
-                          );
-                        }}
-                        disabled={isLoading}
-                        className="mt-1"
-                      />
-                      <span>
+                      <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
+                        <input
+                          type="radio"
+                          name="sourceAddress"
+                          value={idx}
+                          checked={fromAddressIdx === idx}
+                          onChange={() => {
+                            setFromAddressIdx(idx);
+                            setSourceType("my");
+                            setFrom(userLocations[idx]?.country || "");
+                            setFromAddress(userLocations[idx]?.street || "");
+                            setFromPostalCode(
+                              userLocations[idx]?.postalCode || "",
+                            );
+                          }}
+                          disabled={isLoading}
+                          className="mt-1"
+                        />
+                        <span className="flex-1 min-w-0">
                         <span className="font-medium">{loc.fullName}</span> -{" "}
                         {loc.street}, {loc.city} ({loc.country})<br />
                         {loc.postalCode} - {loc.mobile} - {loc.addressType}
@@ -599,8 +544,20 @@ export default function NewRequestForm() {
                         {loc.primary && (
                           <span className="text-xs">(Primary Address)</span>
                         )}
-                      </span>
-                    </label>
+                        </span>
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteAddress(loc, "source")}
+                        disabled={isLoading}
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
+                        aria-label="Delete address"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   ))}
                   <div className="mt-2">
                     <Button
@@ -611,17 +568,29 @@ export default function NewRequestForm() {
                         setShowAddAddress(true);
                       }}
                       disabled={isLoading}
-                      className="w-full cursor-pointer"
+                      className="w-full cursor-pointer border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
                     >
                       + Add new address
                     </Button>
                   </div>
                 </div>
+                {sourceCoords && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1">Source location on map</p>
+                    <LocationMapPicker
+                      position={{ lat: sourceCoords.lat, lng: sourceCoords.lng }}
+                      onPositionChange={() => {}}
+                      editable={false}
+                      height={180}
+                    />
+                  </div>
+                )}
               </section>
 
               {/* ——— Section 3: Destination ——— */}
-              <section className="space-y-3">
-                <h2 className="text-lg font-semibold text-foreground">
+              <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">2</span>
                   Destination
                 </h2>
                 <label className="block text-sm font-medium text-muted-foreground">
@@ -629,26 +598,27 @@ export default function NewRequestForm() {
                 </label>
                 <div role="radiogroup" className="space-y-2">
                   {userLocations.map((loc, idx) => (
-                    <label
+                    <div
                       key={idx}
-                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground transition-all duration-300"
+                      className={`flex items-start gap-2 border rounded-lg p-3 transition-all ${toAddressIdx === idx ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
                     >
-                      <input
-                        type="radio"
-                        name="destinationAddress"
-                        value={idx}
-                        checked={toAddressIdx === idx}
-                        onChange={() => {
-                          setToAddressIdx(idx);
-                          setDestType("my");
-                          setTo(userLocations[idx]?.country || "");
-                          setToAddress(userLocations[idx]?.street || "");
-                          setToPostalCode(userLocations[idx]?.postalCode || "");
-                        }}
-                        disabled={isLoading}
-                        className="mt-1"
-                      />
-                      <span>
+                      <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
+                        <input
+                          type="radio"
+                          name="destinationAddress"
+                          value={idx}
+                          checked={toAddressIdx === idx}
+                          onChange={() => {
+                            setToAddressIdx(idx);
+                            setDestType("my");
+                            setTo(userLocations[idx]?.country || "");
+                            setToAddress(userLocations[idx]?.street || "");
+                            setToPostalCode(userLocations[idx]?.postalCode || "");
+                          }}
+                          disabled={isLoading}
+                          className="mt-1"
+                        />
+                        <span className="flex-1 min-w-0">
                         <span className="font-medium">{loc.fullName}</span> -{" "}
                         {loc.street}, {loc.city} ({loc.country})<br />
                         {loc.postalCode} - {loc.mobile} - {loc.addressType}
@@ -680,8 +650,20 @@ export default function NewRequestForm() {
                         {loc.primary && (
                           <span className="text-xs">(Primary Address)</span>
                         )}
-                      </span>
-                    </label>
+                        </span>
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteAddress(loc, "destination")}
+                        disabled={isLoading}
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
+                        aria-label="Delete address"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   ))}
                   <div className="mt-2">
                     <Button
@@ -692,61 +674,188 @@ export default function NewRequestForm() {
                         setShowAddAddress(true);
                       }}
                       disabled={isLoading}
-                      className="w-full cursor-pointer"
+                      className="w-full cursor-pointer border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
                     >
                       + Add new address
                     </Button>
                   </div>
                 </div>
+
+                {/* Manual destination: when no saved address selected, use map to fill address form */}
+                {toAddressIdx === -1 && (
+                  <div className="mt-4 p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
+                    <p className="text-sm font-medium text-foreground">
+                      Enter destination address (pick on map to fill fields)
+                    </p>
+                    <LocationMapPicker
+                      position={
+                        addressForm.coordinates
+                          ? { lat: addressForm.coordinates.latitude, lng: addressForm.coordinates.longitude }
+                          : null
+                      }
+                      onPositionChange={(lat, lng) =>
+                        setAddressForm((prev) => ({
+                          ...prev,
+                          coordinates: { latitude: lat, longitude: lng },
+                        }))
+                      }
+                      onAddressData={(addressData: AddressData) => {
+                        setAddressForm((prev) => ({
+                          ...prev,
+                          street: addressData.street ?? prev.street,
+                          city: addressData.city ?? prev.city,
+                          district: addressData.district ?? prev.district,
+                          governorate: addressData.governorate ?? prev.governorate,
+                          country: addressData.country ?? prev.country,
+                          postalCode: addressData.postalCode ?? prev.postalCode,
+                        }));
+                        setTo(addressData.country ?? "");
+                      }}
+                      editable={true}
+                      height={200}
+                      showUseMyLocation
+                    />
+                    {(addressForm.street || addressForm.city || addressForm.country) && (
+                      <p className="text-xs text-muted-foreground">
+                        From map: {[addressForm.street, addressForm.city, addressForm.governorate, addressForm.country].filter(Boolean).join(", ")}
+                        {addressForm.postalCode && ` (${addressForm.postalCode})`}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {destCoords && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1">Destination location on map</p>
+                    <LocationMapPicker
+                      position={{ lat: destCoords.lat, lng: destCoords.lng }}
+                      onPositionChange={() => {}}
+                      editable={false}
+                      height={180}
+                    />
+                  </div>
+                )}
               </section>
 
-              {/* ——— Section 4: Pickup & Warehouse ——— */}
-              <section className="space-y-4 rounded-lg border border-border p-4 bg-muted/30">
-                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Warehouse className="w-5 h-5 text-primary" />
-                  Pickup & Warehouse
+              {/* ——— Section 4: Pickup & Warehouses ——— */}
+              <section className="space-y-4 rounded-lg border border-primary/20 p-4 bg-primary/5">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                    <Warehouse className="w-4 h-4" />
+                  </span>
+                  Pickup & Warehouses
                 </h2>
-                {/* Pickup Mode */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Pickup Mode
-                  </label>
-                  <select
-                    className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    value={pickupMode}
-                    onChange={(e) => setPickupMode(e.target.value)}
-                    disabled={isLoading}
-                    required
-                  >
-                    <option value="Self">Self</option>
-                    <option value="Delegate">Delegate</option>
-                  </select>
+                <p className="text-sm text-muted-foreground">
+                  Warehouses are filtered by proximity to selected addresses
+                </p>
+
+                {/* Warehouses near me (current GPS) */}
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-foreground">Warehouses near me</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleFindWarehousesNearMe}
+                      disabled={myLocationLoading}
+                      className="gap-1.5 cursor-pointer border-primary/50 text-primary hover:bg-primary/10"
+                    >
+                      {myLocationLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Navigation className="w-3.5 h-3.5" />
+                      )}
+                      Find warehouses near me
+                    </Button>
+                  </div>
+                  {myLocationError && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {myLocationError}
+                    </p>
+                  )}
+                  {myLocationCoords && warehousesNearMe.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Within {NEARBY_RADIUS_KM} km of your current location:
+                      </p>
+                      <ul className="space-y-1 max-h-32 overflow-y-auto">
+                        {warehousesNearMe.map((w) => (
+                          <li
+                            key={w.id}
+                            className="border rounded p-2 flex flex-col text-sm"
+                          >
+                            <span className="font-medium">{w.name || w.id}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {w.state || ""} {w.country || ""}
+                              {"distanceKm" in w &&
+                                ` · ${(w as { distanceKm: number }).distanceKm.toFixed(1)} km`}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {myLocationCoords && warehousesNearMe.length === 0 && !myLocationError && (
+                    <p className="text-xs text-muted-foreground">
+                      No warehouses within {NEARBY_RADIUS_KM} km of your location.
+                    </p>
+                  )}
                 </div>
-                {/* Available Warehouses */}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Source Pickup Mode
+                    </label>
+                  <select
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                    value={sourcePickupMode}
+                      onChange={(e) => setSourcePickupMode(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    >
+                      <option value="Self">Self</option>
+                      <option value="Delegate">Delegate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Destination Pickup Mode
+                    </label>
+                    <select
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                    value={destPickupMode}
+                      onChange={(e) => setDestPickupMode(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    >
+                      <option value="Self">Self</option>
+                      <option value="Delegate">Delegate</option>
+                    </select>
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Available Warehouses
+                    Source Warehouse (near origin)
                   </label>
                   <select
-                    className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    value={selectedWarehouse}
-                    onChange={(e) => setSelectedWarehouse(e.target.value)}
-                    disabled={isLoading || filteredWarehouses.length === 0}
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                    value={selectedSourceWarehouse}
+                    onChange={(e) => setSelectedSourceWarehouse(e.target.value)}
+                    disabled={isLoading || sourceWarehouses.length === 0}
                     required
                   >
                     <option value="" disabled>
-                      {filteredWarehouses.length === 0
+                      {sourceWarehouses.length === 0
                         ? from
-                          ? "No warehouses in this country"
-                          : "Select source first or find warehouses near you"
-                        : "Select a warehouse"}
+                          ? "No warehouses near source"
+                          : "Select source address first"
+                        : "Select source warehouse"}
                     </option>
-                    {filteredWarehouses.map((w) => (
-                      <option
-                        key={w.id}
-                        value={w.id}
-                        className="bg-background text-foreground"
-                      >
+                    {sourceWarehouses.map((w) => (
+                      <option key={w.id} value={w.id} className="bg-background text-foreground">
                         {w.name || w.id} ({w.state || w.country})
                         {"distanceKm" in w
                           ? ` — ${(w as { distanceKm: number }).distanceKm.toFixed(1)} km`
@@ -754,12 +863,101 @@ export default function NewRequestForm() {
                       </option>
                     ))}
                   </select>
+                  {sourceCoords && sourceWarehouses.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs text-muted-foreground mb-1">Warehouses within 50km:</div>
+                      <ul className="space-y-1">
+                        {sourceWarehouses.map((w) => (
+                          <li key={w.id} className="border border-border rounded-lg p-2 flex flex-col bg-card">
+                            <span className="font-medium">{w.name || w.id}</span>
+                            <span className="text-xs">{w.state || ''} {w.country || ''}</span>
+                            {"distanceKm" in w && (
+                              <span className="text-xs">Distance: {(w as { distanceKm: number }).distanceKm.toFixed(1)} km</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Destination Warehouse (near destination)
+                  </label>
+                  <select
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                    value={selectedDestWarehouse}
+                    onChange={(e) => setSelectedDestWarehouse(e.target.value)}
+                    disabled={isLoading || destWarehouses.length === 0}
+                    required
+                  >
+                    <option value="" disabled>
+                      {destWarehouses.length === 0
+                        ? to
+                          ? "No warehouses near destination"
+                          : "Select destination address first"
+                        : "Select destination warehouse"}
+                    </option>
+                    {destWarehouses.map((w) => (
+                      <option key={w.id} value={w.id} className="bg-background text-foreground">
+                        {w.name || w.id} ({w.state || w.country})
+                        {"distanceKm" in w
+                          ? ` — ${(w as { distanceKm: number }).distanceKm.toFixed(1)} km`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {destCoords && destWarehouses.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs text-muted-foreground mb-1">Warehouses within 50km:</div>
+                      <ul className="space-y-1">
+                        {destWarehouses.map((w) => (
+                          <li key={w.id} className="border border-border rounded-lg p-2 flex flex-col bg-card">
+                            <span className="font-medium">{w.name || w.id}</span>
+                            <span className="text-xs">{w.state || ''} {w.country || ''}</span>
+                            {"distanceKm" in w && (
+                              <span className="text-xs">Distance: {(w as { distanceKm: number }).distanceKm.toFixed(1)} km</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </section>
 
+              {/* ——— Section 4b: Route Map ——— */}
+              {(sourceCoords || destCoords) && selectedSourceWarehouse && selectedDestWarehouse && (
+                <section className="space-y-3 rounded-lg border border-primary/20 p-4 bg-primary/5">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                      <MapPinned className="w-4 h-4" />
+                    </span>
+                    Route Overview
+                  </h2>
+                  <RouteMap
+                    source={sourceCoords ? { lat: sourceCoords.lat, lng: sourceCoords.lng } : null}
+                    sourceWarehouse={(() => {
+                      const wh = warehouses.find((w) => w.id === selectedSourceWarehouse);
+                      return wh?.latitude != null && wh?.longitude != null
+                        ? { lat: wh.latitude, lng: wh.longitude }
+                        : null;
+                    })()}
+                    destWarehouse={(() => {
+                      const wh = warehouses.find((w) => w.id === selectedDestWarehouse);
+                      return wh?.latitude != null && wh?.longitude != null
+                        ? { lat: wh.latitude, lng: wh.longitude }
+                        : null;
+                    })()}
+                    destination={destCoords ? { lat: destCoords.lat, lng: destCoords.lng } : null}
+                  />
+                </section>
+              )}
+
               {/* ——— Section 5: Contact ——— */}
-              <section>
-                <h2 className="text-lg font-semibold text-foreground mb-3">
+              <section className="rounded-lg border border-border bg-muted/20 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2 mb-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">3</span>
                   Contact
                 </h2>
                 <div>
@@ -783,11 +981,13 @@ export default function NewRequestForm() {
               </section>
 
               {/* ——— Section 6: Items ——— */}
-              <section className="space-y-4 rounded-lg border border-border p-5 bg-muted/30">
+              <section className="space-y-4 rounded-lg border border-border p-5 bg-muted/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Package className="w-5 h-5 text-primary" />
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                        <Package className="w-4 h-4" />
+                      </span>
                       Shipment Items
                     </h2>
                     <p className="text-sm text-muted-foreground mt-0.5">
@@ -848,7 +1048,7 @@ export default function NewRequestForm() {
                 )}
 
                 {/* Add item form */}
-                <Card className="border-dashed">
+                <Card className="border-dashed border-primary/30 bg-primary/[0.02]">
                   <CardContent className="p-4 space-y-4">
                     <p className="text-sm font-medium text-foreground">
                       Add new item
@@ -887,7 +1087,7 @@ export default function NewRequestForm() {
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                          Dimensions (cm)
+                          Dimensions(cm)
                         </label>
                         <Input
                           placeholder="e.g. 30×20×10 cm"
@@ -955,7 +1155,7 @@ export default function NewRequestForm() {
                         });
                       }}
                       disabled={isLoading}
-                      className="w-full sm:w-auto gap-2 cursor-pointer"
+                      className="w-full sm:w-auto gap-2 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       <Plus className="w-4 h-4" />
                       Add item
@@ -965,8 +1165,9 @@ export default function NewRequestForm() {
               </section>
 
               {/* ——— Section 7: Summary & Submit ——— */}
-              <section className="space-y-4 pt-2 border-t border-border">
-                <h2 className="text-lg font-semibold text-foreground">
+              <section className="space-y-4 pt-6 border-t-2 border-primary/20 rounded-lg bg-primary/5 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">4</span>
                   Summary
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1001,7 +1202,7 @@ export default function NewRequestForm() {
                   <Button
                     type="submit"
                     disabled={isLoading || success}
-                    className="flex-1 cursor-pointer"
+                    className="flex-1 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                   >
                     {isLoading ? "Creating..." : "Request Order"}
                   </Button>
@@ -1010,51 +1211,14 @@ export default function NewRequestForm() {
                     variant="outline"
                     onClick={() => router.back()}
                     disabled={isLoading}
-                    className="flex-1 cursor-pointer"
+                    className="flex-1 cursor-pointer border-primary/50 text-primary hover:bg-primary/10"
                   >
                     Cancel
                   </Button>
                 </div>
               </section>
             </form>
-
-            {/* Location permission dialog — ask before sharing */}
-            {showLocationPrompt && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6">
-                  <div className="flex gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <MapPinned className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground text-lg">
-                        Share your location?
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        ShipHub would like to use your location to find warehouses
-                        within {NEARBY_RADIUS_KM} km of you. Your location is never
-                        stored or shared.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleLocationConfirm}
-                      className="flex-1 cursor-pointer"
-                    >
-                      Allow
-                    </Button>
-                    <Button
-                      onClick={handleLocationDecline}
-                      variant="outline"
-                      className="flex-1 bg-transparent cursor-pointer"
-                    >
-                      Not now
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
 
             <AddAddressDialog
               open={showAddAddress}

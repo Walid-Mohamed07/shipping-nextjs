@@ -124,3 +124,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Route map: custom pins (blue = customer, red = warehouse) – no default marker bg */
+.leaflet-div-icon.route-map-pin {
+  background: transparent !important;
+  border: none !important;
+}

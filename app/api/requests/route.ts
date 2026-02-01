@@ -26,17 +26,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    // Accept all fields, including new structure
-    // 'from' and 'to' are now full location/address objects, not just country strings
+    // Accept both 'from'/'to' and 'source'/'destination' (form sends source/destination)
     const {
       userId,
-      from, // full location object
-      to,   // full location object
+      from,
+      to,
+      source,
+      destination,
       item,
       category,
       dimensions,
       weight,
       quantity,
+      items,
       estimatedCost,
       estimatedTime,
       orderStatus,
@@ -55,16 +57,20 @@ export async function POST(request: NextRequest) {
     const requestsPath = path.join(process.cwd(), "data", "requests.json");
     const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
 
+    const fromAddr = from ?? source;
+    const toAddr = to ?? destination;
+    const firstItem = Array.isArray(items) && items[0] ? items[0] : { item, category, dimensions, weight, quantity };
+
     const newRequest = {
       id: `REQ-${Date.now()}`,
       userId,
-      from, // full object
-      to, // full object
-      item,
-      category,
-      dimensions,
-      weight,
-      quantity,
+      from: fromAddr,
+      to: toAddr,
+      item: firstItem?.item ?? item,
+      category: firstItem?.category ?? category,
+      dimensions: firstItem?.dimensions ?? dimensions,
+      weight: firstItem?.weight ?? weight,
+      quantity: firstItem?.quantity ?? quantity,
       estimatedCost,
       estimatedTime,
       orderStatus: orderStatus || "Pending",
