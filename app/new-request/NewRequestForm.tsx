@@ -1,8 +1,19 @@
 "use client";
 
 import React, { useRef, useState, useMemo, useEffect } from "react";
+import dynamic from "next/dynamic";
 import AddAddressDialog from "./AddAddressDialog";
 import { useRouter } from "next/navigation";
+
+const LocationMapPicker = dynamic(
+  () =>
+    import("@/app/components/LocationMapPicker").then((m) => m.LocationMapPicker),
+  { ssr: false, loading: () => <div className="h-[280px] rounded-lg border border-border bg-muted/50 animate-pulse" /> }
+);
+const RouteMap = dynamic(
+  () => import("@/app/components/RouteMap").then((m) => m.RouteMap),
+  { ssr: false, loading: () => <div className="h-[320px] rounded-lg border border-border bg-muted/50 animate-pulse" /> }
+);
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,26 +24,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/app/context/AuthContext";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle,
+  ImagePlus,
+  Loader2,
+  MapPinned,
+  Navigation,
+  Package,
+  Plus,
+  Trash2,
+  Warehouse,
+  X,
+} from "lucide-react";
 import { countries } from "@/constants/countries";
-
 import { categories } from "@/constants/categories";
+import { Warehouse as WarehouseType } from "@/types";
+import { getDistanceKm } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import type { AddressData } from "@/app/components/LocationMapPicker";
+
+const NEARBY_RADIUS_KM = 50;
 
 export default function NewRequestForm() {
-  // Warehouses state
-  const [warehouses, setWarehouses] = useState<any[]>([]);
-  const [selectedWarehouse, setSelectedWarehouse] = useState("");
-  const [pickupMode, setPickupMode] = useState("Self");
-
-  // ...existing code...
-
-  // Fetch warehouses on mount
-  useEffect(() => {
-    fetch("/api/admin/warehouse")
-      .then((res) => res.json())
-      .then((data) => setWarehouses(data.warehouses || []));
-  }, []);
-
   const { user } = useAuth();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
@@ -51,6 +66,7 @@ export default function NewRequestForm() {
     addressType: "Home",
     deliveryInstructions: "",
     primary: false,
+    coordinates: undefined as { latitude: number; longitude: number } | undefined,
   });
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [editAddressIdx, setEditAddressIdx] = useState<number | null>(null);
@@ -72,7 +88,7 @@ export default function NewRequestForm() {
   }, [user?.id]);
 
   const primaryLocation =
-    userLocations.find((loc) => loc.primary) || userLocations[0] || {};
+    userLocations.find((loc: { primary?: boolean }) => loc.primary) || userLocations[0] || {};
 
   // Source address state
   const [fromAddressIdx, setFromAddressIdx] = useState(0); // index in userLocations
@@ -82,38 +98,77 @@ export default function NewRequestForm() {
     primaryLocation.postalCode || "",
   );
 
-  // Filter warehouses by selected source country
-  const filteredWarehouses = useMemo(
-    () => warehouses.filter((w) => w.country === from),
-    [warehouses, from],
-  );
-
   // Destination address state
   const [toAddressIdx, setToAddressIdx] = useState(-1); // -1 means not using saved address
   const [to, setTo] = useState("");
   const [toAddress, setToAddress] = useState("");
   const [toPostalCode, setToPostalCode] = useState("");
 
+  // Helper to get coords from address (supports Address with coordinates)
+  const getCoords = (loc: { coordinates?: { latitude?: number; longitude?: number } } | null) => {
+    if (!loc?.coordinates || loc.coordinates.latitude == null || loc.coordinates.longitude == null) return null;
+    return { lat: loc.coordinates.latitude, lng: loc.coordinates.longitude };
+  };
+
+  // Source address coords (from saved address with coordinates)
+  const sourceCoords = useMemo(
+    () => getCoords(userLocations[fromAddressIdx] as { coordinates?: { latitude?: number; longitude?: number } }),
+    [userLocations, fromAddressIdx]
+  );
+
+  // Dest address coords: from selected saved address or from manual addressForm (when toAddressIdx === -1)
+  const destCoords = useMemo(() => {
+    if (toAddressIdx >= 0) {
+      return getCoords(userLocations[toAddressIdx] as { coordinates?: { latitude?: number; longitude?: number } });
+    }
+    const coords = addressForm.coordinates;
+    if (coords?.latitude != null && coords?.longitude != null) {
+      return { lat: coords.latitude, lng: coords.longitude };
+    }
+    return null;
+  }, [userLocations, toAddressIdx, addressForm.coordinates]);
+
+  // Pickup modes
+  const [sourcePickupMode, setSourcePickupMode] = useState("Self");
+  const [destPickupMode, setDestPickupMode] = useState("Self");
+
   // Modal state for adding/editing address
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [addAddressType, setAddAddressType] = useState<
     "source" | "destination"
   >("source");
-  const [item, setItem] = useState("");
-  const [category, setCategory] = useState("");
-  const [dimensions, setDimensions] = useState("");
-  const [weight, setWeight] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [items, setItems] = useState<
+    { item: string; category: string; dimensions: string; weight: string; quantity: number; note?: string }[]
+  >([{ item: "", category: "", dimensions: "", weight: "", quantity: 1 }]);
+  // For new item input fields: note (optional), media (up to 4 images, preview only)
+  const [newItem, setNewItem] = useState({
+    item: "",
+    category: "",
+    dimensions: "",
+    weight: "",
+    quantity: 1,
+    note: "",
+    mediaFiles: [] as File[],
+    mediaPreviews: [] as string[],
+  });
+  // Delivery type: Normal (base cost) or Fast (+15% dummy surcharge)
+  const [deliveryType, setDeliveryType] = useState<"Normal" | "Fast">("Normal");
   // Mobile is now per address location, so default to primary location's mobile
   const [mobile, setMobile] = useState(primaryLocation.mobile || "");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
+  // Editable cost and time after auto-calculation
+  const [customCost, setCustomCost] = useState("");
+  const [customTime, setCustomTime] = useState("");
+  // Comments
+  const [comments, setComments] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  // ——— Dummy cost logic: base rate by category × weight × quantity × distance ———
   const calculateCost = (
     category: string,
     weight: string,
@@ -121,7 +176,7 @@ export default function NewRequestForm() {
     from: string,
     to: string,
   ) => {
-    const baseRates = {
+    const baseRates: Record<string, number> = {
       Electronics: 20,
       Clothing: 10,
       Books: 8,
@@ -132,11 +187,16 @@ export default function NewRequestForm() {
       Documents: 5,
       Other: 10,
     };
-    const base = baseRates[category as keyof typeof baseRates] || 10;
+    const base = baseRates[category] ?? 10;
     const weightNum = parseFloat(weight) || 1;
     const distanceMultiplier = from === to ? 1 : 1.5;
-    return (base * weightNum * quantity * distanceMultiplier).toFixed(2);
+    return base * weightNum * quantity * distanceMultiplier;
   };
+
+  // Apply delivery type surcharge: Fast = +15% on base cost
+  const FAST_DELIVERY_SURCHARGE = 1.15;
+  const applyDeliverySurcharge = (baseCost: number) =>
+    deliveryType === "Fast" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
 
   const calculateDeliveryTime = (
     from: string,
@@ -157,25 +217,72 @@ export default function NewRequestForm() {
     return `${min}-${max} days`;
   };
 
+  // Primary cost = base cost × delivery surcharge (Fast +15%); recalc when from, to, items, or deliveryType change
   React.useEffect(() => {
     if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current as any);
+      clearTimeout(debounceTimeout.current as ReturnType<typeof setTimeout>);
     }
     debounceTimeout.current = setTimeout(() => {
-      if (from && to && category && weight && quantity) {
-        setEstimatedCost(calculateCost(category, weight, quantity, from, to));
-        setEstimatedTime(calculateDeliveryTime(from, to, category));
+      const firstItem = items[0] || { category: "", weight: "", quantity: 1 };
+      if (from && to && firstItem.category && firstItem.weight && firstItem.quantity) {
+        const base = calculateCost(firstItem.category, firstItem.weight, firstItem.quantity, from, to);
+        const primaryCost = applyDeliverySurcharge(base);
+        setEstimatedCost(primaryCost.toFixed(2));
+        setEstimatedTime(calculateDeliveryTime(from, to, firstItem.category));
       } else {
         setEstimatedCost("");
         setEstimatedTime("");
       }
     }, 250);
     return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current as any);
-      }
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     };
-  }, [from, to, category, weight, quantity]);
+  }, [from, to, items, deliveryType]);
+
+  // Format estimated time as ETA: "Today 3:00 PM", "Tomorrow 10:30 AM", or "Mon, Jan 15 10:30 AM"
+  const formatWhenToStart = (estimatedTimeStr: string): string => {
+    if (!estimatedTimeStr) return "";
+    const match = estimatedTimeStr.match(/^(\d+)-(\d+)\s*days?$/i);
+    if (!match) return estimatedTimeStr;
+    const minDays = parseInt(match[1], 10) || 0;
+    const maxDays = parseInt(match[2], 10) || minDays;
+    const daysFromNow = Math.round((minDays + maxDays) / 2);
+    const eta = new Date();
+    eta.setDate(eta.getDate() + daysFromNow);
+    eta.setHours(10, 30, 0, 0);
+    const today = new Date();
+    const isToday = eta.toDateString() === today.toDateString();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = eta.toDateString() === tomorrow.toDateString();
+    const timeStr = eta.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    if (isToday) return `Today ${timeStr}`;
+    if (isTomorrow) return `Tomorrow ${timeStr}`;
+    return `${eta.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} ${timeStr}`;
+  };
+
+  // ——— Media upload: max 4 images, accept image only; revoke object URLs on cleanup ———
+  const MAX_MEDIA_FILES = 4;
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    const current = newItem.mediaFiles.length;
+    const toAdd = imageFiles.slice(0, MAX_MEDIA_FILES - current);
+    if (toAdd.length === 0) return;
+    const newFiles = [...newItem.mediaFiles, ...toAdd].slice(0, MAX_MEDIA_FILES);
+    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+    // Revoke previous preview URLs to avoid memory leaks
+    newItem.mediaPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setNewItem((prev) => ({ ...prev, mediaFiles: newFiles, mediaPreviews: newPreviews }));
+    e.target.value = "";
+  };
+  const removeMediaAt = (index: number) => {
+    const newFiles = newItem.mediaFiles.filter((_, i) => i !== index);
+    const urlToRevoke = newItem.mediaPreviews[index];
+    if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
+    const newPreviews = newItem.mediaPreviews.filter((_, i) => i !== index);
+    setNewItem((prev) => ({ ...prev, mediaFiles: newFiles, mediaPreviews: newPreviews }));
+  };
 
   const countryOptions = useMemo(
     () =>
@@ -196,79 +303,82 @@ export default function NewRequestForm() {
     [],
   );
 
+  const handleDeleteAddress = async (
+    addr: { street?: string; postalCode?: string },
+    context: "source" | "destination"
+  ) => {
+    if (!user?.id || !addr.street || !addr.postalCode) return;
+    if (!confirm("Delete this address?")) return;
+    const deletedIdx = userLocations.findIndex(
+      (l: { street?: string; postalCode?: string }) =>
+        l.street === addr.street && l.postalCode === addr.postalCode
+    );
+    try {
+      const res = await fetch("/api/user/addresses", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, address: addr }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      const data = await res.json();
+      if (Array.isArray(data.locations)) {
+        const newLocs = data.locations;
+        setUserLocations(newLocs);
+        if (context === "source") {
+          let newFromIdx = fromAddressIdx;
+          if (deletedIdx === fromAddressIdx) newFromIdx = 0;
+          else if (deletedIdx < fromAddressIdx) newFromIdx = fromAddressIdx - 1;
+          setFromAddressIdx(Math.max(0, newFromIdx));
+          const sel = newLocs[Math.max(0, newFromIdx)];
+          setFrom(sel?.country || "");
+          setFromAddress(sel?.street || "");
+          setFromPostalCode(sel?.postalCode || "");
+        } else {
+          let newToIdx = toAddressIdx;
+          if (deletedIdx === toAddressIdx) newToIdx = -1;
+          else if (deletedIdx < toAddressIdx) newToIdx = toAddressIdx - 1;
+          setToAddressIdx(newToIdx);
+          const sel = newToIdx >= 0 ? newLocs[newToIdx] : null;
+          setTo(sel?.country || "");
+          setToAddress(sel?.street || "");
+          setToPostalCode(sel?.postalCode || "");
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete address");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     // Use selected location for 'my' address, otherwise use manual input
     const selectedSourceLoc = userLocations[fromAddressIdx] || {};
     const selectedDestLoc = userLocations[toAddressIdx] || {};
-    const sourceCountry =
-      sourceType === "my" ? selectedSourceLoc.country : from;
-    const sourceAddress =
-      sourceType === "my" ? selectedSourceLoc.street : fromAddress;
-    const sourcePostalCode =
-      sourceType === "my" ? selectedSourceLoc.postalCode : fromPostalCode;
-    const destCountry = destType === "my" ? selectedDestLoc.country : to;
-    const destAddress = destType === "my" ? selectedDestLoc.street : toAddress;
-    const destPostalCode =
-      destType === "my" ? selectedDestLoc.postalCode : toPostalCode;
-    if (
-      !sourceCountry ||
-      !sourceAddress ||
-      !sourcePostalCode ||
-      !destCountry ||
-      !destAddress ||
-      !destPostalCode ||
-      !item ||
-      !category ||
-      !dimensions ||
-      !weight ||
-      !quantity ||
-      !mobile ||
-      !selectedWarehouse
-    ) {
-      setError("Please fill in all fields");
-      return;
-    }
-    if (
-      sourceCountry === destCountry &&
-      sourceAddress === destAddress &&
-      sourcePostalCode === destPostalCode
-    ) {
-      setError("Destination must be different from origin");
-      return;
-    }
-    if (!estimatedCost || !estimatedTime) {
-      setError(
-        "Please ensure all fields are filled to calculate cost and time",
-      );
+    // Build source and destination objects
+    const source: any = sourceType === "my"
+      ? { ...selectedSourceLoc, pickupMode: sourcePickupMode }
+      : { ...addressForm, pickupMode: sourcePickupMode };
+    const destination: any = destType === "my"
+      ? { ...selectedDestLoc, pickupMode: destPickupMode }
+      : { ...addressForm, pickupMode: destPickupMode };
+    // Validation
+    if (!source || !destination || items.length === 0 || !estimatedCost || !estimatedTime) {
+      setError("Please fill in all fields and add at least one item");
       return;
     }
     setIsLoading(true);
     try {
-      // Build the request object with all relevant fields
       const requestBody = {
         userId: user?.id,
-        from: selectedSourceLoc,
-        to: selectedDestLoc,
-        item,
-        category,
-        dimensions,
-        weight,
-        quantity,
-        address: destAddress,
-        country: destCountry,
-        postalCode: destPostalCode,
-        mobile,
+        source,
+        destination,
+        items,
         estimatedCost,
+        estimatedTime,
+        deliveryType,
         orderStatus: "Pending",
         deliveryStatus: "Pending",
-        estimatedTime,
-        sourceAddress,
-        sourcePostalCode,
-        warehouseId: selectedWarehouse,
-        pickupMode,
-        // Add any additional fields here as needed
       };
       const response = await fetch("/api/requests", {
         method: "POST",
@@ -279,7 +389,6 @@ export default function NewRequestForm() {
         const errData = await response.json();
         throw new Error(errData.error || "Failed to create request");
       }
-      // Optionally, handle the returned request object
       setSuccess(true);
       setTimeout(() => {
         router.push("/my-requests");
@@ -309,64 +418,72 @@ export default function NewRequestForm() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-card rounded-lg border border-border p-8 shadow-sm">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Create Shipping Request
-            </h1>
-            <p className="text-muted-foreground mb-8">
-              Fill in the details below to request a shipment
-            </p>
+          <div className="bg-card rounded-xl border border-border shadow-md overflow-hidden">
+            <div className="border-l-4 border-primary bg-primary/5 px-8 pt-8 pb-4">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Create Shipping Request
+              </h1>
+              <p className="text-muted-foreground">
+                Fill in the details below to request a shipment
+              </p>
+            </div>
+            <div className="p-8 pt-6">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 dark:text-red-400">
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">
                   {error}
                 </p>
               </div>
             )}
             {success && (
-              <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+              <div className="mb-6 p-4 bg-primary/10 border border-primary/30 rounded-lg flex gap-3">
+                <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                  <p className="text-sm font-medium text-primary">
                     Request created successfully!
                   </p>
-                  <p className="text-xs text-green-600 dark:text-green-500">
+                  <p className="text-xs text-muted-foreground">
                     Redirecting to My Requests...
                   </p>
                 </div>
               </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Source (Origin) Section - Radio Group */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-foreground mb-2">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* ——— Section 1: Source (Origin) ——— */}
+              <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">1</span>
                   Source (Origin)
+                </h2>
+                <label className="block text-sm font-medium text-muted-foreground">
+                  Pick where your shipment will be collected from
                 </label>
                 <div role="radiogroup" className="space-y-2">
                   {userLocations.map((loc, idx) => (
-                    <label
+                    <div
                       key={idx}
-                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground transition-all duration-300"
+                      className={`flex items-start gap-2 border rounded-lg p-3 transition-all ${fromAddressIdx === idx ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
                     >
-                      <input
-                        type="radio"
-                        name="sourceAddress"
-                        value={idx}
-                        checked={fromAddressIdx === idx}
-                        onChange={() => {
-                          setFromAddressIdx(idx);
-                          setSourceType("my");
-                          setFrom(userLocations[idx]?.country || "");
-                          setFromAddress(userLocations[idx]?.street || "");
-                          setFromPostalCode(
-                            userLocations[idx]?.postalCode || "",
-                          );
-                        }}
-                        disabled={isLoading}
-                        className="mt-1"
-                      />
-                      <span>
+                      <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
+                        <input
+                          type="radio"
+                          name="sourceAddress"
+                          value={idx}
+                          checked={fromAddressIdx === idx}
+                          onChange={() => {
+                            setFromAddressIdx(idx);
+                            setSourceType("my");
+                            setFrom(userLocations[idx]?.country || "");
+                            setFromAddress(userLocations[idx]?.street || "");
+                            setFromPostalCode(
+                              userLocations[idx]?.postalCode || "",
+                            );
+                          }}
+                          disabled={isLoading}
+                          className="mt-1"
+                        />
+                        <span className="flex-1 min-w-0">
                         <span className="font-medium">{loc.fullName}</span> -{" "}
                         {loc.street}, {loc.city} ({loc.country})<br />
                         {loc.postalCode} - {loc.mobile} - {loc.addressType}
@@ -398,8 +515,20 @@ export default function NewRequestForm() {
                         {loc.primary && (
                           <span className="text-xs">(Primary Address)</span>
                         )}
-                      </span>
-                    </label>
+                        </span>
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteAddress(loc, "source")}
+                        disabled={isLoading}
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
+                        aria-label="Delete address"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   ))}
                   <div className="mt-2">
                     <Button
@@ -410,40 +539,57 @@ export default function NewRequestForm() {
                         setShowAddAddress(true);
                       }}
                       disabled={isLoading}
-                      className="w-full cursor-pointer"
+                      className="w-full cursor-pointer border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
                     >
                       + Add new address
                     </Button>
                   </div>
                 </div>
-              </div>
-              {/* Destination (To) Section - Radio Group */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-foreground mb-2">
+                {sourceCoords && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1">Source location on map</p>
+                    <LocationMapPicker
+                      position={{ lat: sourceCoords.lat, lng: sourceCoords.lng }}
+                      onPositionChange={() => {}}
+                      editable={false}
+                      height={180}
+                    />
+                  </div>
+                )}
+              </section>
+
+              {/* ——— Section 3: Destination ——— */}
+              <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">2</span>
                   Destination
+                </h2>
+                <label className="block text-sm font-medium text-muted-foreground">
+                  Where should your shipment be delivered?
                 </label>
                 <div role="radiogroup" className="space-y-2">
                   {userLocations.map((loc, idx) => (
-                    <label
+                    <div
                       key={idx}
-                      className="flex items-start gap-2 cursor-pointer border rounded p-2 hover:bg-chart-1 hover:text-accent-foreground transition-all duration-300"
+                      className={`flex items-start gap-2 border rounded-lg p-3 transition-all ${toAddressIdx === idx ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
                     >
-                      <input
-                        type="radio"
-                        name="destinationAddress"
-                        value={idx}
-                        checked={toAddressIdx === idx}
-                        onChange={() => {
-                          setToAddressIdx(idx);
-                          setDestType("my");
-                          setTo(userLocations[idx]?.country || "");
-                          setToAddress(userLocations[idx]?.street || "");
-                          setToPostalCode(userLocations[idx]?.postalCode || "");
-                        }}
-                        disabled={isLoading}
-                        className="mt-1"
-                      />
-                      <span>
+                      <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
+                        <input
+                          type="radio"
+                          name="destinationAddress"
+                          value={idx}
+                          checked={toAddressIdx === idx}
+                          onChange={() => {
+                            setToAddressIdx(idx);
+                            setDestType("my");
+                            setTo(userLocations[idx]?.country || "");
+                            setToAddress(userLocations[idx]?.street || "");
+                            setToPostalCode(userLocations[idx]?.postalCode || "");
+                          }}
+                          disabled={isLoading}
+                          className="mt-1"
+                        />
+                        <span className="flex-1 min-w-0">
                         <span className="font-medium">{loc.fullName}</span> -{" "}
                         {loc.street}, {loc.city} ({loc.country})<br />
                         {loc.postalCode} - {loc.mobile} - {loc.addressType}
@@ -475,8 +621,20 @@ export default function NewRequestForm() {
                         {loc.primary && (
                           <span className="text-xs">(Primary Address)</span>
                         )}
-                      </span>
-                    </label>
+                        </span>
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteAddress(loc, "destination")}
+                        disabled={isLoading}
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
+                        aria-label="Delete address"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   ))}
                   <div className="mt-2">
                     <Button
@@ -487,108 +645,125 @@ export default function NewRequestForm() {
                         setShowAddAddress(true);
                       }}
                       disabled={isLoading}
-                      className="w-full cursor-pointer"
+                      className="w-full cursor-pointer border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
                     >
                       + Add new address
                     </Button>
                   </div>
-                  {/* Add Address Dialog Popup */}
-                  <AddAddressDialog
-                    open={showAddAddress}
-                    onOpenChange={(open) => setShowAddAddress(open)}
-                    onSave={async (address) => {
-                      // After saving, fetch latest locations from API
-                      if (user?.id) {
-                        const res = await fetch(
-                          `/api/user/addresses?userId=${user.id}`,
-                        );
-                        const data = await res.json();
-                        if (Array.isArray(data.locations)) {
-                          setUserLocations(data.locations);
-                          // Find the new address index
-                          const idx = data.locations.findIndex(
-                            (loc) =>
-                              loc.street === address.street &&
-                              loc.postalCode === address.postalCode,
-                          );
-                          if (addAddressType === "source") {
-                            setFromAddressIdx(
-                              idx !== -1 ? idx : data.locations.length - 1,
-                            );
-                            setSourceType("my");
-                            setFrom(address.country);
-                            setFromAddress(address.street);
-                            setFromPostalCode(address.postalCode);
-                          } else {
-                            setToAddressIdx(
-                              idx !== -1 ? idx : data.locations.length - 1,
-                            );
-                            setDestType("my");
-                            setTo(address.country);
-                            setToAddress(address.street);
-                            setToPostalCode(address.postalCode);
-                          }
-                        }
+                </div>
+
+                {/* Manual destination: when no saved address selected, use map to fill address form */}
+                {toAddressIdx === -1 && (
+                  <div className="mt-4 p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
+                    <p className="text-sm font-medium text-foreground">
+                      Enter destination address (pick on map to fill fields)
+                    </p>
+                    <LocationMapPicker
+                      position={
+                        addressForm.coordinates
+                          ? { lat: addressForm.coordinates.latitude, lng: addressForm.coordinates.longitude }
+                          : null
                       }
-                    }}
-                    type={addAddressType}
-                    userName={user?.name || ""}
-                    userId={user?.id || ""}
-                  />
-                </div>
-              </div>
-              {/* Available Warehouses */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Available Warehouses
-                </label>
-                <select
-                  className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={selectedWarehouse}
-                  onChange={(e) => setSelectedWarehouse(e.target.value)}
-                  disabled={isLoading || filteredWarehouses.length === 0}
-                  required
-                >
-                  <option value="" disabled>
-                    {filteredWarehouses.length === 0
-                      ? "No warehouses available"
-                      : "Select a warehouse"}
-                  </option>
-                  {filteredWarehouses.map((w) => (
-                    <option
-                      key={w.id}
-                      value={w.id}
-                      className="bg-background text-foreground"
+                      onPositionChange={(lat, lng) =>
+                        setAddressForm((prev) => ({
+                          ...prev,
+                          coordinates: { latitude: lat, longitude: lng },
+                        }))
+                      }
+                      onAddressData={(addressData: AddressData) => {
+                        setAddressForm((prev) => ({
+                          ...prev,
+                          street: addressData.street ?? prev.street,
+                          city: addressData.city ?? prev.city,
+                          district: addressData.district ?? prev.district,
+                          governorate: addressData.governorate ?? prev.governorate,
+                          country: addressData.country ?? prev.country,
+                          postalCode: addressData.postalCode ?? prev.postalCode,
+                        }));
+                        setTo(addressData.country ?? "");
+                      }}
+                      editable={true}
+                      height={200}
+                      showUseMyLocation
+                    />
+                    {(addressForm.street || addressForm.city || addressForm.country) && (
+                      <p className="text-xs text-muted-foreground">
+                        From map: {[addressForm.street, addressForm.city, addressForm.governorate, addressForm.country].filter(Boolean).join(", ")}
+                        {addressForm.postalCode && ` (${addressForm.postalCode})`}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {destCoords && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1">Destination location on map</p>
+                    <LocationMapPicker
+                      position={{ lat: destCoords.lat, lng: destCoords.lng }}
+                      onPositionChange={() => {}}
+                      editable={false}
+                      height={180}
+                    />
+                  </div>
+                )}
+              </section>
+
+              {/* ——— Section 4: Pickup Modes ——— */}
+              <section className="space-y-4 rounded-lg border border-primary/20 p-4 bg-primary/5">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                    <Package className="w-4 h-4" />
+                  </span>
+                  Pickup Options
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Source Pickup Mode
+                    </label>
+                    <select
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                      value={sourcePickupMode}
+                      onChange={(e) => setSourcePickupMode(e.target.value)}
+                      disabled={isLoading}
+                      required
                     >
-                      {w.name || w.id} ({w.city || w.country})
-                    </option>
-                  ))}
-                </select>
-              </div>
-                {/* Pickup Mode */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Pickup Mode
-                  </label>
-                  <select
-                    className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    value={pickupMode}
-                    onChange={(e) => setPickupMode(e.target.value)}
-                    disabled={isLoading}
-                    required
-                  >
-                    <option value="Self">Self</option>
-                    <option value="Delegate">Delegate</option>
-                  </select>
+                      <option value="Self">Self</option>
+                      <option value="Delegate">Delegate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Destination Pickup Mode
+                    </label>
+                    <select
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                      value={destPickupMode}
+                      onChange={(e) => setDestPickupMode(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    >
+                      <option value="Self">Self</option>
+                      <option value="Delegate">Delegate</option>
+                    </select>
+                  </div>
                 </div>
-              {/* Mobile Number */}
-              <div>
-                <label
-                  htmlFor="mobile"
-                  className="block text-sm font-medium text-foreground mb-2"
-                >
-                  Mobile Number
-                </label>
+              </section>
+
+              {/* ——— Section 5: Contact ——— */}
+              <section className="rounded-lg border border-border bg-muted/20 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2 mb-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">3</span>
+                  Contact
+                </h2>
+                <div>
+                  <label
+                    htmlFor="mobile"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
+                    Mobile Number
+                  </label>
                 <Input
                   id="mobile"
                   type="tel"
@@ -599,136 +774,342 @@ export default function NewRequestForm() {
                   required
                   style={{ maxWidth: "100%" }}
                 />
-              </div>
-              {/* ...existing code for item, category, dimensions, weight, quantity, estimated cost/time, buttons... */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label
-                    htmlFor="item"
-                    className="block text-sm font-medium text-foreground mb-2"
-                  >
-                    Item Description
-                  </label>
-                  <Input
-                    id="item"
-                    type="text"
-                    placeholder="e.g., Laptop, Clothing Box, etc."
-                    value={item}
-                    onChange={(e) => setItem(e.target.value)}
-                    disabled={isLoading}
-                    required
-                    style={{ maxWidth: "100%" }}
-                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Category
-                  </label>
-                  <Select
-                    value={category}
-                    onValueChange={setCategory}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger style={{ width: "100%" }}>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>{categoryOptions}</SelectContent>
-                  </Select>
+              </section>
+
+              {/* ——— Section 6: Items ——— */}
+              <section className="space-y-4 rounded-lg border border-border p-5 bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                        <Package className="w-4 h-4" />
+                      </span>
+                      Shipment Items
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {items.length === 0
+                        ? "Add at least one item to continue"
+                        : `${items.length} item${items.length !== 1 ? "s" : ""} added`}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label
-                    style={{ maxWidth: "100%" }}
-                    htmlFor="dimensions"
-                    className="block text-sm font-medium text-foreground mb-2"
-                  >
-                    Item Dimensions
-                  </label>
-                  <Input
-                    id="dimensions"
-                    type="text"
-                    placeholder="e.g., 30x20x10 cm"
-                    value={dimensions}
-                    onChange={(e) => setDimensions(e.target.value)}
-                    disabled={isLoading}
-                    required
-                    style={{ maxWidth: "100%" }}
-                  />
+
+                {/* Item list */}
+                {items.length > 0 && (
+                  <div className="space-y-2">
+                    {items.map((itm, idx) => (
+                      <div
+                        key={idx}
+                        className="group flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/[0.02]"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                          {idx + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-foreground">
+                              {itm.item}
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className="text-[11px] font-normal"
+                            >
+                              {itm.category}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {itm.dimensions}
+                            <span className="mx-1.5">·</span>
+                            {itm.weight} kg
+                            <span className="mx-1.5">·</span>
+                            ×{itm.quantity}
+                          </p>
+                          {itm.note && (
+                            <p className="mt-1 text-xs text-muted-foreground italic">Note: {itm.note}</p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            setItems(items.filter((_, i) => i !== idx))
+                          }
+                          disabled={isLoading}
+                          className="h-8 w-8 shrink-0 rounded-full text-muted-foreground opacity-60 transition-opacity hover:bg-destructive/10 hover:text-destructive hover:opacity-100 group-hover:opacity-100 cursor-pointer"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add item form */}
+                <Card className="border-dashed border-primary/30 bg-primary/[0.02]">
+                  <CardContent className="p-4 space-y-4">
+                    <p className="text-sm font-medium text-foreground">
+                      Add new item
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Item description
+                        </label>
+                        <Input
+                          placeholder="e.g. Laptop, Documents, Clothing"
+                          value={newItem.item}
+                          onChange={(e) =>
+                            setNewItem({ ...newItem, item: e.target.value })
+                          }
+                          disabled={isLoading}
+                          className="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Category
+                        </label>
+                        <Select
+                          value={newItem.category}
+                          onValueChange={(val) =>
+                            setNewItem({ ...newItem, category: val })
+                          }
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>{categoryOptions}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Dimensions(cm)
+                        </label>
+                        <Input
+                          placeholder="e.g. 30×20×10 cm"
+                          value={newItem.dimensions}
+                          onChange={(e) =>
+                            setNewItem({ ...newItem, dimensions: e.target.value })
+                          }
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Weight (kg)
+                        </label>
+                        <Input
+                          type="number"
+                          min="0.1"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={newItem.weight}
+                          onChange={(e) =>
+                            setNewItem({ ...newItem, weight: e.target.value })
+                          }
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Quantity
+                        </label>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="1"
+                          value={newItem.quantity}
+                          onChange={(e) =>
+                            setNewItem({
+                              ...newItem,
+                              quantity: Number(e.target.value) || 1,
+                            })
+                          }
+                          disabled={isLoading}
+                        />
+                      </div>
+                      {/* Note (optional, multiline) */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Note <span className="text-muted-foreground/70">(optional)</span>
+                        </label>
+                        <textarea
+                          placeholder="e.g. Handle with care, leave at reception"
+                          value={newItem.note}
+                          onChange={(e) => setNewItem({ ...newItem, note: e.target.value })}
+                          disabled={isLoading}
+                          rows={3}
+                          className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 disabled:opacity-50 resize-y min-h-[80px]"
+                        />
+                      </div>
+                      {/* Media upload: up to 4 images, previews shown */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          Media <span className="text-muted-foreground/70">(optional, max 4 images)</span>
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {newItem.mediaPreviews.map((url, idx) => (
+                            <div
+                              key={url}
+                              className="relative w-20 h-20 rounded-lg border border-border overflow-hidden bg-muted flex-shrink-0 group"
+                            >
+                              <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeMediaAt(idx)}
+                                className="absolute top-0.5 right-0.5 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                aria-label="Remove image"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                          {newItem.mediaPreviews.length < MAX_MEDIA_FILES && (
+                            <label className="w-20 h-20 rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors flex-shrink-0">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleMediaChange}
+                                className="sr-only"
+                              />
+                              <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          !newItem.item ||
+                          !newItem.category ||
+                          !newItem.dimensions ||
+                          !newItem.weight ||
+                          !newItem.quantity
+                        )
+                          return;
+                        // Add item with optional note; media is preview-only and not persisted to items
+                        setItems([
+                          ...items,
+                          {
+                            item: newItem.item,
+                            category: newItem.category,
+                            dimensions: newItem.dimensions,
+                            weight: newItem.weight,
+                            quantity: newItem.quantity,
+                            ...(newItem.note.trim() ? { note: newItem.note.trim() } : {}),
+                          },
+                        ]);
+                        // Revoke object URLs before reset to avoid memory leaks
+                        newItem.mediaPreviews.forEach((url) => URL.revokeObjectURL(url));
+                        setNewItem({
+                          item: "",
+                          category: "",
+                          dimensions: "",
+                          weight: "",
+                          quantity: 1,
+                          note: "",
+                          mediaFiles: [],
+                          mediaPreviews: [],
+                        });
+                      }}
+                      disabled={isLoading}
+                      className="w-full sm:w-auto gap-2 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add item
+                    </Button>
+                  </CardContent>
+                </Card>
+              </section>
+
+              {/* ——— Section 7: Order Summary & Submit ——— */}
+              <section className="space-y-4 pt-6 border-t-2 border-primary/20 rounded-lg bg-primary/5 p-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">4</span>
+                  cost & time
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Delivery Type at the top */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Delivery Type
+                    </label>
+                    <select
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+                      value={deliveryType}
+                      onChange={(e) => setDeliveryType(e.target.value as "Normal" | "Fast")}
+                      disabled={isLoading}
+                    >
+                      <option value="Normal" className="bg-background text-foreground">Normal</option>
+                      <option value="Fast" className="bg-background text-foreground">Fast (+15%)</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Fast delivery adds a 15% surcharge to Primary Cost.
+                    </p>
+                  </div>
+                  {/* Primary Cost - Editable */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Primary Cost
+                    </label>
+                    <Input
+                      type="text"
+                      value={customCost || (estimatedCost ? `$${estimatedCost}` : "")}
+                      onChange={(e) => setCustomCost(e.target.value)}
+                      placeholder={estimatedCost ? `$${estimatedCost}` : "Auto-calculated"}
+                      disabled={isLoading}
+                      style={{ maxWidth: "100%" }}
+                    />
+                    {deliveryType === "Fast" && estimatedCost && (
+                      <p className="text-xs text-muted-foreground mt-1">Includes Fast delivery (+15%)</p>
+                    )}
+                  </div>
+                  {/* When to Start - Editable */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      When to Start
+                    </label>
+                    <Input
+                      type="text"
+                      value={customTime || formatWhenToStart(estimatedTime)}
+                      onChange={(e) => setCustomTime(e.target.value)}
+                      placeholder={formatWhenToStart(estimatedTime) || "Auto-calculated"}
+                      disabled={isLoading}
+                      style={{ maxWidth: "100%" }}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="weight"
-                    className="block text-sm font-medium text-foreground mb-2"
-                  >
-                    Item Weight (kg)
-                  </label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    min="0.1"
-                    step="0.01"
-                    placeholder="e.g., 2.5"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    disabled={isLoading}
-                    required
-                    style={{ maxWidth: "100%" }}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="quantity"
-                    className="block text-sm font-medium text-foreground mb-2"
-                  >
-                    Quantity
-                  </label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    disabled={isLoading}
-                    required
-                    style={{ maxWidth: "100%" }}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Estimated Cost
-                  </label>
-                  <Input
-                    id="estimatedCost"
-                    type="text"
-                    value={estimatedCost ? `$${estimatedCost}` : ""}
-                    disabled
-                    placeholder="Auto-calculated"
-                    style={{ maxWidth: "100%" }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Estimated Delivery Time
-                  </label>
-                  <Input
-                    id="estimatedTime"
-                    type="text"
-                    value={estimatedTime}
-                    disabled
-                    placeholder="Auto-calculated"
-                    style={{ maxWidth: "100%" }}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-4">
+              </section>
+
+              {/* ——— Comments Section ——— */}
+              <section className="space-y-4 mt-4">
+                <label className="block text-sm font-medium text-foreground">
+                  Comments <span className="text-muted-foreground/70">(optional)</span>
+                </label>
+                <textarea
+                  placeholder="Add any additional comments or special instructions"
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                  disabled={isLoading}
+                  rows={3}
+                  className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 disabled:opacity-50 resize-y min-h-[80px]"
+                />
+              </section>
+
+              {/* ——— Buttons: Outside section ——— */}
+              <div className="flex gap-4 mt-4">
                 <Button
                   type="submit"
                   disabled={isLoading || success}
-                  className="flex-1 cursor-pointer"
+                  className="flex-1 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                 >
                   {isLoading ? "Creating..." : "Request Order"}
                 </Button>
@@ -737,12 +1118,51 @@ export default function NewRequestForm() {
                   variant="outline"
                   onClick={() => router.back()}
                   disabled={isLoading}
-                  className="flex-1 cursor-pointer"
+                  className="flex-1 cursor-pointer border-primary/50 text-primary hover:bg-primary/10"
                 >
                   Cancel
                 </Button>
               </div>
             </form>
+            </div>
+
+            <AddAddressDialog
+              open={showAddAddress}
+              onOpenChange={(open) => setShowAddAddress(open)}
+              onSave={async (address) => {
+                if (user?.id) {
+                  const res = await fetch(
+                    `/api/user/addresses?userId=${user.id}`,
+                  );
+                  const data = await res.json();
+                  if (Array.isArray(data.locations)) {
+                    setUserLocations(data.locations);
+                    const idx = data.locations.findIndex(
+                      (loc: { street?: string; postalCode?: string }) =>
+                        loc.street === address.street &&
+                        loc.postalCode === address.postalCode,
+                    );
+                    const newIdx = idx !== -1 ? idx : data.locations.length - 1;
+                    if (addAddressType === "source") {
+                      setFromAddressIdx(newIdx);
+                      setSourceType("my");
+                      setFrom(address.country);
+                      setFromAddress(address.street);
+                      setFromPostalCode(address.postalCode);
+                    } else {
+                      setToAddressIdx(newIdx);
+                      setDestType("my");
+                      setTo(address.country);
+                      setToAddress(address.street);
+                      setToPostalCode(address.postalCode);
+                    }
+                  }
+                }
+              }}
+              type={addAddressType}
+              userName={user?.name || ""}
+              userId={user?.id || ""}
+            />
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import 'leaflet/dist/leaflet.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -122,4 +123,10 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Route map: custom pins (blue = customer, red = warehouse) – no default marker bg */
+.leaflet-div-icon.route-map-pin {
+  background: transparent !important;
+  border: none !important;
 }

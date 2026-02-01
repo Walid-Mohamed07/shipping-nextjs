@@ -13,6 +13,10 @@ export interface Warehouse {
   country: string;
   state: string;
   location: string;
+  /** Latitude for distance calculation (optional) */
+  latitude?: number;
+  /** Longitude for distance calculation (optional) */
+  longitude?: number;
   capacity: number;
   currentStock: number;
   manager: string;

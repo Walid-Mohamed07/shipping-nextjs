@@ -186,13 +186,66 @@ export function WarehouseManagementTab() {
             />
             <input
               type="text"
-              placeholder="Location"
+              placeholder="Location (address)"
               value={formData.location || ""}
               onChange={(e) =>
                 setFormData({ ...formData, location: e.target.value })
               }
               className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
             />
+            <div className="md:col-span-2 flex gap-2 flex-wrap items-center">
+              <input
+                type="number"
+                step="any"
+                placeholder="Latitude (for distance)"
+                value={formData.latitude ?? ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    latitude: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+                className="px-3 py-2 border border-border rounded-md bg-background text-foreground flex-1 min-w-[120px]"
+              />
+              <input
+                type="number"
+                step="any"
+                placeholder="Longitude (for distance)"
+                value={formData.longitude ?? ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    longitude: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+                className="px-3 py-2 border border-border rounded-md bg-background text-foreground flex-1 min-w-[120px]"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!navigator.geolocation) {
+                    alert("Geolocation is not supported by your browser.");
+                    return;
+                  }
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      setFormData({
+                        ...formData,
+                        latitude: Number(pos.coords.latitude.toFixed(6)),
+                        longitude: Number(pos.coords.longitude.toFixed(6)),
+                      });
+                    },
+                    () => alert("Could not get your location.")
+                  );
+                }}
+                className="gap-1 bg-transparent shrink-0"
+              >
+                <MapPin className="w-4 h-4" />
+                Use my location
+              </Button>
+            </div>
             <input
               type="number"
               placeholder="Capacity"
