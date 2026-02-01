@@ -1,8 +1,21 @@
 import { Address } from "./address";
 
 export type OrderStatus = "Accepted" | "Pending" | "Rejected" | "Cancelled";
-export type DeliveryStatus = "Pending" | "In Transit" | "Delivered" | "Failed";
+
+export enum RequestDeliveryStatus {
+  PENDING = 'Pending',
+  PICKED_UP_SOURCE = 'Picked Up Source',
+  WAREHOUSE_SOURCE_RECEIVED = 'Warehouse Source Received',
+  IN_TRANSIT = 'In Transit',
+  WAREHOUSE_DESTINATION_RECEIVED = 'Warehouse Destination Received',
+  PICKED_UP_DESTINATION = 'Picked Up Destination',
+  DELIVERED = 'Delivered',
+  FAILED = 'Failed',
+}
+
+export type DeliveryStatus = RequestDeliveryStatus | "Pending" | "In Transit" | "Delivered" | "Failed";
 export type PickupMode = "Delegate" | "Direct" | "Scheduled";
+
 
 export interface ShippingItem {
   item: string;
@@ -10,25 +23,18 @@ export interface ShippingItem {
   dimensions: string;
   weight: string;
   quantity: number;
-  estimatedCost: string;
-  estimatedTime: string;
 }
 
-export interface Request extends ShippingItem {
-  id: string;
+export interface Request {
+  id?: string;
   userId: string;
-  from: Address;
-  to: Address;
+  source: Address;
+  destination: Address;
+  items: ShippingItem[];
+  estimatedCost: string;
+  estimatedTime: string;
   orderStatus: OrderStatus;
   deliveryStatus: DeliveryStatus;
-  sourceAddress: string;
-  sourcePostalCode: string;
-  address: string;
-  country: string;
-  postalCode: string;
-  mobile: string;
-  warehouseId: string;
-  pickupMode: PickupMode;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
