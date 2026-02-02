@@ -268,9 +268,8 @@ export default function RequestDetailsPage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {request.items && request.items.length > 0 ? request.items[0].item : "-"}
+                  {request.id}
                 </h1>
-                <p className="text-muted-foreground text-lg">{request.id}</p>
               </div>
               <div className="flex gap-2">
                    <span
@@ -487,104 +486,155 @@ export default function RequestDetailsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">From</p>
                   <p className="text-lg font-medium text-foreground">
-                    {formatLocation(request.source)}
+                    {request.source ? formatLocation(request.source) : (request.from ? formatLocation(request.from) : "-")}
                   </p>
                 </div>
                 <div className="border-l-2 border-primary h-8" />
                 <div>
                   <p className="text-sm text-muted-foreground">To</p>
                   <p className="text-lg font-medium text-foreground">
-                    {formatLocation(request.destination)}
+                    {request.destination ? formatLocation(request.destination) : (request.to ? formatLocation(request.to) : "-")}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Package Details */}
+            {/* Package Details - All Items */}
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-primary" />
-                Package Details
+                Shipment Items ({request.items?.length || 0})
               </h3>
-              <div className="space-y-3">
-                {request.items && request.items.length > 0 && (
-                  <>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Category</p>
-                      <p className="text-base font-medium text-foreground">
-                        {request.items[0].category}
-                      </p>
+              
+              <div className="max-h-52 overflow-y-auto pr-2 space-y-4   p-2 rounded-md">
+                {request.items && request.items.length > 0 ? (
+                  request.items.map((item, idx) => (
+                    <div key={item.id || `item-${idx}`} className="border border-border rounded-lg p-4 bg-white dark:bg-gray-900">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground flex items-center gap-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">
+                              {idx + 1}
+                            </span>
+                            {item.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">{item.category}</p>
+                        </div>
+                        {item.quantity > 1 && (
+                          <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+                            ×{item.quantity}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Dimensions</p>
+                          <p className="font-medium text-foreground">{item.dimensions}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Weight</p>
+                          <p className="font-medium text-foreground">{item.weight} kg</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Quantity</p>
+                          <p className="font-medium text-foreground">{item.quantity}</p>
+                        </div>
+                      </div>
+                      {item.note && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground">Note</p>
+                          <p className="text-sm text-foreground italic">{item.note}</p>
+                        </div>
+                      )}
+                      {item.media && item.media.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground mb-2">Media ({item.media.length})</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {item.media.map((mediaUrl, mIdx) => (
+                              <img
+                                key={mIdx}
+                                src={mediaUrl}
+                                alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
+                                className="w-16 h-16 rounded-lg object-cover border border-border"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Item</p>
-                      <p className="text-base font-medium text-foreground">
-                        {request.items[0].item}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Dimensions</p>
-                      <p className="text-base font-medium text-foreground">
-                        {request.items[0].dimensions}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Weight</p>
-                      <p className="text-base font-medium text-foreground">
-                        {request.items[0].weight}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Quantity</p>
-                      <p className="text-base font-medium text-foreground">
-                        {request.items[0].quantity}
-                      </p>
-                    </div>
-                  </>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No items</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Timing Details */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
-                Requested Date
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {request.createdAt ? new Date(request.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }) : "-"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {request.createdAt ? new Date(request.createdAt).toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }) : "-"}
-              </p>
-            </div>
+          {/* Timing & Delivery Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Requested Date
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {request.createdAt ? new Date(request.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }) : "-"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {request.createdAt ? new Date(request.createdAt).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }) : "-"}
+                </p>
+              </div>
 
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                Actual Time
-              </h3>
-              <p className="text-base font-medium text-foreground">
-                {request.estimatedTime}
-              </p>
-            </div>
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  When to Start (ETA)
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {request.whenToStart ? new Date(request.whenToStart).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }) : "-"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {request.whenToStart ? new Date(request.whenToStart).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }) : "-"}
+                </p>
+              </div>
 
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Banknote className="w-5 h-5 text-primary" />
-                Actual Cost
-              </h3>
-              <p className="text-base font-medium text-foreground">
-                {request.estimatedCost}
-              </p>
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-primary" />
+                  Delivery Type
+                </h3>
+                <p className="text-base font-medium text-foreground capitalize">
+                  {request.deliveryType === "fast" ? "🔥 Fast Delivery" : "Normal Delivery"}
+                </p>
+                {request.deliveryType === "fast" && (
+                  <p className="text-xs text-muted-foreground mt-1">+25% surcharge applied</p>
+                )}
+              </div>
+
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Banknote className="w-5 h-5 text-primary" />
+                  Primary Cost
+                </h3>
+                <p className="text-base font-medium text-foreground">
+                  {request.primaryCost ? `$${request.primaryCost}` : "-"}
+                </p>
+              </div>
             </div>
 
             <div className="bg-card rounded-lg border border-border p-6">

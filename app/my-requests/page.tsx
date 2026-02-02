@@ -137,55 +137,70 @@ export default function MyRequestsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {requests.map((request) => (
-              <Link key={request.id} href={`/request/${request.id}`}>
-                <div className="h-full bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground truncate">
-                        {request.item}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {request.id}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(request.deliveryStatus)}`}
-                    >
-                      {request.deliveryStatus}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span>
-                        {formatLocation(request.from ?? request.source)} → {formatLocation(request.to ?? request.destination)}
+            {requests.map((request) => {
+              // Get preview items (first 3)
+              const previewItems = (request.items || []).slice(0, 3);
+              const remaining = Math.max(0, (request.items || []).length - 3);
+              return (
+                <Link key={request.id} href={`/request/${request.id}`}>
+                  <div className="h-full bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-foreground truncate">
+                          {previewItems[0]?.name || "Multiple Items"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {request.id}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${getStatusColor(request.deliveryStatus)}`}
+                      >
+                        {request.deliveryStatus}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Tag className="w-4 h-4 flex-shrink-0" />
-                      <span>{request.category}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                      <span>{request.estimatedTime}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Banknote className="w-4 h-4 flex-shrink-0" />
-                      <span>{request.estimatedCost}</span>
-                    </div>
-                  </div>
 
-                  <div className="pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
-                    <span>
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
+                    {/* Items preview */}
+                    <div className="space-y-2 mb-4 bg-muted/50 rounded-lg p-3">
+                      {previewItems.map((item, idx) => (
+                        <div key={item.id || `item-${idx}`} className="text-sm text-foreground">
+                          • {item.name} {item.quantity > 1 ? `(×${item.quantity})` : ""}
+                        </div>
+                      ))}
+                      {remaining > 0 && (
+                        <div className="text-sm text-muted-foreground italic">
+                          +{remaining} more item{remaining !== 1 ? "s" : ""}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4 flex-shrink-0" />
+                        <span>
+                          {formatLocation(request.from ?? request.source)} → {formatLocation(request.to ?? request.destination)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <span>{request.deliveryType === "fast" ? "Fast" : "Normal"} Delivery</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Banknote className="w-4 h-4 flex-shrink-0" />
+                        <span>{request.primaryCost ? `$${request.primaryCost}` : "-"}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
+                      <span>
+                        {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : ""}
+                      </span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

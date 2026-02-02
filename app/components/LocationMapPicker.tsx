@@ -11,7 +11,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
-import { Pencil, Loader2, AlertCircle, RefreshCw, Navigation } from "lucide-react";
+import { Pencil, Loader2, AlertCircle, RefreshCw, Navigation, MapPin, Check } from "lucide-react";
 
 // Fix Leaflet default icon in Next.js
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })
@@ -24,6 +24,61 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
+
+// Custom marker icon with better styling
+const createCustomIcon = (isActive: boolean = false) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `
+      <div style="
+        position: relative;
+        width: 40px;
+        height: 40px;
+        transform: translate(-50%, -50%);
+      ">
+        <div style="
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 32px;
+          height: 32px;
+          background: ${isActive ? '#3b82f6' : '#ef4444'};
+          border-radius: 50% 50% 50% 0;
+          transform: translateX(-50%) rotate(-45deg);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          border: 3px solid white;
+          transition: all 0.3s ease;
+        ">
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+          "></div>
+        </div>
+        <div style="
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 8px solid ${isActive ? '#3b82f6' : '#ef4444'};
+          opacity: 0.3;
+        "></div>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+  });
+};
 
 export interface AddressData {
   street?: string;
@@ -49,7 +104,6 @@ async function fetchAddressFromCoordinates(
     const response = await fetch(
       `/api/reverse-geocode?lat=${lat}&lon=${lng}`,
       {
-        // Add cache: 'no-store' to prevent stale data
         cache: 'no-store',
       }
     );
@@ -67,7 +121,6 @@ async function fetchAddressFromCoordinates(
 
     const data = await response.json();
 
-    // Validate we have address data (Nominatim returns { address: { ... } })
     if (!data || !data.address) {
       return {
         success: false,
@@ -100,23 +153,14 @@ async function fetchAddressFromCoordinates(
 }
 
 interface LocationMapPickerProps {
-  /** Current position (lat, lng) */
   position: { lat: number; lng: number } | null;
-  /** Called when position changes (map click in edit mode) */
   onPositionChange: (lat: number, lng: number) => void;
-  /** Whether the user can click the map to change location */
   editable?: boolean;
-  /** Called when user toggles edit mode */
   onEditableChange?: (editable: boolean) => void;
-  /** Compact height for inline display */
   height?: number;
-  /** Called when address data is retrieved from map coordinates */
   onAddressData?: (addressData: AddressData) => void;
-  /** Show loading indicator when fetching address */
   showLoadingState?: boolean;
-  /** Allow manual retry on error */
   allowRetry?: boolean;
-  /** Show "Use my location" button to get current GPS position */
   showUseMyLocation?: boolean;
 }
 
@@ -140,7 +184,7 @@ function MapClickHandler({
 function MapViewUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, 14);
+    map.setView(center, 14, { animate: true, duration: 0.5 });
   }, [map, center]);
   return null;
 }
@@ -150,7 +194,7 @@ export function LocationMapPicker({
   onPositionChange,
   editable = false,
   onEditableChange,
-  height = 280,
+  height = 400,
   onAddressData,
   showLoadingState = true,
   allowRetry = true,
@@ -162,6 +206,7 @@ export function LocationMapPicker({
   const [retryCount, setRetryCount] = useState(0);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [isDraggingMarker, setIsDraggingMarker] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -188,10 +233,9 @@ export function LocationMapPicker({
 
       if (result.success && result.addressData) {
         onAddressData(result.addressData);
-        setRetryCount(0); // Reset retry count on success
+        setRetryCount(0);
       } else {
         setAddressError(result.error || "Failed to fetch address");
-        // Still call onAddressData with empty data so form can continue
         onAddressData({
           street: "",
           city: "",
@@ -245,34 +289,51 @@ export function LocationMapPicker({
   if (!isClient) {
     return (
       <div
-        className="w-full rounded-lg border border-border bg-muted/50 flex items-center justify-center text-muted-foreground"
+        className="w-full rounded-xl border-2 border-dashed border-border bg-gradient-to-br from-muted/30 to-muted/50 flex flex-col items-center justify-center text-muted-foreground gap-3"
         style={{ height }}
       >
-        Loading map...
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm font-medium">Initializing map...</p>
       </div>
     );
   }
 
-  // Default center (Cairo) when no position
   const center = position || { lat: 30.0444, lng: 31.2357 };
   const zoom = position ? 14 : 4;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            {editable
-              ? "Click on the map to set your location"
-              : position
-                ? "Your selected location"
-                : "No location set"}
-          </p>
-          {showLoadingState && isLoadingAddress && (
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-          )}
+    <div className="space-y-3">
+      {/* Header Section */}
+      <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+        <div className="flex items-start gap-3 flex-1">
+          <div className="mt-0.5">
+            <MapPin className="w-5 h-5 text-primary" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">
+              {editable
+                ? "📍 Interactive Mode"
+                : position
+                  ? "✓ Location Selected"
+                  : "⚠ No Location Set"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {editable
+                ? "Click anywhere on the map or drag the marker to set your location"
+                : position
+                  ? "Your location has been set successfully"
+                  : "Use the button to enable location selection"}
+            </p>
+            {showLoadingState && isLoadingAddress && (
+              <div className="flex items-center gap-2 mt-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                <span className="text-xs text-muted-foreground">Fetching address details...</span>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex items-center gap-2 shrink-0">
           {showUseMyLocation && (
             <Button
               type="button"
@@ -280,44 +341,57 @@ export function LocationMapPicker({
               size="sm"
               onClick={handleUseMyLocation}
               disabled={isGettingLocation}
-              className="gap-1.5 shrink-0 cursor-pointer"
+              className="gap-2 shadow-sm hover:shadow-md transition-all duration-200"
             >
               {isGettingLocation ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Navigation className="w-3.5 h-3.5" />
+                <Navigation className="w-4 h-4" />
               )}
-              Use my location
+              <span className="hidden sm:inline">Use My Location</span>
             </Button>
           )}
           {onEditableChange && position && (
-          <Button
-            type="button"
-            variant={editable ? "default" : "outline"}
-            size="sm"
-            onClick={() => onEditableChange(!editable)}
-            className="gap-1.5 shrink-0 cursor-pointer"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            {editable ? "Done" : "Edit on map"}
-          </Button>
+            <Button
+              type="button"
+              variant={editable ? "default" : "outline"}
+              size="sm"
+              onClick={() => onEditableChange(!editable)}
+              className="gap-2 shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              {editable ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span className="hidden sm:inline">Done</span>
+                </>
+              ) : (
+                <>
+                  <Pencil className="w-4 h-4" />
+                  <span className="hidden sm:inline">Edit Location</span>
+                </>
+              )}
+            </Button>
           )}
         </div>
       </div>
 
+      {/* Location Error */}
       {locationError && (
-        <p className="text-sm text-destructive flex items-center gap-1.5">
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          {locationError}
-        </p>
+          <p>{locationError}</p>
+        </div>
       )}
 
-      {/* Error message with optional retry button */}
+      {/* Address Error with Retry */}
       {addressError && (
-        <div className="flex items-start justify-between gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-            <p>{addressError}</p>
+            <div>
+              <p className="font-medium">Address Lookup Failed</p>
+              <p className="text-xs mt-1 opacity-90">{addressError}</p>
+            </div>
           </div>
           {allowRetry && !isLoadingAddress && (
             <Button
@@ -325,18 +399,73 @@ export function LocationMapPicker({
               variant="ghost"
               size="sm"
               onClick={handleRetry}
-              className="h-auto p-1 hover:bg-destructive/20 shrink-0"
+              className="h-auto p-2 hover:bg-amber-500/20 shrink-0 transition-colors"
+              title="Retry fetching address"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className="h-4 w-4" />
             </Button>
           )}
         </div>
       )}
 
+      {/* Map Container with Enhanced Styling */}
       <div
-        className="rounded-lg overflow-hidden border border-border"
+        className={`
+          rounded-xl overflow-hidden border-2 shadow-lg transition-all duration-300
+          ${editable 
+            ? 'border-primary shadow-primary/20 ring-2 ring-primary/10' 
+            : 'border-border shadow-md'
+          }
+        `}
         style={{ height }}
       >
+        <style jsx global>{`
+          .leaflet-container {
+            transition: filter 0.3s ease;
+          }
+          ${editable ? `
+            .leaflet-container {
+              filter: saturate(1.1) brightness(1.05);
+              cursor: pointer !important;
+            }
+            .leaflet-interactive {
+              cursor: pointer !important;
+            }
+          ` : `
+            .leaflet-container {
+              cursor: default !important;
+            }
+          `}
+          .custom-marker {
+            animation: markerBounce 0.5s ease-out;
+          }
+          @keyframes markerBounce {
+            0% {
+              transform: translateY(-100px) scale(0.5);
+              opacity: 0;
+            }
+            50% {
+              transform: translateY(10px) scale(1.1);
+            }
+            100% {
+              transform: translateY(0) scale(1);
+              opacity: 1;
+            }
+          }
+          .leaflet-marker-icon {
+            cursor: ${editable ? 'grab' : 'default'} !important;
+            transition: transform 0.2s ease;
+          }
+          .leaflet-marker-icon:active {
+            cursor: ${editable ? 'grabbing' : 'default'} !important;
+            transform: scale(1.15) !important;
+          }
+          .leaflet-marker-dragging {
+            cursor: grabbing !important;
+            transform: scale(1.15) !important;
+          }
+        `}</style>
+        
         {isClient ? (
           <MapContainer
             key="leaflet-map"
@@ -344,6 +473,7 @@ export function LocationMapPicker({
             zoom={zoom}
             className="h-full w-full"
             scrollWheelZoom={true}
+            zoomControl={true}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -359,11 +489,14 @@ export function LocationMapPicker({
             {position && (
               <Marker
                 position={[position.lat, position.lng]}
+                icon={createCustomIcon(editable)}
                 eventHandlers={{
+                  dragstart: () => setIsDraggingMarker(true),
                   dragend: (e) => {
                     const marker = e.target;
                     const { lat, lng } = marker.getLatLng();
                     handlePositionChange(lat, lng);
+                    setIsDraggingMarker(false);
                   },
                 }}
                 draggable={editable}
@@ -371,11 +504,21 @@ export function LocationMapPicker({
             )}
           </MapContainer>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted/50">
-            <p className="text-muted-foreground text-sm">Loading map...</p>
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
+            <p className="text-muted-foreground text-sm font-medium">Loading map...</p>
           </div>
         )}
       </div>
+
+      {/* Coordinates Display (Optional - for debugging or info) */}
+      {position && (
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg p-2">
+          <span className="font-mono">
+            📍 {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

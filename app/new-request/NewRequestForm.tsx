@@ -4,6 +4,7 @@ import React, { useRef, useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import AddAddressDialog from "./AddAddressDialog";
 import { useRouter } from "next/navigation";
+import type { Item } from "@/types";
 
 const LocationMapPicker = dynamic(
   () =>
@@ -137,12 +138,11 @@ export default function NewRequestForm() {
   const [addAddressType, setAddAddressType] = useState<
     "source" | "destination"
   >("source");
-  const [items, setItems] = useState<
-    { item: string; category: string; dimensions: string; weight: string; quantity: number; note?: string }[]
-  >([{ item: "", category: "", dimensions: "", weight: "", quantity: 1 }]);
+  
+  const [items, setItems] = useState<Item[]>([]);
   // For new item input fields: note (optional), media (up to 4 images, preview only)
   const [newItem, setNewItem] = useState({
-    item: "",
+    name: "",
     category: "",
     dimensions: "",
     weight: "",
@@ -151,15 +151,14 @@ export default function NewRequestForm() {
     mediaFiles: [] as File[],
     mediaPreviews: [] as string[],
   });
-  // Delivery type: Normal (base cost) or Fast (+15% dummy surcharge)
-  const [deliveryType, setDeliveryType] = useState<"Normal" | "Fast">("Normal");
+  // Delivery type: "normal" | "fast"
+  const [deliveryType, setDeliveryType] = useState<"normal" | "fast">("normal");
+  // When to start (ISO format)
+  const [whenToStart, setWhenToStart] = useState<string>("");
   // Mobile is now per address location, so default to primary location's mobile
   const [mobile, setMobile] = useState(primaryLocation.mobile || "");
-  const [estimatedCost, setEstimatedCost] = useState("");
+  const [primaryCost, setPrimaryCost] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
-  // Editable cost and time after auto-calculation
-  const [customCost, setCustomCost] = useState("");
-  const [customTime, setCustomTime] = useState("");
   // Comments
   const [comments, setComments] = useState("");
   const [error, setError] = useState("");
@@ -193,10 +192,10 @@ export default function NewRequestForm() {
     return base * weightNum * quantity * distanceMultiplier;
   };
 
-  // Apply delivery type surcharge: Fast = +15% on base cost
-  const FAST_DELIVERY_SURCHARGE = 1.15;
+  // Apply delivery type surcharge: Fast = +25% on base cost
+  const FAST_DELIVERY_SURCHARGE = 1.25;
   const applyDeliverySurcharge = (baseCost: number) =>
-    deliveryType === "Fast" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
+    deliveryType === "fast" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
 
   const calculateDeliveryTime = (
     from: string,
@@ -217,7 +216,7 @@ export default function NewRequestForm() {
     return `${min}-${max} days`;
   };
 
-  // Primary cost = base cost × delivery surcharge (Fast +15%); recalc when from, to, items, or deliveryType change
+  // Primary cost = base cost × delivery surcharge (Fast +25%); recalc when from, to, items, or deliveryType change
   React.useEffect(() => {
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current as ReturnType<typeof setTimeout>);
@@ -226,11 +225,11 @@ export default function NewRequestForm() {
       const firstItem = items[0] || { category: "", weight: "", quantity: 1 };
       if (from && to && firstItem.category && firstItem.weight && firstItem.quantity) {
         const base = calculateCost(firstItem.category, firstItem.weight, firstItem.quantity, from, to);
-        const primaryCost = applyDeliverySurcharge(base);
-        setEstimatedCost(primaryCost.toFixed(2));
+        const primaryCostValue = applyDeliverySurcharge(base);
+        setPrimaryCost(primaryCostValue.toFixed(2));
         setEstimatedTime(calculateDeliveryTime(from, to, firstItem.category));
       } else {
-        setEstimatedCost("");
+        setPrimaryCost("");
         setEstimatedTime("");
       }
     }, 250);
@@ -362,9 +361,16 @@ export default function NewRequestForm() {
     const destination: any = destType === "my"
       ? { ...selectedDestLoc, pickupMode: destPickupMode }
       : { ...addressForm, pickupMode: destPickupMode };
+      
+    // Convert whenToStart to ISO format
+    let whenToStartISO = "";
+    if (whenToStart) {
+      whenToStartISO = new Date(whenToStart).toISOString();
+    }
+    
     // Validation
-    if (!source || !destination || items.length === 0 || !estimatedCost || !estimatedTime) {
-      setError("Please fill in all fields and add at least one item");
+    if (!source || !destination || items.length === 0 || !primaryCost || !whenToStart) {
+      setError("Please fill in all fields, add at least one item, and set when to start");
       return;
     }
     setIsLoading(true);
@@ -374,9 +380,9 @@ export default function NewRequestForm() {
         source,
         destination,
         items,
-        estimatedCost,
-        estimatedTime,
         deliveryType,
+        whenToStart: whenToStartISO,
+        primaryCost,
         orderStatus: "Pending",
         deliveryStatus: "Pending",
       };
@@ -461,74 +467,94 @@ export default function NewRequestForm() {
                 </label>
                 <div role="radiogroup" className="space-y-2">
                   {userLocations.map((loc, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex items-start gap-2 border rounded-lg p-3 transition-all ${fromAddressIdx === idx ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
-                    >
-                      <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
-                        <input
-                          type="radio"
-                          name="sourceAddress"
-                          value={idx}
-                          checked={fromAddressIdx === idx}
-                          onChange={() => {
-                            setFromAddressIdx(idx);
-                            setSourceType("my");
-                            setFrom(userLocations[idx]?.country || "");
-                            setFromAddress(userLocations[idx]?.street || "");
-                            setFromPostalCode(
-                              userLocations[idx]?.postalCode || "",
-                            );
-                          }}
-                          disabled={isLoading}
-                          className="mt-1"
-                        />
-                        <span className="flex-1 min-w-0">
-                        <span className="font-medium">{loc.fullName}</span> -{" "}
-                        {loc.street}, {loc.city} ({loc.country})<br />
-                        {loc.postalCode} - {loc.mobile} - {loc.addressType}
-                        <br />
-                        {loc.landmark && (
-                          <>
-                            <span className="text-xs">
-                              Landmark: {loc.landmark}
-                            </span>
-                            <br />
-                          </>
-                        )}
-                        {loc.deliveryInstructions && (
-                          <>
-                            <span className="text-xs">
-                              Instructions: {loc.deliveryInstructions}
-                            </span>
-                            <br />
-                          </>
-                        )}
-                        {loc.building && (
-                          <>
-                            <span className="text-xs">
-                              Building: {loc.building}
-                            </span>
-                            <br />
-                          </>
-                        )}
-                        {loc.primary && (
-                          <span className="text-xs">(Primary Address)</span>
-                        )}
-                        </span>
-                      </label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteAddress(loc, "source")}
-                        disabled={isLoading}
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
-                        aria-label="Delete address"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+<div
+  key={idx}
+  className={`group relative flex items-start gap-2 border rounded-lg p-3 transition-all overflow-hidden ${
+    fromAddressIdx === idx
+      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+      : "border-border hover:border-primary/30"
+  }`}
+>
+  <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
+    <input
+      type="radio"
+      name="sourceAddress"
+      value={idx}
+      checked={fromAddressIdx === idx}
+      onChange={() => {
+        setFromAddressIdx(idx);
+        setSourceType("my");
+        setFrom(userLocations[idx]?.country || "");
+        setFromAddress(userLocations[idx]?.street || "");
+        setFromPostalCode(userLocations[idx]?.postalCode || "");
+      }}
+      disabled={isLoading}
+      className="mt-1 shrink-0"
+    />
+    <div className="flex-1 min-w-0">
+      {/* Always visible content */}
+      <div className="font-medium truncate">{loc.fullName}</div>
+      <div className="text-sm text-muted-foreground truncate">
+        {loc.street}, {loc.city}
+      </div>
+      
+      {/* Expanded content on hover */}
+      <div className="max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100 transition-all duration-300 ease-in-out overflow-hidden">
+        <div className="pt-2 space-y-1 text-sm">
+          <div>
+            <span className="font-medium">Country:</span> {loc.country}
+          </div>
+          <div>
+            <span className="font-medium">Postal Code:</span> {loc.postalCode}
+          </div>
+          <div>
+            <span className="font-medium">Mobile:</span> {loc.mobile}
+          </div>
+          <div>
+            <span className="font-medium">Type:</span> {loc.addressType}
+          </div>
+          
+          {loc.landmark && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">Landmark:</span> {loc.landmark}
+            </div>
+          )}
+          
+          {loc.deliveryInstructions && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">Instructions:</span>{" "}
+              {loc.deliveryInstructions}
+            </div>
+          )}
+          
+          {loc.building && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">Building:</span> {loc.building}
+            </div>
+          )}
+          
+          {loc.primary && (
+            <div className="text-xs font-medium text-primary">
+              ⭐ Primary Address
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </label>
+  
+  <Button
+    type="button"
+    variant="ghost"
+    size="icon"
+    onClick={() => handleDeleteAddress(loc, "source")}
+    disabled={isLoading}
+    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
+    aria-label="Delete address"
+  >
+    <Trash2 className="w-4 h-4" />
+  </Button>
+</div>
                   ))}
                   <div className="mt-2">
                     <Button
@@ -569,72 +595,94 @@ export default function NewRequestForm() {
                 </label>
                 <div role="radiogroup" className="space-y-2">
                   {userLocations.map((loc, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex items-start gap-2 border rounded-lg p-3 transition-all ${toAddressIdx === idx ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
-                    >
-                      <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
-                        <input
-                          type="radio"
-                          name="destinationAddress"
-                          value={idx}
-                          checked={toAddressIdx === idx}
-                          onChange={() => {
-                            setToAddressIdx(idx);
-                            setDestType("my");
-                            setTo(userLocations[idx]?.country || "");
-                            setToAddress(userLocations[idx]?.street || "");
-                            setToPostalCode(userLocations[idx]?.postalCode || "");
-                          }}
-                          disabled={isLoading}
-                          className="mt-1"
-                        />
-                        <span className="flex-1 min-w-0">
-                        <span className="font-medium">{loc.fullName}</span> -{" "}
-                        {loc.street}, {loc.city} ({loc.country})<br />
-                        {loc.postalCode} - {loc.mobile} - {loc.addressType}
-                        <br />
-                        {loc.landmark && (
-                          <>
-                            <span className="text-xs">
-                              Landmark: {loc.landmark}
-                            </span>
-                            <br />
-                          </>
-                        )}
-                        {loc.deliveryInstructions && (
-                          <>
-                            <span className="text-xs">
-                              Instructions: {loc.deliveryInstructions}
-                            </span>
-                            <br />
-                          </>
-                        )}
-                        {loc.building && (
-                          <>
-                            <span className="text-xs">
-                              Building: {loc.building}
-                            </span>
-                            <br />
-                          </>
-                        )}
-                        {loc.primary && (
-                          <span className="text-xs">(Primary Address)</span>
-                        )}
-                        </span>
-                      </label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteAddress(loc, "destination")}
-                        disabled={isLoading}
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
-                        aria-label="Delete address"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+<div
+  key={idx}
+  className={`group relative flex items-start gap-2 border rounded-lg p-3 transition-all overflow-hidden ${
+    toAddressIdx === idx
+      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+      : "border-border hover:border-primary/30"
+  }`}
+>
+  <label className="flex flex-1 items-start gap-2 cursor-pointer min-w-0">
+    <input
+      type="radio"
+      name="destinationAddress"
+      value={idx}
+      checked={toAddressIdx === idx}
+      onChange={() => {
+        setToAddressIdx(idx);
+        setDestType("my");
+        setTo(userLocations[idx]?.country || "");
+        setToAddress(userLocations[idx]?.street || "");
+        setToPostalCode(userLocations[idx]?.postalCode || "");
+      }}
+      disabled={isLoading}
+      className="mt-1 shrink-0"
+    />
+    <div className="flex-1 min-w-0">
+      {/* Always visible content */}
+      <div className="font-medium truncate">{loc.fullName}</div>
+      <div className="text-sm text-muted-foreground truncate">
+        {loc.street}, {loc.city}
+      </div>
+      
+      {/* Expanded content on hover */}
+      <div className="max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100 transition-all duration-300 ease-in-out overflow-hidden">
+        <div className="pt-2 space-y-1 text-sm">
+          <div>
+            <span className="font-medium">Country:</span> {loc.country}
+          </div>
+          <div>
+            <span className="font-medium">Postal Code:</span> {loc.postalCode}
+          </div>
+          <div>
+            <span className="font-medium">Mobile:</span> {loc.mobile}
+          </div>
+          <div>
+            <span className="font-medium">Type:</span> {loc.addressType}
+          </div>
+          
+          {loc.landmark && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">Landmark:</span> {loc.landmark}
+            </div>
+          )}
+          
+          {loc.deliveryInstructions && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">Instructions:</span>{" "}
+              {loc.deliveryInstructions}
+            </div>
+          )}
+          
+          {loc.building && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">Building:</span> {loc.building}
+            </div>
+          )}
+          
+          {loc.primary && (
+            <div className="text-xs font-medium text-primary">
+              ⭐ Primary Address
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </label>
+  
+  <Button
+    type="button"
+    variant="ghost"
+    size="icon"
+    onClick={() => handleDeleteAddress(loc, "destination")}
+    disabled={isLoading}
+    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
+    aria-label="Delete address"
+  >
+    <Trash2 className="w-4 h-4" />
+  </Button>
+</div>
                   ))}
                   <div className="mt-2">
                     <Button
@@ -809,7 +857,7 @@ export default function NewRequestForm() {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-foreground">
-                              {itm.item}
+                              {itm.name}
                             </span>
                             <Badge
                               variant="secondary"
@@ -856,13 +904,13 @@ export default function NewRequestForm() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                          Item description
+                          Item name
                         </label>
                         <Input
                           placeholder="e.g. Laptop, Documents, Clothing"
-                          value={newItem.item}
+                          value={newItem.name}
                           onChange={(e) =>
-                            setNewItem({ ...newItem, item: e.target.value })
+                            setNewItem({ ...newItem, name: e.target.value })
                           }
                           disabled={isLoading}
                           className="w-full"
@@ -988,29 +1036,33 @@ export default function NewRequestForm() {
                       type="button"
                       onClick={() => {
                         if (
-                          !newItem.item ||
+                          !newItem.name ||
                           !newItem.category ||
                           !newItem.dimensions ||
                           !newItem.weight ||
                           !newItem.quantity
                         )
                           return;
-                        // Add item with optional note; media is preview-only and not persisted to items
+                        // Create new item with proper structure
+                        const itemId = `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                        const newItemObj: Item = {
+                          id: itemId,
+                          name: newItem.name,
+                          category: newItem.category,
+                          dimensions: newItem.dimensions,
+                          weight: newItem.weight,
+                          quantity: newItem.quantity,
+                          note: newItem.note.trim() || undefined,
+                          media: [], // Media URLs would be added after upload
+                        };
                         setItems([
                           ...items,
-                          {
-                            item: newItem.item,
-                            category: newItem.category,
-                            dimensions: newItem.dimensions,
-                            weight: newItem.weight,
-                            quantity: newItem.quantity,
-                            ...(newItem.note.trim() ? { note: newItem.note.trim() } : {}),
-                          },
+                          newItemObj,
                         ]);
                         // Revoke object URLs before reset to avoid memory leaks
                         newItem.mediaPreviews.forEach((url) => URL.revokeObjectURL(url));
                         setNewItem({
-                          item: "",
+                          name: "",
                           category: "",
                           dimensions: "",
                           weight: "",
@@ -1034,7 +1086,7 @@ export default function NewRequestForm() {
               <section className="space-y-4 pt-6 border-t-2 border-primary/20 rounded-lg bg-primary/5 p-4">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">4</span>
-                  cost & time
+                  Delivery & Cost
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Delivery Type at the top */}
@@ -1045,45 +1097,57 @@ export default function NewRequestForm() {
                     <select
                       className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
                       value={deliveryType}
-                      onChange={(e) => setDeliveryType(e.target.value as "Normal" | "Fast")}
+                      onChange={(e) => setDeliveryType(e.target.value as "normal" | "fast")}
                       disabled={isLoading}
                     >
-                      <option value="Normal" className="bg-background text-foreground">Normal</option>
-                      <option value="Fast" className="bg-background text-foreground">Fast (+15%)</option>
+                      <option value="normal" className="bg-background text-foreground">Normal</option>
+                      <option value="fast" className="bg-background text-foreground">Fast (+25%)</option>
                     </select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Fast delivery adds a 15% surcharge to Primary Cost.
+                      Fast delivery adds a 25% surcharge to the base cost.
                     </p>
                   </div>
-                  {/* Primary Cost - Editable */}
+                  
+                  {/* When to Start - using datetime-local */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      When to Start 
+                    </label>
+                    <Input
+                      type="datetime-local"
+                      value={whenToStart}
+                      onChange={(e) => setWhenToStart(e.target.value)}
+                      disabled={isLoading}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  {/* Primary Cost - Read-only auto-calculated */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Primary Cost
                     </label>
                     <Input
                       type="text"
-                      value={customCost || (estimatedCost ? `$${estimatedCost}` : "")}
-                      onChange={(e) => setCustomCost(e.target.value)}
-                      placeholder={estimatedCost ? `$${estimatedCost}` : "Auto-calculated"}
-                      disabled={isLoading}
-                      style={{ maxWidth: "100%" }}
+                      value={primaryCost ? `$${primaryCost}` : "Auto-calculating..."}
+                      disabled
+                      className="w-full bg-muted text-muted-foreground"
                     />
-                    {deliveryType === "Fast" && estimatedCost && (
-                      <p className="text-xs text-muted-foreground mt-1">Includes Fast delivery (+15%)</p>
+                    {deliveryType === "fast" && primaryCost && (
+                      <p className="text-xs text-muted-foreground mt-1">Includes Fast delivery surcharge (+25%)</p>
                     )}
                   </div>
-                  {/* When to Start - Editable */}
+                  
+                  {/* Estimated Time */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      When to Start
+                      Estimated Time
                     </label>
                     <Input
                       type="text"
-                      value={customTime || formatWhenToStart(estimatedTime)}
-                      onChange={(e) => setCustomTime(e.target.value)}
-                      placeholder={formatWhenToStart(estimatedTime) || "Auto-calculated"}
-                      disabled={isLoading}
-                      style={{ maxWidth: "100%" }}
+                      value={estimatedTime || "Auto-calculating..."}
+                      disabled
+                      className="w-full bg-muted text-muted-foreground"
                     />
                   </div>
                 </div>

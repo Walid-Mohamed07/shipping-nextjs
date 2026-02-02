@@ -2,6 +2,68 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+type LegacyRequest = any
+
+function normalizeItems(req: LegacyRequest) {
+  if (Array.isArray(req.items) && req.items.length > 0) {
+    return req.items.map((it: any, idx: number) => ({
+      id: it.id || `ITEM-${req.id || Date.now()}-${idx + 1}`,
+      name: it.name ?? it.item ?? "-",
+      category: it.category ?? "",
+      dimensions: it.dimensions ?? "",
+      weight: it.weight ?? "",
+      quantity: Number(it.quantity ?? 1) || 1,
+      note: it.note || undefined,
+      media: Array.isArray(it.media) ? it.media.slice(0, 4) : [],
+    }))
+  }
+  if (req.item || req.category || req.dimensions || req.weight || req.quantity) {
+    return [
+      {
+        id: `ITEM-${req.id || Date.now()}-1`,
+        name: req.item ?? "-",
+        category: req.category ?? "",
+        dimensions: req.dimensions ?? "",
+        weight: req.weight ?? "",
+        quantity: Number(req.quantity ?? 1) || 1,
+        note: req.note || undefined,
+        media: Array.isArray(req.media) ? req.media.slice(0, 4) : [],
+      },
+    ]
+  }
+  return []
+}
+
+function normalizeDeliveryType(value: any): "normal" | "fast" | undefined {
+  const v = String(value || "").toLowerCase().trim()
+  if (v === "fast") return "fast"
+  if (v === "normal") return "normal"
+  return undefined
+}
+
+function normalizeRequest(req: LegacyRequest) {
+  const from = req.from ?? req.source
+  const to = req.to ?? req.destination
+  const items = normalizeItems(req)
+  const deliveryType = normalizeDeliveryType(req.deliveryType)
+  const whenToStart = req.whenToStart || undefined
+  const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined
+  return {
+    id: req.id,
+    userId: req.userId,
+    from,
+    to,
+    deliveryType,
+    whenToStart,
+    primaryCost,
+    orderStatus: req.orderStatus,
+    deliveryStatus: req.deliveryStatus,
+    items,
+    createdAt: req.createdAt,
+    updatedAt: req.updatedAt,
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -20,7 +82,8 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ request: foundRequest }, { status: 200 })
+    // Always return the FINAL structure (normalized), even for legacy records.
+    return NextResponse.json({ request: normalizeRequest(foundRequest) }, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch request' },
