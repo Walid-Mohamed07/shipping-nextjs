@@ -125,8 +125,42 @@
   }
 }
 
-/* Route map: custom pins (blue = customer, red = warehouse) – no default marker bg */
-.leaflet-div-icon.route-map-pin {
-  background: transparent !important;
-  border: none !important;
+
+/* Default cursor for map */
+.leaflet-container {
+  cursor: default;
+}
+
+/* Pointer cursor when hovering over the map in editable mode */
+.leaflet-container.leaflet-grab {
+  cursor: crosshair;
+}
+
+/* Pointer cursor when clicking/dragging */
+.leaflet-container.leaflet-dragging {
+  cursor: grabbing;
+}
+
+/* Pointer cursor for clickable map (you can add a custom class) */
+.leaflet-clickable-map {
+  cursor: pointer !important;
+}
+/* When map is in editable mode, show pointer cursor */
+.leaflet-container {
+  cursor: pointer;
+}
+
+/* When dragging the map */
+.leaflet-container.leaflet-drag-target {
+  cursor: grabbing;
+}
+
+/* Default grab cursor when hovering */
+.leaflet-grab {
+  cursor: grab;
+}
+
+/* Grabbing cursor when panning */
+.leaflet-grabbing {
+  cursor: grabbing;
 }

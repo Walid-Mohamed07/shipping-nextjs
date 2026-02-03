@@ -6,6 +6,7 @@ import { Header } from "@/app/components/Header";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
+import { toast, Toaster } from "sonner";
 import Link from "next/link";
 import {
   Package,
@@ -111,17 +112,20 @@ export default function RequestDetailsPage() {
             .sort((a, b) => a.distanceKm - b.distanceKm);
           setNearbyWarehouses(withDistance);
         } catch {
-          setLocationError("Failed to load warehouses.");
+          const errorMsg = "Failed to load warehouses.";
+          setLocationError(errorMsg);
+          toast.error(errorMsg);
         } finally {
           setLocationLoading(false);
         }
       },
       (err) => {
-        setLocationError(
+        const errorMsg =
           err.code === 1
             ? "Location permission was denied."
-            : "Could not get your location. Please try again."
-        );
+            : "Could not get your location. Please try again.";
+        setLocationError(errorMsg);
+        toast.error(errorMsg);
         setLocationLoading(false);
       }
     );
@@ -149,9 +153,9 @@ export default function RequestDetailsPage() {
 
         setRequest(data.request);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch request",
-        );
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch request";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -248,6 +252,7 @@ export default function RequestDetailsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Toaster position="top-right" richColors />
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

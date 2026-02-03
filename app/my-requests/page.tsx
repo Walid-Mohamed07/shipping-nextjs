@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
+import { toast, Toaster } from "sonner";
 import Link from "next/link";
 import {
   Package,
@@ -19,16 +20,15 @@ import { Request, Address } from "@/types";
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
   if (!loc) return "-";
-  if (loc.landmark) return loc.landmark;
-  if (loc.street && loc.city && loc.country) {
-    return `${loc.street}, ${loc.city}, ${loc.country}`;
-  }
-  if (loc.street) return loc.street;
-  if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
-  if (loc.city) return loc.city;
-  if (loc.country) return loc.country;
-  return "-";
+
+  const parts = [
+    loc.country,
+    loc.city,
+  ].filter(Boolean);
+
+  return parts.length ? parts.join(", ") : "-";
 };
+
 
 export default function MyRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -56,9 +56,9 @@ export default function MyRequestsPage() {
         const data = await response.json();
         setRequests(data.requests);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch requests",
-        );
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch requests";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -88,6 +88,7 @@ export default function MyRequestsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Toaster position="top-right" richColors />
       <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -147,11 +148,9 @@ export default function MyRequestsPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-semibold text-foreground truncate">
-                          {previewItems[0]?.name || "Multiple Items"}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
                           {request.id}
-                        </p>
+                        </h3>
+                      
                       </div>
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${getStatusColor(request.deliveryStatus)}`}

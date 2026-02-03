@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { countries } from "@/constants/countries";
 import { Address } from "@/types";
 import { MapPinned, Navigation } from "lucide-react";
+import { toast } from "sonner";
 import type { AddressData } from "@/app/components/LocationMapPicker";
 
 const LocationMapPicker = dynamic(
@@ -54,6 +55,7 @@ export default function AddAddressDialog({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [showMap, setShowMap] = useState(false);
   const [mapEditable, setMapEditable] = useState(true);
 
@@ -85,14 +87,36 @@ export default function AddAddressDialog({
   };
 
   const handleSave = async () => {
-    // Basic validation
-    if (!form.country || !form.street || !form.postalCode || !form.mobile) {
-      setError(
-        "Please fill in required fields (country, street, postal code, mobile)"
-      );
+    // Reset validation errors
+    setValidationErrors({});
+    const errors: {[key: string]: boolean} = {};
+
+    // Validate required fields
+    if (!form.country) {
+      errors.country = true;
+      toast.error("Country is required");
+    }
+    if (!form.street) {
+      errors.street = true;
+      toast.error("Street is required");
+    }
+    if (!form.postalCode) {
+      errors.postalCode = true;
+      toast.error("Postal code is required");
+    }
+    if (!form.mobile) {
+      errors.mobile = true;
+      toast.error("Mobile number is required");
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setError("Please fill in all required fields");
       return;
     }
+
     setLoading(true);
+    setError("");
     try {
       const addressToSave = {
         ...form,
@@ -111,10 +135,13 @@ export default function AddAddressDialog({
       const resData = await response.json();
       const savedAddress = resData.locations?.[resData.locations.length - 1] ?? addressToSave;
       onSave(savedAddress as Address);
+      toast.success("Address saved successfully!");
       setLoading(false);
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save address");
+      const errorMessage = err instanceof Error ? err.message : "Failed to save address";
+      setError(errorMessage);
+      toast.error(errorMessage);
       setLoading(false);
     }
   };
@@ -231,7 +258,9 @@ export default function AddAddressDialog({
               value={form.country}
               onChange={handleChange}
               required
-              className="block w-full rounded border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className={`block w-full rounded border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary bg-background ${
+                validationErrors.country ? 'border-red-500' : 'border-border'
+              }`}
             >
               <option value="" disabled>
                 Select country
@@ -266,6 +295,7 @@ export default function AddAddressDialog({
               value={form.street}
               onChange={handleChange}
               required
+              className={validationErrors.street ? 'border-red-500' : ''}
             />
 
             <label className="block text-sm font-medium text-foreground mb-1">
@@ -307,6 +337,7 @@ export default function AddAddressDialog({
               value={form.postalCode}
               onChange={handleChange}
               required
+              className={validationErrors.postalCode ? 'border-red-500' : ''}
             />
 
             <label className="block text-sm font-medium text-foreground mb-1">
@@ -318,6 +349,7 @@ export default function AddAddressDialog({
               value={form.mobile}
               onChange={handleChange}
               required
+              className={validationErrors.mobile ? 'border-red-500' : ''}
             />
 
             <label className="block text-sm font-medium text-foreground mb-1">

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import AddAddressDialog from "./AddAddressDialog";
 import { useRouter } from "next/navigation";
 import type { Item } from "@/types";
+import { toast, Toaster } from "sonner";
 
 const LocationMapPicker = dynamic(
   () =>
@@ -158,12 +159,13 @@ export default function NewRequestForm() {
   // Mobile is now per address location, so default to primary location's mobile
   const [mobile, setMobile] = useState(primaryLocation.mobile || "");
   const [primaryCost, setPrimaryCost] = useState("");
-  const [estimatedTime, setEstimatedTime] = useState("");
   // Comments
   const [comments, setComments] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
+  const [itemValidationErrors, setItemValidationErrors] = useState<{[key: string]: boolean}>({});
   const router = useRouter();
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -197,25 +199,6 @@ export default function NewRequestForm() {
   const applyDeliverySurcharge = (baseCost: number) =>
     deliveryType === "fast" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
 
-  const calculateDeliveryTime = (
-    from: string,
-    to: string,
-    category: string,
-  ) => {
-    if (!from || !to) return "";
-    let min = from === to ? 2 : 5;
-    let max = from === to ? 3 : 10;
-    if (category === "Documents") {
-      min -= 1;
-      max -= 1;
-    } else if (category === "Furniture") {
-      min += 2;
-      max += 3;
-    }
-    if (min < 1) min = 1;
-    return `${min}-${max} days`;
-  };
-
   // Primary cost = base cost × delivery surcharge (Fast +25%); recalc when from, to, items, or deliveryType change
   React.useEffect(() => {
     if (debounceTimeout.current) {
@@ -227,10 +210,8 @@ export default function NewRequestForm() {
         const base = calculateCost(firstItem.category, firstItem.weight, firstItem.quantity, from, to);
         const primaryCostValue = applyDeliverySurcharge(base);
         setPrimaryCost(primaryCostValue.toFixed(2));
-        setEstimatedTime(calculateDeliveryTime(from, to, firstItem.category));
       } else {
         setPrimaryCost("");
-        setEstimatedTime("");
       }
     }, 250);
     return () => {
@@ -238,27 +219,6 @@ export default function NewRequestForm() {
     };
   }, [from, to, items, deliveryType]);
 
-  // Format estimated time as ETA: "Today 3:00 PM", "Tomorrow 10:30 AM", or "Mon, Jan 15 10:30 AM"
-  const formatWhenToStart = (estimatedTimeStr: string): string => {
-    if (!estimatedTimeStr) return "";
-    const match = estimatedTimeStr.match(/^(\d+)-(\d+)\s*days?$/i);
-    if (!match) return estimatedTimeStr;
-    const minDays = parseInt(match[1], 10) || 0;
-    const maxDays = parseInt(match[2], 10) || minDays;
-    const daysFromNow = Math.round((minDays + maxDays) / 2);
-    const eta = new Date();
-    eta.setDate(eta.getDate() + daysFromNow);
-    eta.setHours(10, 30, 0, 0);
-    const today = new Date();
-    const isToday = eta.toDateString() === today.toDateString();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const isTomorrow = eta.toDateString() === tomorrow.toDateString();
-    const timeStr = eta.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-    if (isToday) return `Today ${timeStr}`;
-    if (isTomorrow) return `Tomorrow ${timeStr}`;
-    return `${eta.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} ${timeStr}`;
-  };
 
   // ——— Media upload: max 4 images, accept image only; revoke object URLs on cleanup ———
   const MAX_MEDIA_FILES = 4;
@@ -351,16 +311,54 @@ export default function NewRequestForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-    // Use selected location for 'my' address, otherwise use manual input
+    setValidationErrors({});
+    
+    const errors: {[key: string]: boolean} = {};
+    
+    // Get selected locations
     const selectedSourceLoc = userLocations[fromAddressIdx] || {};
     const selectedDestLoc = userLocations[toAddressIdx] || {};
-    // Build source and destination objects
-    const source: any = sourceType === "my"
-      ? { ...selectedSourceLoc, pickupMode: sourcePickupMode }
-      : { ...addressForm, pickupMode: sourcePickupMode };
-    const destination: any = destType === "my"
-      ? { ...selectedDestLoc, pickupMode: destPickupMode }
-      : { ...addressForm, pickupMode: destPickupMode };
+    
+    // Validate source address
+    if (!selectedSourceLoc || Object.keys(selectedSourceLoc).length === 0) {
+      errors.sourceAddress = true;
+      toast.error("Please select a source address");
+    }
+    
+    // Validate destination address
+    if (!selectedDestLoc || Object.keys(selectedDestLoc).length === 0 || toAddressIdx === -1) {
+      errors.destinationAddress = true;
+      toast.error("Please select a destination address");
+    }
+    
+    // Validate items
+    if (items.length === 0) {
+      errors.items = true;
+      toast.error("Please add at least one item");
+    }
+    
+    // Validate when to start
+    if (!whenToStart) {
+      errors.whenToStart = true;
+      toast.error("Please set when to start");
+    }
+    
+    // Validate mobile
+    if (!mobile || mobile.trim() === "") {
+      errors.mobile = true;
+      toast.error("Please enter mobile number");
+    }
+    
+    // If there are validation errors, stop submission
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    
+    // Build source and destination objects with pickup modes
+    const source: any = { ...selectedSourceLoc, pickupMode: sourcePickupMode };
+    const destination: any = { ...selectedDestLoc, pickupMode: destPickupMode };
       
     // Convert whenToStart to ISO format
     let whenToStartISO = "";
@@ -368,11 +366,6 @@ export default function NewRequestForm() {
       whenToStartISO = new Date(whenToStart).toISOString();
     }
     
-    // Validation
-    if (!source || !destination || items.length === 0 || !primaryCost || !whenToStart) {
-      setError("Please fill in all fields, add at least one item, and set when to start");
-      return;
-    }
     setIsLoading(true);
     try {
       const requestBody = {
@@ -396,11 +389,14 @@ export default function NewRequestForm() {
         throw new Error(errData.error || "Failed to create request");
       }
       setSuccess(true);
+      toast.success("Request created successfully!");
       setTimeout(() => {
         router.push("/my-requests");
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create request");
+      const errorMessage = err instanceof Error ? err.message : "Failed to create request";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -422,6 +418,7 @@ export default function NewRequestForm() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Toaster position="top-right" richColors />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-2xl mx-auto">
           <div className="bg-card rounded-xl border border-border shadow-md overflow-hidden">
@@ -457,7 +454,11 @@ export default function NewRequestForm() {
             )}
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* ——— Section 1: Source (Origin) ——— */}
-              <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+              <section className={`space-y-3 rounded-lg border p-4 ${
+                validationErrors.sourceAddress 
+                  ? 'border-red-500 bg-red-50/20' 
+                  : 'border-border bg-muted/20'
+              }`}>
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">1</span>
                   Source (Origin)
@@ -573,7 +574,7 @@ export default function NewRequestForm() {
                 </div>
                 {sourceCoords && (
                   <div className="mt-3">
-                    <p className="text-xs text-muted-foreground mb-1">Source location on map</p>
+                    <p className="text-xs text-muted-foreground mb-1 ">Source location on map</p>
                     <LocationMapPicker
                       position={{ lat: sourceCoords.lat, lng: sourceCoords.lng }}
                       onPositionChange={() => {}}
@@ -585,7 +586,11 @@ export default function NewRequestForm() {
               </section>
 
               {/* ——— Section 3: Destination ——— */}
-              <section className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+              <section className={`space-y-3 rounded-lg border p-4 ${
+                validationErrors.destinationAddress 
+                  ? 'border-red-500 bg-red-50/20' 
+                  : 'border-border bg-muted/20'
+              }`}>
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">2</span>
                   Destination
@@ -700,49 +705,6 @@ export default function NewRequestForm() {
                   </div>
                 </div>
 
-                {/* Manual destination: when no saved address selected, use map to fill address form */}
-                {toAddressIdx === -1 && (
-                  <div className="mt-4 p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
-                    <p className="text-sm font-medium text-foreground">
-                      Enter destination address (pick on map to fill fields)
-                    </p>
-                    <LocationMapPicker
-                      position={
-                        addressForm.coordinates
-                          ? { lat: addressForm.coordinates.latitude, lng: addressForm.coordinates.longitude }
-                          : null
-                      }
-                      onPositionChange={(lat, lng) =>
-                        setAddressForm((prev) => ({
-                          ...prev,
-                          coordinates: { latitude: lat, longitude: lng },
-                        }))
-                      }
-                      onAddressData={(addressData: AddressData) => {
-                        setAddressForm((prev) => ({
-                          ...prev,
-                          street: addressData.street ?? prev.street,
-                          city: addressData.city ?? prev.city,
-                          district: addressData.district ?? prev.district,
-                          governorate: addressData.governorate ?? prev.governorate,
-                          country: addressData.country ?? prev.country,
-                          postalCode: addressData.postalCode ?? prev.postalCode,
-                        }));
-                        setTo(addressData.country ?? "");
-                      }}
-                      editable={true}
-                      height={200}
-                      showUseMyLocation
-                    />
-                    {(addressForm.street || addressForm.city || addressForm.country) && (
-                      <p className="text-xs text-muted-foreground">
-                        From map: {[addressForm.street, addressForm.city, addressForm.governorate, addressForm.country].filter(Boolean).join(", ")}
-                        {addressForm.postalCode && ` (${addressForm.postalCode})`}
-                      </p>
-                    )}
-                  </div>
-                )}
-
                 {destCoords && (
                   <div className="mt-3">
                     <p className="text-xs text-muted-foreground mb-1">Destination location on map</p>
@@ -800,7 +762,11 @@ export default function NewRequestForm() {
               </section>
 
               {/* ——— Section 5: Contact ——— */}
-              <section className="rounded-lg border border-border bg-muted/20 p-4">
+              <section className={`rounded-lg border p-4 ${
+                validationErrors.mobile 
+                  ? 'border-red-500 bg-red-50/20' 
+                  : 'border-border bg-muted/20'
+              }`}>
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2 mb-3">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary text-sm font-bold">3</span>
                   Contact
@@ -821,12 +787,17 @@ export default function NewRequestForm() {
                   disabled={isLoading}
                   required
                   style={{ maxWidth: "100%" }}
+                  className={validationErrors.mobile ? 'border-red-500' : ''}
                 />
                 </div>
               </section>
 
               {/* ——— Section 6: Items ——— */}
-              <section className="space-y-4 rounded-lg border border-border p-5 bg-muted/20">
+              <section className={`space-y-4 rounded-lg border p-5 ${
+                validationErrors.items 
+                  ? 'border-red-500 bg-red-50/20' 
+                  : 'border-border bg-muted/20'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 border-b border-primary/30 pb-2">
@@ -913,7 +884,7 @@ export default function NewRequestForm() {
                             setNewItem({ ...newItem, name: e.target.value })
                           }
                           disabled={isLoading}
-                          className="w-full"
+                          className={`w-full ${itemValidationErrors.itemName ? 'border-red-500' : ''}`}
                         />
                       </div>
                       <div>
@@ -927,7 +898,7 @@ export default function NewRequestForm() {
                           }
                           disabled={isLoading}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className={`w-full ${itemValidationErrors.itemCategory ? 'border-red-500' : ''}`}>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>{categoryOptions}</SelectContent>
@@ -944,6 +915,7 @@ export default function NewRequestForm() {
                             setNewItem({ ...newItem, dimensions: e.target.value })
                           }
                           disabled={isLoading}
+                          className={itemValidationErrors.itemDimensions ? 'border-red-500' : ''}
                         />
                       </div>
                       <div>
@@ -960,6 +932,7 @@ export default function NewRequestForm() {
                             setNewItem({ ...newItem, weight: e.target.value })
                           }
                           disabled={isLoading}
+                          className={itemValidationErrors.itemWeight ? 'border-red-500' : ''}
                         />
                       </div>
                       <div>
@@ -979,6 +952,7 @@ export default function NewRequestForm() {
                             })
                           }
                           disabled={isLoading}
+                          className={itemValidationErrors.itemQuantity ? 'border-red-500' : ''}
                         />
                       </div>
                       {/* Note (optional, multiline) */}
@@ -1035,14 +1009,38 @@ export default function NewRequestForm() {
                     <Button
                       type="button"
                       onClick={() => {
-                        if (
-                          !newItem.name ||
-                          !newItem.category ||
-                          !newItem.dimensions ||
-                          !newItem.weight ||
-                          !newItem.quantity
-                        )
+                        // Reset item validation errors
+                        setItemValidationErrors({});
+                        const errors: {[key: string]: boolean} = {};
+
+                        // Validate required fields
+                        if (!newItem.name) {
+                          errors.itemName = true;
+                          toast.error("Item name is required");
+                        }
+                        if (!newItem.category) {
+                          errors.itemCategory = true;
+                          toast.error("Category is required");
+                        }
+                        if (!newItem.dimensions) {
+                          errors.itemDimensions = true;
+                          toast.error("Dimensions are required");
+                        }
+                        if (!newItem.weight) {
+                          errors.itemWeight = true;
+                          toast.error("Weight is required");
+                        }
+                        if (!newItem.quantity) {
+                          errors.itemQuantity = true;
+                          toast.error("Quantity is required");
+                        }
+
+                        if (Object.keys(errors).length > 0) {
+                          setItemValidationErrors(errors);
+                          toast.error("Please fill in all required item fields");
                           return;
+                        }
+
                         // Create new item with proper structure
                         const itemId = `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                         const newItemObj: Item = {
@@ -1059,6 +1057,7 @@ export default function NewRequestForm() {
                           ...items,
                           newItemObj,
                         ]);
+                        toast.success("Item added successfully!");
                         // Revoke object URLs before reset to avoid memory leaks
                         newItem.mediaPreviews.forEach((url) => URL.revokeObjectURL(url));
                         setNewItem({
@@ -1101,27 +1100,13 @@ export default function NewRequestForm() {
                       disabled={isLoading}
                     >
                       <option value="normal" className="bg-background text-foreground">Normal</option>
-                      <option value="fast" className="bg-background text-foreground">Fast (+25%)</option>
+                      <option value="fast" className="bg-background text-foreground">Urgent (+25%)</option>
                     </select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Fast delivery adds a 25% surcharge to the base cost.
+                      Urgent delivery adds a 25% surcharge to the base cost.
                     </p>
                   </div>
-                  
-                  {/* When to Start - using datetime-local */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      When to Start 
-                    </label>
-                    <Input
-                      type="datetime-local"
-                      value={whenToStart}
-                      onChange={(e) => setWhenToStart(e.target.value)}
-                      disabled={isLoading}
-                      className="w-full"
-                    />
-                  </div>
-                  
+        
                   {/* Primary Cost - Read-only auto-calculated */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
@@ -1138,16 +1123,17 @@ export default function NewRequestForm() {
                     )}
                   </div>
                   
-                  {/* Estimated Time */}
+                  {/* When to Start */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Estimated Time
+                      When to Start 
                     </label>
                     <Input
-                      type="text"
-                      value={estimatedTime || "Auto-calculating..."}
-                      disabled
-                      className="w-full bg-muted text-muted-foreground"
+                      type="datetime-local"
+                      value={whenToStart}
+                      onChange={(e) => setWhenToStart(e.target.value)}
+                      disabled={isLoading}
+                      className={`w-full ${validationErrors.whenToStart ? 'border-red-500' : ''}`}
                     />
                   </div>
                 </div>

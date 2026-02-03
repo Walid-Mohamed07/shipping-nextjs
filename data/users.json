@@ -383,6 +383,28 @@
             "latitude": 30.048492990706322,
             "longitude": 31.356245325278817
           }
+        },
+        {
+          "country": "Saudi Arabia",
+          "countryCode": "",
+          "fullName": "Mohamed Ahmed ",
+          "mobile": "01006591234",
+          "street": "Amir Muhammad Ibn Abdulrahman",
+          "building": "3",
+          "city": "Riyadh",
+          "district": "Al Mansurah District",
+          "governorate": "Riyadh Region",
+          "postalCode": "22242",
+          "landmark": "next to abu abdallah",
+          "addressType": "Home",
+          "deliveryInstructions": "",
+          "primary": false,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 24.61357557156029,
+            "longitude": 46.73315048130463
+          }
         }
       ],
       "role": "admin",
