@@ -38,7 +38,6 @@ export const metadata: Metadata = {
     description: "Fast and reliable shipping services worldwide",
     images: ["/ShipHub logo icon.png"],
   },
-  generator: "v0.app",
   icons: {
     icon: "/ShipHub logo icon.png",
     apple: "/ShipHub logo icon.png",
