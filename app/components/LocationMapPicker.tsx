@@ -11,7 +11,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
-import { Pencil, Loader2, AlertCircle, RefreshCw, Navigation } from "lucide-react";
+import { Pencil, Loader2, AlertCircle, RefreshCw, Navigation, MapPin, Check } from "lucide-react";
 
 // Fix Leaflet default icon in Next.js
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })
@@ -24,6 +24,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
+
+
 
 export interface AddressData {
   street?: string;
@@ -49,7 +51,6 @@ async function fetchAddressFromCoordinates(
     const response = await fetch(
       `/api/reverse-geocode?lat=${lat}&lon=${lng}`,
       {
-        // Add cache: 'no-store' to prevent stale data
         cache: 'no-store',
       }
     );
@@ -67,7 +68,6 @@ async function fetchAddressFromCoordinates(
 
     const data = await response.json();
 
-    // Validate we have address data (Nominatim returns { address: { ... } })
     if (!data || !data.address) {
       return {
         success: false,
@@ -99,7 +99,7 @@ async function fetchAddressFromCoordinates(
   }
 }
 
-interface LocationMapPickerProps {
+export interface LocationMapPickerProps {
   /** Current position (lat, lng) */
   position: { lat: number; lng: number } | null;
   /** Called when position changes (map click in edit mode) */
@@ -110,13 +110,13 @@ interface LocationMapPickerProps {
   onEditableChange?: (editable: boolean) => void;
   /** Compact height for inline display */
   height?: number;
-  /** Called when address data is retrieved from map coordinates */
+  /** Called with address data when coordinates are reverse-geocoded */
   onAddressData?: (addressData: AddressData) => void;
-  /** Show loading indicator when fetching address */
+  /** Show loading state while fetching address */
   showLoadingState?: boolean;
-  /** Allow manual retry on error */
+  /** Allow retry on address fetch failure */
   allowRetry?: boolean;
-  /** Show "Use my location" button to get current GPS position */
+  /** Show "Use My Location" button */
   showUseMyLocation?: boolean;
 }
 
@@ -160,8 +160,6 @@ export function LocationMapPicker({
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -188,10 +186,9 @@ export function LocationMapPicker({
 
       if (result.success && result.addressData) {
         onAddressData(result.addressData);
-        setRetryCount(0); // Reset retry count on success
+        setRetryCount(0);
       } else {
         setAddressError(result.error || "Failed to fetch address");
-        // Still call onAddressData with empty data so form can continue
         onAddressData({
           street: "",
           city: "",
@@ -221,27 +218,6 @@ export function LocationMapPicker({
     setRetryCount((prev) => prev + 1);
   }, []);
 
-  const handleUseMyLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      return;
-    }
-    setIsGettingLocation(true);
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        handlePositionChange(latitude, longitude);
-        setIsGettingLocation(false);
-      },
-      () => {
-        setLocationError("Could not get your location");
-        setIsGettingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
-  }, [handlePositionChange]);
-
   if (!isClient) {
     return (
       <div
@@ -253,129 +229,84 @@ export function LocationMapPicker({
     );
   }
 
-  // Default center (Cairo) when no position
   const center = position || { lat: 30.0444, lng: 31.2357 };
   const zoom = position ? 14 : 4;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      {/* Simple header */}
+      <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            {editable
-              ? "Click on the map to set your location"
-              : position
-                ? "Your selected location"
-                : "No location set"}
-          </p>
-          {showLoadingState && isLoadingAddress && (
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-          )}
+          <span className="text-muted-foreground">
+            {editable ? "Click on map to pick location" : position ? "Location set" : "No location"}
+          </span>
+          {isLoadingAddress && <Loader2 className="w-3 h-3 animate-spin" />}
         </div>
-        <div className="flex items-center gap-2">
-          {showUseMyLocation && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleUseMyLocation}
-              disabled={isGettingLocation}
-              className="gap-1.5 shrink-0 cursor-pointer"
-            >
-              {isGettingLocation ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Navigation className="w-3.5 h-3.5" />
-              )}
-              Use my location
-            </Button>
-          )}
-          {onEditableChange && position && (
+        {onEditableChange && (
           <Button
             type="button"
             variant={editable ? "default" : "outline"}
             size="sm"
             onClick={() => onEditableChange(!editable)}
-            className="gap-1.5 shrink-0 cursor-pointer"
+            className="cursor-pointer"
           >
-            <Pencil className="w-3.5 h-3.5" />
-            {editable ? "Done" : "Edit on map"}
+            {editable ? "Done" : "Edit"}
           </Button>
-          )}
-        </div>
-      </div>
-
-      {locationError && (
-        <p className="text-sm text-destructive flex items-center gap-1.5">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {locationError}
-        </p>
-      )}
-
-      {/* Error message with optional retry button */}
-      {addressError && (
-        <div className="flex items-start justify-between gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-            <p>{addressError}</p>
-          </div>
-          {allowRetry && !isLoadingAddress && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleRetry}
-              className="h-auto p-1 hover:bg-destructive/20 shrink-0"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
-      )}
-
-      <div
-        className="rounded-lg overflow-hidden border border-border"
-        style={{ height }}
-      >
-        {isClient ? (
-          <MapContainer
-            key="leaflet-map"
-            center={[center.lat, center.lng]}
-            zoom={zoom}
-            className="h-full w-full"
-            scrollWheelZoom={true}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapClickHandler
-              editable={editable}
-              onPositionChange={handlePositionChange}
-            />
-            {position && (
-              <MapViewUpdater center={[position.lat, position.lng]} />
-            )}
-            {position && (
-              <Marker
-                position={[position.lat, position.lng]}
-                eventHandlers={{
-                  dragend: (e) => {
-                    const marker = e.target;
-                    const { lat, lng } = marker.getLatLng();
-                    handlePositionChange(lat, lng);
-                  },
-                }}
-                draggable={editable}
-              />
-            )}
-          </MapContainer>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted/50">
-            <p className="text-muted-foreground text-sm">Loading map...</p>
-          </div>
         )}
       </div>
+
+      {/* Simple error message */}
+      {addressError && (
+        <div className="flex items-center justify-between gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded p-2">
+          <span>Could not get address. {allowRetry && "Click retry or enter manually."}</span>
+          {allowRetry && !isLoadingAddress && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="text-amber-700 hover:text-amber-900 dark:text-amber-300"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Simple map container */}
+      <div className="rounded-lg overflow-hidden border border-border" style={{ height }}>
+        <MapContainer
+          center={[center.lat, center.lng]}
+          zoom={zoom}
+          className="h-full w-full z-0"
+          scrollWheelZoom={true}
+          zoomControl={true}
+          dragging={true}
+        >
+          <TileLayer
+            attribution='&copy; OpenStreetMap'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapClickHandler
+            editable={editable}
+            onPositionChange={handlePositionChange}
+          />
+          {position && <MapViewUpdater center={[position.lat, position.lng]} />}
+          {position && (
+            <Marker
+              position={[position.lat, position.lng]}
+              draggable={editable}
+              eventHandlers={{
+                dragend: (e) => {
+                  const marker = e.target;
+                  const { lat, lng } = marker.getLatLng();
+                  handlePositionChange(lat, lng);
+                },
+              }}
+            />
+          )}
+        </MapContainer>
+      </div>
+
+      
     </div>
   );
 }

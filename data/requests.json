@@ -35,13 +35,21 @@
         "deliveryInstructions": "",
         "primary": true
       },
-      "item": "Cell phone",
-      "category": "Electronics",
-      "dimensions": "15x10x0.7",
-      "weight": "0.13",
-      "quantity": 1,
-      "estimatedCost": "2.60",
-      "estimatedTime": "2-3 days",
+      "items": [
+        {
+          "id": "ITEM-1769419731959-1",
+          "name": "Cell phone",
+          "category": "Electronics",
+          "dimensions": "15x10x0.7",
+          "weight": "0.13",
+          "quantity": 1,
+          "note": "",
+          "media": []
+        }
+      ],
+      "deliveryType": "normal",
+      "whenToStart": "2026-02-05T10:00:00Z",
+      "primaryCost": "2.60",
       "orderStatus": "Accepted",
       "deliveryStatus": "In Transit",
       "sourceAddress": "20 Client St",
@@ -95,7 +103,7 @@
       "dimensions": "25x17x0.8",
       "weight": "0.5",
       "quantity": 2,
-      "estimatedCost": "8.00",
+      "primaryCost": "8.00",
       "estimatedTime": "2-3 days",
       "orderStatus": "Rejected",
       "deliveryStatus": "Cancelled",
@@ -150,7 +158,7 @@
       "dimensions": "22x15x8",
       "weight": "2.0",
       "quantity": 4,
-      "estimatedCost": "16.00",
+      "primaryCost": "16.00",
       "estimatedTime": "2-3 days",
       "orderStatus": "Pending",
       "deliveryStatus": "Pending",
@@ -205,7 +213,7 @@
       "dimensions": "30x22x1",
       "weight": "0.3",
       "quantity": 1,
-      "estimatedCost": "3.00",
+      "primaryCost": "3.00",
       "estimatedTime": "1-2 days",
       "orderStatus": "Pending",
       "deliveryStatus": "Pending",
@@ -260,7 +268,7 @@
       "dimensions": "35x25x2",
       "weight": "2.2",
       "quantity": 1,
-      "estimatedCost": "30.00",
+      "primaryCost": "30.00",
       "estimatedTime": "2-3 days",
       "orderStatus": "Pending",
       "deliveryStatus": "Pending",
@@ -315,7 +323,7 @@
       "dimensions": "20x15x10",
       "weight": "3.5",
       "quantity": 5,
-      "estimatedCost": "42.00",
+      "primaryCost": "42.00",
       "estimatedTime": "5-10 days",
       "orderStatus": "Rejected",
       "deliveryStatus": "Cancelled",
@@ -370,7 +378,7 @@
       "dimensions": "200x80x60",
       "weight": "40",
       "quantity": 1,
-      "estimatedCost": "1800.00",
+      "primaryCost": "1800.00",
       "estimatedTime": "5-10 days",
       "orderStatus": "Rejected",
       "deliveryStatus": "Cancelled",
@@ -425,7 +433,7 @@
       "dimensions": "150x200x160",
       "weight": "80",
       "quantity": 1,
-      "estimatedCost": "1200.00",
+      "primaryCost": "1200.00",
       "estimatedTime": "5-10 days",
       "orderStatus": "Accepted",
       "deliveryStatus": "Pending",
@@ -480,7 +488,7 @@
       "dimensions": "20x200x150",
       "weight": "5",
       "quantity": 4,
-      "estimatedCost": "300.00",
+      "primaryCost": "300.00",
       "estimatedTime": "5-10 days",
       "orderStatus": "Accepted",
       "deliveryStatus": "Pending",
@@ -495,36 +503,33 @@
       "createdAt": "2026-01-27T12:49:14.895Z",
       "updatedAt": "2026-01-27T12:56:34.806Z"
     },
+
     {
-      "id": "REQ-1769938783628",
+      "id": "REQ-1770104076996",
       "userId": "1769861366877",
-      "estimatedCost": "135.00",
-      "estimatedTime": "5-10 days",
-      "orderStatus": "Pending",
-      "deliveryStatus": "Pending",
-      "source": {
-        "country": "Kuwait",
+      "from": {
+        "country": "Egypt",
         "countryCode": "",
         "fullName": "Mohamed Ahmed ",
         "mobile": "01006591234",
-        "street": "22nd Street North",
-        "building": "12",
-        "city": "Ahmadi",
-        "district": "North Ahmadi",
-        "governorate": "Ahmadi Governorate",
-        "postalCode": "60012",
-        "landmark": "near to kuwait",
+        "street": "Doctor Hassn Al Sherif Street",
+        "building": "65",
+        "city": "Nasr City",
+        "district": "Nasr City",
+        "governorate": "Cairo",
+        "postalCode": "11765",
+        "landmark": "alsalam mosque",
         "addressType": "Home",
-        "deliveryInstructions": "total gas station ",
-        "primary": false,
-        "warehouseId": "wh-005",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 29.103346436272204,
-          "longitude": 48.05617332458497
+          "latitude": 30.048492990706322,
+          "longitude": 31.356245325278817
         }
       },
-      "destination": {
+      "to": {
         "country": "Saudi Arabia",
         "countryCode": "",
         "fullName": "Mohamed Ahmed ",
@@ -539,7 +544,7 @@
         "addressType": "Home",
         "deliveryInstructions": "total gas station ",
         "primary": false,
-        "warehouseId": "wh-007",
+        "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
           "latitude": 24.65237975270708,
@@ -548,15 +553,31 @@
       },
       "items": [
         {
-          "item": "pc",
-          "category": "Electronics",
-          "dimensions": "10x20x30",
+          "id": "ITEM-1770104015320-g1deywcvh",
+          "name": "abc",
+          "category": "Books",
+          "dimensions": "10x10x10",
           "weight": "1.5",
-          "quantity": 3
+          "quantity": 11,
+          "media": []
+        },
+        {
+          "id": "ITEM-1770104050829-g1ths2deb",
+          "name": "defg",
+          "category": "Books",
+          "dimensions": "20x20x20",
+          "weight": "1",
+          "quantity": 15,
+          "media": []
         }
       ],
-      "createdAt": "2026-02-01T09:39:43.628Z",
-      "updatedAt": "2026-02-01T09:39:43.628Z"
+      "deliveryType": "normal",
+      "whenToStart": "2026-02-03T10:37:00.000Z",
+      "primaryCost": "198.00",
+      "orderStatus": "Pending",
+      "deliveryStatus": "Pending",
+      "createdAt": "2026-02-03T07:34:36.996Z",
+      "updatedAt": "2026-02-03T07:34:36.996Z"
     }
   ]
 }
