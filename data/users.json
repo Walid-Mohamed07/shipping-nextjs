@@ -341,50 +341,6 @@
       "name": "Mohamed Ahmed ",
       "locations": [
         {
-          "country": "Kuwait",
-          "countryCode": "",
-          "fullName": "Mohamed Ahmed ",
-          "mobile": "01006591234",
-          "street": "22nd Street North",
-          "building": "12",
-          "city": "Ahmadi",
-          "district": "North Ahmadi",
-          "governorate": "Ahmadi Governorate",
-          "postalCode": "60012",
-          "landmark": "near to kuwait",
-          "addressType": "Home",
-          "deliveryInstructions": "total gas station ",
-          "primary": true,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 29.103346436272204,
-            "longitude": 48.05617332458497
-          }
-        },
-        {
-          "country": "Egypt",
-          "countryCode": "",
-          "fullName": "Mohamed Ahmed ",
-          "mobile": "01006591234",
-          "street": "Doctor Hassn Al Sherif Street",
-          "building": "12",
-          "city": "Nasr City",
-          "district": "Nasr City",
-          "governorate": "Cairo",
-          "postalCode": "11765",
-          "landmark": "near to kuwait",
-          "addressType": "Home",
-          "deliveryInstructions": "total gas station ",
-          "primary": false,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 30.048473,
-            "longitude": 31.356522
-          }
-        },
-        {
           "country": "Saudi Arabia",
           "countryCode": "",
           "fullName": "Mohamed Ahmed ",
@@ -410,22 +366,44 @@
           "country": "Egypt",
           "countryCode": "",
           "fullName": "Mohamed Ahmed ",
-          "mobile": "+20221931041",
+          "mobile": "01006591234",
           "street": "Doctor Hassn Al Sherif Street",
-          "building": "7",
+          "building": "65",
           "city": "Nasr City",
           "district": "Nasr City",
           "governorate": "Cairo",
           "postalCode": "11765",
-          "landmark": "near to kuwait",
+          "landmark": "alsalam mosque",
           "addressType": "Home",
-          "deliveryInstructions": "total gas station ",
+          "deliveryInstructions": "",
+          "primary": true,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 30.048492990706322,
+            "longitude": 31.356245325278817
+          }
+        },
+        {
+          "country": "Saudi Arabia",
+          "countryCode": "",
+          "fullName": "Mohamed Ahmed ",
+          "mobile": "01006591234",
+          "street": "Amir Muhammad Ibn Abdulrahman",
+          "building": "3",
+          "city": "Riyadh",
+          "district": "Al Mansurah District",
+          "governorate": "Riyadh Region",
+          "postalCode": "22242",
+          "landmark": "next to abu abdallah",
+          "addressType": "Home",
+          "deliveryInstructions": "",
           "primary": false,
           "warehouseId": "",
           "pickupMode": "Self",
           "coordinates": {
-            "latitude": 30.04849233085502,
-            "longitude": 31.356522743494423
+            "latitude": 24.61357557156029,
+            "longitude": 46.73315048130463
           }
         }
       ],
