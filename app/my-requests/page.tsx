@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
+import { toast, Toaster } from "sonner";
 import Link from "next/link";
 import {
   Package,
@@ -19,16 +20,15 @@ import { Request, Address } from "@/types";
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
   if (!loc) return "-";
-  if (loc.landmark) return loc.landmark;
-  if (loc.street && loc.city && loc.country) {
-    return `${loc.street}, ${loc.city}, ${loc.country}`;
-  }
-  if (loc.street) return loc.street;
-  if (loc.city && loc.country) return `${loc.city}, ${loc.country}`;
-  if (loc.city) return loc.city;
-  if (loc.country) return loc.country;
-  return "-";
+
+  const parts = [
+    loc.country,
+    loc.city,
+  ].filter(Boolean);
+
+  return parts.length ? parts.join(", ") : "-";
 };
+
 
 export default function MyRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -56,9 +56,9 @@ export default function MyRequestsPage() {
         const data = await response.json();
         setRequests(data.requests);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch requests",
-        );
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch requests";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -88,6 +88,7 @@ export default function MyRequestsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Toaster position="top-right" richColors />
       <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -137,55 +138,68 @@ export default function MyRequestsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {requests.map((request) => (
-              <Link key={request.id} href={`/request/${request.id}`}>
-                <div className="h-full bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground truncate">
-                        {request.item}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {request.id}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(request.deliveryStatus)}`}
-                    >
-                      {request.deliveryStatus}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span>
-                        {formatLocation(request.from ?? request.source)} → {formatLocation(request.to ?? request.destination)}
+            {requests.map((request) => {
+              // Get preview items (first 3)
+              const previewItems = (request.items || []).slice(0, 3);
+              const remaining = Math.max(0, (request.items || []).length - 3);
+              return (
+                <Link key={request.id} href={`/request/${request.id}`}>
+                  <div className="h-full bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-foreground truncate">
+                          {request.id}
+                        </h3>
+                      
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${getStatusColor(request.deliveryStatus)}`}
+                      >
+                        {request.deliveryStatus}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Tag className="w-4 h-4 flex-shrink-0" />
-                      <span>{request.category}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                      <span>{request.estimatedTime}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Banknote className="w-4 h-4 flex-shrink-0" />
-                      <span>{request.estimatedCost}</span>
-                    </div>
-                  </div>
 
-                  <div className="pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
-                    <span>
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
+                    {/* Items preview */}
+                    <div className="space-y-2 mb-4 bg-muted/50 rounded-lg p-3">
+                      {previewItems.map((item, idx) => (
+                        <div key={item.id || `item-${idx}`} className="text-sm text-foreground">
+                          • {item.name} {item.quantity > 1 ? `(×${item.quantity})` : ""}
+                        </div>
+                      ))}
+                      {remaining > 0 && (
+                        <div className="text-sm text-muted-foreground italic">
+                          +{remaining} more item{remaining !== 1 ? "s" : ""}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4 flex-shrink-0" />
+                        <span>
+                          {formatLocation(request.from ?? request.source)} → {formatLocation(request.to ?? request.destination)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <span>{request.deliveryType === "fast" ? "Fast" : "Normal"} Delivery</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Banknote className="w-4 h-4 flex-shrink-0" />
+                        <span>{request.primaryCost ? `$${request.primaryCost}` : "-"}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
+                      <span>
+                        {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : ""}
+                      </span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

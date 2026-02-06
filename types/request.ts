@@ -15,7 +15,18 @@ export enum RequestDeliveryStatus {
 
 export type DeliveryStatus = RequestDeliveryStatus | "Pending" | "In Transit" | "Delivered" | "Failed";
 export type PickupMode = "Delegate" | "Direct" | "Scheduled";
+export type DeliveryType = "normal" | "fast";
 
+export interface Item {
+  id: string;
+  name: string;
+  category: string;
+  dimensions: string;
+  weight: string;
+  quantity: number;
+  note?: string;
+  media: string[];
+}
 
 export interface ShippingItem {
   item: string;
@@ -30,9 +41,13 @@ export interface Request {
   userId: string;
   source: Address;
   destination: Address;
-  items: ShippingItem[];
-  estimatedCost: string;
-  estimatedTime: string;
+  from?: Address;
+  to?: Address;
+  items: Item[];
+  deliveryType: DeliveryType;
+  whenToStart?: string;
+  primaryCost?: string;
+  estimatedTime?: string;
   orderStatus: OrderStatus;
   deliveryStatus: DeliveryStatus;
   createdAt?: string;
