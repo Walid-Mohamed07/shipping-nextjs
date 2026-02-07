@@ -23,7 +23,12 @@ import {
   Truck,
   Box,
 } from "lucide-react";
-import { Request, Address, Warehouse as WarehouseType, RequestDeliveryStatus } from "@/types";
+import {
+  Request,
+  Address,
+  Warehouse as WarehouseType,
+  RequestDeliveryStatus,
+} from "@/types";
 import { getDistanceKm } from "@/lib/utils";
 
 // Helper to format a location object for display
@@ -45,7 +50,10 @@ const statusSteps = [
   { name: RequestDeliveryStatus.PICKED_UP_SOURCE, icon: MapPin },
   { name: RequestDeliveryStatus.WAREHOUSE_SOURCE_RECEIVED, icon: Warehouse },
   { name: RequestDeliveryStatus.IN_TRANSIT, icon: Truck },
-  { name: RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED, icon: Warehouse },
+  {
+    name: RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED,
+    icon: Warehouse,
+  },
   { name: RequestDeliveryStatus.PICKED_UP_DESTINATION, icon: MapPin },
   { name: RequestDeliveryStatus.DELIVERED, icon: CheckCircle2 },
 ];
@@ -101,7 +109,7 @@ export default function RequestDetailsPage() {
             (w) =>
               w.latitude != null &&
               w.longitude != null &&
-              w.status === "active"
+              w.status === "active",
           );
           const withDistance = withCoords
             .map((w) => ({
@@ -127,7 +135,7 @@ export default function RequestDetailsPage() {
         setLocationError(errorMsg);
         toast.error(errorMsg);
         setLocationLoading(false);
-      }
+      },
     );
   };
 
@@ -153,7 +161,8 @@ export default function RequestDetailsPage() {
 
         setRequest(data.request);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to fetch request";
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch request";
         setError(errorMessage);
         toast.error(errorMessage);
       } finally {
@@ -277,26 +286,29 @@ export default function RequestDetailsPage() {
                 </h1>
               </div>
               <div className="flex gap-2">
-                   <span
-                  className={`px-4 py-2 rounded-full text-sm font-semibold ${getOrderStatusBadgeColor(request.orderStatus)}`}
+                <span
+                  className={`px-4 py-2 w-max rounded-full text-sm font-semibold ${getOrderStatusBadgeColor(request.requestStatus)}`}
                 >
-                  Order: {request.orderStatus}
+                  Order: {request.requestStatus}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Live Tracking Map - Only show when In Transit or later */}
-          {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT || 
-            request.deliveryStatus === RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
-            request.deliveryStatus === RequestDeliveryStatus.PICKED_UP_DESTINATION) && 
-            request.source && request.destination && (
-            <LiveTrackingMap
-              from={request.source.country}
-              to={request.destination.country}
-              isInTransit={true}
-            />
-          )}
+          {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT ||
+            request.deliveryStatus ===
+              RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
+            request.deliveryStatus ===
+              RequestDeliveryStatus.PICKED_UP_DESTINATION) &&
+            request.source &&
+            request.destination && (
+              <LiveTrackingMap
+                from={request.source.country}
+                to={request.destination.country}
+                isInTransit={true}
+              />
+            )}
 
           {/* Location permission dialog - ask before sharing */}
           {showLocationPrompt && (
@@ -312,8 +324,8 @@ export default function RequestDetailsPage() {
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       ShipHub would like to use your location to find warehouses
-                      within {NEARBY_RADIUS_KM} km of you. Your location is never
-                      stored or shared.
+                      within {NEARBY_RADIUS_KM} km of you. Your location is
+                      never stored or shared.
                     </p>
                   </div>
                 </div>
@@ -341,32 +353,37 @@ export default function RequestDetailsPage() {
             <h2 className="text-xl font-semibold text-foreground mb-8">
               Shipment Progress
             </h2>
-            
+
             {/* Timeline Container */}
             <div className="relative">
               {/* Desktop: Horizontal Timeline */}
               <div className="hidden md:block">
                 {/* Progress Bar Background */}
                 <div className="absolute top-6 left-0 right-0 h-1 bg-muted rounded-full" />
-                
+
                 {/* Progress Bar Fill */}
-                <div 
+                <div
                   className="absolute top-6 left-0 h-1 bg-primary rounded-full transition-all duration-500"
                   style={{
-                    width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`
+                    width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`,
                   }}
                 />
-                
+
                 {/* Steps */}
                 <div className="flex justify-between relative z-10">
                   {statusSteps.map((step, index) => {
                     const Icon = step.icon;
-                    const currentIndex = getCurrentStatusIndex(request.deliveryStatus);
+                    const currentIndex = getCurrentStatusIndex(
+                      request.deliveryStatus,
+                    );
                     const isCompleted = index <= currentIndex;
                     const isCurrent = index === currentIndex;
 
                     return (
-                      <div key={step.name} className="flex flex-col items-center">
+                      <div
+                        key={step.name}
+                        className="flex flex-col items-center"
+                      >
                         <div
                           className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-all border-2 ${
                             isCompleted
@@ -397,7 +414,9 @@ export default function RequestDetailsPage() {
               <div className="md:hidden space-y-6">
                 {statusSteps.map((step, index) => {
                   const Icon = step.icon;
-                  const currentIndex = getCurrentStatusIndex(request.deliveryStatus);
+                  const currentIndex = getCurrentStatusIndex(
+                    request.deliveryStatus,
+                  );
                   const isCompleted = index <= currentIndex;
                   const isCurrent = index === currentIndex;
 
@@ -437,7 +456,11 @@ export default function RequestDetailsPage() {
                           {step.name}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {isCurrent ? "Current step" : isCompleted ? "Completed" : "Pending"}
+                          {isCurrent
+                            ? "Current step"
+                            : isCompleted
+                              ? "Completed"
+                              : "Pending"}
                         </p>
                       </div>
                     </div>
@@ -450,29 +473,46 @@ export default function RequestDetailsPage() {
             <div className="mt-8 pt-6 border-t border-border">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-primary/5 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Current Status</p>
-                  <p className="text-sm font-semibold text-foreground">{request.deliveryStatus}</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Current Delivery Status
+                  </p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {request.deliveryStatus}
+                  </p>
                 </div>
                 <div className="bg-primary/5 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">Progress</p>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-muted rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-primary h-2 rounded-full transition-all"
                         style={{
-                          width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`
+                          width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`,
                         }}
                       />
                     </div>
                     <span className="text-xs font-medium text-foreground ml-2">
-                      {Math.round((getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100)}%
+                      {Math.round(
+                        (getCurrentStatusIndex(request.deliveryStatus) /
+                          (statusSteps.length - 1)) *
+                          100,
+                      )}
+                      %
                     </span>
                   </div>
                 </div>
                 <div className="bg-primary/5 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Steps Remaining</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Steps Remaining
+                  </p>
                   <p className="text-sm font-semibold text-foreground">
-                    {Math.max(0, statusSteps.length - 1 - getCurrentStatusIndex(request.deliveryStatus))} of {statusSteps.length - 1}
+                    {Math.max(
+                      0,
+                      statusSteps.length -
+                        1 -
+                        getCurrentStatusIndex(request.deliveryStatus),
+                    )}{" "}
+                    of {statusSteps.length - 1}
                   </p>
                 </div>
               </div>
@@ -491,14 +531,22 @@ export default function RequestDetailsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">From</p>
                   <p className="text-lg font-medium text-foreground">
-                    {request.source ? formatLocation(request.source) : (request.from ? formatLocation(request.from) : "-")}
+                    {request.source
+                      ? formatLocation(request.source)
+                      : request.from
+                        ? formatLocation(request.from)
+                        : "-"}
                   </p>
                 </div>
                 <div className="border-l-2 border-primary h-8" />
                 <div>
                   <p className="text-sm text-muted-foreground">To</p>
                   <p className="text-lg font-medium text-foreground">
-                    {request.destination ? formatLocation(request.destination) : (request.to ? formatLocation(request.to) : "-")}
+                    {request.destination
+                      ? formatLocation(request.destination)
+                      : request.to
+                        ? formatLocation(request.to)
+                        : "-"}
                   </p>
                 </div>
               </div>
@@ -510,11 +558,14 @@ export default function RequestDetailsPage() {
                 <Package className="w-5 h-5 text-primary" />
                 Shipment Items ({request.items?.length || 0})
               </h3>
-              
+
               <div className="max-h-52 overflow-y-auto pr-2 space-y-4   p-2 rounded-md">
                 {request.items && request.items.length > 0 ? (
                   request.items.map((item, idx) => (
-                    <div key={item.id || `item-${idx}`} className="border border-border rounded-lg p-4 bg-white dark:bg-gray-900">
+                    <div
+                      key={item.id || `item-${idx}`}
+                      className="border border-border rounded-lg p-4 bg-white dark:bg-gray-900"
+                    >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <p className="font-semibold text-foreground flex items-center gap-2">
@@ -523,7 +574,9 @@ export default function RequestDetailsPage() {
                             </span>
                             {item.name}
                           </p>
-                          <p className="text-sm text-muted-foreground mt-1">{item.category}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {item.category}
+                          </p>
                         </div>
                         {item.quantity > 1 && (
                           <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
@@ -533,27 +586,43 @@ export default function RequestDetailsPage() {
                       </div>
                       <div className="grid grid-cols-3 gap-3 text-sm">
                         <div>
-                          <p className="text-xs text-muted-foreground">Dimensions</p>
-                          <p className="font-medium text-foreground">{item.dimensions}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Dimensions
+                          </p>
+                          <p className="font-medium text-foreground">
+                            {item.dimensions}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Weight</p>
-                          <p className="font-medium text-foreground">{item.weight} kg</p>
+                          <p className="text-xs text-muted-foreground">
+                            Weight
+                          </p>
+                          <p className="font-medium text-foreground">
+                            {item.weight} kg
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Quantity</p>
-                          <p className="font-medium text-foreground">{item.quantity}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Quantity
+                          </p>
+                          <p className="font-medium text-foreground">
+                            {item.quantity}
+                          </p>
                         </div>
                       </div>
                       {item.note && (
                         <div className="mt-3 pt-3 border-t border-border">
                           <p className="text-xs text-muted-foreground">Note</p>
-                          <p className="text-sm text-foreground italic">{item.note}</p>
+                          <p className="text-sm text-foreground italic">
+                            {item.note}
+                          </p>
                         </div>
                       )}
                       {item.media && item.media.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground mb-2">Media ({item.media.length})</p>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Media ({item.media.length})
+                          </p>
                           <div className="flex gap-2 flex-wrap">
                             {item.media.map((mediaUrl, mIdx) => (
                               <img
@@ -584,17 +653,21 @@ export default function RequestDetailsPage() {
                   Requested Date
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {request.createdAt ? new Date(request.createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }) : "-"}
+                  {request.createdAt
+                    ? new Date(request.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : "-"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {request.createdAt ? new Date(request.createdAt).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }) : "-"}
+                  {request.createdAt
+                    ? new Date(request.createdAt).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "-"}
                 </p>
               </div>
 
@@ -604,17 +677,21 @@ export default function RequestDetailsPage() {
                   When to Start (ETA)
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {request.whenToStart ? new Date(request.whenToStart).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }) : "-"}
+                  {request.startTime
+                    ? new Date(request.startTime).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : "-"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {request.whenToStart ? new Date(request.whenToStart).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }) : "-"}
+                  {request.startTime
+                    ? new Date(request.startTime).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "-"}
                 </p>
               </div>
 
@@ -623,11 +700,15 @@ export default function RequestDetailsPage() {
                   <Truck className="w-5 h-5 text-primary" />
                   Delivery Type
                 </h3>
-                <p className="text-base font-medium text-foreground capitalize">
-                  {request.deliveryType === "fast" ? "🔥 Fast Delivery" : "Normal Delivery"}
+                <p className="text-base font-medium w-max text-foreground capitalize">
+                  {request.deliveryType === "Urgent"
+                    ? "🔥 Urgent Delivery"
+                    : "Normal Delivery"}
                 </p>
-                {request.deliveryType === "fast" && (
-                  <p className="text-xs text-muted-foreground mt-1">+25% surcharge applied</p>
+                {request.deliveryType === "Urgent" && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +25% surcharge applied
+                  </p>
                 )}
               </div>
 
@@ -648,17 +729,21 @@ export default function RequestDetailsPage() {
                 Last Updated
               </h3>
               <p className="text-sm text-muted-foreground">
-                {request.updatedAt ? new Date(request.updatedAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }) : "-"}
+                {request.updatedAt
+                  ? new Date(request.updatedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "-"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {request.updatedAt ? new Date(request.updatedAt).toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }) : "-"}
+                {request.updatedAt
+                  ? new Date(request.updatedAt).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "-"}
               </p>
             </div>
           </div>
