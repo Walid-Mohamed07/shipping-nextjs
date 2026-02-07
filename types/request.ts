@@ -1,21 +1,26 @@
 import { Address } from "./address";
 
-export type OrderStatus = "Accepted" | "Pending" | "Rejected" | "Cancelled";
+export type RequestStatus =
+  | "Accepted"
+  | "Pending"
+  | "Rejected"
+  | "Cancelled"
+  | "Action needed";
 
 export enum RequestDeliveryStatus {
-  PENDING = 'Pending',
-  PICKED_UP_SOURCE = 'Picked Up Source',
-  WAREHOUSE_SOURCE_RECEIVED = 'Warehouse Source Received',
-  IN_TRANSIT = 'In Transit',
-  WAREHOUSE_DESTINATION_RECEIVED = 'Warehouse Destination Received',
-  PICKED_UP_DESTINATION = 'Picked Up Destination',
-  DELIVERED = 'Delivered',
-  FAILED = 'Failed',
+  PENDING = "Pending",
+  PICKED_UP_SOURCE = "Picked Up Source",
+  WAREHOUSE_SOURCE_RECEIVED = "Warehouse Source Received",
+  IN_TRANSIT = "In Transit",
+  WAREHOUSE_DESTINATION_RECEIVED = "Warehouse Destination Received",
+  PICKED_UP_DESTINATION = "Picked Up Destination",
+  DELIVERED = "Delivered",
+  FAILED = "Failed",
 }
 
-export type DeliveryStatus = RequestDeliveryStatus | "Pending" | "In Transit" | "Delivered" | "Failed";
-export type PickupMode = "Delegate" | "Direct" | "Scheduled";
-export type DeliveryType = "normal" | "fast";
+export type DeliveryStatus = RequestDeliveryStatus;
+export type PickupMode = "Delegate" | "Self";
+export type DeliveryType = "Normal" | "Urgent";
 
 export interface Item {
   id: string;
@@ -45,10 +50,10 @@ export interface Request {
   to?: Address;
   items: Item[];
   deliveryType: DeliveryType;
-  whenToStart?: string;
+  startTime?: string;
   primaryCost?: string;
   estimatedTime?: string;
-  orderStatus: OrderStatus;
+  requestStatus: RequestStatus;
   deliveryStatus: DeliveryStatus;
   createdAt?: string;
   updatedAt?: string;
