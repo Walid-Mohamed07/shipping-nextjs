@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { Header } from "@/app/components/Header";
-import { AdminOrdersTab } from "@/app/components/AdminOrdersTab";
+import { AdminRequestsTab } from "@/app/components/AdminRequestsTab";
 import { AdminAssignmentTab } from "@/app/components/AdminAssignmentTab";
 import { WarehouseManagementTab } from "@/app/components/AdminWarehouseManagementTab";
 import { AdminVehicleRulesTab } from "@/app/components/AdminVehicleRulesTab";
@@ -21,7 +21,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
     | "warehouses"
-    | "orders"
+    | "requests"
     | "assignments"
     | "vehicle-rules"
     | "vehicles"
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
     | "override"
     | "metrics"
     | "audit"
-  >("orders");
+  >("requests");
   const [acceptedOrderIds, setAcceptedOrderIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -56,11 +56,9 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            Admin Dashboard
-          </h1>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
           <p className="text-muted-foreground">
-            Manage shipping orders and assignments
+            Manage shipping requests and assignments
           </p>
         </div>
 
@@ -74,12 +72,12 @@ export default function AdminDashboard() {
             Warehouses
           </Button>
           <Button
-            onClick={() => setActiveTab("orders")}
-            variant={activeTab === "orders" ? "default" : "outline"}
-            className={activeTab === "orders" ? "" : "bg-transparent"}
+            onClick={() => setActiveTab("requests")}
+            variant={activeTab === "requests" ? "default" : "outline"}
+            className={activeTab === "requests" ? "" : "bg-transparent"}
             size="sm"
           >
-            Orders
+            Requests
           </Button>
           <Button
             onClick={() => setActiveTab("assignments")}
@@ -141,15 +139,15 @@ export default function AdminDashboard() {
 
         <Card className="p-6">
           {activeTab === "warehouses" && <WarehouseManagementTab />}
-          {activeTab === "orders" && (
-            <AdminOrdersTab
-              onOrderAccepted={(orderId) => {
-                setAcceptedOrderIds([...acceptedOrderIds, orderId]);
+          {activeTab === "requests" && (
+            <AdminRequestsTab
+              onRequestAccepted={(requestId) => {
+                setAcceptedRequestIds([...acceptedRequestIds, requestId]);
               }}
             />
           )}
           {activeTab === "assignments" && (
-            <AdminAssignmentTab acceptedOrderIds={acceptedOrderIds} />
+            <AdminAssignmentTab acceptedRequestIds={acceptedRequestIds} />
           )}
           {activeTab === "vehicles" && <AdminVehicleManagementTab />}
           {activeTab === "vehicle-rules" && <AdminVehicleRulesTab />}
