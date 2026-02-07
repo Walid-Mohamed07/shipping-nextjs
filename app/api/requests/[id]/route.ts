@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
-type LegacyRequest = any
+type LegacyRequest = any;
 
 function normalizeItems(req: LegacyRequest) {
   if (Array.isArray(req.items) && req.items.length > 0) {
@@ -15,9 +15,15 @@ function normalizeItems(req: LegacyRequest) {
       quantity: Number(it.quantity ?? 1) || 1,
       note: it.note || undefined,
       media: Array.isArray(it.media) ? it.media.slice(0, 4) : [],
-    }))
+    }));
   }
-  if (req.item || req.category || req.dimensions || req.weight || req.quantity) {
+  if (
+    req.item ||
+    req.category ||
+    req.dimensions ||
+    req.weight ||
+    req.quantity
+  ) {
     return [
       {
         id: `ITEM-${req.id || Date.now()}-1`,
@@ -29,65 +35,69 @@ function normalizeItems(req: LegacyRequest) {
         note: req.note || undefined,
         media: Array.isArray(req.media) ? req.media.slice(0, 4) : [],
       },
-    ]
+    ];
   }
-  return []
+  return [];
 }
 
-function normalizeDeliveryType(value: any): "normal" | "fast" | undefined {
-  const v = String(value || "").toLowerCase().trim()
-  if (v === "fast") return "fast"
-  if (v === "normal") return "normal"
-  return undefined
+function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
+  const v = String(value || "")
+    .toLowerCase()
+    .trim();
+  if (v === "urgent") return "Urgent";
+  if (v === "normal") return "Normal";
+  return undefined;
 }
 
 function normalizeRequest(req: LegacyRequest) {
-  const from = req.from ?? req.source
-  const to = req.to ?? req.destination
-  const items = normalizeItems(req)
-  const deliveryType = normalizeDeliveryType(req.deliveryType)
-  const whenToStart = req.whenToStart || undefined
-  const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined
+  const from = req.from ?? req.source;
+  const to = req.to ?? req.destination;
+  const items = normalizeItems(req);
+  const deliveryType = normalizeDeliveryType(req.deliveryType);
+  const startTime = req.startTime || undefined;
+  const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined;
   return {
     id: req.id,
     userId: req.userId,
     from,
     to,
     deliveryType,
-    whenToStart,
+    startTime,
     primaryCost,
-    orderStatus: req.orderStatus,
+    requestStatus: req.requestStatus,
     deliveryStatus: req.deliveryStatus,
     items,
     createdAt: req.createdAt,
     updatedAt: req.updatedAt,
-  }
+  };
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params
-    const requestsPath = path.join(process.cwd(), 'data', 'requests.json')
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, 'utf-8'))
+    const { id } = await params;
+    const requestsPath = path.join(process.cwd(), "data", "requests.json");
+    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
 
-    const foundRequest = requestsData.requests.find((req: any) => req.id === id)
+    const foundRequest = requestsData.requests.find(
+      (req: any) => req.id === id,
+    );
 
     if (!foundRequest) {
-      return NextResponse.json(
-        { error: 'Request not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
     // Always return the FINAL structure (normalized), even for legacy records.
-    return NextResponse.json({ request: normalizeRequest(foundRequest) }, { status: 200 })
+    return NextResponse.json(
+      { request: normalizeRequest(foundRequest) },
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to fetch request' },
-      { status: 500 }
-    )
+      { error: "Failed to fetch request" },
+      { status: 500 },
+    );
   }
 }
