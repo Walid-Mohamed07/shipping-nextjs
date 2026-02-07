@@ -52,23 +52,31 @@ function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
 function normalizeRequest(req: LegacyRequest) {
   const from = req.from ?? req.source;
   const to = req.to ?? req.destination;
+  const source = req.source ?? req.from;
+  const destination = req.destination ?? req.to;
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime || undefined;
-  const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined;
+  const estimatedCost = req.estimatedCost ?? req.primaryCost ?? undefined;
   return {
     id: req.id,
     userId: req.userId,
     from,
     to,
+    source,
+    destination,
     deliveryType,
     startTime,
-    primaryCost,
+    estimatedCost,
     requestStatus: req.requestStatus,
     deliveryStatus: req.deliveryStatus,
     items,
+    costOffers: req.costOffers || undefined,
+    comment: req.comment || undefined,
     createdAt: req.createdAt,
     updatedAt: req.updatedAt,
+    selectedCompany: req.selectedCompany || undefined,
+    activityHistory: req.activityHistory || undefined,
   };
 }
 

@@ -217,67 +217,47 @@
       "locations": [
         {
           "country": "Egypt",
-          "countryCode": "+20",
+          "countryCode": "",
           "fullName": "Walid Mohamed",
-          "mobile": "+201112223334",
-          "street": "20 Client St",
-          "building": "",
+          "mobile": "12345678",
+          "street": "Al Geish Road",
+          "building": "5",
           "city": "Alexandria",
-          "district": "Montaza",
+          "district": "",
           "governorate": "Alexandria",
-          "postalCode": "21532",
-          "landmark": "Stanley Bridge",
+          "postalCode": "21563",
+          "landmark": "next to messi house",
           "addressType": "Home",
-          "deliveryInstructions": "Ring bell",
-          "primary": false
+          "deliveryInstructions": "",
+          "primary": false,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 31.201354469233138,
+            "longitude": 29.89943504246185
+          }
         },
         {
           "country": "Egypt",
           "countryCode": "",
           "fullName": "Walid Mohamed",
-          "mobile": "123456",
-          "street": "El Ensherah st",
-          "building": "",
+          "mobile": "12345678",
+          "street": "Gesr Al Suez Street",
+          "building": "6",
           "city": "Cairo",
           "district": "",
-          "governorate": "",
-          "postalCode": "123",
-          "landmark": "Taha Hussein axis",
+          "governorate": "Cairo",
+          "postalCode": "11595",
+          "landmark": "next to Hesham Barkat  ",
           "addressType": "Home",
           "deliveryInstructions": "",
-          "primary": true
-        },
-        {
-          "country": "Kuwait",
-          "countryCode": "",
-          "fullName": "Walid Mohamed",
-          "mobile": "4635345234324",
-          "street": "AD st",
-          "building": "2",
-          "city": "Abo Dabi",
-          "district": "",
-          "governorate": "",
-          "postalCode": "23244",
-          "landmark": "Near Diamond Mall",
-          "addressType": "Home",
-          "deliveryInstructions": "Call on arrival",
-          "primary": false
-        },
-        {
-          "country": "Saudi Arabia",
-          "countryCode": "",
-          "fullName": "Walid Mohamed",
-          "mobile": "43657546345345",
-          "street": "45 st",
-          "building": "31",
-          "city": "Riyadh",
-          "district": "",
-          "governorate": "",
-          "postalCode": "45462",
-          "landmark": "Before Riyadh club",
-          "addressType": "Office",
-          "deliveryInstructions": "",
-          "primary": false
+          "primary": false,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 30.13063150596107,
+            "longitude": 31.37140273873229
+          }
         }
       ],
       "createdAt": "2026-01-22T10:00:00Z"
@@ -407,7 +387,7 @@
           }
         }
       ],
-      "role": "admin",
+      "role": "client",
       "createdAt": "2026-01-31T12:09:26.877Z"
     }
   ]

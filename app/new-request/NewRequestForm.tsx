@@ -152,8 +152,8 @@ export default function NewRequestForm() {
     mediaFiles: [] as File[],
     mediaPreviews: [] as string[],
   });
-  // Delivery type: "normal" | "fast"
-  const [deliveryType, setDeliveryType] = useState<"normal" | "fast">("normal");
+  // Delivery type: "Normal" | "Urgent"
+  const [deliveryType, setDeliveryType] = useState<"Normal" | "Urgent">("Normal");
   // When to start (ISO format)
   const [whenToStart, setWhenToStart] = useState<string>("");
   // Mobile is now per address location, so default to primary location's mobile
@@ -197,7 +197,7 @@ export default function NewRequestForm() {
   // Apply delivery type surcharge: Fast = +25% on base cost
   const FAST_DELIVERY_SURCHARGE = 1.25;
   const applyDeliverySurcharge = (baseCost: number) =>
-    deliveryType === "fast" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
+    deliveryType === "Urgent" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
 
   // Primary cost = base cost × delivery surcharge (Fast +25%); recalc when from, to, items, or deliveryType change
   React.useEffect(() => {
@@ -366,18 +366,29 @@ export default function NewRequestForm() {
       whenToStartISO = new Date(whenToStart).toISOString();
     }
     
+    // Format items with new media structure (convert to { url, existing } objects)
+    const formattedItems = items.map(item => ({
+      ...item,
+      item: item.name, // Add "item" field for compatibility
+      media: item.media?.map(url => ({
+        url: url,
+        existing: true
+      })) || []
+    }));
+    
     setIsLoading(true);
     try {
       const requestBody = {
         userId: user?.id,
         source,
         destination,
-        items,
+        items: formattedItems,
         deliveryType,
-        whenToStart: whenToStartISO,
-        primaryCost,
-        orderStatus: "Pending",
+        startTime: whenToStartISO,
+        cost: primaryCost,
+        requestStatus: "Pending",
         deliveryStatus: "Pending",
+        comment: comments || ""
       };
       const response = await fetch("/api/requests", {
         method: "POST",
@@ -390,6 +401,39 @@ export default function NewRequestForm() {
       }
       setSuccess(true);
       toast.success("Request created successfully!");
+      
+      // Reset form inputs
+      setItems([]);
+      setNewItem({
+        name: "",
+        category: "",
+        dimensions: "",
+        weight: "",
+        quantity: 1,
+        note: "",
+        mediaFiles: [],
+        mediaPreviews: [],
+      });
+      setDeliveryType("Normal");
+      setWhenToStart("");
+      setComments("");
+      setPrimaryCost("");
+      setMobile(primaryLocation.mobile || "");
+      
+      // Reset address selections to primary location
+      setFromAddressIdx(0);
+      setToAddressIdx(-1);
+      setFrom(primaryLocation.country || "");
+      setFromAddress(primaryLocation.street || "");
+      setFromPostalCode(primaryLocation.postalCode || "");
+      setTo("");
+      setToAddress("");
+      setToPostalCode("");
+      
+      // Reset pickup modes
+      setSourcePickupMode("Self");
+      setDestPickupMode("Self");
+      
       setTimeout(() => {
         router.push("/my-requests");
       }, 2000);
@@ -1096,11 +1140,11 @@ export default function NewRequestForm() {
                     <select
                       className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
                       value={deliveryType}
-                      onChange={(e) => setDeliveryType(e.target.value as "normal" | "fast")}
+                      onChange={(e) => setDeliveryType(e.target.value as "Normal" | "Urgent")}
                       disabled={isLoading}
                     >
-                      <option value="normal" className="bg-background text-foreground">Normal</option>
-                      <option value="fast" className="bg-background text-foreground">Urgent (+25%)</option>
+                      <option value="Normal" className="bg-background text-foreground">Normal</option>
+                      <option value="Urgent" className="bg-background text-foreground">Urgent (+25%)</option>
                     </select>
                     <p className="text-xs text-muted-foreground mt-1">
                       Urgent delivery adds a 25% surcharge to the base cost.
@@ -1118,8 +1162,8 @@ export default function NewRequestForm() {
                       disabled
                       className="w-full bg-muted text-muted-foreground"
                     />
-                    {deliveryType === "fast" && primaryCost && (
-                      <p className="text-xs text-muted-foreground mt-1">Includes Fast delivery surcharge (+25%)</p>
+                    {deliveryType === "Urgent" && primaryCost && (
+                      <p className="text-xs text-muted-foreground mt-1">Includes Urgent delivery surcharge (+25%)</p>
                     )}
                   </div>
                   

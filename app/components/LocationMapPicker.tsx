@@ -129,8 +129,12 @@ function MapClickHandler({
 }) {
   useMapEvents({
     click(e) {
-      if (editable) {
-        onPositionChange(e.latlng.lat, e.latlng.lng);
+      if (editable && e.latlng) {
+        try {
+          onPositionChange(e.latlng.lat, e.latlng.lng);
+        } catch (error) {
+          console.error("Error handling map click:", error);
+        }
       }
     },
   });
@@ -140,7 +144,13 @@ function MapClickHandler({
 function MapViewUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, 14);
+    try {
+      if (map && map.getContainer() && map._isReady !== false) {
+        map.setView(center, 14);
+      }
+    } catch (error) {
+      console.error("Error updating map view:", error);
+    }
   }, [map, center]);
   return null;
 }
@@ -274,12 +284,14 @@ export function LocationMapPicker({
       {/* Simple map container */}
       <div className="rounded-lg overflow-hidden border border-border" style={{ height }}>
         <MapContainer
+          key={`map-${position?.lat}-${position?.lng}`}
           center={[center.lat, center.lng]}
           zoom={zoom}
           className="h-full w-full z-0"
           scrollWheelZoom={true}
           zoomControl={true}
           dragging={true}
+          style={{ height: "100%", width: "100%" }}
         >
           <TileLayer
             attribution='&copy; OpenStreetMap'
@@ -296,9 +308,15 @@ export function LocationMapPicker({
               draggable={editable}
               eventHandlers={{
                 dragend: (e) => {
-                  const marker = e.target;
-                  const { lat, lng } = marker.getLatLng();
-                  handlePositionChange(lat, lng);
+                  try {
+                    const marker = e.target;
+                    if (marker && typeof marker.getLatLng === 'function') {
+                      const { lat, lng } = marker.getLatLng();
+                      handlePositionChange(lat, lng);
+                    }
+                  } catch (error) {
+                    console.error("Error handling marker drag:", error);
+                  }
                 },
               }}
             />
