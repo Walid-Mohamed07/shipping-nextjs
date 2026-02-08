@@ -14,6 +14,8 @@ import {
   MapPin,
   Tag,
   Banknote,
+  Wrench,
+  BoxSelect,
 } from "lucide-react";
 import { Request, Address } from "@/types";
 
@@ -189,6 +191,24 @@ export default function MyRequestsPage() {
                       )}
                     </div>
 
+                    {/* Services badges */}
+                    {request.items && request.items.some(item => item.services && (item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly || item.services.packaging)) && (
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {request.items.some(item => item.services?.canBeAssembledDisassembled || item.services?.assemblyDisassembly) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            <Wrench className="w-3 h-3" />
+                            Assembly
+                          </span>
+                        )}
+                        {request.items.some(item => item.services?.packaging) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                            <BoxSelect className="w-3 h-3" />
+                            Packaging
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="w-4 h-4 flex-shrink-0" />
@@ -202,18 +222,17 @@ export default function MyRequestsPage() {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Banknote className="w-4 h-4 flex-shrink-0" />
-                        {request.selectedCompany ? (
-                          <span className="font-medium text-foreground">
-                            ${Number(request.selectedCompany.cost).toFixed(2)}
-                            <span className="text-xs text-muted-foreground font-normal ml-1">({request.selectedCompany.name})</span>
-                          </span>
-                        ) : (
-                          <span>
-                            {(request as any).estimatedCost
-                              ? `$${Number((request as any).estimatedCost).toFixed(2)}`
-                              : "-"}
-                            <span className="text-xs ml-1">(estimated)</span>
-                          </span>
+                        <span className="font-medium text-foreground">
+                          {request.selectedCompany
+                            ? `$${Number(request.selectedCompany.cost).toFixed(2)}`
+                            : request.cost
+                            ? `$${Number(request.cost).toFixed(2)}`
+                            : request.primaryCost
+                            ? `$${Number(request.primaryCost).toFixed(2)}`
+                            : "-"}
+                        </span>
+                        {!request.selectedCompany && (request.primaryCost || request.cost) && (
+                          <span className="text-xs ml-1">(estimated)</span>
                         )}
                       </div>
                     </div>

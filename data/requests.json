@@ -1,200 +1,28 @@
 {
   "requests": [
     {
-      "id": "a0857fbb-4866-4ad7-a27d-8796f831aa81",
-      "userId": "walid-client-001",
-      "source": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Walid Mohamed",
-        "mobile": "+201112223334",
-        "street": "20 Client St",
-        "building": "14",
-        "city": "Alexandria",
-        "district": "Montaza",
-        "governorate": "Alexandria",
-        "postalCode": "21532",
-        "landmark": "Stanley Bridge",
-        "addressType": "Home",
-        "deliveryInstructions": "Ring bell",
-        "warehouseId": "wh-001",
-        "pickupMode": "Delegate",
-        "coordinates": {
-          "latitude": 31.2001,
-          "longitude": 29.9187
-        }
-      },
-      "destination": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Walid Mohamed",
-        "mobile": "+201112223334",
-        "street": "20 Client St",
-        "building": "14",
-        "city": "Alexandria",
-        "district": "Montaza",
-        "governorate": "Alexandria",
-        "postalCode": "21532",
-        "landmark": "Stanley Bridge",
-        "addressType": "Home",
-        "deliveryInstructions": "Ring bell",
-        "warehouseId": "wh-001",
-        "pickupMode": "Delegate",
-        "coordinates": {
-          "latitude": 31.2001,
-          "longitude": 29.9187
-        }
-      },
-      "items": [
-        {
-          "item": "Cell phone",
-          "category": "Electronics",
-          "dimensions": "15x10x0.7",
-          "weight": "0.13",
-          "quantity": 1,
-          "note": "Fragile. Handle with care",
-          "media": [
-            {
-              "url": "https://cdn.example.com/img.jpg",
-              "existing": true
-            }
-          ]
-        }
-      ],
-      "estimatedCost": "2.60",
-      "startTime": "2024-01-01T00:00:00.000Z",
-      "requestStatus": "Accepted",
-      "deliveryStatus": "Pending",
-      "deliveryType": "Urgent",
-      "comment": "Leave at front desk",
-      "sourceWarehouseId": "wh-001",
-      "destinationWarehouseId": "wh-001",
-      "sourcePickupMode": "Delegate",
-      "destinationPickupMode": "Delegate",
-      "requestStatusHistory": [
-        {
-          "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "initial"
-        },
-        {
-          "status": "Accepted",
-          "changedAt": "2026-02-03T08:34:11.944Z",
-          "changedBy": "bc22d721-2fd1-4b87-9346-eda4099e6a43",
-          "role": "operator",
-          "note": null
-        },
-        {
-          "status": "Action needed",
-          "changedAt": "2026-02-03T12:17:05.952Z",
-          "changedBy": null,
-          "role": "operator",
-          "note": "Cost offers set by operator with 3 offer(s)"
-        },
-        {
-          "status": "Accepted",
-          "changedAt": "2026-02-03T12:20:26.398Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "Client selected cost offer from DHL at $150.5"
-        }
-      ],
-      "deliveryStatusHistory": [
-        {
-          "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "initial"
-        }
-      ],
-      "costOffers": [
-        {
-          "cost": 179.99,
-          "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
-            "name": "FedEx",
-            "phoneNumber": "+201112223335",
-            "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
-            "rate": "4.60"
-          },
-          "comment": "Express delivery available 1",
-          "selected": false
-        },
-        {
-          "cost": 150.5,
-          "company": {
-            "id": "f8f442e4-8170-4a59-857b-a3a975b5eb59",
-            "name": "DHL",
-            "phoneNumber": "+201112223331",
-            "email": "info@dhl.com",
-            "address": "789 Business St, Cairo, Egypt",
-            "rate": "4.70"
-          },
-          "comment": "Express delivery available 2",
-          "selected": true
-        },
-        {
-          "cost": 135.99,
-          "company": {
-            "id": "2bc45057-f825-4ff6-ae7d-fc3d044b89dd",
-            "name": "Acme Logistics",
-            "phoneNumber": "+201112223334",
-            "email": "info@acme.com",
-            "address": "123 Business St, Cairo, Egypt",
-            "rate": "4.50"
-          },
-          "comment": "Express delivery available 3",
-          "selected": false
-        }
-      ],
-      "createdAt": "2026-02-03T06:13:27.209Z",
-      "updatedAt": "2026-02-03T10:20:26.405Z",
-      "deliveryFlow": [
-        "Pending"
-      ],
-      "deliveryCompletedStatuses": [
-        "Pending"
-      ],
-      "orderFlow": [
-        "Pending",
-        "Accepted",
-        "Action needed",
-        "Accepted"
-      ],
-      "orderCompletedStatuses": [
-        "Pending",
-        "Accepted",
-        "Action needed",
-        "Accepted"
-      ]
-    },
-    {
-      "id": "REQ-1770469329642",
+      "id": "REQ-1770564848586",
       "userId": "walid-client-001",
       "source": {
         "country": "Egypt",
         "countryCode": "",
         "fullName": "Walid Mohamed",
         "mobile": "12345678",
-        "street": "Al Geish Road",
-        "building": "5",
-        "city": "Alexandria",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
         "district": "",
-        "governorate": "Alexandria",
-        "postalCode": "21563",
-        "landmark": "next to messi house",
+        "governorate": "Giza",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
         "addressType": "Home",
         "deliveryInstructions": "",
         "primary": false,
         "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 31.201354469233138,
-          "longitude": 29.89943504246185
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
         }
       },
       "destination": {
@@ -202,1331 +30,714 @@
         "countryCode": "",
         "fullName": "Walid Mohamed",
         "mobile": "12345678",
-        "street": "Gesr Al Suez Street",
-        "building": "6",
-        "city": "Cairo",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
         "district": "",
         "governorate": "Cairo",
-        "postalCode": "11595",
-        "landmark": "next to Hesham Barkat  ",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
         "addressType": "Home",
         "deliveryInstructions": "",
-        "primary": false,
+        "primary": true,
         "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 30.13063150596107,
-          "longitude": 31.37140273873229
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
         }
       },
       "items": [
         {
-          "id": "ITEM-1770469110718-sq13189b0",
-          "item": "laptop",
-          "name": "laptop",
+          "id": "ITEM-1770564822807-06gta7thn",
+          "item": "pc",
+          "name": "pc",
           "category": "Electronics",
-          "dimensions": "30x20x10",
-          "weight": "1.5",
+          "dimensions": "5x5x5",
+          "weight": "2",
           "quantity": 1,
-          "note": "be careful",
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
         },
         {
-          "id": "ITEM-1770469179187-8pnaxhavx",
-          "item": "traffic engineer book",
-          "name": "traffic engineer book",
+          "id": "ITEM-1770564840710-db69jey7k",
+          "item": "H",
+          "name": "H",
           "category": "Books",
-          "dimensions": "10x30x20",
-          "weight": ".500",
+          "dimensions": "2x3x4",
+          "weight": "1",
           "quantity": 1,
-          "media": []
-        },
-        {
-          "id": "ITEM-1770469312944-fm9ggyqv5",
-          "item": "sweatshirt",
-          "name": "sweatshirt",
-          "category": "Clothing",
-          "dimensions": "40x50x40",
-          "weight": ".100",
-          "quantity": 1,
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         }
       ],
-      "deliveryType": "Urgent",
-      "startTime": "2026-02-07T13:02:00.000Z",
-      "estimatedCost": "37.50",
-      "requestStatus": "Accepted",
+      "deliveryType": "Normal",
+      "startTime": "2026-02-08T15:34:00.000Z",
+      "primaryCost": "40.00",
+      "cost": "40.00",
+      "requestStatus": "Pending",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-08T15:34:08.586Z",
+      "updatedAt": "2026-02-08T15:34:08.586Z",
       "costOffers": [
         {
-          "cost": 179.99,
+          "cost": 45,
           "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
+            "id": "company-001",
             "name": "FedEx",
             "phoneNumber": "+201112223335",
             "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.60"
           },
-          "comment": "Express delivery available 1",
+          "comment": "Express - arrives in 2 days",
           "selected": false
         },
         {
-          "cost": 150.5,
+          "cost": 42,
           "company": {
-            "id": "f8f442e4-8170-4a59-857b-a3a975b5eb59",
+            "id": "company-002",
             "name": "DHL",
             "phoneNumber": "+201112223331",
             "email": "info@dhl.com",
-            "address": "789 Business St, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.70"
           },
-          "comment": "Express delivery available 2",
+          "comment": "Standard - arrives in 3 days",
           "selected": false
         },
         {
-          "cost": 135.99,
+          "cost": 38.5,
           "company": {
-            "id": "2bc45057-f825-4ff6-ae7d-fc3d044b89dd",
-            "name": "Acme Logistics",
-            "phoneNumber": "+201112223334",
-            "email": "info@acme.com",
-            "address": "123 Business St, Cairo, Egypt",
-            "rate": "4.50"
-          },
-          "comment": "Express delivery available 3",
-          "selected": false
-        },
-        {
-          "cost": 165.75,
-          "company": {
-            "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
-            "name": "UPS",
-            "phoneNumber": "+201112223336",
-            "email": "info@ups.com",
-            "address": "321 Shipping Ave, Cairo, Egypt",
-            "rate": "4.80"
-          },
-          "comment": "Reliable worldwide delivery",
-          "selected": false
-        },
-        {
-          "cost": 142,
-          "company": {
-            "id": "b2c3d4e5-6789-01bc-def2-234567890bcd",
+            "id": "company-003",
             "name": "Aramex",
             "phoneNumber": "+201112223337",
             "email": "info@aramex.com",
-            "address": "555 Logistics Rd, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.65"
           },
-          "comment": "Fast regional shipping",
-          "selected": true
-        },
-        {
-          "cost": 188.5,
-          "company": {
-            "id": "c3d4e5f6-7890-12cd-ef34-34567890cdef",
-            "name": "TNT Express",
-            "phoneNumber": "+201112223338",
-            "email": "info@tnt.com",
-            "address": "777 Express Lane, Cairo, Egypt",
-            "rate": "4.55"
-          },
-          "comment": "Premium express service",
+          "comment": "Economy - arrives in 4 days",
           "selected": false
-        }
-      ],
-      "deliveryStatus": "Pending",
-      "comment": "",
-      "createdAt": "2026-02-07T13:02:09.642Z",
-      "updatedAt": "2026-02-07T13:07:30.470Z",
-      "selectedCompany": {
-        "name": "Aramex",
-        "rate": "4.65",
-        "cost": 142
-      },
-      "primaryCost": "142.00",
-      "activityHistory": [
-        {
-          "timestamp": "2026-02-07T13:07:30.470Z",
-          "action": "Offer Selected",
-          "description": "Selected shipping offer from Aramex",
-          "companyName": "Aramex",
-          "companyRate": "4.65",
-          "cost": 142
         }
       ]
     },
     {
-      "id": "REQ-1770550123456",
+      "id": "REQ-1770564848587",
       "userId": "walid-client-001",
       "source": {
         "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Ahmed Hassan",
-        "mobile": "+201001234567",
-        "street": "Tahrir Square",
-        "building": "10",
-        "city": "Cairo",
-        "district": "Downtown",
-        "governorate": "Cairo",
-        "postalCode": "11511",
-        "landmark": "Near Museum",
-        "addressType": "Office",
-        "deliveryInstructions": "Ring doorbell twice",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
+        "district": "",
+        "governorate": "Giza",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 30.0444,
-          "longitude": 31.2357
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
         }
       },
       "destination": {
-        "country": "UAE",
-        "countryCode": "+971",
-        "fullName": "Fatima Al Mansouri",
-        "mobile": "+971501234567",
-        "street": "Sheikh Zayed Road",
-        "building": "45",
-        "city": "Dubai",
-        "district": "Downtown Dubai",
-        "governorate": "Dubai",
-        "postalCode": "00001",
-        "landmark": "Near Burj Khalifa",
-        "addressType": "Apartment",
-        "deliveryInstructions": "Leave at security",
-        "pickupMode": "Delegate",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Self",
         "coordinates": {
-          "latitude": 25.1972,
-          "longitude": 55.2744
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
         }
       },
       "items": [
         {
-          "id": "ITEM-1770550123456-1",
+          "id": "ITEM-1770564848587-1",
           "item": "Laptop",
           "name": "Laptop",
           "category": "Electronics",
           "dimensions": "35x25x2",
-          "weight": "2.1",
+          "weight": "2.5",
           "quantity": 1,
-          "note": "Fragile - Handle with extreme care",
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
         },
         {
-          "id": "ITEM-1770550123456-2",
-          "item": "Computer Mouse",
-          "name": "Computer Mouse",
+          "id": "ITEM-1770564848587-2",
+          "item": "Mouse",
+          "name": "Mouse",
           "category": "Electronics",
           "dimensions": "10x6x4",
-          "weight": "0.1",
-          "quantity": 2,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550123456-3",
-          "item": "USB Cable Pack",
-          "name": "USB Cable Pack",
-          "category": "Electronics",
-          "dimensions": "25x15x3",
           "weight": "0.2",
           "quantity": 1,
-          "note": "5 different cables included",
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         },
         {
-          "id": "ITEM-1770550123456-4",
-          "item": "Screen Protector",
-          "name": "Screen Protector",
+          "id": "ITEM-1770564848587-3",
+          "item": "Keyboard",
+          "name": "Keyboard",
           "category": "Electronics",
-          "dimensions": "18x12x1",
-          "weight": "0.05",
-          "quantity": 3,
-          "note": "",
-          "media": []
+          "dimensions": "45x15x5",
+          "weight": "0.8",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         }
       ],
       "deliveryType": "Normal",
-      "startTime": "2026-02-10T08:00:00.000Z",
-      "estimatedCost": "85.50",
+      "startTime": "2026-02-08T15:34:00.000Z",
+      "primaryCost": "85.00",
+      "cost": "90.00",
       "requestStatus": "Accepted",
       "deliveryStatus": "Pending",
-      "comment": "Electronics shipment to Dubai",
-      "createdAt": "2026-02-08T09:15:30.000Z",
-      "updatedAt": "2026-02-07T14:35:33.923Z",
+      "comment": "",
+      "createdAt": "2026-02-08T15:34:08.586Z",
+      "updatedAt": "2026-02-08T15:41:26.072Z",
       "costOffers": [
         {
-          "cost": 95.99,
+          "cost": 95,
           "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
+            "id": "company-001",
             "name": "FedEx",
             "phoneNumber": "+201112223335",
             "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.60"
           },
-          "comment": "Express delivery in 3 days",
+          "comment": "Fast delivery - arrives today",
           "selected": false
         },
         {
-          "cost": 78.5,
+          "cost": 88,
           "company": {
-            "id": "f8f442e4-8170-4a59-857b-a3a975b5eb59",
+            "id": "company-002",
             "name": "DHL",
             "phoneNumber": "+201112223331",
             "email": "info@dhl.com",
-            "address": "789 Business St, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.70"
           },
-          "comment": "Standard delivery in 5 days",
+          "comment": "Standard - arrives tomorrow",
           "selected": false
         },
         {
-          "cost": 72,
+          "cost": 82.5,
           "company": {
-            "id": "2bc45057-f825-4ff6-ae7d-fc3d044b89dd",
-            "name": "Acme Logistics",
-            "phoneNumber": "+201112223334",
-            "email": "info@acme.com",
-            "address": "123 Business St, Cairo, Egypt",
-            "rate": "4.50"
+            "id": "company-003",
+            "name": "Aramex",
+            "phoneNumber": "+201112223337",
+            "email": "info@aramex.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.65"
           },
-          "comment": "Budget option - 7 days",
+          "comment": "Budget option - 2 days",
+          "selected": false
+        },
+        {
+          "cost": 90,
+          "company": {
+            "id": "company-004",
+            "name": "UPS",
+            "phoneNumber": "+201112223336",
+            "email": "info@ups.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.80"
+          },
+          "comment": "Reliable - 3 days",
           "selected": true
         }
       ],
       "selectedCompany": {
-        "name": "Acme Logistics",
-        "rate": "4.50",
-        "cost": 72
+        "name": "UPS",
+        "rate": "4.80",
+        "cost": 90
       },
-      "cost": "72.00",
       "activityHistory": [
         {
-          "timestamp": "2026-02-07T14:35:33.923Z",
+          "timestamp": "2026-02-08T15:41:26.072Z",
           "action": "Offer Selected",
-          "description": "Selected shipping offer from Acme Logistics",
-          "companyName": "Acme Logistics",
-          "companyRate": "4.50",
-          "cost": 72
+          "description": "Selected shipping offer from UPS",
+          "companyName": "UPS",
+          "companyRate": "4.80",
+          "cost": 90
         }
       ]
     },
     {
-      "id": "REQ-1770550234567",
-      "userId": "sara-client-002",
+      "id": "REQ-1770564848588",
+      "userId": "walid-client-001",
       "source": {
-        "country": "Saudi Arabia",
-        "countryCode": "+966",
-        "fullName": "Mohammed Al Saud",
-        "mobile": "+966501234567",
-        "street": "King Fahd Road",
-        "building": "78",
-        "city": "Riyadh",
-        "district": "Al Olaya",
-        "governorate": "Riyadh",
-        "postalCode": "11564",
-        "landmark": "Kingdom Tower",
-        "addressType": "Office",
-        "deliveryInstructions": "Delivery to main office",
-        "pickupMode": "Delegate",
-        "coordinates": {
-          "latitude": 24.7114,
-          "longitude": 46.6753
-        }
-      },
-      "destination": {
         "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Noor Ibrahim",
-        "mobile": "+201112345678",
-        "street": "Nile Corniche",
-        "building": "55",
-        "city": "Giza",
-        "district": "Dokki",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
+        "district": "",
         "governorate": "Giza",
-        "postalCode": "12611",
-        "landmark": "Shooting Club",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
         "addressType": "Home",
-        "deliveryInstructions": "Call upon arrival",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 30.0377,
-          "longitude": 31.2126
-        }
-      },
-      "items": [
-        {
-          "id": "ITEM-1770550234567-1",
-          "item": "Designer Dress",
-          "name": "Designer Dress",
-          "category": "Clothing",
-          "dimensions": "35x25x5",
-          "weight": "0.6",
-          "quantity": 1,
-          "note": "Heavy fabric - keep away from moisture",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550234567-2",
-          "item": "Silk Scarves",
-          "name": "Silk Scarves",
-          "category": "Clothing",
-          "dimensions": "40x40x2",
-          "weight": "0.3",
-          "quantity": 5,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550234567-3",
-          "item": "Leather Shoes",
-          "name": "Leather Shoes",
-          "category": "Clothing",
-          "dimensions": "30x20x15",
-          "weight": "1.2",
-          "quantity": 2,
-          "note": "Use shoe boxes",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550234567-4",
-          "item": "Handbags",
-          "name": "Handbags",
-          "category": "Clothing",
-          "dimensions": "35x25x10",
-          "weight": "0.8",
-          "quantity": 2,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550234567-5",
-          "item": "Accessories Box",
-          "name": "Accessories Box",
-          "category": "Clothing",
-          "dimensions": "25x15x8",
-          "weight": "0.4",
-          "quantity": 1,
-          "note": "Contains belts, sunglasses, jewelry",
-          "media": []
-        }
-      ],
-      "deliveryType": "Urgent",
-      "startTime": "2026-02-12T14:00:00.000Z",
-      "estimatedCost": "156.25",
-      "requestStatus": "Action needed",
-      "deliveryStatus": "Pending",
-      "comment": "Fashion items - urgent priority",
-      "createdAt": "2026-02-08T11:45:20.000Z",
-      "updatedAt": "2026-02-08T11:45:20.000Z",
-      "costOffers": [
-        {
-          "cost": 185.75,
-          "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
-            "name": "FedEx",
-            "phoneNumber": "+201112223335",
-            "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
-            "rate": "4.60"
-          },
-          "comment": "Priority express - 2 days",
-          "selected": false
-        },
-        {
-          "cost": 162.5,
-          "company": {
-            "id": "b2c3d4e5-6789-01bc-def2-234567890bcd",
-            "name": "Aramex",
-            "phoneNumber": "+201112223337",
-            "email": "info@aramex.com",
-            "address": "555 Logistics Rd, Cairo, Egypt",
-            "rate": "4.65"
-          },
-          "comment": "Fast delivery - 3 days",
-          "selected": false
-        },
-        {
-          "cost": 148,
-          "company": {
-            "id": "c3d4e5f6-7890-12cd-ef34-34567890cdef",
-            "name": "TNT Express",
-            "phoneNumber": "+201112223338",
-            "email": "info@tnt.com",
-            "address": "777 Express Lane, Cairo, Egypt",
-            "rate": "4.55"
-          },
-          "comment": "Standard express - 4 days",
-          "selected": false
-        }
-      ]
-    },
-    {
-      "id": "REQ-1770550345678",
-      "userId": "john-client-003",
-      "source": {
-        "country": "UAE",
-        "countryCode": "+971",
-        "fullName": "Fatima Ali",
-        "mobile": "+971509876543",
-        "street": "Al Wasl Road",
-        "building": "120",
-        "city": "Dubai",
-        "district": "Al Safa",
-        "governorate": "Dubai",
-        "postalCode": "00002",
-        "landmark": "Wasl Art Center",
-        "addressType": "Business",
-        "deliveryInstructions": "Leave with reception",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 25.1907,
-          "longitude": 55.2502
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
         }
       },
       "destination": {
         "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Hassan Mahmoud",
-        "mobile": "+201223344556",
-        "street": "Maadi Road",
-        "building": "88",
-        "city": "Cairo",
-        "district": "Maadi",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
+        "district": "",
         "governorate": "Cairo",
-        "postalCode": "11728",
-        "landmark": "Maadi Club",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
         "addressType": "Home",
-        "deliveryInstructions": "Ring bell 3 times",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 29.9769,
-          "longitude": 31.2648
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
         }
       },
       "items": [
         {
-          "id": "ITEM-1770550345678-1",
-          "item": "Home Decor Set",
-          "name": "Home Decor Set",
+          "id": "ITEM-1770564848588-1",
+          "item": "Desk",
+          "name": "Desk",
           "category": "Furniture",
-          "dimensions": "80x60x40",
+          "dimensions": "120x60x75",
+          "weight": "15",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        },
+        {
+          "id": "ITEM-1770564848588-2",
+          "item": "Chair",
+          "name": "Chair",
+          "category": "Furniture",
+          "dimensions": "60x60x100",
+          "weight": "8",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        },
+        {
+          "id": "ITEM-1770564848588-3",
+          "item": "Bookshelf",
+          "name": "Bookshelf",
+          "category": "Furniture",
+          "dimensions": "80x30x180",
           "weight": "12",
           "quantity": 1,
-          "note": "Includes wall art, mirrors, and vases - fragile items",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550345678-2",
-          "item": "Throw Pillows",
-          "name": "Throw Pillows",
-          "category": "Furniture",
-          "dimensions": "50x50x15",
-          "weight": "2",
-          "quantity": 4,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550345678-3",
-          "item": "Table Runner",
-          "name": "Table Runner",
-          "category": "Furniture",
-          "dimensions": "150x40x1",
-          "weight": "0.5",
-          "quantity": 2,
-          "note": "Premium fabric - handle carefully",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550345678-4",
-          "item": "Curtain Rods",
-          "name": "Curtain Rods",
-          "category": "Furniture",
-          "dimensions": "200x5x5",
-          "weight": "3",
-          "quantity": 1,
-          "note": "",
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
         }
       ],
       "deliveryType": "Normal",
-      "startTime": "2026-02-15T10:00:00.000Z",
-      "estimatedCost": "245.75",
+      "startTime": "2026-02-08T15:34:00.000Z",
+      "primaryCost": "250.00",
+      "cost": "250.00",
       "requestStatus": "Action needed",
       "deliveryStatus": "Pending",
-      "comment": "Home decor collection shipment",
-      "createdAt": "2026-02-08T14:20:15.000Z",
-      "updatedAt": "2026-02-08T14:20:15.000Z",
+      "comment": "",
+      "createdAt": "2026-02-08T15:34:08.586Z",
+      "updatedAt": "2026-02-08T15:34:08.586Z",
       "costOffers": [
         {
-          "cost": 275.99,
+          "cost": 280,
           "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
+            "id": "company-001",
             "name": "FedEx",
             "phoneNumber": "+201112223335",
             "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.60"
           },
-          "comment": "Fast delivery - door to door",
+          "comment": "Premium - arrives today with assembly",
           "selected": false
         },
         {
-          "cost": 245.5,
+          "cost": 260,
           "company": {
-            "id": "b2c3d4e5-6789-01bc-def2-234567890bcd",
+            "id": "company-002",
+            "name": "DHL",
+            "phoneNumber": "+201112223331",
+            "email": "info@dhl.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.70"
+          },
+          "comment": "Standard with assembly - 2 days",
+          "selected": false
+        },
+        {
+          "cost": 240,
+          "company": {
+            "id": "company-003",
             "name": "Aramex",
             "phoneNumber": "+201112223337",
             "email": "info@aramex.com",
-            "address": "555 Logistics Rd, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.65"
           },
-          "comment": "Standard door to door",
-          "selected": false
-        },
-        {
-          "cost": 220,
-          "company": {
-            "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
-            "name": "UPS",
-            "phoneNumber": "+201112223336",
-            "email": "info@ups.com",
-            "address": "321 Shipping Ave, Cairo, Egypt",
-            "rate": "4.80"
-          },
-          "comment": "Economy option - 6 days",
+          "comment": "Economy - 3 days",
           "selected": false
         }
       ]
     },
     {
-      "id": "REQ-1770550456789",
-      "userId": "fatima-client-004",
-      "source": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Khaled Ibrahim",
-        "mobile": "+201334455667",
-        "street": "Helwan Road",
-        "building": "42",
-        "city": "Helwan",
-        "district": "Helwan",
-        "governorate": "Cairo",
-        "postalCode": "11421",
-        "landmark": "Helwan Train Station",
-        "addressType": "Office",
-        "deliveryInstructions": "Call ahead before delivery",
-        "pickupMode": "Delegate",
-        "coordinates": {
-          "latitude": 29.8611,
-          "longitude": 31.3238
-        }
-      },
-      "destination": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Amira Mohamed",
-        "mobile": "+201445566778",
-        "street": "New Cairo",
-        "building": "15",
-        "city": "Cairo",
-        "district": "New Cairo",
-        "governorate": "Cairo",
-        "postalCode": "11835",
-        "landmark": "AUC Campus",
-        "addressType": "Office",
-        "deliveryInstructions": "Delivery to library",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 30.0265,
-          "longitude": 31.4765
-        }
-      },
-      "items": [
-        {
-          "id": "ITEM-1770550456789-1",
-          "item": "Medical Textbooks",
-          "name": "Medical Textbooks",
-          "category": "Books",
-          "dimensions": "30x22x10",
-          "weight": "5",
-          "quantity": 1,
-          "note": "Heavy books - handle with care",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550456789-2",
-          "item": "Research Papers Set",
-          "name": "Research Papers Set",
-          "category": "Books",
-          "dimensions": "25x20x5",
-          "weight": "2",
-          "quantity": 3,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550456789-3",
-          "item": "Student Notebooks",
-          "name": "Student Notebooks",
-          "category": "Books",
-          "dimensions": "20x15x2",
-          "weight": "1",
-          "quantity": 10,
-          "note": "",
-          "media": []
-        }
-      ],
-      "deliveryType": "Normal",
-      "startTime": "2026-02-11T09:00:00.000Z",
-      "estimatedCost": "45.00",
-      "requestStatus": "Pending",
-      "deliveryStatus": "Pending",
-      "comment": "Educational materials shipment",
-      "createdAt": "2026-02-08T16:30:45.000Z",
-      "updatedAt": "2026-02-08T16:30:45.000Z"
-    },
-    {
-      "id": "REQ-1770550567890",
+      "id": "REQ-1770564848589",
       "userId": "walid-client-001",
       "source": {
         "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Youssef Ahmed",
-        "mobile": "+201556677889",
-        "street": "Ramses Street",
-        "building": "33",
-        "city": "Cairo",
-        "district": "Downtown",
-        "governorate": "Cairo",
-        "postalCode": "11511",
-        "landmark": "Egyptian Museum",
-        "addressType": "Business",
-        "deliveryInstructions": "For central office",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
+        "district": "",
+        "governorate": "Giza",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 30.0626,
-          "longitude": 31.2497
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
         }
       },
       "destination": {
         "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Leila Hassan",
-        "mobile": "+201667788990",
-        "street": "Abbasia",
-        "building": "67",
-        "city": "Cairo",
-        "district": "Abbasia",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
+        "district": "",
         "governorate": "Cairo",
-        "postalCode": "11571",
-        "landmark": "Abbasia Park",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
         "addressType": "Home",
-        "deliveryInstructions": "Ring once and wait",
-        "pickupMode": "Delegate",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Self",
         "coordinates": {
-          "latitude": 30.0852,
-          "longitude": 31.3519
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
         }
       },
       "items": [
         {
-          "id": "ITEM-1770550567890-1",
-          "item": "Legal Documents Folder",
-          "name": "Legal Documents Folder",
-          "category": "Documents",
-          "dimensions": "30x22x1",
-          "weight": "0.3",
+          "id": "ITEM-1770564848589-1",
+          "item": "Textbook",
+          "name": "Textbook",
+          "category": "Books",
+          "dimensions": "25x18x2",
+          "weight": "0.8",
           "quantity": 1,
-          "note": "Confidential - handle carefully, use registered mail procedures",
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         },
         {
-          "id": "ITEM-1770550567890-2",
-          "item": "Contract Copies",
-          "name": "Contract Copies",
-          "category": "Documents",
-          "dimensions": "21x15x0.5",
-          "weight": "0.5",
-          "quantity": 5,
-          "note": "",
-          "media": []
+          "id": "ITEM-1770564848589-2",
+          "item": "Notebook",
+          "name": "Notebook",
+          "category": "Books",
+          "dimensions": "20x15x1",
+          "weight": "0.3",
+          "quantity": 2,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         },
         {
-          "id": "ITEM-1770550567890-3",
-          "item": "Notarized Papers",
-          "name": "Notarized Papers",
-          "category": "Documents",
-          "dimensions": "25x20x0.2",
+          "id": "ITEM-1770564848589-3",
+          "item": "Pen Set",
+          "name": "Pen Set",
+          "category": "Stationery",
+          "dimensions": "15x10x3",
           "weight": "0.2",
-          "quantity": 3,
-          "note": "Official documents - signature on delivery required",
-          "media": []
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         }
       ],
       "deliveryType": "Normal",
-      "startTime": "2026-02-09T08:00:00.000Z",
-      "estimatedCost": "22.50",
-      "requestStatus": "Pending",
+      "startTime": "2026-02-08T15:34:00.000Z",
+      "primaryCost": "45.00",
+      "cost": "45.00",
+      "requestStatus": "Action needed",
       "deliveryStatus": "Pending",
-      "comment": "Legal documents delivery",
-      "createdAt": "2026-02-08T10:15:00.000Z",
-      "updatedAt": "2026-02-08T10:15:00.000Z"
+      "comment": "",
+      "createdAt": "2026-02-08T15:34:08.586Z",
+      "updatedAt": "2026-02-08T15:34:08.586Z",
+      "costOffers": [
+        {
+          "cost": 50,
+          "company": {
+            "id": "company-001",
+            "name": "FedEx",
+            "phoneNumber": "+201112223335",
+            "email": "info@fedex.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.60"
+          },
+          "comment": "Express - arrives tomorrow",
+          "selected": false
+        },
+        {
+          "cost": 47,
+          "company": {
+            "id": "company-002",
+            "name": "DHL",
+            "phoneNumber": "+201112223331",
+            "email": "info@dhl.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.70"
+          },
+          "comment": "Standard - 2 days",
+          "selected": false
+        },
+        {
+          "cost": 43,
+          "company": {
+            "id": "company-003",
+            "name": "Aramex",
+            "phoneNumber": "+201112223337",
+            "email": "info@aramex.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.65"
+          },
+          "comment": "Budget - 3 days",
+          "selected": false
+        },
+        {
+          "cost": 48.5,
+          "company": {
+            "id": "company-004",
+            "name": "UPS",
+            "phoneNumber": "+201112223336",
+            "email": "info@ups.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.80"
+          },
+          "comment": "Reliable - arrives in 2 days",
+          "selected": false
+        }
+      ]
     },
     {
-      "id": "REQ-1770550678901",
+      "id": "REQ-1770564848590",
       "userId": "walid-client-001",
       "source": {
         "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Samira Abdel Aziz",
-        "mobile": "+201778899001",
-        "street": "Zamalek Island",
-        "building": "25",
-        "city": "Cairo",
-        "district": "Zamalek",
-        "governorate": "Cairo",
-        "postalCode": "11211",
-        "landmark": "Zamalek Club",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
+        "district": "",
+        "governorate": "Giza",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
         "addressType": "Home",
-        "deliveryInstructions": "Doorman can accept",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
         "pickupMode": "Self",
         "coordinates": {
-          "latitude": 30.0661,
-          "longitude": 31.2489
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
         }
       },
       "destination": {
         "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Omar Ismail",
-        "mobile": "+201889900112",
-        "street": "Nasr City",
-        "building": "44",
-        "city": "Cairo",
-        "district": "Nasr City",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
+        "district": "",
         "governorate": "Cairo",
-        "postalCode": "11371",
-        "landmark": "Misr Helwan Highway",
-        "addressType": "Office",
-        "deliveryInstructions": "Business hours delivery",
-        "pickupMode": "Delegate",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Self",
         "coordinates": {
-          "latitude": 30.0045,
-          "longitude": 31.3755
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
         }
       },
       "items": [
         {
-          "id": "ITEM-1770550678901-1",
-          "item": "Pharmacy Equipment",
-          "name": "Pharmacy Equipment",
-          "category": "Medical",
-          "dimensions": "50x40x30",
-          "weight": "8",
+          "id": "ITEM-1770564848590-1",
+          "item": "Jacket",
+          "name": "Jacket",
+          "category": "Clothing",
+          "dimensions": "40x25x5",
+          "weight": "1.2",
           "quantity": 1,
-          "note": "Fragile medical instruments - keep upright",
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         },
         {
-          "id": "ITEM-1770550678901-2",
-          "item": "Medicine Bottles",
-          "name": "Medicine Bottles",
-          "category": "Medical",
-          "dimensions": "20x15x20",
-          "weight": "3",
-          "quantity": 2,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550678901-3",
-          "item": "First Aid Kit Box",
-          "name": "First Aid Kit Box",
-          "category": "Medical",
-          "dimensions": "35x25x15",
-          "weight": "2",
+          "id": "ITEM-1770564848590-2",
+          "item": "Shirt",
+          "name": "Shirt",
+          "category": "Clothing",
+          "dimensions": "35x25x2",
+          "weight": "0.4",
           "quantity": 3,
-          "note": "Temperature controlled storage recommended",
-          "media": []
-        }
-      ],
-      "deliveryType": "Urgent",
-      "startTime": "2026-02-13T10:00:00.000Z",
-      "estimatedCost": "198.75",
-      "requestStatus": "Action needed",
-      "deliveryStatus": "Pending",
-      "comment": "Medical supplies urgent delivery",
-      "createdAt": "2026-02-08T17:45:30.000Z",
-      "updatedAt": "2026-02-08T17:45:30.000Z",
-      "costOffers": [
-        {
-          "cost": 225.99,
-          "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
-            "name": "FedEx",
-            "phoneNumber": "+201112223335",
-            "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
-            "rate": "4.60"
-          },
-          "comment": "Priority medical delivery - same day",
-          "selected": false
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         },
         {
-          "cost": 195.50,
-          "company": {
-            "id": "b2c3d4e5-6789-01bc-def2-234567890bcd",
-            "name": "Aramex",
-            "phoneNumber": "+201112223337",
-            "email": "info@aramex.com",
-            "address": "555 Logistics Rd, Cairo, Egypt",
-            "rate": "4.65"
-          },
-          "comment": "Fast medical delivery - next day",
-          "selected": false
-        },
-        {
-          "cost": 178.00,
-          "company": {
-            "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
-            "name": "UPS",
-            "phoneNumber": "+201112223336",
-            "email": "info@ups.com",
-            "address": "321 Shipping Ave, Cairo, Egypt",
-            "rate": "4.80"
-          },
-          "comment": "Standard medical delivery - 2 days",
-          "selected": false
-        }
-      ]
-    },
-    {
-      "id": "REQ-1770550789012",
-      "userId": "sara-client-002",
-      "source": {
-        "country": "Saudi Arabia",
-        "countryCode": "+966",
-        "fullName": "Rayan Al Qahtani",
-        "mobile": "+966531234567",
-        "street": "Olaya Street",
-        "building": "99",
-        "city": "Riyadh",
-        "district": "Olaya",
-        "governorate": "Riyadh",
-        "postalCode": "11564",
-        "landmark": "Olaya Shopping Mall",
-        "addressType": "Business",
-        "deliveryInstructions": "Weekday business hours",
-        "pickupMode": "Delegate",
-        "coordinates": {
-          "latitude": 24.7136,
-          "longitude": 46.6753
-        }
-      },
-      "destination": {
-        "country": "UAE",
-        "countryCode": "+971",
-        "fullName": "Leila Al Mansoori",
-        "mobile": "+971551234567",
-        "street": "Deira Road",
-        "building": "33",
-        "city": "Dubai",
-        "district": "Deira",
-        "governorate": "Dubai",
-        "postalCode": "00003",
-        "landmark": "Gold Souk",
-        "addressType": "Business",
-        "deliveryInstructions": "Shop delivery",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 25.2654,
-          "longitude": 55.3081
-        }
-      },
-      "items": [
-        {
-          "id": "ITEM-1770550789012-1",
-          "item": "Gold Jewelry Box",
-          "name": "Gold Jewelry Box",
-          "category": "Jewelry",
-          "dimensions": "30x20x10",
-          "weight": "1.5",
+          "id": "ITEM-1770564848590-3",
+          "item": "Shoes",
+          "name": "Shoes",
+          "category": "Clothing",
+          "dimensions": "30x15x15",
+          "weight": "0.9",
           "quantity": 1,
-          "note": "Very valuable - requires signature & insurance",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550789012-2",
-          "item": "Diamond Necklaces",
-          "name": "Diamond Necklaces",
-          "category": "Jewelry",
-          "dimensions": "25x15x5",
-          "weight": "0.3",
-          "quantity": 5,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550789012-3",
-          "item": "Pearl Bracelets",
-          "name": "Pearl Bracelets",
-          "category": "Jewelry",
-          "dimensions": "20x10x8",
-          "weight": "0.2",
-          "quantity": 3,
-          "note": "Delicate items - use protective packaging",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550789012-4",
-          "item": "Gold Rings Display",
-          "name": "Gold Rings Display",
-          "category": "Jewelry",
-          "dimensions": "40x30x8",
-          "weight": "2",
-          "quantity": 1,
-          "note": "",
-          "media": []
-        }
-      ],
-      "deliveryType": "Urgent",
-      "startTime": "2026-02-14T09:00:00.000Z",
-      "estimatedCost": "425.50",
-      "requestStatus": "Action needed",
-      "deliveryStatus": "Pending",
-      "comment": "Jewelry shipment - high value cargo",
-      "createdAt": "2026-02-08T18:20:15.000Z",
-      "updatedAt": "2026-02-08T18:20:15.000Z",
-      "costOffers": [
-        {
-          "cost": 475.99,
-          "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
-            "name": "FedEx",
-            "phoneNumber": "+201112223335",
-            "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
-            "rate": "4.60"
-          },
-          "comment": "Premium insured delivery",
-          "selected": false
-        },
-        {
-          "cost": 425.00,
-          "company": {
-            "id": "c3d4e5f6-7890-12cd-ef34-34567890cdef",
-            "name": "TNT Express",
-            "phoneNumber": "+201112223338",
-            "email": "info@tnt.com",
-            "address": "777 Express Lane, Cairo, Egypt",
-            "rate": "4.55"
-          },
-          "comment": "Insured international delivery",
-          "selected": false
-        },
-        {
-          "cost": 398.50,
-          "company": {
-            "id": "2bc45057-f825-4ff6-ae7d-fc3d044b89dd",
-            "name": "Acme Logistics",
-            "phoneNumber": "+201112223334",
-            "email": "info@acme.com",
-            "address": "123 Business St, Cairo, Egypt",
-            "rate": "4.50"
-          },
-          "comment": "Standard insured delivery",
-          "selected": false
-        }
-      ]
-    },
-    {
-      "id": "REQ-1770550890123",
-      "userId": "john-client-003",
-      "source": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Hassan Al Fayoumi",
-        "mobile": "+201990011223",
-        "street": "Mohamed Mahmoud Street",
-        "building": "19",
-        "city": "Cairo",
-        "district": "Downtown",
-        "governorate": "Cairo",
-        "postalCode": "11511",
-        "landmark": "Photographers Bazaar",
-        "addressType": "Business",
-        "deliveryInstructions": "Photo studio delivery",
-        "pickupMode": "Delegate",
-        "coordinates": {
-          "latitude": 30.0553,
-          "longitude": 31.2453
-        }
-      },
-      "destination": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Fatima El Sayed",
-        "mobile": "+201001122334",
-        "street": "Red Sea City",
-        "building": "7",
-        "city": "Hurghada",
-        "district": "Central",
-        "governorate": "Red Sea",
-        "postalCode": "84512",
-        "landmark": "Sheraton Resort",
-        "addressType": "Business",
-        "deliveryInstructions": "Resort delivery",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 27.2379,
-          "longitude": 33.8129
-        }
-      },
-      "items": [
-        {
-          "id": "ITEM-1770550890123-1",
-          "item": "Professional Camera Equipment",
-          "name": "Professional Camera Equipment",
-          "category": "Photography",
-          "dimensions": "60x45x40",
-          "weight": "10",
-          "quantity": 1,
-          "note": "High-end equipment - handle with utmost care, keep in temperature controlled environment",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550890123-2",
-          "item": "Camera Lenses Set",
-          "name": "Camera Lenses Set",
-          "category": "Photography",
-          "dimensions": "35x25x20",
-          "weight": "4",
-          "quantity": 1,
-          "note": "Expensive lenses - require protective case",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550890123-3",
-          "item": "Lighting Equipment",
-          "name": "Lighting Equipment",
-          "category": "Photography",
-          "dimensions": "45x35x30",
-          "weight": "8",
-          "quantity": 1,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550890123-4",
-          "item": "Tripods and Stands",
-          "name": "Tripods and Stands",
-          "category": "Photography",
-          "dimensions": "150x10x10",
-          "weight": "3",
-          "quantity": 4,
-          "note": "Fragile - do not bend or apply pressure",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550890123-5",
-          "item": "Camera Accessories Box",
-          "name": "Camera Accessories Box",
-          "category": "Photography",
-          "dimensions": "40x30x25",
-          "weight": "5",
-          "quantity": 1,
-          "note": "",
-          "media": []
-        }
-      ],
-      "deliveryType": "Urgent",
-      "startTime": "2026-02-16T15:00:00.000Z",
-      "estimatedCost": "685.00",
-      "requestStatus": "Action needed",
-      "deliveryStatus": "Pending",
-      "comment": "Photography equipment for resort event",
-      "createdAt": "2026-02-08T19:30:45.000Z",
-      "updatedAt": "2026-02-08T19:30:45.000Z",
-      "costOffers": [
-        {
-          "cost": 775.99,
-          "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
-            "name": "FedEx",
-            "phoneNumber": "+201112223335",
-            "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
-            "rate": "4.60"
-          },
-          "comment": "Express fragile cargo handling",
-          "selected": false
-        },
-        {
-          "cost": 715.50,
-          "company": {
-            "id": "b2c3d4e5-6789-01bc-def2-234567890bcd",
-            "name": "Aramex",
-            "phoneNumber": "+201112223337",
-            "email": "info@aramex.com",
-            "address": "555 Logistics Rd, Cairo, Egypt",
-            "rate": "4.65"
-          },
-          "comment": "Premium fragile cargo service",
-          "selected": false
-        },
-        {
-          "cost": 680.00,
-          "company": {
-            "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
-            "name": "UPS",
-            "phoneNumber": "+201112223336",
-            "email": "info@ups.com",
-            "address": "321 Shipping Ave, Cairo, Egypt",
-            "rate": "4.80"
-          },
-          "comment": "Standard fragile cargo delivery",
-          "selected": false
-        }
-      ]
-    },
-    {
-      "id": "REQ-1770550901234",
-      "userId": "fatima-client-004",
-      "source": {
-        "country": "UAE",
-        "countryCode": "+971",
-        "fullName": "Zainab Al Kindi",
-        "mobile": "+971561234567",
-        "street": "Al Khaleej Road",
-        "building": "88",
-        "city": "Abu Dhabi",
-        "district": "Al Marjan",
-        "governorate": "Abu Dhabi",
-        "postalCode": "00001",
-        "landmark": "Emirates Palace",
-        "addressType": "Residence",
-        "deliveryInstructions": "Villa entrance",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 24.4267,
-          "longitude": 54.3498
-        }
-      },
-      "destination": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Mona El Sherif",
-        "mobile": "+201112233445",
-        "street": "Rehab City",
-        "building": "51",
-        "city": "Cairo",
-        "district": "Rehab",
-        "governorate": "Cairo",
-        "postalCode": "11855",
-        "landmark": "Rehab Mall",
-        "addressType": "Apartment",
-        "deliveryInstructions": "Residential complex",
-        "pickupMode": "Delegate",
-        "coordinates": {
-          "latitude": 30.0534,
-          "longitude": 31.5286
-        }
-      },
-      "items": [
-        {
-          "id": "ITEM-1770550901234-1",
-          "item": "Designer Furniture Sofa",
-          "name": "Designer Furniture Sofa",
-          "category": "Furniture",
-          "dimensions": "200x100x80",
-          "weight": "80",
-          "quantity": 1,
-          "note": "Large furniture piece - requires careful handling and delivery coordination",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550901234-2",
-          "item": "Coffee Table",
-          "name": "Coffee Table",
-          "category": "Furniture",
-          "dimensions": "120x60x40",
-          "weight": "20",
-          "quantity": 1,
-          "note": "Glass top - very fragile",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550901234-3",
-          "item": "TV Stand Unit",
-          "name": "TV Stand Unit",
-          "category": "Furniture",
-          "dimensions": "180x45x50",
-          "weight": "35",
-          "quantity": 1,
-          "note": "",
-          "media": []
-        },
-        {
-          "id": "ITEM-1770550901234-4",
-          "item": "Wall Shelving System",
-          "name": "Wall Shelving System",
-          "category": "Furniture",
-          "dimensions": "250x25x20",
-          "weight": "40",
-          "quantity": 1,
-          "note": "Installation assistance required",
-          "media": []
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
         }
       ],
       "deliveryType": "Normal",
-      "startTime": "2026-02-20T10:00:00.000Z",
-      "estimatedCost": "520.00",
+      "startTime": "2026-02-08T15:34:00.000Z",
+      "primaryCost": "65.00",
+      "cost": "65.00",
       "requestStatus": "Action needed",
       "deliveryStatus": "Pending",
-      "comment": "Home furniture collection - large items",
-      "createdAt": "2026-02-08T20:15:00.000Z",
-      "updatedAt": "2026-02-08T20:15:00.000Z",
+      "comment": "",
+      "createdAt": "2026-02-08T15:34:08.586Z",
+      "updatedAt": "2026-02-08T15:34:08.586Z",
       "costOffers": [
         {
-          "cost": 595.99,
+          "cost": 72,
           "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
+            "id": "company-001",
             "name": "FedEx",
             "phoneNumber": "+201112223335",
             "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.60"
           },
-          "comment": "Express furniture delivery with assembly",
+          "comment": "Premium - arrives today",
           "selected": false
         },
         {
-          "cost": 545.50,
+          "cost": 68,
           "company": {
-            "id": "b2c3d4e5-6789-01bc-def2-234567890bcd",
+            "id": "company-002",
+            "name": "DHL",
+            "phoneNumber": "+201112223331",
+            "email": "info@dhl.com",
+            "address": "Cairo, Egypt",
+            "rate": "4.70"
+          },
+          "comment": "Standard - arrives tomorrow",
+          "selected": false
+        },
+        {
+          "cost": 62,
+          "company": {
+            "id": "company-003",
             "name": "Aramex",
             "phoneNumber": "+201112223337",
             "email": "info@aramex.com",
-            "address": "555 Logistics Rd, Cairo, Egypt",
+            "address": "Cairo, Egypt",
             "rate": "4.65"
           },
-          "comment": "Standard furniture delivery - no assembly",
-          "selected": false
-        },
-        {
-          "cost": 515.00,
-          "company": {
-            "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
-            "name": "UPS",
-            "phoneNumber": "+201112223336",
-            "email": "info@ups.com",
-            "address": "321 Shipping Ave, Cairo, Egypt",
-            "rate": "4.80"
-          },
-          "comment": "Economy furniture delivery",
+          "comment": "Economy - 3 days",
           "selected": false
         }
       ]

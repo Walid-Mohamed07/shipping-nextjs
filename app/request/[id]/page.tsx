@@ -22,6 +22,8 @@ import {
   MapPinned,
   Truck,
   Box,
+  Wrench,
+  BoxSelect,
 } from "lucide-react";
 import {
   Request,
@@ -159,11 +161,7 @@ export default function RequestDetailsPage() {
       };
       setRequest(updatedRequest);
       setSelectedOfferId(offerId);
-      
-      const selectedOffer = request.costOffers.find(o => o.company.id === offerId);
-      if (selectedOffer) {
-        toast.success(`${selectedOffer.company.name} selected!`);
-      }
+      toast.success("Offer selected!");
     }
   };
 
@@ -199,7 +197,7 @@ export default function RequestDetailsPage() {
 
       const data = await response.json();
       
-      toast.success(`Successfully submitted ${confirmingOffer.company.name}'s offer!`);
+      toast.success("Offer submitted successfully!");
       setShowConfirmDialog(false);
       setConfirmingOffer(null);
       
@@ -611,7 +609,7 @@ export default function RequestDetailsPage() {
                 </p>
               </div>
 
-              <div className="max-h-[300px] overflow-y-auto pr-2">
+              <div className="max-h-[300px] overflow-y-auto pr-2 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {request.costOffers.map((offer, idx) => (
                     <div
@@ -633,10 +631,10 @@ export default function RequestDetailsPage() {
                       </div>
                     )}
 
-                    {/* Company Name with Rating */}
+                    {/* Option Label */}
                     <div className="mb-3">
                       <h3 className="text-base font-bold text-foreground mb-1">
-                        {offer.company.name}
+                        Option {idx + 1}
                       </h3>
                       <div className="flex items-center gap-1">
                         <span className="text-yellow-500 text-sm">★</span>
@@ -653,9 +651,9 @@ export default function RequestDetailsPage() {
                       </p>
                     </div>
 
-                    {/* Comment */}
+                    {/* Delivery Reason */}
                     {offer.comment && (
-                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-3">
                         {offer.comment}
                       </p>
                     )}
@@ -705,22 +703,17 @@ export default function RequestDetailsPage() {
 
                 {/* Offer Details */}
                 <div className="bg-muted/50 rounded-lg p-4 mb-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-foreground">
-                      {confirmingOffer.company.name}
-                    </h4>
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500">★</span>
-                      <span className="font-semibold text-foreground">
-                        {confirmingOffer.company.rate}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-1 mb-2">
+                    <span className="text-yellow-500">★</span>
+                    <span className="font-semibold text-foreground">
+                      {confirmingOffer.company.rate}
+                    </span>
                   </div>
                   <p className="text-2xl font-bold text-primary mb-2">
                     ${confirmingOffer.cost.toFixed(2)}
                   </p>
                   {confirmingOffer.comment && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {confirmingOffer.comment}
                     </p>
                   )}
@@ -869,6 +862,32 @@ export default function RequestDetailsPage() {
                           </div>
                         </div>
                       )}
+                      {item.services && (item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly || item.services.packaging) && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Services
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {(item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly) && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                <Wrench className="w-3 h-3" />
+                                Assembly &amp; Disassembly
+                                {item.services.assemblyDisassemblyHandler && (
+                                  <span className="ml-1 text-[10px]">
+                                    ({item.services.assemblyDisassemblyHandler === "self" ? "Self" : "Company"})
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                            {item.services.packaging && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                <BoxSelect className="w-3 h-3" />
+                                Packaging
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -949,26 +968,25 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-primary" />
-                  {request.selectedCompany ? "Cost" : "Estimated Cost"}
+                  {request.selectedCompany ? "Cost" : "Primary Cost"}
                 </h3>
                 {request.selectedCompany ? (
                   <>
                     <p className="text-xl font-bold text-primary">
                       ${Number(request.selectedCompany.cost).toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      From {request.selectedCompany.name}
-                    </p>
-                    {(request as any).estimatedCost && (
+                    {request.primaryCost && (
                       <p className="text-xs text-muted-foreground mt-2 line-through">
-                        Est. ${Number((request as any).estimatedCost).toFixed(2)}
+                        Primary: ${Number(request.primaryCost).toFixed(2)}
                       </p>
                     )}
                   </>
                 ) : (
                   <p className="text-base font-medium text-foreground">
-                    {(request as any).estimatedCost
-                      ? `$${Number((request as any).estimatedCost).toFixed(2)}`
+                    {request.primaryCost
+                      ? `$${Number(request.primaryCost).toFixed(2)}`
+                      : request.cost
+                      ? `$${Number(request.cost).toFixed(2)}`
                       : "-"}
                   </p>
                 )}
@@ -998,14 +1016,14 @@ export default function RequestDetailsPage() {
                 </span>
               </div>
 
-              {/* Selected company info */}
+              {/* Selected offer info */}
               {request.selectedCompany && (
                 <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground">Shipping Company</p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {request.selectedCompany.name}
+                      <p className="text-xs text-muted-foreground">Accepted Offer</p>
+                      <p className="text-sm font-semibold text-primary">
+                        ${Number(request.selectedCompany.cost).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
@@ -1044,9 +1062,8 @@ export default function RequestDetailsPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {activity.description}
                         </p>
-                        {activity.companyName && activity.cost && (
+                        {activity.cost && (
                           <div className="flex items-center gap-2 mt-1 text-xs">
-                            <span className="font-medium text-foreground">{activity.companyName}</span>
                             <span className="text-primary font-semibold">${Number(activity.cost).toFixed(2)}</span>
                           </div>
                         )}
@@ -1087,24 +1104,11 @@ export default function RequestDetailsPage() {
                           <p className="text-sm text-muted-foreground mt-1">
                             {activity.description}
                           </p>
-                          {activity.companyName && (
+                          {activity.cost && (
                             <div className="mt-2 flex items-center gap-3 text-sm">
-                              <span className="text-foreground font-medium">
-                                {activity.companyName}
+                              <span className="text-primary font-semibold">
+                                ${activity.cost.toFixed(2)}
                               </span>
-                              {activity.companyRate && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-yellow-500">★</span>
-                                  <span className="font-semibold text-foreground">
-                                    {activity.companyRate}
-                                  </span>
-                                </div>
-                              )}
-                              {activity.cost && (
-                                <span className="text-primary font-semibold">
-                                  ${activity.cost.toFixed(2)}
-                                </span>
-                              )}
                             </div>
                           )}
                         </div>

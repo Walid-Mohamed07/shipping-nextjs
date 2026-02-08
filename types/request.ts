@@ -37,6 +37,13 @@ export interface Item {
   quantity: number;
   note?: string;
   media?: MediaItem[];
+  services?: {
+    canBeAssembledDisassembled?: boolean;
+    assemblyDisassemblyHandler?: "self" | "company";
+    packaging?: boolean;
+    // Backward compatibility
+    assemblyDisassembly?: boolean;
+  };
 }
 
 export interface ShippingItem {
@@ -45,6 +52,11 @@ export interface ShippingItem {
   dimensions: string;
   weight: string;
   quantity: number;
+}
+
+export interface RequestServices {
+  assemblyDisassembly: boolean;
+  packaging: boolean;
 }
 
 export interface CostOffer {
@@ -81,7 +93,7 @@ export interface Request {
   deliveryType: DeliveryType;
   startTime?: string;
   cost?: string;
-  estimatedCost?: string;
+  primaryCost?: string;
   requestStatus: RequestStatus;
   deliveryStatus: DeliveryStatus;
   comment?: string; 

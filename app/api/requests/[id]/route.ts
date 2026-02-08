@@ -15,6 +15,7 @@ function normalizeItems(req: LegacyRequest) {
       quantity: Number(it.quantity ?? 1) || 1,
       note: it.note || undefined,
       media: Array.isArray(it.media) ? it.media.slice(0, 4) : [],
+      services: it.services || { assemblyDisassembly: false, packaging: false },
     }));
   }
   if (
@@ -34,6 +35,7 @@ function normalizeItems(req: LegacyRequest) {
         quantity: Number(req.quantity ?? 1) || 1,
         note: req.note || undefined,
         media: Array.isArray(req.media) ? req.media.slice(0, 4) : [],
+        services: { assemblyDisassembly: false, packaging: false },
       },
     ];
   }
@@ -57,7 +59,8 @@ function normalizeRequest(req: LegacyRequest) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime || undefined;
-  const estimatedCost = req.estimatedCost ?? req.primaryCost ?? undefined;
+  const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined;
+  const cost = req.cost ?? primaryCost;
   return {
     id: req.id,
     userId: req.userId,
@@ -67,7 +70,8 @@ function normalizeRequest(req: LegacyRequest) {
     destination,
     deliveryType,
     startTime,
-    estimatedCost,
+    primaryCost,
+    cost,
     requestStatus: req.requestStatus,
     deliveryStatus: req.deliveryStatus,
     items,

@@ -29,6 +29,7 @@ function normalizeItems(req: LegacyRequest) {
         quantity: Number(it.quantity ?? 1) || 1,
         note: it.note || undefined,
         media: normalizedMedia.slice(0, 4),
+        services: it.services || { assemblyDisassembly: false, packaging: false },
       };
     });
   }
@@ -50,6 +51,7 @@ function normalizeItems(req: LegacyRequest) {
         quantity: Number(req.quantity ?? 1) || 1,
         note: req.note || undefined,
         media: media.slice(0, 4),
+        services: { assemblyDisassembly: false, packaging: false },
       },
     ];
   }
@@ -73,7 +75,8 @@ function normalizeRequest(req: LegacyRequest) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime ?? req.whenToStart;
-  const cost = req.cost ?? req.estimatedCost ?? req.primaryCost;
+  const primaryCost = req.primaryCost ?? req.estimatedCost;
+  const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
   
   return {
@@ -87,7 +90,7 @@ function normalizeRequest(req: LegacyRequest) {
     deliveryType,
     startTime,
     whenToStart: startTime, // Legacy support
-    estimatedCost: req.estimatedCost ?? req.primaryCost,
+    primaryCost,
     cost,
     requestStatus,
     orderStatus: requestStatus, // Legacy support
@@ -155,7 +158,8 @@ export async function POST(request: NextRequest) {
     const sourceAddr = source ?? from;
     const destAddr = destination ?? to;
     const finalStartTime = startTime ?? whenToStart;
-    const finalCost = cost ?? estimatedCost ?? primaryCost;
+    const finalPrimaryCost = primaryCost ?? estimatedCost;
+    const finalCost = cost ?? finalPrimaryCost;
     const finalStatus = requestStatus ?? orderStatus;
 
     // Validate required request-level fields
@@ -206,9 +210,11 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         note: item.note || undefined,
         media: Array.isArray(item.media) ? item.media.slice(0, 4) : [],
+        services: item.services || { assemblyDisassembly: false, packaging: false },
       })),
       deliveryType: normalizedDeliveryType,
       startTime: finalStartTime,
+      primaryCost: finalPrimaryCost,
       cost: finalCost,
       requestStatus: finalStatus || "Pending",
       deliveryStatus: deliveryStatus || "Pending",
