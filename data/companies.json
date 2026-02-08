@@ -1,0 +1,34 @@
+{
+    "companies": [
+        {
+            "id": "adbfcb9f-e1f8-4119-be3a-147590954f2e",
+            "name": "FedEx",
+            "phoneNumber": "+201112223333",
+            "email": "info@fedex.com",
+            "address": "Horrya St, Cairo, Egypt",
+            "rate": "4.80",
+            "createdAt": "2026-02-07T09:14:06.003Z",
+            "updatedAt": "2026-02-07T09:14:06.003Z"
+        },
+        {
+            "id": "51aba1d2-3427-45d0-acfe-76f35822bc8a",
+            "name": "DHL",
+            "phoneNumber": "+201112223335",
+            "email": "info@dhl.com",
+            "address": "457 Business St, Cairo, Egypt",
+            "rate": "4.50",
+            "createdAt": "2026-02-07T09:13:31.715Z",
+            "updatedAt": "2026-02-07T09:13:31.715Z"
+        },
+        {
+            "id": "84b818e9-668c-401c-ba63-2b67436c5263",
+            "name": "Acme Logistics",
+            "phoneNumber": "+201112223334",
+            "email": "info@acme.com",
+            "address": "123 Business St, Cairo, Egypt",
+            "rate": "4.50",
+            "createdAt": "2026-02-07T09:12:51.463Z",
+            "updatedAt": "2026-02-07T09:12:51.463Z"
+        }
+    ]
+}

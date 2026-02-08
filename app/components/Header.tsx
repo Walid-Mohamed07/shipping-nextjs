@@ -5,6 +5,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import Image from "next/image";
+import { MessageNotification } from "./MessageNotification";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -52,6 +53,7 @@ export function Header() {
                   My Orders
                 </Link>
               )}
+              <MessageNotification />
               <span className="text-muted-foreground text-sm">
                 {user.name} ({user.role})
               </span>

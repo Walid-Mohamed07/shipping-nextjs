@@ -1,8 +1,47 @@
 {
   "requests": [
     {
-      "id": "a0857fbb-4866-4ad7-a27d-8796f831aa81",
-      "userId": "walid-client-001",
+      "id": "6a0f86de-eeb7-40e0-8a61-7083055ca50b",
+      "userId": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+      "user": {
+        "id": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+        "fullName": "Mohamed Ahmed",
+        "username": "mohamedahmed",
+        "email": "mohamed@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2004-12-15",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [
+          {
+            "id": "dab5ee7f-d3e0-4c4b-9a42-a077e8ee2789",
+            "country": "Egypt",
+            "countryCode": null,
+            "fullName": null,
+            "mobile": null,
+            "street": "Berti St",
+            "building": "6",
+            "city": "Cairo",
+            "district": "Berti",
+            "governorate": "Cairo",
+            "postalCode": "21532",
+            "landmark": "Metro Station",
+            "addressType": "Home",
+            "deliveryInstructions": "Ring bell",
+            "primary": true,
+            "coordinates": {
+              "latitude": 34.5581,
+              "longitude": 21.9757
+            }
+          }
+        ],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -65,7 +104,7 @@
       "startTime": "2024-01-01T00:00:00.000Z",
       "requestStatus": "Accepted",
       "deliveryStatus": "Pending",
-      "deliveryType": "Urgent",
+      "deliveryType": "normal",
       "comment": "Leave at front desk",
       "sourceWarehouseId": "wh-001",
       "destinationWarehouseId": "wh-001",
@@ -74,153 +113,66 @@
       "requestStatusHistory": [
         {
           "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
+          "changedAt": "2026-02-07T10:35:40.526Z",
+          "changedBy": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
           "role": "client",
           "note": "initial"
         },
         {
-          "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "initial"
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T08:34:11.944Z",
-          "changedBy": "bc22d721-2fd1-4b87-9346-eda4099e6a43",
-          "role": "operator",
+          "status": "Accepted",
+          "changedAt": "2026-02-07T16:06:19.188Z",
+          "changedBy": "admin-001",
+          "role": "admin",
           "note": null
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T08:34:11.944Z",
-          "changedBy": "bc22d721-2fd1-4b87-9346-eda4099e6a43",
-          "role": "operator",
-          "note": null
-        },
-        {
-          "status": "Action needed",
-          "changedAt": "2026-02-03T12:17:05.952Z",
-          "changedBy": null,
-          "role": "operator",
-          "note": "Cost offers set by operator with 3 offer(s)"
-        },
-        {
-          "status": "Action needed",
-          "changedAt": "2026-02-03T12:17:05.952Z",
-          "changedBy": null,
-          "role": "operator",
-          "note": "Cost offers set by operator with 3 offer(s)"
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T12:20:26.398Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "Client selected cost offer from DHL at $150.5"
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T12:20:26.398Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "Client selected cost offer from DHL at $150.5"
         }
       ],
       "deliveryStatusHistory": [
         {
           "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "initial"
-        },
-        {
-          "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
+          "changedAt": "2026-02-07T10:35:40.526Z",
+          "changedBy": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
           "role": "client",
           "note": "initial"
         }
       ],
-      "costOffers": [
-        {
-          "cost": 179.99,
-          "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
-            "name": "FedEx",
-            "phoneNumber": "+201112223335",
-            "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
-            "rate": "4.60"
-          },
-          "comment": "Express delivery available 1",
-          "selected": false
-        },
-        {
-          "cost": 150.5,
-          "company": {
-            "id": "f8f442e4-8170-4a59-857b-a3a975b5eb59",
-            "name": "DHL",
-            "phoneNumber": "+201112223331",
-            "email": "info@dhl.com",
-            "address": "789 Business St, Cairo, Egypt",
-            "rate": "4.70"
-          },
-          "comment": "Express delivery available 2",
-          "selected": true
-        },
-        {
-          "cost": 135.99,
-          "company": {
-            "id": "2bc45057-f825-4ff6-ae7d-fc3d044b89dd",
-            "name": "Acme Logistics",
-            "phoneNumber": "+201112223334",
-            "email": "info@acme.com",
-            "address": "123 Business St, Cairo, Egypt",
-            "rate": "4.50"
-          },
-          "comment": "Express delivery available 3",
-          "selected": false
-        }
-      ],
-      "createdAt": "2026-02-03T06:13:27.209Z",
-      "updatedAt": "2026-02-03T10:20:26.405Z",
+      "costOffers": [],
+      "createdAt": "2026-02-07T08:35:40.530Z",
+      "updatedAt": "2026-02-07T16:06:19.188Z",
       "deliveryFlow": [
-        "Pending",
         "Pending"
       ],
       "deliveryCompletedStatuses": [
-        "Pending",
         "Pending"
       ],
       "orderFlow": [
         "Pending",
-        "Pending",
-        "Confirmed",
-        "Confirmed",
-        "Action needed",
-        "Action needed",
-        "Confirmed",
-        "Confirmed"
+        "Accepted"
       ],
       "orderCompletedStatuses": [
         "Pending",
-        "Pending",
-        "Confirmed",
-        "Confirmed",
-        "Action needed",
-        "Action needed",
-        "Confirmed",
-        "Confirmed"
+        "Accepted"
       ]
-    }
-    ,
+    },
     {
-      "id": "b1f3a9c2-2a4b-4e6b-9a6d-11f5b7b2c9d0",
-      "userId": "asmaa-client-002",
+      "id": "7b1f86de-eeb7-40e0-8a61-7083055ca50c",
+      "userId": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+      "user": {
+        "id": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+        "fullName": "Asmaa Ali",
+        "username": "asmaaali",
+        "email": "asmaa@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2005-08-20",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -276,9 +228,9 @@
       ],
       "estimatedCost": "15.00",
       "startTime": "2026-02-05T09:00:00.000Z",
-      "requestStatus": "Pending",
+      "requestStatus": "Accepted",
       "deliveryStatus": "Pending",
-      "deliveryType": "Normal",
+      "deliveryType": "normal",
       "comment": "Handle carefully",
       "sourceWarehouseId": "wh-002",
       "destinationWarehouseId": "wh-002",
@@ -288,31 +240,65 @@
         {
           "status": "Pending",
           "changedAt": "2026-02-05T09:00:00.000Z",
-          "changedBy": null,
+          "changedBy": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
           "role": "client",
           "note": "initial"
+        },
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-07T16:08:07.049Z",
+          "changedBy": "admin-001",
+          "role": "admin",
+          "note": null
         }
       ],
       "deliveryStatusHistory": [
         {
           "status": "Pending",
           "changedAt": "2026-02-05T09:00:00.000Z",
-          "changedBy": null,
+          "changedBy": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
           "role": "client",
           "note": "initial"
         }
       ],
       "costOffers": [],
       "createdAt": "2026-02-05T09:00:00.000Z",
-      "updatedAt": "2026-02-05T09:00:00.000Z",
-      "deliveryFlow": ["Pending"],
-      "deliveryCompletedStatuses": ["Pending"],
-      "orderFlow": ["Pending"],
-      "orderCompletedStatuses": ["Pending"]
+      "updatedAt": "2026-02-07T16:08:07.049Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending",
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Pending",
+        "Accepted"
+      ]
     },
     {
       "id": "c6d9e7f0-8b2c-4d7a-9b3e-22a6d8f4b7c1",
-      "userId": "ahmed-client-003",
+      "userId": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+      "user": {
+        "id": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+        "fullName": "Ahmed Omar",
+        "username": "ahmedomar",
+        "email": "ahmed@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2003-05-10",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -352,7 +338,7 @@
         "pickupMode": "Self",
         "coordinates": {
           "latitude": 30.0561,
-          "longitude": 31.3300
+          "longitude": 31.33
         }
       },
       "items": [
@@ -368,9 +354,9 @@
       ],
       "estimatedCost": "5.50",
       "startTime": "2026-02-06T11:30:00.000Z",
-      "requestStatus": "Accepted",
+      "requestStatus": "Pending",
       "deliveryStatus": "Pending",
-      "deliveryType": "Normal",
+      "deliveryType": "normal",
       "comment": "N/A",
       "sourceWarehouseId": "wh-003",
       "destinationWarehouseId": "wh-001",
@@ -380,38 +366,56 @@
         {
           "status": "Pending",
           "changedAt": "2026-02-06T11:00:00.000Z",
-          "changedBy": null,
+          "changedBy": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
           "role": "client",
           "note": "initial"
-        },
-        {
-          "status": "Accepted",
-          "changedAt": "2026-02-06T11:35:00.000Z",
-          "changedBy": "operator-001",
-          "role": "operator",
-          "note": "Accepted by operator"
         }
       ],
       "deliveryStatusHistory": [
         {
           "status": "Pending",
           "changedAt": "2026-02-06T11:30:00.000Z",
-          "changedBy": null,
+          "changedBy": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
           "role": "client",
           "note": "initial"
         }
       ],
       "costOffers": [],
       "createdAt": "2026-02-06T11:30:00.000Z",
-      "updatedAt": "2026-02-06T11:35:00.000Z",
-      "deliveryFlow": ["Pending"],
-      "deliveryCompletedStatuses": ["Pending"],
-      "orderFlow": ["Pending", "Accepted"],
-      "orderCompletedStatuses": ["Pending", "Accepted"]
+      "updatedAt": "2026-02-06T11:30:00.000Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending"
+      ],
+      "orderCompletedStatuses": [
+        "Pending"
+      ]
     },
     {
       "id": "d4e8b2a3-9f7c-4b5a-9c1d-33f7c8a6b2e4",
-      "userId": "laila-client-004",
+      "userId": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+      "user": {
+        "id": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+        "fullName": "Laila Nabil",
+        "username": "lailanabil",
+        "email": "laila@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2002-09-25",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -450,7 +454,7 @@
         "warehouseId": "wh-004",
         "pickupMode": "Delegate",
         "coordinates": {
-          "latitude": 24.0900,
+          "latitude": 24.09,
           "longitude": 32.8998
         }
       },
@@ -469,7 +473,7 @@
       "startTime": "2026-02-07T08:00:00.000Z",
       "requestStatus": "Pending",
       "deliveryStatus": "Pending",
-      "deliveryType": "Urgent",
+      "deliveryType": "normal",
       "comment": "Fragile item",
       "sourceWarehouseId": "wh-004",
       "destinationWarehouseId": "wh-004",
@@ -479,7 +483,7 @@
         {
           "status": "Pending",
           "changedAt": "2026-02-07T08:00:00.000Z",
-          "changedBy": null,
+          "changedBy": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
           "role": "client",
           "note": "initial"
         }
@@ -488,7 +492,7 @@
         {
           "status": "Pending",
           "changedAt": "2026-02-07T08:00:00.000Z",
-          "changedBy": null,
+          "changedBy": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
           "role": "client",
           "note": "initial"
         }
@@ -496,10 +500,18 @@
       "costOffers": [],
       "createdAt": "2026-02-07T08:00:00.000Z",
       "updatedAt": "2026-02-07T08:00:00.000Z",
-      "deliveryFlow": ["Pending"],
-      "deliveryCompletedStatuses": ["Pending"],
-      "orderFlow": ["Pending"],
-      "orderCompletedStatuses": ["Pending"]
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending"
+      ],
+      "orderCompletedStatuses": [
+        "Pending"
+      ]
     }
   ]
 }
