@@ -44,6 +44,19 @@ export interface ShippingItem {
 export interface Request {
   id?: string;
   userId: string;
+  user?: {
+    id: string;
+    fullName: string;
+    username: string;
+    email: string;
+    nationalOrPassportNumber: string | null;
+    birthDate: string;
+    idImage: string | null;
+    licenseImage: string | null;
+    criminalRecord: string | null;
+    status: string;
+    profilePicture: string | null;
+  };
   source: Address;
   destination: Address;
   from?: Address;

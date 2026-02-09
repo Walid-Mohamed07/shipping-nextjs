@@ -4,7 +4,9 @@
       "id": "1",
       "email": "john@example.com",
       "password": "hashed_password_123",
+      "fullName": "John Doe",
       "name": "John Doe",
+      "username": "johndoe",
       "role": "client",
       "locations": [
         {
@@ -24,13 +26,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-15T10:30:00Z"
     },
     {
       "id": "2",
       "email": "jane@example.com",
       "password": "hashed_password_456",
+      "fullName": "Jane Smith",
       "name": "Jane Smith",
+      "username": "janesmith",
       "role": "client",
       "locations": [
         {
@@ -50,13 +55,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-16T14:20:00Z"
     },
     {
       "id": "admin-001",
       "email": "admin@example.com",
       "password": "admin_password_123",
+      "fullName": "Admin User",
       "name": "Admin User",
+      "username": "adminuser",
       "role": "admin",
       "locations": [
         {
@@ -76,13 +84,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-10T08:00:00Z"
     },
     {
       "id": "driver-001",
       "email": "driver1@example.com",
       "password": "driver_password_123",
+      "fullName": "Mike Johnson",
       "name": "Mike Johnson",
+      "username": "mikejohnson",
       "role": "driver",
       "locations": [
         {
@@ -102,13 +113,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-12T10:00:00Z"
     },
     {
       "id": "driver-002",
       "email": "driver2@example.com",
       "password": "driver_password_456",
+      "fullName": "Sarah Williams",
       "name": "Sarah Williams",
+      "username": "sarahwilliams",
       "role": "driver",
       "locations": [
         {
@@ -128,13 +142,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-13T14:00:00Z"
     },
     {
       "id": "driver-003",
       "email": "driver3@example.com",
       "password": "driver_password_789",
+      "fullName": "Marcus Schmidt",
       "name": "Marcus Schmidt",
+      "username": "marcusschmidt",
       "role": "driver",
       "locations": [
         {
@@ -154,13 +171,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-14T09:00:00Z"
     },
     {
       "id": "driver-004",
       "email": "driver4@example.com",
       "password": "driver_password_012",
+      "fullName": "Pierre Dupont",
       "name": "Pierre Dupont",
+      "username": "pierredupont",
       "role": "driver",
       "locations": [
         {
@@ -180,13 +200,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-15T11:00:00Z"
     },
     {
       "id": "1769075647206",
       "email": "walid@cepac-eg.com",
       "password": "Walid132",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
       "role": "client",
       "locations": [
         {
@@ -206,13 +229,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2026-01-22T09:54:07.206Z"
     },
     {
       "id": "walid-client-001",
       "email": "walid.client@cepac-eg.com",
       "password": "WalidClient123",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
       "role": "client",
       "locations": [
         {
@@ -280,13 +306,16 @@
           "primary": false
         }
       ],
+      "status": "active",
       "createdAt": "2026-01-22T10:00:00Z"
     },
     {
       "id": "walid-admin-001",
       "email": "walid.admin@cepac-eg.com",
       "password": "WalidAdmin123",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
       "role": "admin",
       "locations": [
         {
@@ -306,13 +335,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2026-01-22T10:01:00Z"
     },
     {
       "id": "walid-driver-001",
       "email": "walid.driver@cepac-eg.com",
       "password": "WalidDriver123",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
       "role": "driver",
       "locations": [
         {
@@ -332,13 +364,16 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2026-01-22T10:02:00Z"
     },
     {
       "id": "1769861366877",
       "email": "Mohamed@yahoo.com",
       "password": "Mohamed1234",
-      "name": "Mohamed Ahmed ",
+      "fullName": "Mohamed Ahmed",
+      "name": "Mohamed Ahmed",
+      "username": "mohamedahmed",
       "locations": [
         {
           "country": "Saudi Arabia",
@@ -408,6 +443,7 @@
         }
       ],
       "role": "admin",
+      "status": "active",
       "createdAt": "2026-01-31T12:09:26.877Z"
     }
   ]

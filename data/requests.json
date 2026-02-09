@@ -1,586 +1,47 @@
 {
   "requests": [
     {
-      "id": "REQ-1769419731959",
-      "userId": "walid-client-001",
-      "from": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Walid Mohamed",
-        "mobile": "+201112223334",
-        "street": "20 Client St",
-        "building": "14",
-        "city": "Alexandria",
-        "district": "Montaza",
-        "governorate": "Alexandria",
-        "postalCode": "21532",
-        "landmark": "Stanley Bridge",
-        "addressType": "Home",
-        "deliveryInstructions": "Ring bell",
-        "primary": false
+      "id": "6a0f86de-eeb7-40e0-8a61-7083055ca50b",
+      "userId": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+      "user": {
+        "id": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+        "fullName": "Mohamed Ahmed",
+        "username": "mohamedahmed",
+        "email": "mohamed@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2004-12-15",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [
+          {
+            "id": "dab5ee7f-d3e0-4c4b-9a42-a077e8ee2789",
+            "country": "Egypt",
+            "countryCode": null,
+            "fullName": null,
+            "mobile": null,
+            "street": "Berti St",
+            "building": "6",
+            "city": "Cairo",
+            "district": "Berti",
+            "governorate": "Cairo",
+            "postalCode": "21532",
+            "landmark": "Metro Station",
+            "addressType": "Home",
+            "deliveryInstructions": "Ring bell",
+            "primary": true,
+            "coordinates": {
+              "latitude": 34.5581,
+              "longitude": 21.9757
+            }
+          }
+        ],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
       },
-      "to": {
-        "country": "Egypt",
-        "countryCode": "",
-        "fullName": "Walid Mohamed",
-        "mobile": "123456",
-        "street": "El Ensherah st",
-        "building": "22",
-        "city": "Cairo",
-        "district": "",
-        "governorate": "",
-        "postalCode": "123",
-        "landmark": "Taha Hussein axis",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": true
-      },
-      "items": [
-        {
-          "id": "ITEM-1769419731959-1",
-          "name": "Cell phone",
-          "category": "Electronics",
-          "dimensions": "15x10x0.7",
-          "weight": "0.13",
-          "quantity": 1,
-          "note": "",
-          "media": []
-        }
-      ],
-      "deliveryType": "normal",
-      "startTime": "2026-02-05T10:00:00Z",
-      "primaryCost": "2.60",
-      "orderStatus": "Accepted",
-      "deliveryStatus": "In Transit",
-      "sourceAddress": "20 Client St",
-      "sourcePostalCode": "21532",
-      "address": "El Ensherah st",
-      "country": "Egypt",
-      "postalCode": "123",
-      "mobile": "12432532554",
-      "warehouseId": "wh-001",
-      "pickupMode": "Delegate",
-      "createdAt": "2026-01-26T09:28:51.959Z",
-      "updatedAt": "2026-01-27T12:34:55.903Z"
-    },
-    {
-      "id": "REQ-1769419732300",
-      "userId": "walid-client-001",
-      "from": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Walid Mohamed",
-        "mobile": "+201112223334",
-        "street": "15 Corniche Rd",
-        "building": "32",
-        "city": "Alexandria",
-        "district": "Gleem",
-        "governorate": "Alexandria",
-        "postalCode": "21523",
-        "landmark": "Gleem Bay",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": false
-      },
-      "to": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Mona Hassan",
-        "mobile": "+201234567890",
-        "street": "12 Salah Salem",
-        "building": "",
-        "city": "Cairo",
-        "district": "Nasr City",
-        "governorate": "Cairo",
-        "postalCode": "11371",
-        "landmark": "Near Genena Mall",
-        "addressType": "Apartment",
-        "deliveryInstructions": "",
-        "primary": false
-      },
-      "item": "Tablet",
-      "category": "Electronics",
-      "dimensions": "25x17x0.8",
-      "weight": "0.5",
-      "quantity": 2,
-      "primaryCost": "8.00",
-      "estimatedTime": "2-3 days",
-      "orderStatus": "Rejected",
-      "deliveryStatus": "Cancelled",
-      "sourceAddress": "15 Corniche Rd",
-      "sourcePostalCode": "21523",
-      "address": "12 Salah Salem",
-      "country": "Egypt",
-      "postalCode": "11371",
-      "mobile": "+201234567890",
-      "warehouseId": "wh-001",
-      "pickupMode": "Self",
-      "createdAt": "2026-01-26T10:30:00.000Z",
-      "updatedAt": "2026-01-26T10:28:16.448Z"
-    },
-    {
-      "id": "REQ-1769419732400",
-      "userId": "walid-client-001",
-      "from": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Walid Mohamed",
-        "mobile": "+201112223334",
-        "street": "8 El Horreya Ave",
-        "building": "",
-        "city": "Alexandria",
-        "district": "Roushdy",
-        "governorate": "Alexandria",
-        "postalCode": "21526",
-        "landmark": "Roushdy Mall",
-        "addressType": "Home",
-        "deliveryInstructions": "Evening delivery",
-        "primary": false
-      },
-      "to": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Karim Fathy",
-        "mobile": "+201223344556",
-        "street": "25 Abbas El Akkad",
-        "building": "",
-        "city": "Cairo",
-        "district": "Nasr City",
-        "governorate": "Cairo",
-        "postalCode": "11371",
-        "landmark": "Near City Stars",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": false
-      },
-      "item": "Books",
-      "category": "Books",
-      "dimensions": "22x15x8",
-      "weight": "2.0",
-      "quantity": 4,
-      "primaryCost": "16.00",
-      "estimatedTime": "2-3 days",
-      "orderStatus": "Pending",
-      "deliveryStatus": "Pending",
-      "sourceAddress": "8 El Horreya Ave",
-      "sourcePostalCode": "21526",
-      "address": "25 Abbas El Akkad",
-      "country": "Egypt",
-      "postalCode": "11371",
-      "mobile": "+201223344556",
-      "warehouseId": "wh-001",
-      "pickupMode": "Delegate",
-      "createdAt": "2026-01-26T10:40:00.000Z",
-      "updatedAt": "2026-01-26T10:40:00.000Z"
-    },
-    {
-      "id": "REQ-1769419732500",
-      "userId": "walid-client-001",
-      "from": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Walid Mohamed",
-        "mobile": "+201112223334",
-        "street": "30 Sidi Gaber",
-        "building": "",
-        "city": "Alexandria",
-        "district": "Sidi Gaber",
-        "governorate": "Alexandria",
-        "postalCode": "21524",
-        "landmark": "Sidi Gaber Station",
-        "addressType": "Home",
-        "deliveryInstructions": "Morning delivery",
-        "primary": false
-      },
-      "to": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Nour El Din",
-        "mobile": "+201334455667",
-        "street": "50 Ramses St",
-        "building": "",
-        "city": "Cairo",
-        "district": "Downtown",
-        "governorate": "Cairo",
-        "postalCode": "11511",
-        "landmark": "Ramses Station",
-        "addressType": "Office",
-        "deliveryInstructions": "",
-        "primary": false
-      },
-      "item": "Documents",
-      "category": "Documents",
-      "dimensions": "30x22x1",
-      "weight": "0.3",
-      "quantity": 1,
-      "primaryCost": "3.00",
-      "estimatedTime": "1-2 days",
-      "orderStatus": "Pending",
-      "deliveryStatus": "Pending",
-      "sourceAddress": "30 Sidi Gaber",
-      "sourcePostalCode": "21524",
-      "address": "50 Ramses St",
-      "country": "Egypt",
-      "postalCode": "11511",
-      "mobile": "+201334455667",
-      "warehouseId": "wh-001",
-      "pickupMode": "Self",
-      "createdAt": "2026-01-26T10:50:00.000Z",
-      "updatedAt": "2026-01-26T10:50:00.000Z"
-    },
-    {
-      "id": "REQ-1769419732000",
-      "userId": "sara-client-002",
-      "from": {
-        "country": "UAE",
-        "countryCode": "+971",
-        "fullName": "Sara Ahmed",
-        "mobile": "+971501234567",
-        "street": "10 Marina Walk",
-        "building": "Tower 2",
-        "city": "Dubai",
-        "district": "Dubai Marina",
-        "governorate": "Dubai",
-        "postalCode": "00000",
-        "landmark": "Near JBR",
-        "addressType": "Apartment",
-        "deliveryInstructions": "Call on arrival",
-        "primary": true
-      },
-      "to": {
-        "country": "UAE",
-        "countryCode": "+971",
-        "fullName": "Omar Khaled",
-        "mobile": "+971502345678",
-        "street": "Mall of the Emirates",
-        "building": "",
-        "city": "Dubai",
-        "district": "Al Barsha",
-        "governorate": "Dubai",
-        "postalCode": "00001",
-        "landmark": "Ski Dubai",
-        "addressType": "Business",
-        "deliveryInstructions": "Reception desk",
-        "primary": false
-      },
-      "item": "Laptop",
-      "category": "Electronics",
-      "dimensions": "35x25x2",
-      "weight": "2.2",
-      "quantity": 1,
-      "primaryCost": "30.00",
-      "estimatedTime": "2-3 days",
-      "orderStatus": "Pending",
-      "deliveryStatus": "Pending",
-      "sourceAddress": "10 Marina Walk",
-      "sourcePostalCode": "00000",
-      "address": "Mall of the Emirates",
-      "country": "UAE",
-      "postalCode": "00001",
-      "mobile": "+971502345678",
-      "warehouseId": "wh-002",
-      "pickupMode": "Self",
-      "createdAt": "2026-01-26T10:00:00.000Z",
-      "updatedAt": "2026-01-26T10:00:00.000Z"
-    },
-    {
-      "id": "REQ-1769419732100",
-      "userId": "john-client-003",
-      "from": {
-        "country": "Saudi Arabia",
-        "countryCode": "+966",
-        "fullName": "John Smith",
-        "mobile": "+966555123456",
-        "street": "King Fahd Rd",
-        "building": "",
-        "city": "Riyadh",
-        "district": "Al Olaya",
-        "governorate": "Riyadh",
-        "postalCode": "11564",
-        "landmark": "Kingdom Tower",
-        "addressType": "Office",
-        "deliveryInstructions": "Ask for John at reception",
-        "primary": false
-      },
-      "to": {
-        "country": "Saudi Arabia",
-        "countryCode": "+966",
-        "fullName": "Fatima Al Saud",
-        "mobile": "+966555654321",
-        "street": "Al Takhassusi St",
-        "building": "",
-        "city": "Riyadh",
-        "district": "Al Mohammadiyah",
-        "governorate": "Riyadh",
-        "postalCode": "12345",
-        "landmark": "Near King Khalid Hospital",
-        "addressType": "Home",
-        "deliveryInstructions": "Leave at security gate",
-        "primary": true
-      },
-      "item": "Books",
-      "category": "Books",
-      "dimensions": "20x15x10",
-      "weight": "3.5",
-      "quantity": 5,
-      "primaryCost": "42.00",
-      "estimatedTime": "5-10 days",
-      "orderStatus": "Rejected",
-      "deliveryStatus": "Cancelled",
-      "sourceAddress": "King Fahd Rd",
-      "sourcePostalCode": "11564",
-      "address": "Al Takhassusi St",
-      "country": "Saudi Arabia",
-      "postalCode": "12345",
-      "mobile": "+966555654321",
-      "warehouseId": "wh-003",
-      "pickupMode": "Delegate",
-      "createdAt": "2026-01-26T10:10:00.000Z",
-      "updatedAt": "2026-01-27T12:56:36.461Z"
-    },
-    {
-      "id": "REQ-1769419732200",
-      "userId": "fatima-client-004",
-      "from": {
-        "country": "Egypt",
-        "countryCode": "+20",
-        "fullName": "Fatima Hassan",
-        "mobile": "+201234567890",
-        "street": "5 Nile St",
-        "building": "",
-        "city": "Giza",
-        "district": "Dokki",
-        "governorate": "Giza",
-        "postalCode": "12611",
-        "landmark": "Near Shooting Club",
-        "addressType": "Home",
-        "deliveryInstructions": "Call before arrival",
-        "primary": true
-      },
-      "to": {
-        "country": "UAE",
-        "countryCode": "+971",
-        "fullName": "Ahmed Zayed",
-        "mobile": "+971509876543",
-        "street": "Sheikh Zayed Rd",
-        "building": "",
-        "city": "Dubai",
-        "district": "Trade Centre",
-        "governorate": "Dubai",
-        "postalCode": "00002",
-        "landmark": "Near World Trade Center",
-        "addressType": "Business",
-        "deliveryInstructions": "Loading dock",
-        "primary": false
-      },
-      "item": "Furniture",
-      "category": "Furniture",
-      "dimensions": "200x80x60",
-      "weight": "40",
-      "quantity": 1,
-      "primaryCost": "1800.00",
-      "estimatedTime": "5-10 days",
-      "orderStatus": "Rejected",
-      "deliveryStatus": "Cancelled",
-      "sourceAddress": "5 Nile St",
-      "sourcePostalCode": "12611",
-      "address": "Sheikh Zayed Rd",
-      "country": "UAE",
-      "postalCode": "00002",
-      "mobile": "+971509876543",
-      "warehouseId": "wh-002",
-      "pickupMode": "Self",
-      "createdAt": "2026-01-26T10:20:00.000Z",
-      "updatedAt": "2026-01-27T11:45:24.152Z"
-    },
-    {
-      "id": "REQ-1769512196589",
-      "userId": "walid-client-001",
-      "from": {
-        "country": "Egypt",
-        "countryCode": "",
-        "fullName": "Walid Mohamed",
-        "mobile": "123456",
-        "street": "El Ensherah st",
-        "building": "",
-        "city": "Cairo",
-        "district": "",
-        "governorate": "",
-        "postalCode": "123",
-        "landmark": "Taha Hussein axis",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": true
-      },
-      "to": {
-        "country": "Saudi Arabia",
-        "countryCode": "",
-        "fullName": "Walid Mohamed",
-        "mobile": "43657546345345",
-        "street": "45 st",
-        "building": "31",
-        "city": "Riyadh",
-        "district": "",
-        "governorate": "",
-        "postalCode": "45462",
-        "landmark": "Before Riyadh club",
-        "addressType": "Office",
-        "deliveryInstructions": "",
-        "primary": false
-      },
-      "item": "BMW M3 2024 Gearbox",
-      "category": "Automotive Parts",
-      "dimensions": "150x200x160",
-      "weight": "80",
-      "quantity": 1,
-      "primaryCost": "1200.00",
-      "estimatedTime": "5-10 days",
-      "orderStatus": "Accepted",
-      "deliveryStatus": "Pending",
-      "sourceAddress": "El Ensherah st",
-      "sourcePostalCode": "123",
-      "address": "45 st",
-      "country": "Saudi Arabia",
-      "postalCode": "45462",
-      "mobile": "6666666666666",
-      "warehouseId": "wh-001",
-      "pickupMode": "Self",
-      "createdAt": "2026-01-27T11:09:56.589Z",
-      "updatedAt": "2026-01-27T11:26:19.427Z"
-    },
-    {
-      "id": "REQ-1769518154894",
-      "userId": "walid-client-001",
-      "from": {
-        "country": "Kuwait",
-        "countryCode": "",
-        "fullName": "Walid Mohamed",
-        "mobile": "4635345234324",
-        "street": "AD st",
-        "building": "2",
-        "city": "Abo Dabi",
-        "district": "",
-        "governorate": "",
-        "postalCode": "23244",
-        "landmark": "Near Diamond Mall",
-        "addressType": "Home",
-        "deliveryInstructions": "Call on arrival",
-        "primary": false
-      },
-      "to": {
-        "country": "Egypt",
-        "countryCode": "",
-        "fullName": "Walid Mohamed",
-        "mobile": "123456",
-        "street": "El Ensherah st",
-        "building": "",
-        "city": "Cairo",
-        "district": "",
-        "governorate": "",
-        "postalCode": "123",
-        "landmark": "Taha Hussein axis",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": true
-      },
-      "item": "Coillover",
-      "category": "Automotive Parts",
-      "dimensions": "20x200x150",
-      "weight": "5",
-      "quantity": 4,
-      "primaryCost": "300.00",
-      "estimatedTime": "5-10 days",
-      "orderStatus": "Accepted",
-      "deliveryStatus": "Pending",
-      "sourceAddress": "AD st",
-      "sourcePostalCode": "23244",
-      "address": "El Ensherah st",
-      "country": "Egypt",
-      "postalCode": "123",
-      "mobile": "56467868687",
-      "warehouseId": "wh-005",
-      "pickupMode": "Delegate",
-      "createdAt": "2026-01-27T12:49:14.895Z",
-      "updatedAt": "2026-01-27T12:56:34.806Z"
-    },
-    {
-      "id": "REQ-1770104076996",
-      "userId": "1769861366877",
-      "from": {
-        "country": "Egypt",
-        "countryCode": "",
-        "fullName": "Mohamed Ahmed ",
-        "mobile": "01006591234",
-        "street": "Doctor Hassn Al Sherif Street",
-        "building": "65",
-        "city": "Nasr City",
-        "district": "Nasr City",
-        "governorate": "Cairo",
-        "postalCode": "11765",
-        "landmark": "alsalam mosque",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": true,
-        "warehouseId": "",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 30.048492990706322,
-          "longitude": 31.356245325278817
-        }
-      },
-      "to": {
-        "country": "Saudi Arabia",
-        "countryCode": "",
-        "fullName": "Mohamed Ahmed ",
-        "mobile": "01006591234",
-        "street": "Al Washm",
-        "building": "21",
-        "city": "Riyadh",
-        "district": "Al Murabba`",
-        "governorate": "Riyadh Region",
-        "postalCode": "12612",
-        "landmark": "near to abu fahd",
-        "addressType": "Home",
-        "deliveryInstructions": "total gas station ",
-        "primary": false,
-        "warehouseId": "",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 24.65237975270708,
-          "longitude": 46.71020505018533
-        }
-      },
-      "items": [
-        {
-          "id": "ITEM-1770104015320-g1deywcvh",
-          "name": "abc",
-          "category": "Books",
-          "dimensions": "10x10x10",
-          "weight": "1.5",
-          "quantity": 11,
-          "media": []
-        },
-        {
-          "id": "ITEM-1770104050829-g1ths2deb",
-          "name": "defg",
-          "category": "Books",
-          "dimensions": "20x20x20",
-          "weight": "1",
-          "quantity": 15,
-          "media": []
-        }
-      ],
-      "deliveryType": "normal",
-      "startTime": "2026-02-03T10:37:00.000Z",
-      "primaryCost": "198.00",
-      "orderStatus": "Pending",
-      "deliveryStatus": "Pending",
-      "createdAt": "2026-02-03T07:34:36.996Z",
-      "updatedAt": "2026-02-03T07:34:36.996Z"
-    },
-    {
-      "id": "a0857fbb-4866-4ad7-a27d-8796f831aa81",
-      "userId": "walid-client-001",
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -643,7 +104,7 @@
       "startTime": "2024-01-01T00:00:00.000Z",
       "requestStatus": "Accepted",
       "deliveryStatus": "Pending",
-      "deliveryType": "Urgent",
+      "deliveryType": "normal",
       "comment": "Leave at front desk",
       "sourceWarehouseId": "wh-001",
       "destinationWarehouseId": "wh-001",
@@ -652,147 +113,404 @@
       "requestStatusHistory": [
         {
           "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
+          "changedAt": "2026-02-07T10:35:40.526Z",
+          "changedBy": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
           "role": "client",
           "note": "initial"
         },
         {
-          "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "initial"
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T08:34:11.944Z",
-          "changedBy": "bc22d721-2fd1-4b87-9346-eda4099e6a43",
-          "role": "operator",
+          "status": "Accepted",
+          "changedAt": "2026-02-07T16:06:19.188Z",
+          "changedBy": "admin-001",
+          "role": "admin",
           "note": null
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T08:34:11.944Z",
-          "changedBy": "bc22d721-2fd1-4b87-9346-eda4099e6a43",
-          "role": "operator",
-          "note": null
-        },
-        {
-          "status": "Action needed",
-          "changedAt": "2026-02-03T12:17:05.952Z",
-          "changedBy": null,
-          "role": "operator",
-          "note": "Cost offers set by operator with 3 offer(s)"
-        },
-        {
-          "status": "Action needed",
-          "changedAt": "2026-02-03T12:17:05.952Z",
-          "changedBy": null,
-          "role": "operator",
-          "note": "Cost offers set by operator with 3 offer(s)"
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T12:20:26.398Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "Client selected cost offer from DHL at $150.5"
-        },
-        {
-          "status": "Confirmed",
-          "changedAt": "2026-02-03T12:20:26.398Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "Client selected cost offer from DHL at $150.5"
         }
       ],
       "deliveryStatusHistory": [
         {
           "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
-          "role": "client",
-          "note": "initial"
-        },
-        {
-          "status": "Pending",
-          "changedAt": "2026-02-03T08:13:27.201Z",
-          "changedBy": "d962d53a-0ca9-466b-9cf9-3be3ae8f5cc2",
+          "changedAt": "2026-02-07T10:35:40.526Z",
+          "changedBy": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
           "role": "client",
           "note": "initial"
         }
       ],
-      "costOffers": [
-        {
-          "cost": 179.99,
-          "company": {
-            "id": "6c6e2104-5251-4975-8289-104e81af2086",
-            "name": "FedEx",
-            "phoneNumber": "+201112223335",
-            "email": "info@fedex.com",
-            "address": "456 Business St, Cairo, Egypt",
-            "rate": "4.60"
-          },
-          "comment": "Express delivery available 1",
-          "selected": false
-        },
-        {
-          "cost": 150.5,
-          "company": {
-            "id": "f8f442e4-8170-4a59-857b-a3a975b5eb59",
-            "name": "DHL",
-            "phoneNumber": "+201112223331",
-            "email": "info@dhl.com",
-            "address": "789 Business St, Cairo, Egypt",
-            "rate": "4.70"
-          },
-          "comment": "Express delivery available 2",
-          "selected": true
-        },
-        {
-          "cost": 135.99,
-          "company": {
-            "id": "2bc45057-f825-4ff6-ae7d-fc3d044b89dd",
-            "name": "Acme Logistics",
-            "phoneNumber": "+201112223334",
-            "email": "info@acme.com",
-            "address": "123 Business St, Cairo, Egypt",
-            "rate": "4.50"
-          },
-          "comment": "Express delivery available 3",
-          "selected": false
-        }
-      ],
-      "createdAt": "2026-02-03T06:13:27.209Z",
-      "updatedAt": "2026-02-03T10:20:26.405Z",
+      "costOffers": [],
+      "createdAt": "2026-02-07T08:35:40.530Z",
+      "updatedAt": "2026-02-07T16:06:19.188Z",
       "deliveryFlow": [
-        "Pending",
         "Pending"
       ],
       "deliveryCompletedStatuses": [
-        "Pending",
         "Pending"
       ],
       "orderFlow": [
         "Pending",
-        "Pending",
-        "Confirmed",
-        "Confirmed",
-        "Action needed",
-        "Action needed",
-        "Confirmed",
-        "Confirmed"
+        "Accepted"
       ],
       "orderCompletedStatuses": [
         "Pending",
+        "Accepted"
+      ]
+    },
+    {
+      "id": "7b1f86de-eeb7-40e0-8a61-7083055ca50c",
+      "userId": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+      "user": {
+        "id": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+        "fullName": "Asmaa Ali",
+        "username": "asmaaali",
+        "email": "asmaa@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2005-08-20",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
+      "source": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Asmaa Ali",
+        "mobile": "+201011223334",
+        "street": "10 Nile Rd",
+        "building": "2",
+        "city": "Cairo",
+        "district": "Zamalek",
+        "governorate": "Cairo",
+        "postalCode": "11511",
+        "landmark": "Cairo Tower",
+        "addressType": "Home",
+        "deliveryInstructions": "Call on arrival",
+        "warehouseId": "wh-002",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.0459,
+          "longitude": 31.2243
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Mohamed Hassan",
+        "mobile": "+201012223335",
+        "street": "5 Garden St",
+        "building": "8",
+        "city": "Giza",
+        "district": "Dokki",
+        "governorate": "Giza",
+        "postalCode": "12611",
+        "landmark": "Opera",
+        "addressType": "Office",
+        "deliveryInstructions": "Reception",
+        "warehouseId": "wh-002",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.0131,
+          "longitude": 31.2089
+        }
+      },
+      "items": [
+        {
+          "item": "Books",
+          "category": "Education",
+          "dimensions": "20x15x10",
+          "weight": "1.2",
+          "quantity": 3,
+          "note": "Use cardboard box",
+          "media": []
+        }
+      ],
+      "estimatedCost": "15.00",
+      "startTime": "2026-02-05T09:00:00.000Z",
+      "requestStatus": "Accepted",
+      "deliveryStatus": "Pending",
+      "deliveryType": "normal",
+      "comment": "Handle carefully",
+      "sourceWarehouseId": "wh-002",
+      "destinationWarehouseId": "wh-002",
+      "sourcePickupMode": "Self",
+      "destinationPickupMode": "Delegate",
+      "requestStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-05T09:00:00.000Z",
+          "changedBy": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+          "role": "client",
+          "note": "initial"
+        },
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-07T16:08:07.049Z",
+          "changedBy": "admin-001",
+          "role": "admin",
+          "note": null
+        }
+      ],
+      "deliveryStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-05T09:00:00.000Z",
+          "changedBy": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "costOffers": [],
+      "createdAt": "2026-02-05T09:00:00.000Z",
+      "updatedAt": "2026-02-07T16:08:07.049Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
         "Pending",
-        "Confirmed",
-        "Confirmed",
-        "Action needed",
-        "Action needed",
-        "Confirmed",
-        "Confirmed"
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Pending",
+        "Accepted"
+      ]
+    },
+    {
+      "id": "c6d9e7f0-8b2c-4d7a-9b3e-22a6d8f4b7c1",
+      "userId": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+      "user": {
+        "id": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+        "fullName": "Ahmed Omar",
+        "username": "ahmedomar",
+        "email": "ahmed@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2003-05-10",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
+      "source": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Ahmed Omar",
+        "mobile": "+201055667788",
+        "street": "12 Sea Ave",
+        "building": "1",
+        "city": "Hurghada",
+        "district": "Beach",
+        "governorate": "Red Sea",
+        "postalCode": "84511",
+        "landmark": "Marina",
+        "addressType": "Home",
+        "deliveryInstructions": "Leave at guard",
+        "warehouseId": "wh-003",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 27.2579,
+          "longitude": 33.8116
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Sara Youssef",
+        "mobile": "+201066778899",
+        "street": "77 Market St",
+        "building": "4",
+        "city": "Cairo",
+        "district": "Nasr City",
+        "governorate": "Cairo",
+        "postalCode": "11371",
+        "landmark": "Mall",
+        "addressType": "Office",
+        "deliveryInstructions": "Call before arrival",
+        "warehouseId": "wh-001",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.0561,
+          "longitude": 31.33
+        }
+      },
+      "items": [
+        {
+          "item": "T-shirt",
+          "category": "Clothing",
+          "dimensions": "30x25x2",
+          "weight": "0.2",
+          "quantity": 2,
+          "note": "Folded",
+          "media": []
+        }
+      ],
+      "estimatedCost": "5.50",
+      "startTime": "2026-02-06T11:30:00.000Z",
+      "requestStatus": "Pending",
+      "deliveryStatus": "Pending",
+      "deliveryType": "normal",
+      "comment": "N/A",
+      "sourceWarehouseId": "wh-003",
+      "destinationWarehouseId": "wh-001",
+      "sourcePickupMode": "Delegate",
+      "destinationPickupMode": "Self",
+      "requestStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-06T11:00:00.000Z",
+          "changedBy": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "deliveryStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-06T11:30:00.000Z",
+          "changedBy": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "costOffers": [],
+      "createdAt": "2026-02-06T11:30:00.000Z",
+      "updatedAt": "2026-02-06T11:30:00.000Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending"
+      ],
+      "orderCompletedStatuses": [
+        "Pending"
+      ]
+    },
+    {
+      "id": "d4e8b2a3-9f7c-4b5a-9c1d-33f7c8a6b2e4",
+      "userId": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+      "user": {
+        "id": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+        "fullName": "Laila Nabil",
+        "username": "lailanabil",
+        "email": "laila@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2002-09-25",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
+      "source": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Laila Nabil",
+        "mobile": "+201099887766",
+        "street": "3 Luxor Rd",
+        "building": "10",
+        "city": "Luxor",
+        "district": "East Bank",
+        "governorate": "Luxor",
+        "postalCode": "85911",
+        "landmark": "Temple",
+        "addressType": "Home",
+        "deliveryInstructions": "Gate code 1234",
+        "warehouseId": "wh-004",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 25.6872,
+          "longitude": 32.6396
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Omar Adel",
+        "mobile": "+201088776655",
+        "street": "88 Nile St",
+        "building": "22",
+        "city": "Aswan",
+        "district": "Corniche",
+        "governorate": "Aswan",
+        "postalCode": "81511",
+        "landmark": "Old Bridge",
+        "addressType": "Office",
+        "deliveryInstructions": "Deliver to office hours",
+        "warehouseId": "wh-004",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 24.09,
+          "longitude": 32.8998
+        }
+      },
+      "items": [
+        {
+          "item": "Glassware",
+          "category": "Home",
+          "dimensions": "25x25x20",
+          "weight": "3.5",
+          "quantity": 1,
+          "note": "Fragile",
+          "media": []
+        }
+      ],
+      "estimatedCost": "25.00",
+      "startTime": "2026-02-07T08:00:00.000Z",
+      "requestStatus": "Pending",
+      "deliveryStatus": "Pending",
+      "deliveryType": "normal",
+      "comment": "Fragile item",
+      "sourceWarehouseId": "wh-004",
+      "destinationWarehouseId": "wh-004",
+      "sourcePickupMode": "Self",
+      "destinationPickupMode": "Delegate",
+      "requestStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-07T08:00:00.000Z",
+          "changedBy": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "deliveryStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-07T08:00:00.000Z",
+          "changedBy": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "costOffers": [],
+      "createdAt": "2026-02-07T08:00:00.000Z",
+      "updatedAt": "2026-02-07T08:00:00.000Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending"
+      ],
+      "orderCompletedStatuses": [
+        "Pending"
       ]
     }
   ]

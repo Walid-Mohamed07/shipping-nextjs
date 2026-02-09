@@ -1,6 +1,6 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'leaflet/dist/leaflet.css';
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -17,7 +17,7 @@
   --secondary-foreground: oklch(0.2 0.01 240);
   --muted: oklch(0.93 0.01 0);
   --muted-foreground: oklch(0.55 0.05 240);
-  --accent: oklch(0.5 0.25 140);
+  --accent: oklch(0.45 0.3 240);
   --accent-foreground: oklch(0.98 0.001 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.98 0.001 0);
@@ -34,7 +34,7 @@
   --sidebar-foreground: oklch(0.2 0.01 240);
   --sidebar-primary: oklch(0.45 0.3 240);
   --sidebar-primary-foreground: oklch(0.98 0.001 0);
-  --sidebar-accent: oklch(0.5 0.25 140);
+  --sidebar-accent: oklch(0.45 0.3 240);
   --sidebar-accent-foreground: oklch(0.98 0.001 0);
   --sidebar-border: oklch(0.92 0.01 0);
   --sidebar-ring: oklch(0.45 0.3 240);
@@ -53,8 +53,8 @@
   --secondary-foreground: oklch(0.15 0.01 0);
   --muted: oklch(0.35 0.01 0);
   --muted-foreground: oklch(0.7 0.05 240);
-  --accent: oklch(0.65 0.25 140);
-  --accent-foreground: oklch(0.15 0.01 0);
+  --accent: oklch(0.45 0.3 240);
+  --accent-foreground: oklch(0.98 0.001 0);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.95 0.01 0);
   --border: oklch(0.35 0.01 0);
@@ -76,8 +76,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -124,7 +124,6 @@
     @apply bg-background text-foreground;
   }
 }
-
 
 /* Default cursor for map */
 .leaflet-container {

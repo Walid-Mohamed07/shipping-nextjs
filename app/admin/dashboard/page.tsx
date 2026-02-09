@@ -1,36 +1,52 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { Header } from "@/app/components/Header";
-import { AdminOrdersTab } from "@/app/components/AdminOrdersTab";
-import { AdminAssignmentTab } from "@/app/components/AdminAssignmentTab";
-import { WarehouseManagementTab } from "@/app/components/AdminWarehouseManagementTab";
-import { AdminVehicleRulesTab } from "@/app/components/AdminVehicleRulesTab";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AdminVehicleManagementTab } from "@/app/components/AdminVehicleManagementTab";
-import { AdminShipmentsMapTab } from "@/app/components/AdminShipmentsMapTab";
-import { AdminOverrideAssignmentsTab } from "@/app/components/AdminOverrideAssignmentsTab";
-import { AdminPerformanceMetricsTab } from "@/app/components/AdminPerformanceMetricsTab";
-import { AdminAuditLogsTab } from "@/app/components/AdminAuditLogsTab";
+import {
+  LayoutDashboard,
+  Package,
+  Users,
+  Truck,
+  Map,
+  Settings,
+  BarChart3,
+  Lock,
+  Building2,
+} from "lucide-react";
+
+const navItems = [
+  { label: "Requests", href: "/admin/dashboard/requests", icon: Package },
+  {
+    label: "Assignments",
+    href: "/admin/dashboard/assignments",
+    icon: LayoutDashboard,
+  },
+  { label: "Vehicles", href: "/admin/dashboard/vehicles", icon: Truck },
+  {
+    label: "Vehicle Rules",
+    href: "/admin/dashboard/vehicle-rules",
+    icon: Settings,
+  },
+  { label: "Users", href: "/admin/dashboard/users", icon: Users },
+  { label: "Drivers", href: "/admin/dashboard/drivers", icon: Truck },
+  { label: "Companies", href: "/admin/dashboard/companies", icon: Building2 },
+  {
+    label: "Cost Offers",
+    href: "/admin/dashboard/cost-offers",
+    icon: BarChart3,
+  },
+  { label: "Map", href: "/admin/dashboard/map", icon: Map },
+  { label: "Override", href: "/admin/dashboard/override", icon: Lock },
+  { label: "Metrics", href: "/admin/dashboard/metrics", icon: BarChart3 },
+  { label: "Audit", href: "/admin/dashboard/audit", icon: LayoutDashboard },
+];
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<
-    | "warehouses"
-    | "orders"
-    | "assignments"
-    | "vehicle-rules"
-    | "vehicles"
-    | "map"
-    | "override"
-    | "metrics"
-    | "audit"
-  >("orders");
-  const [acceptedOrderIds, setAcceptedOrderIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "admin")) {
@@ -54,111 +70,47 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-muted-foreground">
-            Manage shipping orders and assignments
-          </p>
-        </div>
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-white border-r border-border min-h-[calc(100vh-64px)] p-6">
+          <nav className="space-y-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors text-foreground hover:text-foreground"
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
 
-        <div className="flex gap-2 mb-6 flex-wrap">
-          <Button
-            onClick={() => setActiveTab("warehouses")}
-            variant={activeTab === "warehouses" ? "default" : "outline"}
-            className={activeTab === "warehouses" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Warehouses
-          </Button>
-          <Button
-            onClick={() => setActiveTab("orders")}
-            variant={activeTab === "orders" ? "default" : "outline"}
-            className={activeTab === "orders" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Orders
-          </Button>
-          <Button
-            onClick={() => setActiveTab("assignments")}
-            variant={activeTab === "assignments" ? "default" : "outline"}
-            className={activeTab === "assignments" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Assignments
-          </Button>
-          <Button
-            onClick={() => setActiveTab("vehicles")}
-            variant={activeTab === "vehicles" ? "default" : "outline"}
-            className={activeTab === "vehicles" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Vehicles
-          </Button>
-          <Button
-            onClick={() => setActiveTab("vehicle-rules")}
-            variant={activeTab === "vehicle-rules" ? "default" : "outline"}
-            className={activeTab === "vehicle-rules" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Rules
-          </Button>
-          <Button
-            onClick={() => setActiveTab("map")}
-            variant={activeTab === "map" ? "default" : "outline"}
-            className={activeTab === "map" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Map
-          </Button>
-          <Button
-            onClick={() => setActiveTab("override")}
-            variant={activeTab === "override" ? "default" : "outline"}
-            className={activeTab === "override" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Override
-          </Button>
-          <Button
-            onClick={() => setActiveTab("metrics")}
-            variant={activeTab === "metrics" ? "default" : "outline"}
-            className={activeTab === "metrics" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Metrics
-          </Button>
-          <Button
-            onClick={() => setActiveTab("audit")}
-            variant={activeTab === "audit" ? "default" : "outline"}
-            className={activeTab === "audit" ? "" : "bg-transparent"}
-            size="sm"
-          >
-            Audit
-          </Button>
-        </div>
+        {/* Main Content */}
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Select a section from the sidebar to get started
+            </p>
+          </div>
 
-        <Card className="p-6">
-          {activeTab === "warehouses" && <WarehouseManagementTab />}
-          {activeTab === "orders" && (
-            <AdminOrdersTab
-              onOrderAccepted={(orderId) => {
-                setAcceptedOrderIds([...acceptedOrderIds, orderId]);
-              }}
-            />
-          )}
-          {activeTab === "assignments" && (
-            <AdminAssignmentTab acceptedOrderIds={acceptedOrderIds} />
-          )}
-          {activeTab === "vehicles" && <AdminVehicleManagementTab />}
-          {activeTab === "vehicle-rules" && <AdminVehicleRulesTab />}
-          {activeTab === "map" && <AdminShipmentsMapTab />}
-          {activeTab === "override" && <AdminOverrideAssignmentsTab />}
-          {activeTab === "metrics" && <AdminPerformanceMetricsTab />}
-          {activeTab === "audit" && <AdminAuditLogsTab />}
-        </Card>
-      </main>
+          <div className="bg-muted/50 border border-border rounded-lg p-8 text-center">
+            <p className="text-muted-foreground mb-4">
+              Welcome to the Admin Dashboard
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Use the navigation menu on the left to access different sections
+            </p>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
