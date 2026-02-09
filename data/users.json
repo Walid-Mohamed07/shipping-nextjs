@@ -469,6 +469,24 @@
       "role": "client",
       "status": "active",
       "createdAt": "2026-01-31T12:09:26.877Z"
+    },
+    {
+      "id": "1770629536936",
+      "email": "mohamedprovider@cepac.com",
+      "password": "provider1234",
+      "name": "mohamed provider",
+      "locations": [
+        {
+          "address": "123 main street",
+          "country": "Egypt",
+          "countryCode": "+20",
+          "postalCode": "21232",
+          "mobile": "21321324132",
+          "primary": true
+        }
+      ],
+      "role": "Provider ",
+      "createdAt": "2026-02-09T09:32:16.936Z"
     }
   ]
 }
