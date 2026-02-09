@@ -84,10 +84,10 @@ export async function GET(request: NextRequest) {
 
       return {
         ...a,
-        driverName: driver?.name || 'Unknown',
-        vehicleName: vehicle?.name || 'Unknown',
-        from: shippingRequest?.from || 'Unknown',
-        to: shippingRequest?.to || 'Unknown',
+        driverName: driver?.fullName || driver?.name || 'Unknown',
+        vehicleName: vehicle?.model || vehicle?.name || 'Unknown',
+        from: shippingRequest?.source?.city || 'Unknown',
+        to: shippingRequest?.destination?.city || 'Unknown',
       }
     })
 

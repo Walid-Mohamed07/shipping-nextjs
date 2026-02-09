@@ -374,16 +374,16 @@ export function AdminAssignmentTab({
                 </select>
               </div>
 
-              {/* Estimated Cost Field */}
+              {/* Primary Cost Field */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Estimated Cost
+                  Primary Cost
                 </label>
                 <input
                   type="text"
                   value={(() => {
                     const order = orders.find((o) => o.id === selectedOrder);
-                    return order?.estimatedCost || "";
+                    return order?.primaryCost || order?.estimatedCost || "";
                   })()}
                   readOnly
                   placeholder={selectedOrder ? undefined : "Select order first"}

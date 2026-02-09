@@ -512,6 +512,80 @@
       "orderCompletedStatuses": [
         "Pending"
       ]
+    },
+    {
+      "id": "REQ-1770629065499",
+      "userId": "walid-client-001",
+      "source": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
+        "district": "",
+        "governorate": "Giza",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770629051835-qu5zuaeff",
+          "item": "laptop",
+          "name": "laptop",
+          "category": "Electronics",
+          "dimensions": "5x5x5",
+          "weight": "2",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Normal",
+      "startTime": "2026-02-09T09:24:00.000Z",
+      "primaryCost": "40.00",
+      "cost": "40.00",
+      "requestStatus": "Pending",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-09T09:24:25.499Z",
+      "updatedAt": "2026-02-09T09:24:25.499Z"
     }
   ]
-}
+} 
