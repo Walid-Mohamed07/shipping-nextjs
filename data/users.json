@@ -466,12 +466,8 @@
           }
         }
       ],
-<<<<<<< HEAD
       "role": "client",
-=======
-      "role": "admin",
       "status": "active",
->>>>>>> 34aaad5507285ba48c67c4caff80978499e905f2
       "createdAt": "2026-01-31T12:09:26.877Z"
     }
   ]
