@@ -1,6 +1,7 @@
 {
   "requests": [
     {
+<<<<<<< HEAD
       "id": "REQ-1770564848586",
       "userId": "walid-client-001",
       "source": {
@@ -152,6 +153,68 @@
         "coordinates": {
           "latitude": 30.04126278549466,
           "longitude": 31.003475188335877
+=======
+      "id": "6a0f86de-eeb7-40e0-8a61-7083055ca50b",
+      "userId": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+      "user": {
+        "id": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+        "fullName": "Mohamed Ahmed",
+        "username": "mohamedahmed",
+        "email": "mohamed@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2004-12-15",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [
+          {
+            "id": "dab5ee7f-d3e0-4c4b-9a42-a077e8ee2789",
+            "country": "Egypt",
+            "countryCode": null,
+            "fullName": null,
+            "mobile": null,
+            "street": "Berti St",
+            "building": "6",
+            "city": "Cairo",
+            "district": "Berti",
+            "governorate": "Cairo",
+            "postalCode": "21532",
+            "landmark": "Metro Station",
+            "addressType": "Home",
+            "deliveryInstructions": "Ring bell",
+            "primary": true,
+            "coordinates": {
+              "latitude": 34.5581,
+              "longitude": 21.9757
+            }
+          }
+        ],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
+      "source": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Walid Mohamed",
+        "mobile": "+201112223334",
+        "street": "20 Client St",
+        "building": "14",
+        "city": "Alexandria",
+        "district": "Montaza",
+        "governorate": "Alexandria",
+        "postalCode": "21532",
+        "landmark": "Stanley Bridge",
+        "addressType": "Home",
+        "deliveryInstructions": "Ring bell",
+        "warehouseId": "wh-001",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 31.2001,
+          "longitude": 29.9187
+>>>>>>> 34aaad5507285ba48c67c4caff80978499e905f2
         }
       },
       "destination": {
@@ -227,6 +290,7 @@
       "cost": "90.00",
       "requestStatus": "Accepted",
       "deliveryStatus": "Pending",
+<<<<<<< HEAD
       "comment": "",
       "createdAt": "2026-02-08T15:34:08.586Z",
       "updatedAt": "2026-02-08T15:41:26.072Z",
@@ -740,6 +804,415 @@
           "comment": "Economy - 3 days",
           "selected": false
         }
+=======
+      "deliveryType": "normal",
+      "comment": "Leave at front desk",
+      "sourceWarehouseId": "wh-001",
+      "destinationWarehouseId": "wh-001",
+      "sourcePickupMode": "Delegate",
+      "destinationPickupMode": "Delegate",
+      "requestStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-07T10:35:40.526Z",
+          "changedBy": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+          "role": "client",
+          "note": "initial"
+        },
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-07T16:06:19.188Z",
+          "changedBy": "admin-001",
+          "role": "admin",
+          "note": null
+        }
+      ],
+      "deliveryStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-07T10:35:40.526Z",
+          "changedBy": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "costOffers": [],
+      "createdAt": "2026-02-07T08:35:40.530Z",
+      "updatedAt": "2026-02-07T16:06:19.188Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending",
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Pending",
+        "Accepted"
+      ]
+    },
+    {
+      "id": "7b1f86de-eeb7-40e0-8a61-7083055ca50c",
+      "userId": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+      "user": {
+        "id": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+        "fullName": "Asmaa Ali",
+        "username": "asmaaali",
+        "email": "asmaa@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2005-08-20",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
+      "source": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Asmaa Ali",
+        "mobile": "+201011223334",
+        "street": "10 Nile Rd",
+        "building": "2",
+        "city": "Cairo",
+        "district": "Zamalek",
+        "governorate": "Cairo",
+        "postalCode": "11511",
+        "landmark": "Cairo Tower",
+        "addressType": "Home",
+        "deliveryInstructions": "Call on arrival",
+        "warehouseId": "wh-002",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.0459,
+          "longitude": 31.2243
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Mohamed Hassan",
+        "mobile": "+201012223335",
+        "street": "5 Garden St",
+        "building": "8",
+        "city": "Giza",
+        "district": "Dokki",
+        "governorate": "Giza",
+        "postalCode": "12611",
+        "landmark": "Opera",
+        "addressType": "Office",
+        "deliveryInstructions": "Reception",
+        "warehouseId": "wh-002",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.0131,
+          "longitude": 31.2089
+        }
+      },
+      "items": [
+        {
+          "item": "Books",
+          "category": "Education",
+          "dimensions": "20x15x10",
+          "weight": "1.2",
+          "quantity": 3,
+          "note": "Use cardboard box",
+          "media": []
+        }
+      ],
+      "estimatedCost": "15.00",
+      "startTime": "2026-02-05T09:00:00.000Z",
+      "requestStatus": "Accepted",
+      "deliveryStatus": "Pending",
+      "deliveryType": "normal",
+      "comment": "Handle carefully",
+      "sourceWarehouseId": "wh-002",
+      "destinationWarehouseId": "wh-002",
+      "sourcePickupMode": "Self",
+      "destinationPickupMode": "Delegate",
+      "requestStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-05T09:00:00.000Z",
+          "changedBy": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+          "role": "client",
+          "note": "initial"
+        },
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-07T16:08:07.049Z",
+          "changedBy": "admin-001",
+          "role": "admin",
+          "note": null
+        }
+      ],
+      "deliveryStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-05T09:00:00.000Z",
+          "changedBy": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "costOffers": [],
+      "createdAt": "2026-02-05T09:00:00.000Z",
+      "updatedAt": "2026-02-07T16:08:07.049Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending",
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Pending",
+        "Accepted"
+      ]
+    },
+    {
+      "id": "c6d9e7f0-8b2c-4d7a-9b3e-22a6d8f4b7c1",
+      "userId": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+      "user": {
+        "id": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+        "fullName": "Ahmed Omar",
+        "username": "ahmedomar",
+        "email": "ahmed@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2003-05-10",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
+      "source": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Ahmed Omar",
+        "mobile": "+201055667788",
+        "street": "12 Sea Ave",
+        "building": "1",
+        "city": "Hurghada",
+        "district": "Beach",
+        "governorate": "Red Sea",
+        "postalCode": "84511",
+        "landmark": "Marina",
+        "addressType": "Home",
+        "deliveryInstructions": "Leave at guard",
+        "warehouseId": "wh-003",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 27.2579,
+          "longitude": 33.8116
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Sara Youssef",
+        "mobile": "+201066778899",
+        "street": "77 Market St",
+        "building": "4",
+        "city": "Cairo",
+        "district": "Nasr City",
+        "governorate": "Cairo",
+        "postalCode": "11371",
+        "landmark": "Mall",
+        "addressType": "Office",
+        "deliveryInstructions": "Call before arrival",
+        "warehouseId": "wh-001",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.0561,
+          "longitude": 31.33
+        }
+      },
+      "items": [
+        {
+          "item": "T-shirt",
+          "category": "Clothing",
+          "dimensions": "30x25x2",
+          "weight": "0.2",
+          "quantity": 2,
+          "note": "Folded",
+          "media": []
+        }
+      ],
+      "estimatedCost": "5.50",
+      "startTime": "2026-02-06T11:30:00.000Z",
+      "requestStatus": "Pending",
+      "deliveryStatus": "Pending",
+      "deliveryType": "normal",
+      "comment": "N/A",
+      "sourceWarehouseId": "wh-003",
+      "destinationWarehouseId": "wh-001",
+      "sourcePickupMode": "Delegate",
+      "destinationPickupMode": "Self",
+      "requestStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-06T11:00:00.000Z",
+          "changedBy": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "deliveryStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-06T11:30:00.000Z",
+          "changedBy": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "costOffers": [],
+      "createdAt": "2026-02-06T11:30:00.000Z",
+      "updatedAt": "2026-02-06T11:30:00.000Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending"
+      ],
+      "orderCompletedStatuses": [
+        "Pending"
+      ]
+    },
+    {
+      "id": "d4e8b2a3-9f7c-4b5a-9c1d-33f7c8a6b2e4",
+      "userId": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+      "user": {
+        "id": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+        "fullName": "Laila Nabil",
+        "username": "lailanabil",
+        "email": "laila@gmail.com",
+        "nationalOrPassportNumber": null,
+        "birthDate": "2002-09-25",
+        "idImage": null,
+        "licenseImage": null,
+        "criminalRecord": null,
+        "status": "active",
+        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
+        "profilePicture": null,
+        "addresses": [],
+        "createdAt": "2026-02-07T08:21:39.092Z",
+        "updatedAt": "2026-02-07T08:21:39.092Z"
+      },
+      "source": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Laila Nabil",
+        "mobile": "+201099887766",
+        "street": "3 Luxor Rd",
+        "building": "10",
+        "city": "Luxor",
+        "district": "East Bank",
+        "governorate": "Luxor",
+        "postalCode": "85911",
+        "landmark": "Temple",
+        "addressType": "Home",
+        "deliveryInstructions": "Gate code 1234",
+        "warehouseId": "wh-004",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 25.6872,
+          "longitude": 32.6396
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "+20",
+        "fullName": "Omar Adel",
+        "mobile": "+201088776655",
+        "street": "88 Nile St",
+        "building": "22",
+        "city": "Aswan",
+        "district": "Corniche",
+        "governorate": "Aswan",
+        "postalCode": "81511",
+        "landmark": "Old Bridge",
+        "addressType": "Office",
+        "deliveryInstructions": "Deliver to office hours",
+        "warehouseId": "wh-004",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 24.09,
+          "longitude": 32.8998
+        }
+      },
+      "items": [
+        {
+          "item": "Glassware",
+          "category": "Home",
+          "dimensions": "25x25x20",
+          "weight": "3.5",
+          "quantity": 1,
+          "note": "Fragile",
+          "media": []
+        }
+      ],
+      "estimatedCost": "25.00",
+      "startTime": "2026-02-07T08:00:00.000Z",
+      "requestStatus": "Pending",
+      "deliveryStatus": "Pending",
+      "deliveryType": "normal",
+      "comment": "Fragile item",
+      "sourceWarehouseId": "wh-004",
+      "destinationWarehouseId": "wh-004",
+      "sourcePickupMode": "Self",
+      "destinationPickupMode": "Delegate",
+      "requestStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-07T08:00:00.000Z",
+          "changedBy": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "deliveryStatusHistory": [
+        {
+          "status": "Pending",
+          "changedAt": "2026-02-07T08:00:00.000Z",
+          "changedBy": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+          "role": "client",
+          "note": "initial"
+        }
+      ],
+      "costOffers": [],
+      "createdAt": "2026-02-07T08:00:00.000Z",
+      "updatedAt": "2026-02-07T08:00:00.000Z",
+      "deliveryFlow": [
+        "Pending"
+      ],
+      "deliveryCompletedStatuses": [
+        "Pending"
+      ],
+      "orderFlow": [
+        "Pending"
+      ],
+      "orderCompletedStatuses": [
+        "Pending"
+>>>>>>> 34aaad5507285ba48c67c4caff80978499e905f2
       ]
     }
   ]

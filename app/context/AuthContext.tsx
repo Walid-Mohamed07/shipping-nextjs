@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import { User } from "@/types";
 // Cookie utility functions
 // Simple Bearer token generator (for demo; use backend in production)
 // JWT secret for demo (in production, use backend secret)
@@ -50,13 +51,13 @@ export interface AddressLocation {
   primary: boolean;
 }
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  locations: AddressLocation[];
-  role: "client" | "admin" | "driver";
-}
+// interface User {
+//   id: string;
+//   email: string;
+//   name: string;
+//   locations: AddressLocation[];
+//   role: "client" | "admin" | "driver" | "operator" | "provider";
+// }
 
 interface AuthContextType {
   user: User | null;
@@ -70,7 +71,7 @@ interface AuthContextType {
     country: string,
     countryCode: string,
     postalCode: string,
-    mobile: string
+    mobile: string,
   ) => Promise<void>;
   logout: () => void;
 }
@@ -128,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     country: string,
     countryCode: string,
     postalCode: string,
-    mobile: string
+    mobile: string,
   ) => {
     const response = await fetch("/api/auth/signup", {
       method: "POST",
