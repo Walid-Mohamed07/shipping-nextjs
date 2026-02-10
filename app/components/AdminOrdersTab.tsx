@@ -4,15 +4,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Check, X, Eye } from "lucide-react";
-import { Request } from "@/types";
+import { Request, User } from "@/types";
 import Link from "next/link";
-
-interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  profilePicture?: string | null;
-}
 
 interface Order extends Request {
   user?: User;

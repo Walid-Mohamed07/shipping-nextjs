@@ -8,6 +8,7 @@
         "fullName": "Mohamed Ahmed",
         "username": "mohamedahmed",
         "email": "mohamed@gmail.com",
+        "mobile": "+201112223334",
         "nationalOrPassportNumber": null,
         "birthDate": "2004-12-15",
         "idImage": null,
@@ -106,8 +107,8 @@
       "deliveryStatus": "Pending",
       "deliveryType": "normal",
       "comment": "Leave at front desk",
-      "sourceWarehouseId": "wh-001",
-      "destinationWarehouseId": "wh-001",
+      "sourceWarehouse": null,
+      "destinationWarehouse": null,
       "sourcePickupMode": "Delegate",
       "destinationPickupMode": "Delegate",
       "requestStatusHistory": [
@@ -161,6 +162,7 @@
         "fullName": "Asmaa Ali",
         "username": "asmaaali",
         "email": "asmaa@gmail.com",
+        "mobile": "+201011223334",
         "nationalOrPassportNumber": null,
         "birthDate": "2005-08-20",
         "idImage": null,
@@ -232,8 +234,8 @@
       "deliveryStatus": "Pending",
       "deliveryType": "normal",
       "comment": "Handle carefully",
-      "sourceWarehouseId": "wh-002",
-      "destinationWarehouseId": "wh-002",
+      "sourceWarehouse": null,
+      "destinationWarehouse": null,
       "sourcePickupMode": "Self",
       "destinationPickupMode": "Delegate",
       "requestStatusHistory": [
@@ -287,6 +289,7 @@
         "fullName": "Ahmed Omar",
         "username": "ahmedomar",
         "email": "ahmed@gmail.com",
+        "mobile": "+201055667788",
         "nationalOrPassportNumber": null,
         "birthDate": "2003-05-10",
         "idImage": null,
@@ -354,12 +357,12 @@
       ],
       "estimatedCost": "5.50",
       "startTime": "2026-02-06T11:30:00.000Z",
-      "requestStatus": "Pending",
+      "requestStatus": "Accepted",
       "deliveryStatus": "Pending",
       "deliveryType": "normal",
       "comment": "N/A",
-      "sourceWarehouseId": "wh-003",
-      "destinationWarehouseId": "wh-001",
+      "sourceWarehouse": null,
+      "destinationWarehouse": null,
       "sourcePickupMode": "Delegate",
       "destinationPickupMode": "Self",
       "requestStatusHistory": [
@@ -369,6 +372,13 @@
           "changedBy": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
           "role": "client",
           "note": "initial"
+        },
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-10T09:44:16.399Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
         }
       ],
       "deliveryStatusHistory": [
@@ -382,7 +392,7 @@
       ],
       "costOffers": [],
       "createdAt": "2026-02-06T11:30:00.000Z",
-      "updatedAt": "2026-02-06T11:30:00.000Z",
+      "updatedAt": "2026-02-10T09:44:16.399Z",
       "deliveryFlow": [
         "Pending"
       ],
@@ -390,10 +400,12 @@
         "Pending"
       ],
       "orderFlow": [
-        "Pending"
+        "Pending",
+        "Accepted"
       ],
       "orderCompletedStatuses": [
-        "Pending"
+        "Pending",
+        "Accepted"
       ]
     },
     {
@@ -404,6 +416,7 @@
         "fullName": "Laila Nabil",
         "username": "lailanabil",
         "email": "laila@gmail.com",
+        "mobile": "+201099887766",
         "nationalOrPassportNumber": null,
         "birthDate": "2002-09-25",
         "idImage": null,
@@ -471,12 +484,12 @@
       ],
       "estimatedCost": "25.00",
       "startTime": "2026-02-07T08:00:00.000Z",
-      "requestStatus": "Pending",
+      "requestStatus": "Rejected",
       "deliveryStatus": "Pending",
       "deliveryType": "normal",
       "comment": "Fragile item",
-      "sourceWarehouseId": "wh-004",
-      "destinationWarehouseId": "wh-004",
+      "sourceWarehouse": null,
+      "destinationWarehouse": null,
       "sourcePickupMode": "Self",
       "destinationPickupMode": "Delegate",
       "requestStatusHistory": [
@@ -486,6 +499,13 @@
           "changedBy": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
           "role": "client",
           "note": "initial"
+        },
+        {
+          "status": "Rejected",
+          "changedAt": "2026-02-10T09:43:46.873Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request rejected by operator"
         }
       ],
       "deliveryStatusHistory": [
@@ -499,7 +519,7 @@
       ],
       "costOffers": [],
       "createdAt": "2026-02-07T08:00:00.000Z",
-      "updatedAt": "2026-02-07T08:00:00.000Z",
+      "updatedAt": "2026-02-10T09:43:46.873Z",
       "deliveryFlow": [
         "Pending"
       ],
@@ -507,85 +527,13 @@
         "Pending"
       ],
       "orderFlow": [
-        "Pending"
+        "Pending",
+        "Rejected"
       ],
       "orderCompletedStatuses": [
-        "Pending"
+        "Pending",
+        "Rejected"
       ]
-    },
-    {
-      "id": "REQ-1770629065499",
-      "userId": "walid-client-001",
-      "source": {
-        "country": "Egypt",
-        "countryCode": "",
-        "fullName": "Walid Mohamed",
-        "mobile": "12345678",
-        "street": "Al Horeya Street",
-        "building": "2",
-        "city": "El Karma 2",
-        "district": "",
-        "governorate": "Giza",
-        "postalCode": "12588",
-        "landmark": "near to Zaid",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": false,
-        "warehouseId": "",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 30.04126278549466,
-          "longitude": 31.003475188335877
-        }
-      },
-      "destination": {
-        "country": "Egypt",
-        "countryCode": "",
-        "fullName": "Walid Mohamed",
-        "mobile": "12345678",
-        "street": "taha hessin",
-        "building": "2",
-        "city": "Nasr City",
-        "district": "",
-        "governorate": "Cairo",
-        "postalCode": "11351",
-        "landmark": "near to shehab",
-        "addressType": "Home",
-        "deliveryInstructions": "",
-        "primary": true,
-        "warehouseId": "",
-        "pickupMode": "Self",
-        "coordinates": {
-          "latitude": 30.117248422464215,
-          "longitude": 31.38808250339935
-        }
-      },
-      "items": [
-        {
-          "id": "ITEM-1770629051835-qu5zuaeff",
-          "item": "laptop",
-          "name": "laptop",
-          "category": "Electronics",
-          "dimensions": "5x5x5",
-          "weight": "2",
-          "quantity": 1,
-          "media": [],
-          "services": {
-            "canBeAssembledDisassembled": true,
-            "assemblyDisassemblyHandler": "company",
-            "packaging": true
-          }
-        }
-      ],
-      "deliveryType": "Normal",
-      "startTime": "2026-02-09T09:24:00.000Z",
-      "primaryCost": "40.00",
-      "cost": "40.00",
-      "requestStatus": "Pending",
-      "deliveryStatus": "Pending",
-      "comment": "",
-      "createdAt": "2026-02-09T09:24:25.499Z",
-      "updatedAt": "2026-02-09T09:24:25.499Z"
     }
   ]
-} 
+}

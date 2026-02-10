@@ -16,6 +16,7 @@ export interface User {
   email: string;
   password: string;
   profilePicture: string | null;
+  mobile: string | null;
   nationalOrPassportNumber: string | null;
   birthDate: string | null;
   idImage: string | null;
