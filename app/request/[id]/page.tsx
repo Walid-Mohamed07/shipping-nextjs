@@ -24,7 +24,14 @@ import {
   Box,
   Wrench,
   BoxSelect,
+  ChevronDown,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 import {
   Request,
   Address,
@@ -1077,54 +1084,181 @@ export default function RequestDetailsPage() {
             </div>
           </div>
 
-          {/* Activity History Section */}
-          {request.activityHistory && request.activityHistory.length > 0 && (
+          {/* Warehouse Locations Section - Show when warehouses are assigned */}
+          {(request.sourceWarehouse || request.destinationWarehouse) && (
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                Activity History
+                <Warehouse className="w-5 h-5 text-primary" />
+                Assigned Warehouse Locations
               </h3>
-              <div className="space-y-4">
-                {request.activityHistory.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-4 pb-4 border-b border-border last:border-b-0 last:pb-0"
-                  >
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <CheckCircle2 className="w-5 h-5 text-primary" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h4 className="font-semibold text-foreground">
-                            {activity.action}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {activity.description}
-                          </p>
-                          {activity.cost && (
-                            <div className="mt-2 flex items-center gap-3 text-sm">
-                              <span className="text-primary font-semibold">
-                                ${activity.cost.toFixed(2)}
-                              </span>
-                            </div>
-                          )}
+              
+              {/* Show accordion if both warehouses are assigned */}
+              {request.sourceWarehouse && request.destinationWarehouse ? (
+                <Accordion type="multiple" defaultValue={["source", "destination"]} className="space-y-3">
+                  {/* Source Warehouse */}
+                  <AccordionItem value="source" className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+                    <AccordionTrigger value="source" className="bg-transparent">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <time className="text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(activity.timestamp).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </time>
+                        <div className="text-left">
+                          <p className="font-semibold text-foreground">Source Warehouse (Pickup)</p>
+                          <p className="text-xs text-muted-foreground">{request.sourceWarehouse.name}</p>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent value="source" className="bg-white/50 dark:bg-gray-900/50">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Warehouse Name</p>
+                          <p className="text-sm font-medium text-foreground">{request.sourceWarehouse.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Address</p>
+                          <p className="text-sm font-medium text-foreground">{request.sourceWarehouse.address}</p>
+                        </div>
+                        {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Location</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
+                            </p>
+                          </div>
+                        )}
+                        {request.sourceWarehouse.assignedAt && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
+                            <p className="text-sm text-foreground">
+                              {new Date(request.sourceWarehouse.assignedAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* Destination Warehouse */}
+                  <AccordionItem value="destination" className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
+                    <AccordionTrigger value="destination" className="bg-transparent">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                          <MapPinned className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-foreground">Destination Warehouse (Delivery)</p>
+                          <p className="text-xs text-muted-foreground">{request.destinationWarehouse.name}</p>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent value="destination" className="bg-white/50 dark:bg-gray-900/50">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Warehouse Name</p>
+                          <p className="text-sm font-medium text-foreground">{request.destinationWarehouse.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Address</p>
+                          <p className="text-sm font-medium text-foreground">{request.destinationWarehouse.address}</p>
+                        </div>
+                        {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Location</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
+                            </p>
+                          </div>
+                        )}
+                        {request.destinationWarehouse.assignedAt && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
+                            <p className="text-sm text-foreground">
+                              {new Date(request.destinationWarehouse.assignedAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ) : (
+                /* Show single warehouse card if only one is assigned */
+                <div className="space-y-4">
+                  {request.sourceWarehouse && (
+                    <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-foreground mb-2">Source Warehouse (Pickup)</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Warehouse Name</p>
+                              <p className="font-medium text-foreground">{request.sourceWarehouse.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Address</p>
+                              <p className="font-medium text-foreground">{request.sourceWarehouse.address}</p>
+                            </div>
+                            {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Location</p>
+                                <p className="font-medium text-foreground">
+                                  {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+
+                  {request.destinationWarehouse && (
+                    <div className="bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                          <MapPinned className="w-6 h-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-foreground mb-2">Destination Warehouse (Delivery)</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Warehouse Name</p>
+                              <p className="font-medium text-foreground">{request.destinationWarehouse.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Address</p>
+                              <p className="font-medium text-foreground">{request.destinationWarehouse.address}</p>
+                            </div>
+                            {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Location</p>
+                                <p className="font-medium text-foreground">
+                                  {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

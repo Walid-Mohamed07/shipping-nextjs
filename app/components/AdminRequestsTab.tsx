@@ -264,7 +264,7 @@ export function AdminRequestsTab() {
                   <img
                     src={
                       request.user
-                        ? getProfileImage(request.user.profilePicture) ||
+                        ? getProfileImage(request.user.profilePicture ?? undefined) ||
                           "/placeholder.svg"
                         : "/placeholder.svg"
                     }
@@ -438,7 +438,7 @@ export function AdminRequestsTab() {
                   <img
                     src={
                       selectedRequest.user
-                        ? getProfileImage(selectedRequest.user.profilePicture) ||
+                        ? getProfileImage(selectedRequest.user.profilePicture ?? undefined) ||
                           "/placeholder.svg"
                         : "/placeholder.svg"
                     }

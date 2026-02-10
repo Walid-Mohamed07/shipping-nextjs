@@ -1,30 +1,43 @@
 {
-    "companies": [
-      {
-        "id": "company-001",
-        "userId": "1770629536936",
-        "name": "Mohamed Shipping Co",
-        "phoneNumber": "+20123456789",
-        "email": "mohamedprovider@cepac.com",
-        "address": "123 Main Street, Cairo",
-        "rate": "4.5",
-        "warehouses": [
-          {
-            "id": "wh-company-001",
-            "name": "Cairo Main Warehouse",
-            "address": "10 Industrial Zone",
-            "city": "Cairo",
-            "country": "Egypt",
-            "coordinates": {
-              "latitude": 30.0444,
-              "longitude": 31.2357
-            },
-            "createdAt": "2026-02-09T10:00:00Z",
-            "updatedAt": "2026-02-09T10:00:00Z"
-          }
-        ],
-        "createdAt": "2026-02-09T09:32:16.936Z",
-        "updatedAt": "2026-02-09T09:32:16.936Z"
-      }
-    ]
+  "companies": [
+    {
+      "id": "company-001",
+      "userId": "1770629536936",
+      "name": "Mohamed Shipping Co",
+      "phoneNumber": "+20123456789",
+      "email": "mohamedprovider@cepac.com",
+      "address": "123 Main Street, Cairo",
+      "rate": "4.5",
+      "warehouses": [
+        {
+          "id": "wh-company-001",
+          "name": "Cairo Main Warehouse",
+          "address": "10 Industrial Zone",
+          "city": "Cairo",
+          "country": "Egypt",
+          "coordinates": {
+            "latitude": 30.0444,
+            "longitude": 31.2357
+          },
+          "createdAt": "2026-02-09T10:00:00Z",
+          "updatedAt": "2026-02-09T10:00:00Z"
+        },
+        {
+          "id": "wh-company-1770729041415",
+          "name": "Sheraton warehouse",
+          "address": "near to sun city mall ",
+          "city": "Nasr City",
+          "country": "Egypt",
+          "coordinates": {
+            "latitude": 30.103871929795925,
+            "longitude": 31.382979154559507
+          },
+          "createdAt": "2026-02-10T13:10:41.415Z",
+          "updatedAt": "2026-02-10T13:10:41.415Z"
+        }
+      ],
+      "createdAt": "2026-02-09T09:32:16.936Z",
+      "updatedAt": "2026-02-10T13:10:41.415Z"
+    }
+  ]
 }

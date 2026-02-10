@@ -6,27 +6,35 @@ import path from "path";
  * Warehouse Assignment API
  * 
  * When:
- * - Client chooses Pickup Option = Self
+ * - Client chooses Pickup Option = Self (for source warehouse)
+ * - Client chooses Delivery Option = Self (for destination warehouse)
  * - Client accepts a company's offer
  * 
  * Then:
- * - The company must assign ONE of its warehouses to the request
- * - The selected warehouse becomes the official pickup location for the client
- * - Warehouse assignment happens after offer acceptance, not before
+ * - The company must assign warehouse(s) to the request
+ * - Source warehouse: pickup location for the client
+ * - Destination warehouse: delivery location for the client
  * 
  * Rules:
  * - A company can only assign its own warehouses
- * - Once assigned, the warehouse cannot be changed
+ * - Each type (source/destination) can only be assigned once
  */
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { requestId, companyId, warehouseId } = body;
+    const { requestId, companyId, warehouseId, warehouseType = "source" } = body;
 
     if (!requestId || !companyId || !warehouseId) {
       return NextResponse.json(
         { error: "requestId, companyId, and warehouseId are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!["source", "destination"].includes(warehouseType)) {
+      return NextResponse.json(
+        { error: "warehouseType must be 'source' or 'destination'" },
         { status: 400 }
       );
     }
@@ -84,39 +92,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify a warehouse hasn't already been assigned
-    if (currentRequest.assignedWarehouseId) {
+    // Check if the specific warehouse type is already assigned
+    const warehouseField = warehouseType === "source" ? "sourceWarehouse" : "destinationWarehouse";
+    if (currentRequest[warehouseField]) {
       return NextResponse.json(
-        { error: "A warehouse has already been assigned to this request" },
+        { error: `A ${warehouseType} warehouse has already been assigned to this request` },
         { status: 400 }
       );
     }
 
-    // Check if self-pickup is required
-    const sourceIsSelfPickup = 
-      currentRequest.sourcePickupMode === "Self" || 
-      currentRequest.source?.pickupMode === "Self";
+    // Check if self-pickup/delivery is required for this warehouse type
+    const isSelfMode = warehouseType === "source" 
+      ? (currentRequest.sourcePickupMode === "Self" || currentRequest.source?.pickupMode === "Self")
+      : (currentRequest.destinationPickupMode === "Self" || currentRequest.destination?.pickupMode === "Self");
 
-    if (!sourceIsSelfPickup) {
+    if (!isSelfMode) {
       return NextResponse.json(
-        { error: "Warehouse assignment is only required for self-pickup requests" },
+        { error: `Warehouse assignment is only required for self-pickup/delivery requests` },
         { status: 400 }
       );
     }
 
     // Assign the warehouse
-    currentRequest.assignedWarehouseId = warehouseId;
-    currentRequest.assignedWarehouse = {
-      id: warehouse.id,
-      name: warehouse.name,
-      address: warehouse.address,
-      city: warehouse.city || "",
-      country: warehouse.country || "",
-      coordinates: warehouse.coordinates || null,
-    };
-
-    // Update the source pickup location to reflect the warehouse
-    currentRequest.pickupWarehouse = {
+    const warehouseData = {
       id: warehouse.id,
       name: warehouse.name,
       address: warehouse.address,
@@ -126,14 +124,24 @@ export async function POST(request: NextRequest) {
       assignedAt: now,
     };
 
+    currentRequest[warehouseField] = warehouseData;
+
+    // Legacy support: also update assignedWarehouseId for source warehouse
+    if (warehouseType === "source") {
+      currentRequest.assignedWarehouseId = warehouseId;
+      currentRequest.assignedWarehouse = warehouseData;
+      currentRequest.pickupWarehouse = warehouseData;
+    }
+
     // Add to activity history
     if (!currentRequest.activityHistory) {
       currentRequest.activityHistory = [];
     }
+    const locationLabel = warehouseType === "source" ? "pickup" : "delivery";
     currentRequest.activityHistory.push({
       timestamp: now,
       action: "warehouse_assigned",
-      description: `Warehouse "${warehouse.name}" assigned as pickup location`,
+      description: `Warehouse "${warehouse.name}" assigned as ${locationLabel} location`,
     });
 
     currentRequest.updatedAt = now;
@@ -142,8 +150,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Warehouse assigned successfully",
-      warehouse: currentRequest.assignedWarehouse,
+      message: `${warehouseType.charAt(0).toUpperCase() + warehouseType.slice(1)} warehouse assigned successfully`,
+      warehouse: currentRequest[warehouseField],
+      warehouseType,
     }, { status: 200 });
   } catch (error) {
     console.error("Error assigning warehouse:", error);
@@ -160,6 +169,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const requestId = searchParams.get("requestId");
     const companyId = searchParams.get("companyId");
+    const warehouseType = searchParams.get("warehouseType") || "both";
 
     if (!requestId || !companyId) {
       return NextResponse.json(
@@ -183,26 +193,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if self-pickup is required
+    // Check if self-pickup/delivery is required
     const sourceIsSelfPickup = 
       currentRequest.sourcePickupMode === "Self" || 
       currentRequest.source?.pickupMode === "Self";
+    const destinationIsSelfDelivery = 
+      currentRequest.destinationPickupMode === "Self" || 
+      currentRequest.destination?.pickupMode === "Self";
 
-    if (!sourceIsSelfPickup) {
-      return NextResponse.json({
-        needsAssignment: false,
-        message: "Warehouse assignment not required for this request",
-      }, { status: 200 });
-    }
+    // Build response for both warehouse types
+    const sourceStatus = {
+      needsAssignment: sourceIsSelfPickup && !currentRequest.sourceWarehouse,
+      alreadyAssigned: !!currentRequest.sourceWarehouse,
+      warehouse: currentRequest.sourceWarehouse || null,
+    };
 
-    // Check if already assigned
-    if (currentRequest.assignedWarehouseId) {
-      return NextResponse.json({
-        needsAssignment: false,
-        alreadyAssigned: true,
-        warehouse: currentRequest.assignedWarehouse,
-      }, { status: 200 });
-    }
+    const destinationStatus = {
+      needsAssignment: destinationIsSelfDelivery && !currentRequest.destinationWarehouse,
+      alreadyAssigned: !!currentRequest.destinationWarehouse,
+      warehouse: currentRequest.destinationWarehouse || null,
+    };
 
     // Get company warehouses
     const companiesPath = path.join(process.cwd(), "data", "companies.json");
@@ -215,11 +225,13 @@ export async function GET(request: NextRequest) {
     const warehouses = company?.warehouses || [];
 
     return NextResponse.json({
-      needsAssignment: true,
+      sourceWarehouse: sourceStatus,
+      destinationWarehouse: destinationStatus,
+      needsAnyAssignment: sourceStatus.needsAssignment || destinationStatus.needsAssignment,
       warehouses,
       message: warehouses.length === 0 
         ? "Please add a warehouse to your company profile first"
-        : "Please select a warehouse for client pickup",
+        : "Select warehouses for client pickup/delivery",
     }, { status: 200 });
   } catch (error) {
     console.error("Error checking warehouse assignment:", error);

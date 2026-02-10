@@ -70,6 +70,7 @@ interface Request {
   destinationPickupMode?: string;
   assignedCompanyId?: string;
   rejectedByCompanies?: string[];
+  primaryCost?: string;
 }
 
 interface CompanyInfo {
@@ -368,7 +369,16 @@ export default function CompanyRequestsPage() {
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cost</p>
-                        {request.costOffers && request.costOffers.length > 0 ? (
+                        {request.primaryCost ? (
+                          <>
+                            <p className="text-base font-bold text-primary mt-0.5">
+                              ${request.primaryCost}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {request.costOffers && request.costOffers.length > 0 ? `${request.costOffers.length} offer(s)` : 'Primary'}
+                            </p>
+                          </>
+                        ) : request.costOffers && request.costOffers.length > 0 ? (
                           <>
                             <p className="text-base font-bold text-primary mt-0.5">
                               ${Math.min(...request.costOffers.map(o => o.cost)).toFixed(2)}

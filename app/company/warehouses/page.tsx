@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,16 @@ import {
   MapPin,
   Save,
   X,
+  MapPinned,
+  Navigation,
 } from "lucide-react";
+import type { AddressData } from "@/app/components/LocationMapPicker";
+
+const LocationMapPicker = dynamic(
+  () =>
+    import("@/app/components/LocationMapPicker").then((m) => m.LocationMapPicker),
+  { ssr: false, loading: () => <div className="h-[280px] rounded-lg border border-gray-300 bg-gray-100 animate-pulse" /> }
+);
 
 interface CompanyWarehouse {
   id: string;
@@ -48,6 +58,8 @@ export default function CompanyWarehousesPage() {
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [mapEditable, setMapEditable] = useState(true);
 
   const fetchWarehouses = useCallback(async () => {
     if (!user?.id) return;
@@ -86,6 +98,8 @@ export default function CompanyWarehousesPage() {
     });
     setEditingWarehouse(null);
     setIsFormOpen(false);
+    setShowMap(false);
+    setMapEditable(true);
   };
 
   const openEditForm = (warehouse: CompanyWarehouse) => {
@@ -98,6 +112,10 @@ export default function CompanyWarehousesPage() {
       latitude: warehouse.coordinates?.latitude?.toString() || "",
       longitude: warehouse.coordinates?.longitude?.toString() || "",
     });
+    setShowMap(
+      warehouse.coordinates?.latitude != null && warehouse.coordinates?.longitude != null
+    );
+    setMapEditable(false);
     setIsFormOpen(true);
   };
 
@@ -296,34 +314,107 @@ export default function CompanyWarehousesPage() {
                     className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   />
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Latitude (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.latitude}
-                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                    placeholder="e.g., 30.0444"
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Longitude (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.longitude}
-                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                    placeholder="e.g., 31.2357"
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                  />
-                </div>
+              </div>
+
+              {/* Location capture - store lat/long for map display */}
+              <div className="p-3 rounded-lg border border-border bg-muted/30">
+                <p className="text-sm font-medium text-foreground mb-3">
+                  Set location (optional)
+                </p>
+                {!showMap ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                latitude: pos.coords.latitude.toString(),
+                                longitude: pos.coords.longitude.toString(),
+                              }));
+                              setShowMap(true);
+                              setMapEditable(true);
+                            },
+                            () => alert("Could not get your location"),
+                          );
+                        } else {
+                          alert("Geolocation not supported");
+                        }
+                      }}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <Navigation className="w-4 h-4" />
+                      Use my location
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowMap(true);
+                        setMapEditable(true);
+                      }}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <MapPinned className="w-4 h-4" />
+                      Pick on map
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <LocationMapPicker
+                      position={
+                        formData.latitude && formData.longitude
+                          ? {
+                              lat: parseFloat(formData.latitude),
+                              lng: parseFloat(formData.longitude),
+                            }
+                          : null
+                      }
+                      onPositionChange={(lat, lng) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          latitude: lat.toString(),
+                          longitude: lng.toString(),
+                        }));
+                      }}
+                      onAddressData={(addressData: AddressData) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          address: addressData.street || prev.address,
+                          city: addressData.city || prev.city,
+                          country: addressData.country || prev.country,
+                        }));
+                      }}
+                      editable={mapEditable}
+                      onEditableChange={setMapEditable}
+                      height={280}
+                      showUseMyLocation
+                    />
+                    {formData.latitude && formData.longitude && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowMap(false);
+                          setFormData((prev) => ({
+                            ...prev,
+                            latitude: "",
+                            longitude: "",
+                          }));
+                        }}
+                        className="text-muted-foreground cursor-pointer"
+                      >
+                        Hide map
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-2 pt-4">

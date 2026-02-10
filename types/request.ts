@@ -125,6 +125,31 @@ export interface Request {
   // Company assignment fields
   assignedCompanyId?: string;
   assignedWarehouseId?: string;
+  // Source and destination warehouse assignments
+  sourceWarehouse?: {
+    id: string;
+    name: string;
+    address: string;
+    city?: string;
+    country?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+    assignedAt?: string;
+  } | null;
+  destinationWarehouse?: {
+    id: string;
+    name: string;
+    address: string;
+    city?: string;
+    country?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+    assignedAt?: string;
+  } | null;
   // Pickup mode fields
   sourcePickupMode?: "Delegate" | "Self";
   destinationPickupMode?: "Delegate" | "Self";
