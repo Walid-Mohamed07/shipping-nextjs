@@ -17,8 +17,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get user data for each request
+    const usersPath = path.join(process.cwd(), "data", "users.json");
+    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
+
+    const withUserData = results.map((req: any) => {
+      const user = usersData.users.find((u: any) => u.id === req.userId);
+      return {
+        ...req,
+        user: user || null,
+      };
+    });
+
     // Normalize to the shape the client expects (keep legacy compatibility)
-    return NextResponse.json(results, { status: 200 });
+    return NextResponse.json(withUserData, { status: 200 });
   } catch (error) {
     console.error("Error in manage GET:", error);
     return NextResponse.json(
@@ -129,10 +141,20 @@ export async function PUT(request: NextRequest) {
 
     fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
 
+    // Get user data for the request
+    const usersPath = path.join(process.cwd(), "data", "users.json");
+    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
+    const user = usersData.users.find(
+      (u: any) => u.id === currentRequest.userId,
+    );
+
     return NextResponse.json(
       {
         success: true,
-        request: currentRequest,
+        request: {
+          ...currentRequest,
+          user: user || null,
+        },
       },
       { status: 200 },
     );

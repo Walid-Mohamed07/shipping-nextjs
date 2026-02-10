@@ -119,7 +119,20 @@ export async function GET(request: NextRequest) {
 
     // Always return the FINAL structure (normalized), even for legacy records.
     const normalized = filteredRequests.map((req: any) => normalizeRequest(req));
-    return NextResponse.json({ requests: normalized }, { status: 200 });
+    
+    // Get user data for each request
+    const usersPath = path.join(process.cwd(), "data", "users.json");
+    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
+    
+    const withUserData = normalized.map((req: any) => {
+      const user = usersData.users.find((u: any) => u.id === req.userId);
+      return {
+        ...req,
+        user: user || null
+      };
+    });
+    
+    return NextResponse.json({ requests: withUserData }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch requests" },

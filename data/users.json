@@ -546,6 +546,130 @@
       ],
       "role": "provider",
       "createdAt": "2026-02-09T09:32:16.936Z"
+    },
+    {
+      "id": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
+      "email": "sarah.wilson@gmail.com",
+      "password": "hashed_password_001",
+      "name": "Sarah Wilson",
+      "fullName": "Sarah Wilson",
+      "username": "sarahwilson",
+      "mobile": "+14155551001",
+      "profilePicture": "https://example.com/profiles/sarahwilson.jpg",
+      "locations": [
+        {
+          "country": "United States",
+          "countryCode": "+1",
+          "fullName": "Sarah Wilson",
+          "mobile": "+14155551001",
+          "street": "789 Oak Ave",
+          "building": "Apt 204",
+          "city": "San Francisco",
+          "district": "Marina District",
+          "governorate": "California",
+          "postalCode": "94123",
+          "landmark": "Near Golden Gate Park",
+          "addressType": "Home",
+          "deliveryInstructions": "Ring doorbell twice",
+          "primary": true
+        }
+      ],
+      "role": "client",
+      "status": "active",
+      "createdAt": "2026-02-10T08:15:30Z"
+    },
+    {
+      "id": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
+      "email": "james.martinez@outlook.com",
+      "password": "hashed_password_002",
+      "name": "James Martinez",
+      "fullName": "James Martinez",
+      "username": "jamesmartinez",
+      "mobile": "+13105552045",
+      "profilePicture": "https://example.com/profiles/jamesmartinez.jpg",
+      "locations": [
+        {
+          "country": "United States",
+          "countryCode": "+1",
+          "fullName": "James Martinez",
+          "mobile": "+13105552045",
+          "street": "456 Sunset Blvd",
+          "building": "Suite 500",
+          "city": "Los Angeles",
+          "district": "Hollywood",
+          "governorate": "California",
+          "postalCode": "90028",
+          "landmark": "Hollywood Sign visible",
+          "addressType": "Office",
+          "deliveryInstructions": "Call on arrival",
+          "primary": true
+        }
+      ],
+      "role": "client",
+      "status": "active",
+      "createdAt": "2026-02-10T09:42:15Z"
+    },
+    {
+      "id": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
+      "email": "elizabeth.chen@yahoo.com",
+      "password": "hashed_password_003",
+      "name": "Elizabeth Chen",
+      "fullName": "Elizabeth Chen",
+      "username": "elizabethchen",
+      "mobile": "+12125553892",
+      "profilePicture": "https://example.com/profiles/elizabethchen.jpg",
+      "locations": [
+        {
+          "country": "United States",
+          "countryCode": "+1",
+          "fullName": "Elizabeth Chen",
+          "mobile": "+12125553892",
+          "street": "321 Park Avenue",
+          "building": "Penthouse 2A",
+          "city": "New York",
+          "district": "Midtown Manhattan",
+          "governorate": "New York",
+          "postalCode": "10022",
+          "landmark": "Near Central Park South",
+          "addressType": "Home",
+          "deliveryInstructions": "Use building's main entrance",
+          "primary": true
+        }
+      ],
+      "role": "client",
+      "status": "active",
+      "createdAt": "2026-02-10T10:27:45Z"
+    },
+    {
+      "id": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
+      "email": "michael.thompson@gmail.com",
+      "password": "hashed_password_004",
+      "name": "Michael Thompson",
+      "fullName": "Michael Thompson",
+      "username": "michaelthompson",
+      "mobile": "+17135554521",
+      "profilePicture": "https://example.com/profiles/michaelthompson.jpg",
+      "locations": [
+        {
+          "country": "United States",
+          "countryCode": "+1",
+          "fullName": "Michael Thompson",
+          "mobile": "+17135554521",
+          "street": "2847 Westheimer Rd",
+          "building": "Unit 301",
+          "city": "Houston",
+          "district": "Midtown",
+          "governorate": "Texas",
+          "postalCode": "77006",
+          "landmark": "Near Memorial Park",
+          "addressType": "Home",
+          "deliveryInstructions": "Leave at front gate",
+          "primary": true
+        }
+      ],
+      "role": "client",
+      "status": "active",
+      "createdAt": "2026-02-10T11:03:20Z"
     }
   ]
 }

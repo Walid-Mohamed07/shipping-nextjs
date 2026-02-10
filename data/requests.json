@@ -3,46 +3,6 @@
     {
       "id": "6a0f86de-eeb7-40e0-8a61-7083055ca50b",
       "userId": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
-      "user": {
-        "id": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
-        "fullName": "Mohamed Ahmed",
-        "username": "mohamedahmed",
-        "email": "mohamed@gmail.com",
-        "mobile": "+201112223334",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2004-12-15",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [
-          {
-            "id": "dab5ee7f-d3e0-4c4b-9a42-a077e8ee2789",
-            "country": "Egypt",
-            "countryCode": null,
-            "fullName": null,
-            "mobile": null,
-            "street": "Berti St",
-            "building": "6",
-            "city": "Cairo",
-            "district": "Berti",
-            "governorate": "Cairo",
-            "postalCode": "21532",
-            "landmark": "Metro Station",
-            "addressType": "Home",
-            "deliveryInstructions": "Ring bell",
-            "primary": true,
-            "coordinates": {
-              "latitude": 34.5581,
-              "longitude": 21.9757
-            }
-          }
-        ],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -157,24 +117,6 @@
     {
       "id": "7b1f86de-eeb7-40e0-8a61-7083055ca50c",
       "userId": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
-      "user": {
-        "id": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
-        "fullName": "Asmaa Ali",
-        "username": "asmaaali",
-        "email": "asmaa@gmail.com",
-        "mobile": "+201011223334",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2005-08-20",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -284,24 +226,6 @@
     {
       "id": "c6d9e7f0-8b2c-4d7a-9b3e-22a6d8f4b7c1",
       "userId": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
-      "user": {
-        "id": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
-        "fullName": "Ahmed Omar",
-        "username": "ahmedomar",
-        "email": "ahmed@gmail.com",
-        "mobile": "+201055667788",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2003-05-10",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -411,24 +335,6 @@
     {
       "id": "d4e8b2a3-9f7c-4b5a-9c1d-33f7c8a6b2e4",
       "userId": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
-      "user": {
-        "id": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
-        "fullName": "Laila Nabil",
-        "username": "lailanabil",
-        "email": "laila@gmail.com",
-        "mobile": "+201099887766",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2002-09-25",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
