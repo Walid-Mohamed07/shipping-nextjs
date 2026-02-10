@@ -22,6 +22,8 @@ import {
   MapPinned,
   Truck,
   Box,
+  Wrench,
+  BoxSelect,
 } from "lucide-react";
 import {
   Request,
@@ -54,7 +56,7 @@ const statusSteps = [
     name: RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED,
     icon: Warehouse,
   },
-  { name: RequestDeliveryStatus.PICKED_UP_DESTINATION, icon: MapPin },
+  { name: RequestDeliveryStatus.SHIPMENT_DELIVER, icon: Package },
   { name: RequestDeliveryStatus.DELIVERED, icon: CheckCircle2 },
 ];
 
@@ -75,6 +77,10 @@ export default function RequestDetailsPage() {
     (WarehouseType & { distanceKm: number })[]
   >([]);
   const [locationChecked, setLocationChecked] = useState(false);
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmingOffer, setConfirmingOffer] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -143,6 +149,76 @@ export default function RequestDetailsPage() {
     setShowLocationPrompt(false);
   };
 
+  const handleSelectOffer = (offerId: string) => {
+    // Update local request state to reflect the selection immediately
+    if (request && request.costOffers) {
+      const updatedRequest = {
+        ...request,
+        costOffers: request.costOffers.map((offer) => ({
+          ...offer,
+          selected: offer.company.id === offerId,
+        })),
+      };
+      setRequest(updatedRequest);
+      setSelectedOfferId(offerId);
+      toast.success("Offer selected!");
+    }
+  };
+
+  const handleSubmitOffer = async () => {
+    const selectedOffer = request?.costOffers?.find(o => o.selected);
+    if (!selectedOffer) {
+      toast.error("Please select an offer first");
+      return;
+    }
+    
+    setConfirmingOffer(selectedOffer);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (!confirmingOffer || !request) return;
+    
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/requests/${requestId}/submit-offer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          offerId: confirmingOffer.company.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit offer");
+      }
+
+      const data = await response.json();
+      
+      toast.success("Offer submitted successfully!");
+      setShowConfirmDialog(false);
+      setConfirmingOffer(null);
+      
+      // Update the local request state with the response data
+      if (data.request) {
+        setRequest(data.request);
+      }
+      
+      // Optionally redirect after a short delay to show the updated state
+      setTimeout(() => {
+        // Refresh the page data or stay on page to show updates
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to submit offer";
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     if (!user || !user.id) {
       router.push("/login");
@@ -183,7 +259,7 @@ export default function RequestDetailsPage() {
       case RequestDeliveryStatus.IN_TRANSIT:
         return "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-800";
       case RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED:
-      case RequestDeliveryStatus.PICKED_UP_DESTINATION:
+      case RequestDeliveryStatus.SHIPMENT_DELIVER:
         return "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border border-purple-300 dark:border-purple-800";
       case RequestDeliveryStatus.DELIVERED:
         return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-300 dark:border-green-800";
@@ -209,6 +285,8 @@ export default function RequestDetailsPage() {
         return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400";
       case "Rejected":
         return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400";
+      case "Action needed":
+        return "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border border-orange-300 dark:border-orange-700";
       default:
         return "bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-400";
     }
@@ -300,7 +378,7 @@ export default function RequestDetailsPage() {
             request.deliveryStatus ===
               RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
             request.deliveryStatus ===
-              RequestDeliveryStatus.PICKED_UP_DESTINATION) &&
+              RequestDeliveryStatus.SHIPMENT_DELIVER) &&
             request.source &&
             request.destination && (
               <LiveTrackingMap
@@ -519,6 +597,152 @@ export default function RequestDetailsPage() {
             </div>
           </div>
 
+          {/* Cost Offers Section - Show when Action needed */}
+          {request.requestStatus === "Action needed" && request.costOffers && request.costOffers.length > 0 && (
+            <div className="bg-card rounded-lg border border-border p-6">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-foreground mb-1">
+                  Shipping Offers
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Choose your preferred shipping company
+                </p>
+              </div>
+
+              <div className="max-h-[300px] overflow-y-auto pr-2 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {request.costOffers.map((offer, idx) => (
+                    <div
+                      key={offer.company.id}
+                      onClick={() => handleSelectOffer(offer.company.id)}
+                      className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
+                        offer.selected
+                          ? "border-primary bg-primary/5 shadow-md"
+                          : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
+                      }`}
+                    >
+                    {/* Selected Badge */}
+                    {offer.selected && (
+                      <div className="absolute -top-2 -right-2">
+                        <div className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-sm">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Selected
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Option Label */}
+                    <div className="mb-3">
+                      <h3 className="text-base font-bold text-foreground mb-1">
+                        Option {idx + 1}
+                      </h3>
+                      <div className="flex items-center gap-1">
+                        <span className="text-yellow-500 text-sm">★</span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {offer.company.rate}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Cost */}
+                    <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
+                      <p className="text-2xl font-bold text-foreground">
+                        ${offer.cost.toFixed(2)}
+                      </p>
+                    </div>
+
+                    {/* Delivery Reason */}
+                    {offer.comment && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {offer.comment}
+                      </p>
+                    )}
+
+                    {/* Select Indicator */}
+                    <div className={`text-center text-xs font-medium py-1 rounded ${
+                      offer.selected 
+                        ? "text-primary" 
+                        : "text-muted-foreground"
+                    }`}>
+                      {offer.selected ? "✓ Your Choice" : "Click to select"}
+                    </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Submit Button */}
+              <div className="mt-4">
+                <Button
+                  onClick={handleSubmitOffer}
+                  className="w-full bg-primary text-primary-foreground cursor-pointer"
+                >
+                  Submit Selected Offer
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Confirmation Dialog */}
+          {showConfirmDialog && confirmingOffer && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6">
+                <div className="flex gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground text-lg">
+                      Confirm Selection
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Are you sure you want to select this shipping company?
+                    </p>
+                  </div>
+                </div>
+
+                {/* Offer Details */}
+                <div className="bg-muted/50 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-1 mb-2">
+                    <span className="text-yellow-500">★</span>
+                    <span className="font-semibold text-foreground">
+                      {confirmingOffer.company.rate}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-primary mb-2">
+                    ${confirmingOffer.cost.toFixed(2)}
+                  </p>
+                  {confirmingOffer.comment && (
+                    <p className="text-sm text-muted-foreground">
+                      {confirmingOffer.comment}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setShowConfirmDialog(false);
+                      setConfirmingOffer(null);
+                    }}
+                    variant="outline"
+                    className="flex-1 bg-transparent cursor-pointer"
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmSubmit}
+                    className="flex-1 bg-primary text-primary-foreground cursor-pointer"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Yes, Confirm"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Details Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Route Details */}
@@ -572,7 +796,7 @@ export default function RequestDetailsPage() {
                             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">
                               {idx + 1}
                             </span>
-                            {item.name}
+                            {item.name || item.item}
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
                             {item.category}
@@ -624,14 +848,43 @@ export default function RequestDetailsPage() {
                             Media ({item.media.length})
                           </p>
                           <div className="flex gap-2 flex-wrap">
-                            {item.media.map((mediaUrl, mIdx) => (
-                              <img
-                                key={mIdx}
-                                src={mediaUrl}
-                                alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
-                                className="w-16 h-16 rounded-lg object-cover border border-border"
-                              />
-                            ))}
+                            {item.media.map((mediaItem, mIdx) => {
+                              const url = typeof mediaItem === 'string' ? mediaItem : mediaItem.url;
+                              return (
+                                <img
+                                  key={mIdx}
+                                  src={url}
+                                  alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
+                                  className="w-16 h-16 rounded-lg object-cover border border-border"
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {item.services && (item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly || item.services.packaging) && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Services
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {(item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly) && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                <Wrench className="w-3 h-3" />
+                                Assembly &amp; Disassembly
+                                {item.services.assemblyDisassemblyHandler && (
+                                  <span className="ml-1 text-[10px]">
+                                    ({item.services.assemblyDisassemblyHandler === "self" ? "Self" : "Company"})
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                            {item.services.packaging && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                <BoxSelect className="w-3 h-3" />
+                                Packaging
+                              </span>
+                            )}
                           </div>
                         </div>
                       )}
@@ -715,38 +968,165 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-primary" />
-                  Primary Cost
+                  {request.selectedCompany ? "Cost" : "Primary Cost"}
                 </h3>
-                <p className="text-base font-medium text-foreground">
-                  {request.primaryCost ? `$${request.primaryCost}` : "-"}
-                </p>
+                {request.selectedCompany ? (
+                  <>
+                    <p className="text-xl font-bold text-primary">
+                      ${Number(request.selectedCompany.cost).toFixed(2)}
+                    </p>
+                    {request.primaryCost && (
+                      <p className="text-xs text-muted-foreground mt-2 line-through">
+                        Primary: ${Number(request.primaryCost).toFixed(2)}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-base font-medium text-foreground">
+                    {request.primaryCost
+                      ? `$${Number(request.primaryCost).toFixed(2)}`
+                      : request.cost
+                      ? `$${Number(request.cost).toFixed(2)}`
+                      : "-"}
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
-                Last Updated
+              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Activity Log
               </h3>
-              <p className="text-sm text-muted-foreground">
-                {request.updatedAt
-                  ? new Date(request.updatedAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : "-"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {request.updatedAt
-                  ? new Date(request.updatedAt).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "-"}
-              </p>
+
+              {/* Last updated time */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                <span>Updated:</span>
+                <span className="font-medium text-foreground">
+                  {request.updatedAt
+                    ? `${new Date(request.updatedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })} at ${new Date(request.updatedAt).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}`
+                    : "-"}
+                </span>
+              </div>
+
+              {/* Selected offer info */}
+              {request.selectedCompany && (
+                <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Accepted Offer</p>
+                      <p className="text-sm font-semibold text-primary">
+                        ${Number(request.selectedCompany.cost).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
+                      <span className="text-yellow-500 text-sm">★</span>
+                      <span className="text-sm font-bold text-foreground">
+                        {request.selectedCompany.rate}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Activity entries */}
+              {request.activityHistory && request.activityHistory.length > 0 ? (
+                <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                  {[...request.activityHistory].reverse().map((activity, index) => (
+                    <div
+                      key={index}
+                      className="flex gap-3 text-sm"
+                    >
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="font-medium text-foreground truncate">
+                            {activity.action}
+                          </p>
+                          <time className="text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(activity.timestamp).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </time>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {activity.description}
+                        </p>
+                        {activity.cost && (
+                          <div className="flex items-center gap-2 mt-1 text-xs">
+                            <span className="text-primary font-semibold">${Number(activity.cost).toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No activity recorded yet.</p>
+              )}
             </div>
           </div>
+
+          {/* Activity History Section */}
+          {request.activityHistory && request.activityHistory.length > 0 && (
+            <div className="bg-card rounded-lg border border-border p-6">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Activity History
+              </h3>
+              <div className="space-y-4">
+                {request.activityHistory.map((activity, index) => (
+                  <div
+                    key={index}
+                    className="flex gap-4 pb-4 border-b border-border last:border-b-0 last:pb-0"
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-semibold text-foreground">
+                            {activity.action}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {activity.description}
+                          </p>
+                          {activity.cost && (
+                            <div className="mt-2 flex items-center gap-3 text-sm">
+                              <span className="text-primary font-semibold">
+                                ${activity.cost.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <time className="text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(activity.timestamp).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-4">

@@ -14,6 +14,8 @@ import {
   MapPin,
   Tag,
   Banknote,
+  Wrench,
+  BoxSelect,
 } from "lucide-react";
 import { Request, Address } from "@/types";
 
@@ -79,6 +81,21 @@ export default function MyRequestsPage() {
         return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-300 dark:border-red-800";
       default:
         return "bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-400 border border-gray-300 dark:border-gray-800";
+    }
+  };
+
+  const getRequestStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400";
+      case "Accepted":
+        return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400";
+      case "Rejected":
+        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400";
+      case "Action needed":
+        return "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 font-semibold";
+      default:
+        return "bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-400";
     }
   };
 
@@ -150,20 +167,21 @@ export default function MyRequestsPage() {
                         <h3 className="text-lg font-semibold text-foreground truncate">
                           {request.id}
                         </h3>
-                      
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${getStatusColor(request.deliveryStatus)}`}
-                      >
-                        {request.deliveryStatus}
-                      </span>
+                      <div className="ml-2">
+                        {request.requestStatus && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getRequestStatusColor(request.requestStatus)}`}>
+                            {request.requestStatus}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Items preview */}
                     <div className="space-y-2 mb-4 bg-muted/50 rounded-lg p-3">
                       {previewItems.map((item, idx) => (
                         <div key={item.id || `item-${idx}`} className="text-sm text-foreground">
-                          • {item.name} {item.quantity > 1 ? `(×${item.quantity})` : ""}
+                          • {item.name || item.item} {item.quantity > 1 ? `(×${item.quantity})` : ""}
                         </div>
                       ))}
                       {remaining > 0 && (
@@ -172,6 +190,24 @@ export default function MyRequestsPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Services badges */}
+                    {request.items && request.items.some(item => item.services && (item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly || item.services.packaging)) && (
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {request.items.some(item => item.services?.canBeAssembledDisassembled || item.services?.assemblyDisassembly) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            <Wrench className="w-3 h-3" />
+                            Assembly
+                          </span>
+                        )}
+                        {request.items.some(item => item.services?.packaging) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                            <BoxSelect className="w-3 h-3" />
+                            Packaging
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -182,11 +218,22 @@ export default function MyRequestsPage() {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4 flex-shrink-0" />
-                        <span>{request.deliveryType === "fast" ? "Fast" : "Normal"} Delivery</span>
+                        <span>{request.deliveryType === "Urgent" ? "Urgent" : "Normal"} Delivery</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Banknote className="w-4 h-4 flex-shrink-0" />
-                        <span>{request.primaryCost ? `$${request.primaryCost}` : "-"}</span>
+                        <span className="font-medium text-foreground">
+                          {request.selectedCompany
+                            ? `$${Number(request.selectedCompany.cost).toFixed(2)}`
+                            : request.cost
+                            ? `$${Number(request.cost).toFixed(2)}`
+                            : request.primaryCost
+                            ? `$${Number(request.primaryCost).toFixed(2)}`
+                            : "-"}
+                        </span>
+                        {!request.selectedCompany && (request.primaryCost || request.cost) && (
+                          <span className="text-xs ml-1">(estimated)</span>
+                        )}
                       </div>
                     </div>
 

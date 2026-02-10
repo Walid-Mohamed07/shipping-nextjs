@@ -15,6 +15,7 @@ function normalizeItems(req: LegacyRequest) {
       quantity: Number(it.quantity ?? 1) || 1,
       note: it.note || undefined,
       media: Array.isArray(it.media) ? it.media.slice(0, 4) : [],
+      services: it.services || { assemblyDisassembly: false, packaging: false },
     }));
   }
   if (
@@ -34,6 +35,7 @@ function normalizeItems(req: LegacyRequest) {
         quantity: Number(req.quantity ?? 1) || 1,
         note: req.note || undefined,
         media: Array.isArray(req.media) ? req.media.slice(0, 4) : [],
+        services: { assemblyDisassembly: false, packaging: false },
       },
     ];
   }
@@ -52,23 +54,33 @@ function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
 function normalizeRequest(req: LegacyRequest) {
   const from = req.from ?? req.source;
   const to = req.to ?? req.destination;
+  const source = req.source ?? req.from;
+  const destination = req.destination ?? req.to;
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime || undefined;
   const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined;
+  const cost = req.cost ?? primaryCost;
   return {
     id: req.id,
     userId: req.userId,
     from,
     to,
+    source,
+    destination,
     deliveryType,
     startTime,
     primaryCost,
+    cost,
     requestStatus: req.requestStatus,
     deliveryStatus: req.deliveryStatus,
     items,
+    costOffers: req.costOffers || undefined,
+    comment: req.comment || undefined,
     createdAt: req.createdAt,
     updatedAt: req.updatedAt,
+    selectedCompany: req.selectedCompany || undefined,
+    activityHistory: req.activityHistory || undefined,
   };
 }
 

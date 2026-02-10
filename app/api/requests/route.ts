@@ -7,30 +7,51 @@ type LegacyRequest = any;
 function normalizeItems(req: LegacyRequest) {
   // Preferred: items[] already exists
   if (Array.isArray(req.items) && req.items.length > 0) {
-    return req.items.map((it: any, idx: number) => ({
-      id: it.id || `ITEM-${req.id || Date.now()}-${idx + 1}`,
-      name: it.name ?? it.item ?? "-",
-      category: it.category ?? "",
-      dimensions: it.dimensions ?? "",
-      weight: it.weight ?? "",
-      quantity: Number(it.quantity ?? 1) || 1,
-      note: it.note || undefined,
-      media: Array.isArray(it.media) ? it.media.slice(0, 4) : [],
-    }));
+    return req.items.map((it: any, idx: number) => {
+      // Normalize media to handle both string[] and MediaItem[] formats
+      let normalizedMedia = [];
+      if (Array.isArray(it.media)) {
+        normalizedMedia = it.media.map((m: any) => {
+          if (typeof m === 'string') {
+            return { url: m, existing: true };
+          }
+          return m; // Already in MediaItem format
+        });
+      }
+      
+      return {
+        id: it.id || `ITEM-${req.id || Date.now()}-${idx + 1}`,
+        item: it.item ?? it.name ?? "-",
+        name: it.name ?? it.item ?? "-",
+        category: it.category ?? "",
+        dimensions: it.dimensions ?? "",
+        weight: it.weight ?? "",
+        quantity: Number(it.quantity ?? 1) || 1,
+        note: it.note || undefined,
+        media: normalizedMedia.slice(0, 4),
+        services: it.services || { assemblyDisassembly: false, packaging: false },
+      };
+    });
   }
 
   // Legacy: single-item fields
   if (req.item || req.category || req.dimensions || req.weight || req.quantity) {
+    const media = Array.isArray(req.media) 
+      ? req.media.map((m: any) => typeof m === 'string' ? { url: m, existing: true } : m)
+      : [];
+      
     return [
       {
         id: `ITEM-${req.id || Date.now()}-1`,
+        item: req.item ?? "-",
         name: req.item ?? "-",
         category: req.category ?? "",
         dimensions: req.dimensions ?? "",
         weight: req.weight ?? "",
         quantity: Number(req.quantity ?? 1) || 1,
         note: req.note || undefined,
-        media: Array.isArray(req.media) ? req.media.slice(0, 4) : [],
+        media: media.slice(0, 4),
+        services: { assemblyDisassembly: false, packaging: false },
       },
     ];
   }
@@ -39,33 +60,48 @@ function normalizeItems(req: LegacyRequest) {
   return [];
 }
 
-function normalizeDeliveryType(value: any): "normal" | "fast" | undefined {
+function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
   const v = String(value || "").toLowerCase().trim();
-  if (v === "fast") return "fast";
-  if (v === "normal") return "normal";
+  if (v === "urgent" || v === "fast") return "Urgent";
+  if (v === "normal") return "Normal";
   return undefined;
 }
 
 function normalizeRequest(req: LegacyRequest) {
   const from = req.from ?? req.source;
   const to = req.to ?? req.destination;
+  const source = req.source ?? req.from;
+  const destination = req.destination ?? req.to;
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
-  const whenToStart = req.whenToStart || undefined;
-  const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined;
+  const startTime = req.startTime ?? req.whenToStart;
+  const primaryCost = req.primaryCost ?? req.estimatedCost;
+  const cost = req.cost ?? primaryCost;
+  const requestStatus = req.requestStatus ?? req.orderStatus;
+  
   return {
     id: req.id,
     userId: req.userId,
+    // Include both old and new field names for compatibility
     from,
     to,
+    source,
+    destination,
     deliveryType,
-    whenToStart,
+    startTime,
+    whenToStart: startTime, // Legacy support
     primaryCost,
-    orderStatus: req.orderStatus,
+    cost,
+    requestStatus,
+    orderStatus: requestStatus, // Legacy support
     deliveryStatus: req.deliveryStatus,
+    comment: req.comment,
     items,
     createdAt: req.createdAt,
     updatedAt: req.updatedAt,
+    costOffers: req.costOffers,
+    activityHistory: req.activityHistory,
+    selectedCompany: req.selectedCompany,
   };
 }
 
@@ -95,7 +131,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    // FINAL structure (request-level fields + items[])
+    // Support both old and new field names
     const {
       userId,
       from,
@@ -105,16 +141,26 @@ export async function POST(request: NextRequest) {
       items,
       deliveryType,
       whenToStart,
+      startTime,
+      cost,
       primaryCost,
+      estimatedCost,
       orderStatus,
+      requestStatus,
       deliveryStatus,
+      comment,
     } = body;
 
     const requestsPath = path.join(process.cwd(), "data", "requests.json");
     const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
 
-    const fromAddr = from ?? source;
-    const toAddr = to ?? destination;
+    // Use new field names, fallback to old ones
+    const sourceAddr = source ?? from;
+    const destAddr = destination ?? to;
+    const finalStartTime = startTime ?? whenToStart;
+    const finalPrimaryCost = primaryCost ?? estimatedCost;
+    const finalCost = cost ?? finalPrimaryCost;
+    const finalStatus = requestStatus ?? orderStatus;
 
     // Validate required request-level fields
     const normalizedDeliveryType = normalizeDeliveryType(deliveryType);
@@ -124,9 +170,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (!whenToStart) {
+    if (!finalStartTime) {
       return NextResponse.json(
-        { error: "whenToStart is required" },
+        { error: "startTime is required" },
         { status: 400 },
       );
     }
@@ -152,10 +198,11 @@ export async function POST(request: NextRequest) {
     const newRequest = {
       id: `REQ-${Date.now()}`,
       userId,
-      from: fromAddr,
-      to: toAddr,
+      source: sourceAddr,
+      destination: destAddr,
       items: items.map((item: any) => ({
         id: item.id || `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        item: item.item || item.name,
         name: item.name || item.item,
         category: item.category,
         dimensions: item.dimensions,
@@ -163,12 +210,15 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         note: item.note || undefined,
         media: Array.isArray(item.media) ? item.media.slice(0, 4) : [],
+        services: item.services || { assemblyDisassembly: false, packaging: false },
       })),
       deliveryType: normalizedDeliveryType,
-      whenToStart,
-      primaryCost,
-      orderStatus: orderStatus || "Pending",
+      startTime: finalStartTime,
+      primaryCost: finalPrimaryCost,
+      cost: finalCost,
+      requestStatus: finalStatus || "Pending",
       deliveryStatus: deliveryStatus || "Pending",
+      comment: comment || "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

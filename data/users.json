@@ -4,7 +4,11 @@
       "id": "1",
       "email": "john@example.com",
       "password": "hashed_password_123",
+      "fullName": "John Doe",
       "name": "John Doe",
+      "username": "johndoe",
+      "mobile": "+12345678901",
+      "profilePicture": "https://example.com/profiles/johndoe.jpg",
       "role": "client",
       "locations": [
         {
@@ -24,13 +28,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-15T10:30:00Z"
     },
     {
       "id": "2",
       "email": "jane@example.com",
       "password": "hashed_password_456",
+      "fullName": "Jane Smith",
       "name": "Jane Smith",
+      "username": "janesmith",
+      "mobile": "+14165551234",
+      "profilePicture": "https://example.com/profiles/janesmith.jpg",
       "role": "client",
       "locations": [
         {
@@ -50,13 +59,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-16T14:20:00Z"
     },
     {
       "id": "admin-001",
       "email": "admin@example.com",
       "password": "admin_password_123",
+      "fullName": "Admin User",
       "name": "Admin User",
+      "username": "adminuser",
+      "mobile": "+12345678901",
+      "profilePicture": "https://example.com/profiles/adminuser.jpg",
       "role": "admin",
       "locations": [
         {
@@ -76,13 +90,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-10T08:00:00Z"
     },
     {
       "id": "driver-001",
       "email": "driver1@example.com",
       "password": "driver_password_123",
+      "fullName": "Mike Johnson",
       "name": "Mike Johnson",
+      "username": "mikejohnson",
+      "mobile": "+12345678901",
+      "profilePicture": "https://example.com/profiles/mikejohnson.jpg",
       "role": "driver",
       "locations": [
         {
@@ -102,13 +121,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-12T10:00:00Z"
     },
     {
       "id": "driver-002",
       "email": "driver2@example.com",
       "password": "driver_password_456",
+      "fullName": "Sarah Williams",
       "name": "Sarah Williams",
+      "username": "sarahwilliams",
+      "mobile": "+16045551234",
+      "profilePicture": "https://example.com/profiles/sarahwilliams.jpg",
       "role": "driver",
       "locations": [
         {
@@ -128,13 +152,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-13T14:00:00Z"
     },
     {
       "id": "driver-003",
       "email": "driver3@example.com",
       "password": "driver_password_789",
+      "fullName": "Marcus Schmidt",
       "name": "Marcus Schmidt",
+      "username": "marcusschmidt",
+      "mobile": "+4915112345678",
+      "profilePicture": "https://example.com/profiles/marcusschmidt.jpg",
       "role": "driver",
       "locations": [
         {
@@ -154,13 +183,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-14T09:00:00Z"
     },
     {
       "id": "driver-004",
       "email": "driver4@example.com",
       "password": "driver_password_012",
+      "fullName": "Pierre Dupont",
       "name": "Pierre Dupont",
+      "username": "pierredupont",
+      "mobile": "+33612345678",
+      "profilePicture": "https://example.com/profiles/pierredupont.jpg",
       "role": "driver",
       "locations": [
         {
@@ -180,13 +214,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2024-01-15T11:00:00Z"
     },
     {
       "id": "1769075647206",
       "email": "walid@cepac-eg.com",
       "password": "Walid132",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
+      "mobile": "+201001234567",
+      "profilePicture": "https://example.com/profiles/walidmohamed.jpg",
       "role": "client",
       "locations": [
         {
@@ -206,87 +245,121 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2026-01-22T09:54:07.206Z"
     },
     {
       "id": "walid-client-001",
       "email": "walid.client@cepac-eg.com",
       "password": "WalidClient123",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
+      "mobile": "12345678",
+      "profilePicture": "https://example.com/profiles/walidclient.jpg",
       "role": "client",
       "locations": [
         {
           "country": "Egypt",
-          "countryCode": "+20",
+          "countryCode": "",
           "fullName": "Walid Mohamed",
-          "mobile": "+201112223334",
-          "street": "20 Client St",
-          "building": "",
-          "city": "Alexandria",
-          "district": "Montaza",
-          "governorate": "Alexandria",
-          "postalCode": "21532",
-          "landmark": "Stanley Bridge",
+          "mobile": "12345678",
+          "street": "Al Horeya Street",
+          "building": "2",
+          "city": "El Karma 2",
+          "district": "",
+          "governorate": "Giza",
+          "postalCode": "12588",
+          "landmark": "near to Zaid",
           "addressType": "Home",
-          "deliveryInstructions": "Ring bell",
-          "primary": false
+          "deliveryInstructions": "",
+          "primary": false,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 30.04126278549466,
+            "longitude": 31.003475188335877
+          }
         },
         {
           "country": "Egypt",
           "countryCode": "",
           "fullName": "Walid Mohamed",
-          "mobile": "123456",
-          "street": "El Ensherah st",
-          "building": "",
-          "city": "Cairo",
-          "district": "",
-          "governorate": "",
-          "postalCode": "123",
-          "landmark": "Taha Hussein axis",
-          "addressType": "Home",
-          "deliveryInstructions": "",
-          "primary": true
-        },
-        {
-          "country": "Kuwait",
-          "countryCode": "",
-          "fullName": "Walid Mohamed",
-          "mobile": "4635345234324",
-          "street": "AD st",
+          "mobile": "12345678",
+          "street": "Sidi Beshr Mosque Street",
           "building": "2",
-          "city": "Abo Dabi",
-          "district": "",
-          "governorate": "",
-          "postalCode": "23244",
-          "landmark": "Near Diamond Mall",
+          "city": "Alexandria",
+          "district": "Miami",
+          "governorate": "Alexandria",
+          "postalCode": "21613",
+          "landmark": "near to shehab",
           "addressType": "Home",
-          "deliveryInstructions": "Call on arrival",
-          "primary": false
+          "deliveryInstructions": "",
+          "primary": false,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 31.260354922900014,
+            "longitude": 29.9871683116362
+          }
         },
         {
-          "country": "Saudi Arabia",
+          "country": "Egypt",
           "countryCode": "",
           "fullName": "Walid Mohamed",
-          "mobile": "43657546345345",
-          "street": "45 st",
-          "building": "31",
-          "city": "Riyadh",
+          "mobile": "12345678",
+          "street": "taha hessin",
+          "building": "2",
+          "city": "Nasr City",
           "district": "",
-          "governorate": "",
-          "postalCode": "45462",
-          "landmark": "Before Riyadh club",
-          "addressType": "Office",
+          "governorate": "Cairo",
+          "postalCode": "11351",
+          "landmark": "near to shehab",
+          "addressType": "Home",
           "deliveryInstructions": "",
-          "primary": false
+          "primary": true,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 30.117248422464215,
+            "longitude": 31.38808250339935
+          }
+        },
+        {
+          "country": "Egypt",
+          "countryCode": "",
+          "fullName": "Walid Mohamed",
+          "mobile": "+123455677",
+          "street": "Nabeih Street",
+          "building": "",
+          "city": "Port Said",
+          "district": "",
+          "governorate": "Port Said",
+          "postalCode": "42515",
+          "landmark": "",
+          "addressType": "Home",
+          "deliveryInstructions": "",
+          "primary": false,
+          "warehouseId": "",
+          "pickupMode": "Self",
+          "coordinates": {
+            "latitude": 31.268440536157048,
+            "longitude": 32.29248024523258
+          }
         }
       ],
+      "status": "active",
       "createdAt": "2026-01-22T10:00:00Z"
     },
     {
       "id": "walid-admin-001",
       "email": "walid.admin@cepac-eg.com",
       "password": "WalidAdmin123",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
+      "mobile": "+201223344556",
+      "profilePicture": "https://example.com/profiles/walidadmin.jpg",
       "role": "admin",
       "locations": [
         {
@@ -306,13 +379,49 @@
           "primary": true
         }
       ],
+      "status": "active",
+      "createdAt": "2026-01-22T10:01:00Z"
+    },
+    {
+      "id": "walid-operator-001",
+      "email": "walid.operator@cepac-eg.com",
+      "password": "WalidOperator123",
+      "fullName": "Walid Mohamed",
+      "name": "Walid Mohamed",
+      "username": "walidmohamed",
+      "mobile": "+201223344556",
+      "profilePicture": "https://example.com/profiles/walidoperator.jpg",
+      "role": "operator",
+      "locations": [
+        {
+          "country": "Egypt",
+          "countryCode": "+20",
+          "fullName": "Walid Mohamed",
+          "mobile": "+201223344556",
+          "street": "30 Admin Ave",
+          "building": "",
+          "city": "Giza",
+          "district": "Dokki",
+          "governorate": "Giza",
+          "postalCode": "12511",
+          "landmark": "Giza Zoo",
+          "addressType": "Office",
+          "deliveryInstructions": "Reception desk",
+          "primary": true
+        }
+      ],
+      "status": "active",
       "createdAt": "2026-01-22T10:01:00Z"
     },
     {
       "id": "walid-driver-001",
       "email": "walid.driver@cepac-eg.com",
       "password": "WalidDriver123",
+      "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
+      "username": "walidmohamed",
+      "mobile": "+201334455667",
+      "profilePicture": "https://example.com/profiles/waliddriver.jpg",
       "role": "driver",
       "locations": [
         {
@@ -332,13 +441,18 @@
           "primary": true
         }
       ],
+      "status": "active",
       "createdAt": "2026-01-22T10:02:00Z"
     },
     {
       "id": "1769861366877",
       "email": "Mohamed@yahoo.com",
       "password": "Mohamed1234",
-      "name": "Mohamed Ahmed ",
+      "fullName": "Mohamed Ahmed",
+      "name": "Mohamed Ahmed",
+      "username": "mohamedahmed",
+      "mobile": "01006591234",
+      "profilePicture": "https://example.com/profiles/mohamedahmed.jpg",
       "locations": [
         {
           "country": "Saudi Arabia",
@@ -407,8 +521,31 @@
           }
         }
       ],
-      "role": "admin",
+      "role": "client",
+      "status": "active",
       "createdAt": "2026-01-31T12:09:26.877Z"
+    },
+    {
+      "id": "1770629536936",
+      "email": "mohamedprovider@cepac.com",
+      "password": "provider1234",
+      "name": "mohamed provider",
+      "fullName": "Mohamed Provider",
+      "username": "mohamedprovider",
+      "mobile": "+201223344556",
+      "profilePicture": "https://example.com/profiles/mohamedprovider.jpg",
+      "locations": [
+        {
+          "address": "123 main street",
+          "country": "Egypt",
+          "countryCode": "+20",
+          "postalCode": "21232",
+          "mobile": "21321324132",
+          "primary": true
+        }
+      ],
+      "role": "provider",
+      "createdAt": "2026-02-09T09:32:16.936Z"
     }
   ]
 }

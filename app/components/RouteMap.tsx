@@ -59,8 +59,15 @@ function MapBounds({ points }: { points: [number, number][] }) {
     if (points.length < 2) return;
     
     try {
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+      // Add a small delay to ensure map is fully rendered
+      const timeoutId = setTimeout(() => {
+        if (map && map.getContainer() && typeof map.fitBounds === 'function') {
+          const bounds = L.latLngBounds(points);
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+        }
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     } catch (error) {
       console.error("Error fitting map bounds:", error);
     }
@@ -169,10 +176,12 @@ export function RouteMap({
         style={{ height }}
       >
         <MapContainer
+          key={`route-map-${boundsPoints.length}`}
           center={[center.lat, center.lng]}
           zoom={6}
           className="h-full w-full"
           scrollWheelZoom={true}
+          style={{ height: "100%", width: "100%" }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
