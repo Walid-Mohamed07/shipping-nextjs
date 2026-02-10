@@ -474,7 +474,8 @@
       "id": "1770629536936",
       "email": "mohamedprovider@cepac.com",
       "password": "provider1234",
-      "name": "mohamed provider",
+      "name": "mohamed company",
+      "fullName": "Mohamed Company",
       "locations": [
         {
           "address": "123 main street",
@@ -485,7 +486,7 @@
           "primary": true
         }
       ],
-      "role": "Provider ",
+      "role": "company",
       "createdAt": "2026-02-09T09:32:16.936Z"
     }
   ]

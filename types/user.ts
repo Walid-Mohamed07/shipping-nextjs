@@ -6,7 +6,7 @@ export type UserRole =
   | "admin"
   | "warehouse_manager"
   | "operator"
-  | "provider";
+  | "company";
 
 export interface User {
   id: string;

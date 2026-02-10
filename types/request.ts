@@ -5,7 +5,8 @@ export type RequestStatus =
   | "Pending"
   | "Rejected"
   | "Cancelled"
-  | "Action needed";
+  | "Action needed"
+  | "Assigned to Company";
 
 export enum RequestDeliveryStatus {
   PENDING = "Pending",
@@ -71,6 +72,8 @@ export interface CostOffer {
   };
   comment?: string;
   selected: boolean;
+  status: "pending" | "accepted" | "rejected";
+  createdAt?: string;
 }
 
 export interface ActivityHistory {
@@ -119,4 +122,12 @@ export interface Request {
     rate: string;
     cost: number;
   };
+  // Company assignment fields
+  assignedCompanyId?: string;
+  assignedWarehouseId?: string;
+  // Pickup mode fields
+  sourcePickupMode?: "Delegate" | "Self";
+  destinationPickupMode?: "Delegate" | "Self";
+  // Company rejection tracking
+  rejectedByCompanies?: string[];
 }

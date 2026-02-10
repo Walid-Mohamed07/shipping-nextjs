@@ -53,6 +53,28 @@ export function Header() {
                   My Orders
                 </Link>
               )}
+              {user.role === "company" && (
+                <>
+                  <Link
+                    href="/company/requests"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    Requests
+                  </Link>
+                  <Link
+                    href="/company/ongoing"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    Ongoing
+                  </Link>
+                  <Link
+                    href="/company/warehouses"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    Warehouses
+                  </Link>
+                </>
+              )}
               <MessageNotification />
               <span className="text-muted-foreground text-sm">
                 {user.name} ({user.role})
