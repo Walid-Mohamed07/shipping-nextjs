@@ -7,6 +7,8 @@
       "fullName": "John Doe",
       "name": "John Doe",
       "username": "johndoe",
+      "mobile": "+12345678901",
+      "profilePicture": "https://example.com/profiles/johndoe.jpg",
       "role": "client",
       "locations": [
         {
@@ -36,6 +38,8 @@
       "fullName": "Jane Smith",
       "name": "Jane Smith",
       "username": "janesmith",
+      "mobile": "+14165551234",
+      "profilePicture": "https://example.com/profiles/janesmith.jpg",
       "role": "client",
       "locations": [
         {
@@ -65,6 +69,8 @@
       "fullName": "Admin User",
       "name": "Admin User",
       "username": "adminuser",
+      "mobile": "+12345678901",
+      "profilePicture": "https://example.com/profiles/adminuser.jpg",
       "role": "admin",
       "locations": [
         {
@@ -94,6 +100,8 @@
       "fullName": "Mike Johnson",
       "name": "Mike Johnson",
       "username": "mikejohnson",
+      "mobile": "+12345678901",
+      "profilePicture": "https://example.com/profiles/mikejohnson.jpg",
       "role": "driver",
       "locations": [
         {
@@ -123,6 +131,8 @@
       "fullName": "Sarah Williams",
       "name": "Sarah Williams",
       "username": "sarahwilliams",
+      "mobile": "+16045551234",
+      "profilePicture": "https://example.com/profiles/sarahwilliams.jpg",
       "role": "driver",
       "locations": [
         {
@@ -152,6 +162,8 @@
       "fullName": "Marcus Schmidt",
       "name": "Marcus Schmidt",
       "username": "marcusschmidt",
+      "mobile": "+4915112345678",
+      "profilePicture": "https://example.com/profiles/marcusschmidt.jpg",
       "role": "driver",
       "locations": [
         {
@@ -181,6 +193,8 @@
       "fullName": "Pierre Dupont",
       "name": "Pierre Dupont",
       "username": "pierredupont",
+      "mobile": "+33612345678",
+      "profilePicture": "https://example.com/profiles/pierredupont.jpg",
       "role": "driver",
       "locations": [
         {
@@ -210,6 +224,8 @@
       "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
       "username": "walidmohamed",
+      "mobile": "+201001234567",
+      "profilePicture": "https://example.com/profiles/walidmohamed.jpg",
       "role": "client",
       "locations": [
         {
@@ -239,6 +255,8 @@
       "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
       "username": "walidmohamed",
+      "mobile": "12345678",
+      "profilePicture": "https://example.com/profiles/walidclient.jpg",
       "role": "client",
       "locations": [
         {
@@ -340,7 +358,40 @@
       "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
       "username": "walidmohamed",
+      "mobile": "+201223344556",
+      "profilePicture": "https://example.com/profiles/walidadmin.jpg",
       "role": "admin",
+      "locations": [
+        {
+          "country": "Egypt",
+          "countryCode": "+20",
+          "fullName": "Walid Mohamed",
+          "mobile": "+201223344556",
+          "street": "30 Admin Ave",
+          "building": "",
+          "city": "Giza",
+          "district": "Dokki",
+          "governorate": "Giza",
+          "postalCode": "12511",
+          "landmark": "Giza Zoo",
+          "addressType": "Office",
+          "deliveryInstructions": "Reception desk",
+          "primary": true
+        }
+      ],
+      "status": "active",
+      "createdAt": "2026-01-22T10:01:00Z"
+    },
+    {
+      "id": "walid-operator-001",
+      "email": "walid.operator@cepac-eg.com",
+      "password": "WalidOperator123",
+      "fullName": "Walid Mohamed",
+      "name": "Walid Mohamed",
+      "username": "walidmohamed",
+      "mobile": "+201223344556",
+      "profilePicture": "https://example.com/profiles/walidoperator.jpg",
+      "role": "operator",
       "locations": [
         {
           "country": "Egypt",
@@ -369,6 +420,8 @@
       "fullName": "Walid Mohamed",
       "name": "Walid Mohamed",
       "username": "walidmohamed",
+      "mobile": "+201334455667",
+      "profilePicture": "https://example.com/profiles/waliddriver.jpg",
       "role": "driver",
       "locations": [
         {
@@ -398,6 +451,8 @@
       "fullName": "Mohamed Ahmed",
       "name": "Mohamed Ahmed",
       "username": "mohamedahmed",
+      "mobile": "01006591234",
+      "profilePicture": "https://example.com/profiles/mohamedahmed.jpg",
       "locations": [
         {
           "country": "Saudi Arabia",
@@ -475,6 +530,10 @@
       "email": "mohamedprovider@cepac.com",
       "password": "provider1234",
       "name": "mohamed provider",
+      "fullName": "Mohamed Provider",
+      "username": "mohamedprovider",
+      "mobile": "+201223344556",
+      "profilePicture": "https://example.com/profiles/mohamedprovider.jpg",
       "locations": [
         {
           "address": "123 main street",
@@ -485,7 +544,7 @@
           "primary": true
         }
       ],
-      "role": "Provider ",
+      "role": "provider",
       "createdAt": "2026-02-09T09:32:16.936Z"
     }
   ]

@@ -24,8 +24,6 @@ import {
   Package,
   Users,
   Truck,
-  Map,
-  Settings,
   BarChart3,
   Lock,
   Building2,
@@ -33,17 +31,17 @@ import {
 
 const navItems = [
   { label: "Requests", href: "/admin/dashboard/requests", icon: Package },
-  {
-    label: "Assignments",
-    href: "/admin/dashboard/assignments",
-    icon: LayoutDashboard,
-  },
-  { label: "Vehicles", href: "/admin/dashboard/vehicles", icon: Truck },
-  {
-    label: "Vehicle Rules",
-    href: "/admin/dashboard/vehicle-rules",
-    icon: Settings,
-  },
+  // {
+  //   label: "Assignments",
+  //   href: "/admin/dashboard/assignments",
+  //   icon: LayoutDashboard,
+  // },
+  // { label: "Vehicles", href: "/admin/dashboard/vehicles", icon: Truck },
+  // {
+  //   label: "Vehicle Rules",
+  //   href: "/admin/dashboard/vehicle-rules",
+  //   icon: Settings,
+  // },
   { label: "Users", href: "/admin/dashboard/users", icon: Users },
   { label: "Drivers", href: "/admin/dashboard/drivers", icon: Truck },
   { label: "Companies", href: "/admin/dashboard/companies", icon: Building2 },
@@ -52,7 +50,7 @@ const navItems = [
     href: "/admin/dashboard/cost-offers",
     icon: BarChart3,
   },
-  { label: "Map", href: "/admin/dashboard/map", icon: Map },
+  // { label: "Map", href: "/admin/dashboard/map", icon: Map },
   { label: "Override", href: "/admin/dashboard/override", icon: Lock },
   { label: "Metrics", href: "/admin/dashboard/metrics", icon: BarChart3 },
   { label: "Audit", href: "/admin/dashboard/audit", icon: LayoutDashboard },
@@ -94,7 +92,7 @@ export default function DashboardSection({
     );
   }
 
-  if (!user || user.role !== "admin") {
+  if (!user || (user.role !== "admin" && user.role !== "operator")) {
     router.push("/");
     return null;
   }
