@@ -269,7 +269,7 @@ export default function CompanyOngoingRequestsPage() {
                       <div className="text-sm text-muted-foreground flex items-center gap-4">
                         <span className="flex items-center gap-1">
                           <UserIcon className="w-4 h-4" />
-                          {request.user.fullName}
+                          {request.user?.fullName || "User"}
                         </span>
                         <span>
                           Accepted offer: ${request.selectedCompany?.cost.toFixed(2)}

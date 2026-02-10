@@ -392,7 +392,7 @@ export default function CompanyRequestsPage() {
                         <div className="flex items-center gap-1">
                           <UserIcon className="w-3 h-3 text-muted-foreground" />
                           <span className="text-xs font-medium text-foreground truncate">
-                            {request.user.fullName.split(' ')[0]}
+                            {request.user?.fullName?.split(' ')[0] || "User"}
                           </span>
                         </div>
                       </div>
