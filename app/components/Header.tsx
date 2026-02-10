@@ -5,6 +5,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import Image from "next/image";
+import { MessageNotification } from "./MessageNotification";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -36,14 +37,15 @@ export function Header() {
                   My Requests
                 </Link>
               )}
-              {user.role === "admin" && (
-                <Link
-                  href="/admin/dashboard"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
-                  Dashboard
-                </Link>
-              )}
+              {user.role === "admin" ||
+                (user.role === "operator" && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                ))}
               {user.role === "driver" && (
                 <Link
                   href="/driver/orders"
@@ -52,6 +54,7 @@ export function Header() {
                   My Orders
                 </Link>
               )}
+              <MessageNotification />
               <span className="text-muted-foreground text-sm">
                 {user.name} ({user.role})
               </span>
