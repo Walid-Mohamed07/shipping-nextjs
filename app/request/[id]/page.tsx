@@ -39,6 +39,13 @@ import {
   RequestDeliveryStatus,
 } from "@/types";
 import { getDistanceKm } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+// Dynamically import map components to avoid SSR issues
+const LocationMapPicker = dynamic(
+  () => import("@/app/components/LocationMapPicker").then((mod) => ({ default: mod.LocationMapPicker })),
+  { ssr: false }
+);
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -1094,7 +1101,7 @@ export default function RequestDetailsPage() {
               
               {/* Show accordion if both warehouses are assigned */}
               {request.sourceWarehouse && request.destinationWarehouse ? (
-                <Accordion type="multiple" defaultValue={["source", "destination"]} className="space-y-3">
+                <Accordion type="single" className="space-y-3">
                   {/* Source Warehouse */}
                   <AccordionItem value="source" className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
                     <AccordionTrigger value="source" className="bg-transparent">
@@ -1117,15 +1124,12 @@ export default function RequestDetailsPage() {
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">Address</p>
                           <p className="text-sm font-medium text-foreground">{request.sourceWarehouse.address}</p>
-                        </div>
-                        {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Location</p>
-                            <p className="text-sm font-medium text-foreground">
+                          {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                            <p className="text-sm text-muted-foreground mt-1">
                               {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
                             </p>
-                          </div>
-                        )}
+                          )}
+                        </div>
                         {request.sourceWarehouse.assignedAt && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
@@ -1138,6 +1142,23 @@ export default function RequestDetailsPage() {
                                 minute: "2-digit",
                               })}
                             </p>
+                          </div>
+                        )}
+                        {request.sourceWarehouse.coordinates && (
+                          <div className="mt-3">
+                            <p className="text-xs text-muted-foreground mb-2">Location on Map</p>
+                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
+                              <LocationMapPicker
+                                position={{
+                                  lat: request.sourceWarehouse.coordinates.latitude,
+                                  lng: request.sourceWarehouse.coordinates.longitude,
+                                }}
+                                onPositionChange={() => {}}
+                                editable={false}
+                                showUseMyLocation={false}
+                                zoom={15}
+                              />
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1166,15 +1187,12 @@ export default function RequestDetailsPage() {
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">Address</p>
                           <p className="text-sm font-medium text-foreground">{request.destinationWarehouse.address}</p>
-                        </div>
-                        {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Location</p>
-                            <p className="text-sm font-medium text-foreground">
+                          {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                            <p className="text-sm text-muted-foreground mt-1">
                               {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
                             </p>
-                          </div>
-                        )}
+                          )}
+                        </div>
                         {request.destinationWarehouse.assignedAt && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
@@ -1189,6 +1207,23 @@ export default function RequestDetailsPage() {
                             </p>
                           </div>
                         )}
+                        {request.destinationWarehouse.coordinates && (
+                          <div className="mt-3">
+                            <p className="text-xs text-muted-foreground mb-2">Location on Map</p>
+                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
+                              <LocationMapPicker
+                                position={{
+                                  lat: request.destinationWarehouse.coordinates.latitude,
+                                  lng: request.destinationWarehouse.coordinates.longitude,
+                                }}
+                                onPositionChange={() => {}}
+                                editable={false}
+                                showUseMyLocation={false}
+                                zoom={15}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -1198,7 +1233,7 @@ export default function RequestDetailsPage() {
                 <div className="space-y-4">
                   {request.sourceWarehouse && (
                     <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-4 mb-3">
                         <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                           <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         </div>
@@ -1212,24 +1247,35 @@ export default function RequestDetailsPage() {
                             <div>
                               <p className="text-xs text-muted-foreground">Address</p>
                               <p className="font-medium text-foreground">{request.sourceWarehouse.address}</p>
-                            </div>
-                            {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
-                              <div>
-                                <p className="text-xs text-muted-foreground">Location</p>
-                                <p className="font-medium text-foreground">
+                              {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                                <p className="text-sm text-muted-foreground mt-1">
                                   {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
                                 </p>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
+                      {request.sourceWarehouse.coordinates && (
+                        <div className="h-64 w-full rounded-lg overflow-hidden border border-blue-200 dark:border-blue-700">
+                          <LocationMapPicker
+                            position={{
+                              lat: request.sourceWarehouse.coordinates.latitude,
+                              lng: request.sourceWarehouse.coordinates.longitude,
+                            }}
+                            onPositionChange={() => {}}
+                            editable={false}
+                            showUseMyLocation={false}
+                            zoom={15}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {request.destinationWarehouse && (
                     <div className="bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-4 mb-3">
                         <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                           <MapPinned className="w-6 h-6 text-green-600 dark:text-green-400" />
                         </div>
@@ -1243,18 +1289,29 @@ export default function RequestDetailsPage() {
                             <div>
                               <p className="text-xs text-muted-foreground">Address</p>
                               <p className="font-medium text-foreground">{request.destinationWarehouse.address}</p>
-                            </div>
-                            {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
-                              <div>
-                                <p className="text-xs text-muted-foreground">Location</p>
-                                <p className="font-medium text-foreground">
+                              {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                                <p className="text-sm text-muted-foreground mt-1">
                                   {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
                                 </p>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
+                      {request.destinationWarehouse.coordinates && (
+                        <div className="h-64 w-full rounded-lg overflow-hidden border border-green-200 dark:border-green-700">
+                          <LocationMapPicker
+                            position={{
+                              lat: request.destinationWarehouse.coordinates.latitude,
+                              lng: request.destinationWarehouse.coordinates.longitude,
+                            }}
+                            onPositionChange={() => {}}
+                            editable={false}
+                            showUseMyLocation={false}
+                            zoom={15}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

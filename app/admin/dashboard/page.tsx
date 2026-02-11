@@ -73,7 +73,7 @@ export default function AdminDashboard() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-border min-h-[calc(100vh-64px)] p-6">
+        <aside className="sticky top-16 w-64 bg-white border-r border-border h-[calc(100vh-64px)] overflow-y-auto p-6">
           <nav className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
