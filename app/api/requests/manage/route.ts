@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
 
     const requestsPath = path.join(process.cwd(), "data", "requests.json");
+    const usersPath = path.join(process.cwd(), "data", "users.json");
+
     const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
+    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
 
     let results = requestsData.requests;
     if (status) {
@@ -17,20 +20,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user data for each request
-    const usersPath = path.join(process.cwd(), "data", "users.json");
-    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
-
-    const withUserData = results.map((req: any) => {
+    // Populate user information for each request
+    const resultsWithUsers = results.map((req: any) => {
       const user = usersData.users.find((u: any) => u.id === req.userId);
       return {
         ...req,
-        user: user || null,
+        user: user
+          ? {
+              id: user.id,
+              fullName: user.fullName,
+              email: user.email,
+              mobile: user.mobile,
+              profilePicture: user.profilePicture,
+              role: user.role,
+            }
+          : null,
       };
     });
 
     // Normalize to the shape the client expects (keep legacy compatibility)
-    return NextResponse.json(withUserData, { status: 200 });
+    return NextResponse.json(resultsWithUsers, { status: 200 });
   } catch (error) {
     console.error("Error in manage GET:", error);
     return NextResponse.json(
