@@ -1,10 +1,41 @@
 "use client";
 
+/**
+ * LocationMapPicker Component
+ * 
+ * A comprehensive Leaflet-based map picker with the following features:
+ * 
+ * ✅ Click on map to select location
+ * ✅ Single marker placement (no duplicates)
+ * ✅ Draggable marker (when editable=true)
+ * ✅ Auto-popup showing resolved address on marker
+ * ✅ OpenStreetMap Nominatim Reverse Geocoding (free API)
+ * ✅ Extracts: street, city, state/region, postal code, country
+ * ✅ Debounced API requests (800ms) to prevent rapid calls
+ * ✅ Loading and error states with retry functionality
+ * ✅ Search by place name with autocomplete
+ * ✅ "Use my location" button for GPS positioning
+ * ✅ Clean event handling and proper Leaflet cleanup
+ * ✅ Fully compatible with React/Next.js
+ * 
+ * Usage:
+ * ```tsx
+ * <LocationMapPicker
+ *   position={{ lat: 30.0444, lng: 31.2357 }}
+ *   onPositionChange={(lat, lng) => setCoords({ lat, lng })}
+ *   onAddressData={(address) => setAddress(address)}
+ *   editable={true}
+ *   showUseMyLocation={true}
+ * />
+ * ```
+ */
+
 import { useCallback, useEffect, useState, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
   Marker,
+  Popup,
   useMapEvents,
   useMap,
 } from "react-leaflet";
@@ -254,21 +285,44 @@ export function LocationMapPicker({
   const [isSearching, setIsSearching] = useState(false);
   const [shouldCenterMap, setShouldCenterMap] = useState(true);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reverseGeocodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Store resolved address for popup display
+  const [resolvedAddress, setResolvedAddress] = useState<AddressData | null>(null);
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Cleanup all timeouts on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      if (reverseGeocodeTimeoutRef.current) {
+        clearTimeout(reverseGeocodeTimeoutRef.current);
+      }
+    };
   }, []);
 
-  // Fetch address when position changes
+  // Debounced fetch address when position changes (prevents rapid API calls)
   useEffect(() => {
     let isCancelled = false;
 
-    const fetchAddress = async () => {
-      if (!position || !onAddressData) return;
+    // Clear any pending reverse geocode requests
+    if (reverseGeocodeTimeoutRef.current) {
+      clearTimeout(reverseGeocodeTimeoutRef.current);
+    }
 
-      setIsLoadingAddress(true);
-      setAddressError(null);
+    if (!position || !onAddressData) {
+      setResolvedAddress(null);
+      return;
+    }
 
+    setIsLoadingAddress(true);
+    setAddressError(null);
+
+    // Debounce the reverse geocoding API call by 800ms
+    reverseGeocodeTimeoutRef.current = setTimeout(async () => {
       const result = await fetchAddressFromCoordinates(
         position.lat,
         position.lng
@@ -279,25 +333,29 @@ export function LocationMapPicker({
       setIsLoadingAddress(false);
 
       if (result.success && result.addressData) {
+        setResolvedAddress(result.addressData);
         onAddressData(result.addressData);
         setRetryCount(0);
       } else {
         setAddressError(result.error || "Failed to fetch address");
-        onAddressData({
+        const emptyAddress = {
           street: "",
           city: "",
           district: "",
           governorate: "",
           country: "",
           postalCode: "",
-        });
+        };
+        setResolvedAddress(emptyAddress);
+        onAddressData(emptyAddress);
       }
-    };
-
-    fetchAddress();
+    }, 800); // 800ms debounce
 
     return () => {
       isCancelled = true;
+      if (reverseGeocodeTimeoutRef.current) {
+        clearTimeout(reverseGeocodeTimeoutRef.current);
+      }
     };
   }, [position, onAddressData, retryCount]);
 
@@ -348,6 +406,8 @@ export function LocationMapPicker({
     setSearchQuery("");
     setSearchResults([]);
     setShouldCenterMap(false);
+    setResolvedAddress(null);
+    setAddressError(null);
   }, [onPositionChange]);
 
   if (!isClient) {
@@ -506,6 +566,7 @@ export function LocationMapPicker({
                             const latlng = marker.getLatLng();
                             if (latlng && typeof latlng.lat === 'number' && typeof latlng.lng === 'number') {
                               handlePositionChange(latlng.lat, latlng.lng);
+                              setShouldCenterMap(false); // Don't recenter after drag
                             }
                           }
                         } catch (error) {
@@ -514,7 +575,75 @@ export function LocationMapPicker({
                       },
                     } : {}
                   }
-                />
+                >
+                  {/* Popup showing resolved address */}
+                  <Popup>
+                    <div className="text-sm space-y-1 min-w-[200px]">
+                      <div className="font-semibold text-foreground border-b pb-1 mb-2">
+                        📍 Selected Location
+                      </div>
+                      
+                      {isLoadingAddress ? (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Fetching address...</span>
+                        </div>
+                      ) : addressError ? (
+                        <div className="text-amber-600 text-xs">
+                          <AlertCircle className="w-3 h-3 inline mr-1" />
+                          {addressError}
+                        </div>
+                      ) : resolvedAddress ? (
+                        <div className="space-y-1">
+                          {resolvedAddress.street && (
+                            <div className="text-foreground">
+                              <span className="font-medium">Street:</span> {resolvedAddress.street}
+                            </div>
+                          )}
+                          {resolvedAddress.city && (
+                            <div className="text-foreground">
+                              <span className="font-medium">City:</span> {resolvedAddress.city}
+                            </div>
+                          )}
+                          {resolvedAddress.governorate && (
+                            <div className="text-foreground">
+                              <span className="font-medium">State:</span> {resolvedAddress.governorate}
+                            </div>
+                          )}
+                          {resolvedAddress.postalCode && (
+                            <div className="text-foreground">
+                              <span className="font-medium">Postal:</span> {resolvedAddress.postalCode}
+                            </div>
+                          )}
+                          {resolvedAddress.country && (
+                            <div className="text-foreground font-medium">
+                              {resolvedAddress.country}
+                            </div>
+                          )}
+                          {!resolvedAddress.street && !resolvedAddress.city && !resolvedAddress.country && (
+                            <div className="text-muted-foreground text-xs italic">
+                              No address data available
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground text-xs">
+                          Click to see details
+                        </div>
+                      )}
+                      
+                      <div className="text-xs text-muted-foreground pt-2 border-t mt-2">
+                        {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+                      </div>
+                      
+                      {editable && (
+                        <div className="text-xs text-muted-foreground italic pt-1">
+                          💡 Drag marker to adjust
+                        </div>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
               )}
             </MapContainer>
           </div>

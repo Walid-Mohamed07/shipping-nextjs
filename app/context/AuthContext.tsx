@@ -56,7 +56,7 @@ export interface AddressLocation {
 //   email: string;
 //   name: string;
 //   locations: AddressLocation[];
-//   role: "client" | "admin" | "driver" | "operator" | "provider";
+//   role: "client" | "admin" | "driver" | "operator" | "company";
 // }
 
 interface AuthContextType {

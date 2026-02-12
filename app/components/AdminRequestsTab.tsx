@@ -263,10 +263,12 @@ export function AdminRequestsTab() {
                 <div className="shrink-0">
                   <img
                     src={
-                      getProfileImage(request.user.profilePicture!) ||
-                      "/placeholder.svg"
+                      request.user
+                        ? getProfileImage(request.user.profilePicture ?? undefined) ||
+                          "/placeholder.svg"
+                        : "/placeholder.svg"
                     }
-                    alt={request.user.fullName}
+                    alt={request.user?.fullName || "Unknown User"}
                     className="w-12 h-12 rounded-full bg-muted object-cover border border-border"
                     onError={(e) => {
                       e.currentTarget.src =
@@ -276,10 +278,10 @@ export function AdminRequestsTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground truncate">
-                    {request.user.fullName}
+                    {request.user?.fullName || "Unknown User"}
                   </h3>
                   <p className="text-sm text-muted-foreground truncate">
-                    {request.user.email}
+                    {request.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Request ID: {request.id}
@@ -435,10 +437,12 @@ export function AdminRequestsTab() {
                 <div className="shrink-0">
                   <img
                     src={
-                      getProfileImage(selectedRequest.user.profilePicture!) ||
-                      "/placeholder.svg"
+                      selectedRequest.user
+                        ? getProfileImage(selectedRequest.user.profilePicture ?? undefined) ||
+                          "/placeholder.svg"
+                        : "/placeholder.svg"
                     }
-                    alt={selectedRequest.user.fullName}
+                    alt={selectedRequest.user?.fullName || "Unknown User"}
                     className="w-16 h-16 rounded-full bg-muted object-cover border border-border"
                     onError={(e) => {
                       e.currentTarget.src =
@@ -448,13 +452,13 @@ export function AdminRequestsTab() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg text-foreground">
-                    {selectedRequest.user.fullName}
+                    {selectedRequest.user?.fullName || "Unknown User"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedRequest.user.email}
+                    {selectedRequest.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Phone: {selectedRequest.user.mobile || "N/A"}
+                    Phone: {selectedRequest.user?.mobile || "N/A"}
                   </p>
                 </div>
               </div>

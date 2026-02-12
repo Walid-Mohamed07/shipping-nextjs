@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,7 +26,7 @@ interface Message {
 
 const ITEMS_PER_PAGE = 10;
 
-export default function ProviderInboxPage() {
+export default function CompanyInboxPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,39 +37,6 @@ export default function ProviderInboxPage() {
     "all",
   );
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    if (!user || user.role !== "provider") {
-      router.push("/login");
-      return;
-    }
-
-    const fetchMessages = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `/api/messages?recipientEmail=${encodeURIComponent(user.email)}`,
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setMessages(data);
-
-          data.forEach((msg: Message) => {
-            if (msg.status === "unread") {
-              markAsRead(msg.id);
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
-  }, [user, router]);
 
   const markAsRead = async (messageId: string) => {
     try {
@@ -83,8 +50,8 @@ export default function ProviderInboxPage() {
         }),
       });
 
-      setMessages(
-        messages.map((m) =>
+      setMessages((prevMessages) =>
+        prevMessages.map((m) =>
           m.id === messageId ? { ...m, status: "read" as const } : m,
         ),
       );
@@ -92,6 +59,41 @@ export default function ProviderInboxPage() {
       console.error("Failed to mark message as read:", error);
     }
   };
+
+  const fetchMessages = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `/api/messages?recipientEmail=${encodeURIComponent(user.email)}`,
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data);
+
+        data.forEach((msg: Message) => {
+          if (msg.status === "unread") {
+            markAsRead(msg.id);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (!user || user.role !== "company") {
+      router.push("/login");
+      return;
+    }
+
+    fetchMessages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email, user?.role]);
 
   const filteredMessages = messages.filter((msg) => {
     const matchesStatus = filterStatus === "all" || msg.status === filterStatus;
@@ -239,7 +241,7 @@ export default function ProviderInboxPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">
-            Provider Inbox
+            Company Inbox
           </h1>
           <p className="text-muted-foreground">
             Messages sent to you by clients and partners

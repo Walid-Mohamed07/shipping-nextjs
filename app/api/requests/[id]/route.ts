@@ -81,6 +81,12 @@ function normalizeRequest(req: LegacyRequest) {
     updatedAt: req.updatedAt,
     selectedCompany: req.selectedCompany || undefined,
     activityHistory: req.activityHistory || undefined,
+    sourceWarehouse: req.sourceWarehouse || undefined,
+    destinationWarehouse: req.destinationWarehouse || undefined,
+    assignedWarehouseId: req.assignedWarehouseId || undefined,
+    assignedWarehouse: req.assignedWarehouse || undefined,
+    sourcePickupMode: req.sourcePickupMode || undefined,
+    destinationPickupMode: req.destinationPickupMode || undefined,
   };
 }
 
