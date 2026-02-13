@@ -25,6 +25,7 @@ import {
   Wrench,
   BoxSelect,
   ChevronDown,
+  X,
 } from "lucide-react";
 import {
   Accordion,
@@ -95,6 +96,8 @@ export default function RequestDetailsPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmingOffer, setConfirmingOffer] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -262,6 +265,18 @@ export default function RequestDetailsPage() {
 
     fetchRequest();
   }, [user?.id, requestId]);
+
+  // Handle ESC key to close image zoom modal
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showImageZoom) {
+        setShowImageZoom(false);
+        setSelectedImageUrl(null);
+      }
+    };
+    window.addEventListener("keydown", handleEscKey);
+    return () => window.removeEventListener("keydown", handleEscKey);
+  }, [showImageZoom]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -869,7 +884,11 @@ export default function RequestDetailsPage() {
                                   key={mIdx}
                                   src={url}
                                   alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
-                                  className="w-16 h-16 rounded-lg object-cover border border-border"
+                                  className="w-16 h-16 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => {
+                                    setSelectedImageUrl(url);
+                                    setShowImageZoom(true);
+                                  }}
                                 />
                               );
                             })}
@@ -1335,6 +1354,38 @@ export default function RequestDetailsPage() {
               </Button>
             </Link>
           </div>
+
+          {/* Image Zoom Modal */}
+          {showImageZoom && selectedImageUrl && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={() => {
+                setShowImageZoom(false);
+                setSelectedImageUrl(null);
+              }}
+            >
+              <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={selectedImageUrl}
+                  alt="Zoomed image"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
+                <button
+                  onClick={() => {
+                    setShowImageZoom(false);
+                    setSelectedImageUrl(null);
+                  }}
+                  className="absolute top-4 right-4 p-2 rounded-lg bg-gray-900/50 hover:bg-gray-900 text-white transition-colors cursor-pointer"
+                  aria-label="Close zoomed image"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
+                  Click outside or press ESC to close
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

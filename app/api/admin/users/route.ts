@@ -5,9 +5,23 @@ import path from "path";
 export async function GET(request: NextRequest) {
   try {
     const usersPath = path.join(process.cwd(), "data", "users.json");
+    const locationsPath = path.join(process.cwd(), "data", "locations.json");
+    
     const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
+    const locationsData = JSON.parse(fs.readFileSync(locationsPath, "utf-8"));
 
-    return NextResponse.json(usersData.users, { status: 200 });
+    // Attach locations to each user
+    const usersWithLocations = usersData.users.map((user: any) => {
+      const userLocations = locationsData.locations.filter(
+        (loc: any) => loc.userId === user.id
+      );
+      return {
+        ...user,
+        locations: userLocations,
+      };
+    });
+
+    return NextResponse.json(usersWithLocations, { status: 200 });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(

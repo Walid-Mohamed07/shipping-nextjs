@@ -16,7 +16,7 @@ export interface User {
   email: string;
   password: string;
   profilePicture: string | null;
-  mobile: string | null;
+  mobile?: string | null;
   nationalOrPassportNumber: string | null;
   birthDate: string | null;
   idImage: string | null;
@@ -24,6 +24,7 @@ export interface User {
   criminalRecord: string | null;
   status: "active" | "inactive" | "suspended";
   role: UserRole;
-  locations: Address[];
+  locations?: Address[];
   createdAt: string;
+  updatedAt?: string;
 }
