@@ -49,8 +49,9 @@ export default function MessageDetailPage() {
 
   useEffect(() => {
     const fetchMessage = async () => {
+      const id = await params.id;
       try {
-        const response = await fetch(`/api/messages/${params.id}`);
+        const response = await fetch(`/api/messages/${id}`);
         if (response.ok) {
           const data = await response.json();
           setMessage(data);

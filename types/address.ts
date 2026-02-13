@@ -6,6 +6,8 @@ export interface Coordinates {
 }
 
 export interface Address {
+  id: string;
+  userId: string;
   country: string;
   countryCode: string;
   fullName: string;
