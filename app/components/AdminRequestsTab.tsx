@@ -12,44 +12,9 @@ import {
   ChevronRight,
   X as XIcon,
 } from "lucide-react";
-import { User as ClientInfo } from "@/types";
+import { User as ClientInfo, Request } from "@/types";
 import { useAuth } from "../context/AuthContext";
-
-interface LocationData {
-  country: string;
-  city: string;
-  street: string;
-  coordinates?: { latitude: number; longitude: number };
-}
-
-interface ItemData {
-  item: string;
-  category: string;
-  dimensions: string;
-  weight: string;
-  quantity: number;
-  note?: string;
-}
-
-interface Request {
-  id: string;
-  userId: string;
-  user: ClientInfo;
-  source: LocationData;
-  destination: LocationData;
-  items: ItemData[];
-  requestStatus:
-    | "Pending"
-    | "Accepted"
-    | "Rejected"
-    | "Action needed"
-    | "In Progress"
-    | "Completed";
-  deliveryStatus: string;
-  costOffers: any[];
-  createdAt: string;
-  updatedAt: string;
-}
+import Image from "next/image";
 
 const STATUS_COLORS: Record<
   string,
@@ -95,6 +60,8 @@ export function AdminRequestsTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [showImageZoom, setShowImageZoom] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -117,6 +84,18 @@ export function AdminRequestsTab() {
 
     fetchRequests();
   }, []);
+
+  // Handle ESC key to close image zoom modal
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showImageZoom) {
+        setShowImageZoom(false);
+        setSelectedImageUrl(null);
+      }
+    };
+    window.addEventListener("keydown", handleEscKey);
+    return () => window.removeEventListener("keydown", handleEscKey);
+  }, [showImageZoom]);
 
   const filteredRequests = statusFilter
     ? requests.filter((r) => r.requestStatus === statusFilter)
@@ -195,7 +174,7 @@ export function AdminRequestsTab() {
 
   const getProfileImage = (profilePicture?: string) => {
     if (profilePicture) return profilePicture;
-    return "https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous";
+    return "/assets/images/users/unknown.webp";
   };
 
   if (loading) {
@@ -259,27 +238,29 @@ export function AdminRequestsTab() {
               className="p-6 border border-border hover:border-primary/50 transition-colors"
             >
               {/* Client Info Header */}
-              <div className="flex items-start gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-4">
                 <div className="shrink-0">
                   <img
                     src={
-                      getProfileImage(request.user.profilePicture!) ||
-                      "/placeholder.svg"
+                      request.user
+                        ? getProfileImage(
+                            request.user.profilePicture ?? undefined,
+                          ) || "/placeholder.svg"
+                        : "/placeholder.svg"
                     }
-                    alt={request.user.fullName}
+                    alt={request.user?.fullName || "Unknown User"}
                     className="w-12 h-12 rounded-full bg-muted object-cover border border-border"
                     onError={(e) => {
-                      e.currentTarget.src =
-                        "https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous";
+                      e.currentTarget.src = "/assets/images/users/unknown.webp";
                     }}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground truncate">
-                    {request.user.fullName}
+                    {request.user?.fullName || "Unknown User"}
                   </h3>
                   <p className="text-sm text-muted-foreground truncate">
-                    {request.user.email}
+                    {request.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Request ID: {request.id}
@@ -327,7 +308,7 @@ export function AdminRequestsTab() {
                 {/* Dates */}
                 <div className="text-xs text-muted-foreground">
                   <p>
-                    Created: {new Date(request.createdAt).toLocaleDateString()}
+                    Created: {new Date(request.createdAt!).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -435,26 +416,28 @@ export function AdminRequestsTab() {
                 <div className="shrink-0">
                   <img
                     src={
-                      getProfileImage(selectedRequest.user.profilePicture!) ||
-                      "/placeholder.svg"
+                      selectedRequest.user
+                        ? getProfileImage(
+                            selectedRequest.user.profilePicture ?? undefined,
+                          ) || "/placeholder.svg"
+                        : "/placeholder.svg"
                     }
-                    alt={selectedRequest.user.fullName}
+                    alt={selectedRequest.user?.fullName || "Unknown User"}
                     className="w-16 h-16 rounded-full bg-muted object-cover border border-border"
                     onError={(e) => {
-                      e.currentTarget.src =
-                        "https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous";
+                      e.currentTarget.src = "/assets/images/users/unknown.webp";
                     }}
                   />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg text-foreground">
-                    {selectedRequest.user.fullName}
+                    {selectedRequest.user?.fullName || "Unknown User"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedRequest.user.email}
+                    {selectedRequest.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Phone: {selectedRequest.user.mobile || "N/A"}
+                    Phone: {selectedRequest.user?.mobile || "N/A"}
                   </p>
                 </div>
               </div>
@@ -514,28 +497,51 @@ export function AdminRequestsTab() {
                     key={idx}
                     className="p-3 bg-muted/50 rounded-lg border border-border"
                   >
-                    <div className="flex justify-between mb-2">
-                      <span className="font-medium text-foreground">
-                        {item.item}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        Qty: {item.quantity}
-                      </span>
+                    <div className="flex gap-3">
+                      <div className="content-center">
+                        <Image
+                          src={
+                            item.media!.length > 0
+                              ? item.media![0].url
+                              : "/assets/images/items/ShipHub_logo.png"
+                          }
+                          alt={item.name || "Item Image"}
+                          width={70}
+                          height={70}
+                          className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            if (item.media!.length > 0) {
+                              setSelectedImageUrl(item.media![0].url);
+                              setShowImageZoom(true);
+                            }
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between gap-2 mb-2">
+                          <span className="font-medium text-foreground">
+                            {item.item}
+                          </span>
+                          <span className="text-sm text-muted-foreground content-center">
+                            Qty: {item.quantity}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Category: {item.category}
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Weight: {item.weight} kg
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Dimensions: {item.dimensions}
+                        </p>
+                        {item.note && (
+                          <p className="text-sm text-muted-foreground italic">
+                            Note: {item.note}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Category: {item.category}
-                    </p>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Weight: {item.weight} kg
-                    </p>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Dimensions: {item.dimensions}
-                    </p>
-                    {item.note && (
-                      <p className="text-sm text-muted-foreground italic">
-                        Note: {item.note}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
@@ -548,47 +554,81 @@ export function AdminRequestsTab() {
                 <p className="text-muted-foreground">
                   Created:{" "}
                   <span className="text-foreground font-medium">
-                    {new Date(selectedRequest.createdAt).toLocaleString()}
+                    {new Date(selectedRequest.createdAt!).toLocaleString()}
                   </span>
                 </p>
                 <p className="text-muted-foreground">
                   Updated:{" "}
                   <span className="text-foreground font-medium">
-                    {new Date(selectedRequest.updatedAt).toLocaleString()}
+                    {new Date(selectedRequest.updatedAt!).toLocaleString()}
                   </span>
                 </p>
               </div>
             </div>
 
             {/* Cost Offers */}
-            {selectedRequest.costOffers.length > 0 && (
-              <div className="mb-6 pb-6 border-b border-border">
-                <h3 className="font-semibold text-foreground mb-3">
-                  Cost Offers ({selectedRequest.costOffers.length})
-                </h3>
-                <div className="space-y-2 text-sm">
-                  {selectedRequest.costOffers.map((offer, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 bg-muted/50 rounded-lg border border-border"
-                    >
-                      <p className="font-medium text-foreground">
-                        {offer.provider || `Offer ${idx + 1}`}
-                      </p>
-                      {offer.cost && (
-                        <p className="text-foreground">Cost: ${offer.cost}</p>
-                      )}
-                    </div>
-                  ))}
+            {selectedRequest.costOffers ? (
+              selectedRequest.costOffers?.length > 0 ? (
+                <div className="mb-6 pb-6 border-b border-border">
+                  <h3 className="font-semibold text-foreground mb-3">
+                    Cost Offers ({selectedRequest.costOffers.length})
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    {selectedRequest.costOffers.map((offer, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 bg-muted/50 rounded-lg border border-border"
+                      >
+                        <p className="font-medium text-foreground">
+                          {offer.company.name || `Offer ${idx + 1}`}
+                        </p>
+                        {offer.cost && (
+                          <p className="text-foreground">Cost: ${offer.cost}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : null
+            ) : null}
 
             {/* Close Button */}
             <Button onClick={() => setSelectedRequest(null)} className="w-full">
               Close
             </Button>
           </Card>
+        </div>
+      )}
+
+      {/* Image Zoom Modal */}
+      {showImageZoom && selectedImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => {
+            setShowImageZoom(false);
+            setSelectedImageUrl(null);
+          }}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={selectedImageUrl}
+              alt="Zoomed image"
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+            <button
+              onClick={() => {
+                setShowImageZoom(false);
+                setSelectedImageUrl(null);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-lg bg-gray-900/50 hover:bg-gray-900 text-white transition-colors cursor-pointer"
+              aria-label="Close zoomed image"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
+              Click outside or press ESC to close
+            </p>
+          </div>
         </div>
       )}
     </div>

@@ -24,7 +24,15 @@ import {
   Box,
   Wrench,
   BoxSelect,
+  ChevronDown,
+  X,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 import {
   Request,
   Address,
@@ -32,6 +40,13 @@ import {
   RequestDeliveryStatus,
 } from "@/types";
 import { getDistanceKm } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+// Dynamically import map components to avoid SSR issues
+const LocationMapPicker = dynamic(
+  () => import("@/app/components/LocationMapPicker").then((mod) => ({ default: mod.LocationMapPicker })),
+  { ssr: false }
+);
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -81,6 +96,8 @@ export default function RequestDetailsPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmingOffer, setConfirmingOffer] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -248,6 +265,18 @@ export default function RequestDetailsPage() {
 
     fetchRequest();
   }, [user?.id, requestId]);
+
+  // Handle ESC key to close image zoom modal
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showImageZoom) {
+        setShowImageZoom(false);
+        setSelectedImageUrl(null);
+      }
+    };
+    window.addEventListener("keydown", handleEscKey);
+    return () => window.removeEventListener("keydown", handleEscKey);
+  }, [showImageZoom]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -855,7 +884,11 @@ export default function RequestDetailsPage() {
                                   key={mIdx}
                                   src={url}
                                   alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
-                                  className="w-16 h-16 rounded-lg object-cover border border-border"
+                                  className="w-16 h-16 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => {
+                                    setSelectedImageUrl(url);
+                                    setShowImageZoom(true);
+                                  }}
                                 />
                               );
                             })}
@@ -1077,54 +1110,231 @@ export default function RequestDetailsPage() {
             </div>
           </div>
 
-          {/* Activity History Section */}
-          {request.activityHistory && request.activityHistory.length > 0 && (
+          {/* Warehouse Locations Section - Show when warehouses are assigned */}
+          {(request.sourceWarehouse || request.destinationWarehouse) && (
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                Activity History
+                <Warehouse className="w-5 h-5 text-primary" />
+                Assigned Warehouse Locations
               </h3>
-              <div className="space-y-4">
-                {request.activityHistory.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-4 pb-4 border-b border-border last:border-b-0 last:pb-0"
-                  >
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <CheckCircle2 className="w-5 h-5 text-primary" />
+              
+              {/* Show accordion if both warehouses are assigned */}
+              {request.sourceWarehouse && request.destinationWarehouse ? (
+                <Accordion type="single" className="space-y-3">
+                  {/* Source Warehouse */}
+                  <AccordionItem value="source" className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+                    <AccordionTrigger value="source" className="bg-transparent">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-foreground">Source Warehouse (Pickup)</p>
+                          <p className="text-xs text-muted-foreground">{request.sourceWarehouse.name}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-2">
+                    </AccordionTrigger>
+                    <AccordionContent value="source" className="bg-white/50 dark:bg-gray-900/50">
+                      <div className="space-y-3">
                         <div>
-                          <h4 className="font-semibold text-foreground">
-                            {activity.action}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {activity.description}
-                          </p>
-                          {activity.cost && (
-                            <div className="mt-2 flex items-center gap-3 text-sm">
-                              <span className="text-primary font-semibold">
-                                ${activity.cost.toFixed(2)}
-                              </span>
-                            </div>
+                          <p className="text-xs text-muted-foreground mb-1">Warehouse Name</p>
+                          <p className="text-sm font-medium text-foreground">{request.sourceWarehouse.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Address</p>
+                          <p className="text-sm font-medium text-foreground">{request.sourceWarehouse.address}</p>
+                          {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
+                            </p>
                           )}
                         </div>
-                        <time className="text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(activity.timestamp).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </time>
+                        {request.sourceWarehouse.assignedAt && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
+                            <p className="text-sm text-foreground">
+                              {new Date(request.sourceWarehouse.assignedAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        )}
+                        {request.sourceWarehouse.coordinates && (
+                          <div className="mt-3">
+                            <p className="text-xs text-muted-foreground mb-2">Location on Map</p>
+                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
+                              <LocationMapPicker
+                                position={{
+                                  lat: request.sourceWarehouse.coordinates.latitude,
+                                  lng: request.sourceWarehouse.coordinates.longitude,
+                                }}
+                                onPositionChange={() => {}}
+                                editable={false}
+                                showUseMyLocation={false}
+                                zoom={15}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* Destination Warehouse */}
+                  <AccordionItem value="destination" className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
+                    <AccordionTrigger value="destination" className="bg-transparent">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                          <MapPinned className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-foreground">Destination Warehouse (Delivery)</p>
+                          <p className="text-xs text-muted-foreground">{request.destinationWarehouse.name}</p>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent value="destination" className="bg-white/50 dark:bg-gray-900/50">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Warehouse Name</p>
+                          <p className="text-sm font-medium text-foreground">{request.destinationWarehouse.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Address</p>
+                          <p className="text-sm font-medium text-foreground">{request.destinationWarehouse.address}</p>
+                          {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                        {request.destinationWarehouse.assignedAt && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
+                            <p className="text-sm text-foreground">
+                              {new Date(request.destinationWarehouse.assignedAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        )}
+                        {request.destinationWarehouse.coordinates && (
+                          <div className="mt-3">
+                            <p className="text-xs text-muted-foreground mb-2">Location on Map</p>
+                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
+                              <LocationMapPicker
+                                position={{
+                                  lat: request.destinationWarehouse.coordinates.latitude,
+                                  lng: request.destinationWarehouse.coordinates.longitude,
+                                }}
+                                onPositionChange={() => {}}
+                                editable={false}
+                                showUseMyLocation={false}
+                                zoom={15}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ) : (
+                /* Show single warehouse card if only one is assigned */
+                <div className="space-y-4">
+                  {request.sourceWarehouse && (
+                    <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="flex items-start gap-4 mb-3">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-foreground mb-2">Source Warehouse (Pickup)</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Warehouse Name</p>
+                              <p className="font-medium text-foreground">{request.sourceWarehouse.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Address</p>
+                              <p className="font-medium text-foreground">{request.sourceWarehouse.address}</p>
+                              {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {request.sourceWarehouse.coordinates && (
+                        <div className="h-64 w-full rounded-lg overflow-hidden border border-blue-200 dark:border-blue-700">
+                          <LocationMapPicker
+                            position={{
+                              lat: request.sourceWarehouse.coordinates.latitude,
+                              lng: request.sourceWarehouse.coordinates.longitude,
+                            }}
+                            onPositionChange={() => {}}
+                            editable={false}
+                            showUseMyLocation={false}
+                            zoom={15}
+                          />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+
+                  {request.destinationWarehouse && (
+                    <div className="bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-start gap-4 mb-3">
+                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                          <MapPinned className="w-6 h-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-foreground mb-2">Destination Warehouse (Delivery)</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Warehouse Name</p>
+                              <p className="font-medium text-foreground">{request.destinationWarehouse.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Address</p>
+                              <p className="font-medium text-foreground">{request.destinationWarehouse.address}</p>
+                              {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {request.destinationWarehouse.coordinates && (
+                        <div className="h-64 w-full rounded-lg overflow-hidden border border-green-200 dark:border-green-700">
+                          <LocationMapPicker
+                            position={{
+                              lat: request.destinationWarehouse.coordinates.latitude,
+                              lng: request.destinationWarehouse.coordinates.longitude,
+                            }}
+                            onPositionChange={() => {}}
+                            editable={false}
+                            showUseMyLocation={false}
+                            zoom={15}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1144,6 +1354,38 @@ export default function RequestDetailsPage() {
               </Button>
             </Link>
           </div>
+
+          {/* Image Zoom Modal */}
+          {showImageZoom && selectedImageUrl && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={() => {
+                setShowImageZoom(false);
+                setSelectedImageUrl(null);
+              }}
+            >
+              <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={selectedImageUrl}
+                  alt="Zoomed image"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
+                <button
+                  onClick={() => {
+                    setShowImageZoom(false);
+                    setSelectedImageUrl(null);
+                  }}
+                  className="absolute top-4 right-4 p-2 rounded-lg bg-gray-900/50 hover:bg-gray-900 text-white transition-colors cursor-pointer"
+                  aria-label="Close zoomed image"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
+                  Click outside or press ESC to close
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

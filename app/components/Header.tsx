@@ -37,15 +37,30 @@ export function Header() {
                   My Requests
                 </Link>
               )}
-              {user.role === "admin" ||
-                (user.role === "operator" && (
-                  <Link
-                    href="/admin/dashboard"
-                    className="text-foreground hover:text-primary transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                ))}
+              {user.role === "admin" && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
+              {user.role === "operator" && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
+              {user.role === "company" && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
               {user.role === "driver" && (
                 <Link
                   href="/driver/orders"
@@ -53,6 +68,28 @@ export function Header() {
                 >
                   My Orders
                 </Link>
+              )}
+              {user.role === "company" && (
+                <>
+                  <Link
+                    href="/company/requests"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    Requests
+                  </Link>
+                  <Link
+                    href="/company/ongoing"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    Ongoing
+                  </Link>
+                  <Link
+                    href="/company/warehouses"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    Warehouses
+                  </Link>
+                </>
               )}
               <MessageNotification />
               <span className="text-muted-foreground text-sm">

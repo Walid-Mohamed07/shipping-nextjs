@@ -5,7 +5,10 @@ export type RequestStatus =
   | "Pending"
   | "Rejected"
   | "Cancelled"
-  | "Action needed";
+  | "Action needed"
+  | "Assigned to Company"
+  | "In Progress"
+  | "Completed";
 
 export enum RequestDeliveryStatus {
   PENDING = "Pending",
@@ -37,6 +40,7 @@ export interface Item {
   quantity: number;
   note?: string;
   media?: MediaItem[];
+  mediaFiles?: File[]; // Temporary storage for files before upload
   services?: {
     canBeAssembledDisassembled?: boolean;
     assemblyDisassemblyHandler?: "self" | "company";
@@ -71,6 +75,8 @@ export interface CostOffer {
   };
   comment?: string;
   selected: boolean;
+  status: "pending" | "accepted" | "rejected";
+  createdAt?: string;
 }
 
 export interface ActivityHistory {
@@ -83,13 +89,14 @@ export interface ActivityHistory {
 }
 
 export interface Request {
-  id?: string;
+  id: string;
   userId: string;
   user?: {
     id: string;
     fullName: string;
     username: string;
     email: string;
+    mobile: string | null;
     nationalOrPassportNumber: string | null;
     birthDate: string;
     idImage: string | null;
@@ -109,7 +116,7 @@ export interface Request {
   primaryCost?: string;
   requestStatus: RequestStatus;
   deliveryStatus: DeliveryStatus;
-  comment?: string; 
+  comment?: string;
   createdAt?: string;
   updatedAt?: string;
   costOffers?: CostOffer[];
@@ -119,4 +126,37 @@ export interface Request {
     rate: string;
     cost: number;
   };
+  // Company assignment fields
+  assignedCompanyId?: string;
+  assignedWarehouseId?: string;
+  // Source and destination warehouse assignments
+  sourceWarehouse?: {
+    id: string;
+    name: string;
+    address: string;
+    city?: string;
+    country?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+    assignedAt?: string;
+  } | null;
+  destinationWarehouse?: {
+    id: string;
+    name: string;
+    address: string;
+    city?: string;
+    country?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+    assignedAt?: string;
+  } | null;
+  // Pickup mode fields
+  sourcePickupMode?: "Delegate" | "Self";
+  destinationPickupMode?: "Delegate" | "Self";
+  // Company rejection tracking
+  rejectedByCompanies?: string[];
 }

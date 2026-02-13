@@ -55,6 +55,9 @@ export function AdminAuditLogsTab() {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [filterAction, setFilterAction] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"date" | "action" | "user">("date");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   useEffect(() => {
     fetchLogs();
@@ -66,7 +69,25 @@ export function AdminAuditLogsTab() {
     } else {
       setFilteredLogs(logs);
     }
+    setCurrentPage(1);
   }, [logs, filterAction]);
+
+  useEffect(() => {
+    let sorted = [...filteredLogs];
+
+    if (sortBy === "date") {
+      sorted.sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+    } else if (sortBy === "action") {
+      sorted.sort((a, b) => a.action.localeCompare(b.action));
+    } else if (sortBy === "user") {
+      sorted.sort((a, b) => a.userName.localeCompare(b.userName));
+    }
+
+    setFilteredLogs(sorted);
+  }, [sortBy]);
 
   const fetchLogs = async () => {
     try {
@@ -84,6 +105,12 @@ export function AdminAuditLogsTab() {
   };
 
   const uniqueActions = Array.from(new Set(logs.map((log) => log.action)));
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedLogs = filteredLogs.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   return (
     <div className="space-y-6">
@@ -101,41 +128,61 @@ export function AdminAuditLogsTab() {
         </div>
       )}
 
-      {/* Filter Section */}
+      {/* Filter and Sort Section */}
       <Card className="p-4 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-3">
-          <Filter className="w-5 h-5 text-muted-foreground" />
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              onClick={() => setFilterAction("")}
-              variant={filterAction === "" ? "default" : "outline"}
-              size="sm"
-              className={filterAction === "" ? "" : "bg-transparent"}
-            >
-              All Actions
-            </Button>
-            {uniqueActions.map((action) => (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Filter className="w-5 h-5 text-muted-foreground" />
+            <div className="flex gap-2 flex-wrap">
               <Button
-                key={action}
-                onClick={() => setFilterAction(action)}
-                variant={filterAction === action ? "default" : "outline"}
+                onClick={() => setFilterAction("")}
+                variant={filterAction === "" ? "default" : "outline"}
                 size="sm"
-                className={filterAction === action ? "" : "bg-transparent"}
+                className={filterAction === "" ? "" : "bg-transparent"}
               >
-                {action}
+                All Actions
               </Button>
-            ))}
+              {uniqueActions.map((action) => (
+                <Button
+                  key={action}
+                  onClick={() => setFilterAction(action)}
+                  variant={filterAction === action ? "default" : "outline"}
+                  size="sm"
+                  className={filterAction === action ? "" : "bg-transparent"}
+                >
+                  {action}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 pt-2 border-t border-border">
+            <label className="text-xs font-medium text-muted-foreground min-w-max">
+              Sort By:
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-2 py-2 border border-border rounded text-sm bg-background"
+            >
+              <option value="date">Date (Newest)</option>
+              <option value="action">Action (A-Z)</option>
+              <option value="user">User (A-Z)</option>
+            </select>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {filteredLogs.length} entries
+            </span>
           </div>
         </div>
       </Card>
 
       {loading ? (
         <p className="text-muted-foreground">Loading audit logs...</p>
-      ) : filteredLogs.length === 0 ? (
+      ) : paginatedLogs.length === 0 ? (
         <p className="text-muted-foreground">No audit logs found</p>
       ) : (
         <div className="space-y-2">
-          {filteredLogs.map((log) => (
+          {paginatedLogs.map((log) => (
             <Card
               key={log.id}
               className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -228,6 +275,46 @@ export function AdminAuditLogsTab() {
               )}
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum = i + 1;
+              if (totalPages > 5 && currentPage > 3) {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  disabled={pageNum > totalPages}
+                  className="w-8 h-8 p-0"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
         </div>
       )}
     </div>

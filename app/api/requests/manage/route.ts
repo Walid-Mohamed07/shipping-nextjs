@@ -8,7 +8,12 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
 
     const requestsPath = path.join(process.cwd(), "data", "requests.json");
+    const usersPath = path.join(process.cwd(), "data", "users.json");
+    const locationsPath = path.join(process.cwd(), "data", "locations.json");
+
     const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
+    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
+    const locationsData = JSON.parse(fs.readFileSync(locationsPath, "utf-8"));
 
     let results = requestsData.requests;
     if (status) {
@@ -17,8 +22,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Populate user information for each request
+    const resultsWithUsers = results.map((req: any) => {
+      const user = usersData.users.find((u: any) => u.id === req.userId);
+      // Get user locations
+      const userLocations = locationsData.locations.filter(
+        (loc: any) => loc.userId === req.userId,
+      );
+      return {
+        ...req,
+        user: user
+          ? {
+              id: user.id,
+              fullName: user.fullName,
+              email: user.email,
+              mobile: user.mobile,
+              profilePicture: user.profilePicture,
+              role: user.role,
+            }
+          : null,
+        locations: userLocations,
+      };
+    });
+
     // Normalize to the shape the client expects (keep legacy compatibility)
-    return NextResponse.json(results, { status: 200 });
+    return NextResponse.json(resultsWithUsers, { status: 200 });
   } catch (error) {
     console.error("Error in manage GET:", error);
     return NextResponse.json(
@@ -129,10 +157,20 @@ export async function PUT(request: NextRequest) {
 
     fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
 
+    // Get user data for the request
+    const usersPath = path.join(process.cwd(), "data", "users.json");
+    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
+    const user = usersData.users.find(
+      (u: any) => u.id === currentRequest.userId,
+    );
+
     return NextResponse.json(
       {
         success: true,
-        request: currentRequest,
+        request: {
+          ...currentRequest,
+          user: user || null,
+        },
       },
       { status: 200 },
     );

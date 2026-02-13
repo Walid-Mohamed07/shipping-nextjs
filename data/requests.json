@@ -3,46 +3,6 @@
     {
       "id": "6a0f86de-eeb7-40e0-8a61-7083055ca50b",
       "userId": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
-      "user": {
-        "id": "11f4e449-7456-4b55-bbdd-ab6fa23e6810",
-        "fullName": "Mohamed Ahmed",
-        "username": "mohamedahmed",
-        "email": "mohamed@gmail.com",
-        "mobile": "+201112223334",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2004-12-15",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [
-          {
-            "id": "dab5ee7f-d3e0-4c4b-9a42-a077e8ee2789",
-            "country": "Egypt",
-            "countryCode": null,
-            "fullName": null,
-            "mobile": null,
-            "street": "Berti St",
-            "building": "6",
-            "city": "Cairo",
-            "district": "Berti",
-            "governorate": "Cairo",
-            "postalCode": "21532",
-            "landmark": "Metro Station",
-            "addressType": "Home",
-            "deliveryInstructions": "Ring bell",
-            "primary": true,
-            "coordinates": {
-              "latitude": 34.5581,
-              "longitude": 21.9757
-            }
-          }
-        ],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -93,12 +53,7 @@
           "weight": "0.13",
           "quantity": 1,
           "note": "Fragile. Handle with care",
-          "media": [
-            {
-              "url": "https://cdn.example.com/img.jpg",
-              "existing": true
-            }
-          ]
+          "media": []
         }
       ],
       "estimatedCost": "2.60",
@@ -157,24 +112,6 @@
     {
       "id": "7b1f86de-eeb7-40e0-8a61-7083055ca50c",
       "userId": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
-      "user": {
-        "id": "22f4e449-7456-4b55-bbdd-ab6fa23e6811",
-        "fullName": "Asmaa Ali",
-        "username": "asmaaali",
-        "email": "asmaa@gmail.com",
-        "mobile": "+201011223334",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2005-08-20",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -284,24 +221,6 @@
     {
       "id": "c6d9e7f0-8b2c-4d7a-9b3e-22a6d8f4b7c1",
       "userId": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
-      "user": {
-        "id": "33f4e449-7456-4b55-bbdd-ab6fa23e6812",
-        "fullName": "Ahmed Omar",
-        "username": "ahmedomar",
-        "email": "ahmed@gmail.com",
-        "mobile": "+201055667788",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2003-05-10",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -411,24 +330,6 @@
     {
       "id": "d4e8b2a3-9f7c-4b5a-9c1d-33f7c8a6b2e4",
       "userId": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
-      "user": {
-        "id": "44f4e449-7456-4b55-bbdd-ab6fa23e6813",
-        "fullName": "Laila Nabil",
-        "username": "lailanabil",
-        "email": "laila@gmail.com",
-        "mobile": "+201099887766",
-        "nationalOrPassportNumber": null,
-        "birthDate": "2002-09-25",
-        "idImage": null,
-        "licenseImage": null,
-        "criminalRecord": null,
-        "status": "active",
-        "password": "$2b$10$gaiZrurh1y0GcVYqtneLPO0NesGHnZKcC/Nl0GngYsylE0x58iZIu",
-        "profilePicture": null,
-        "addresses": [],
-        "createdAt": "2026-02-07T08:21:39.092Z",
-        "updatedAt": "2026-02-07T08:21:39.092Z"
-      },
       "source": {
         "country": "Egypt",
         "countryCode": "+20",
@@ -533,6 +434,1187 @@
       "orderCompletedStatuses": [
         "Pending",
         "Rejected"
+      ]
+    },
+    {
+      "id": "REQ-1770719378616",
+      "userId": "walid-client-001",
+      "source": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
+        "district": "",
+        "governorate": "Giza",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770719372761-98fr241wd",
+          "item": "laptop",
+          "name": "laptop",
+          "category": "Electronics",
+          "dimensions": "5x5x5",
+          "weight": "1",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Normal",
+      "startTime": "2026-02-10T10:29:00.000Z",
+      "primaryCost": "20.00",
+      "cost": "12.00",
+      "requestStatus": "Assigned to Company",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-10T10:29:38.617Z",
+      "updatedAt": "2026-02-10T10:33:06.155Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-10T10:29:50.723Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        },
+        {
+          "status": "Assigned to Company",
+          "changedAt": "2026-02-10T10:32:18.599Z",
+          "changedBy": "walid-client-001",
+          "role": "client",
+          "note": "Assigned to Mohamed Shipping Co"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ],
+      "costOffers": [
+        {
+          "cost": 12,
+          "comment": "in one day",
+          "company": {
+            "id": "company-001",
+            "name": "Mohamed Shipping Co",
+            "phoneNumber": "+20123456789",
+            "email": "mohamedprovider@cepac.com",
+            "address": "123 Main Street, Cairo",
+            "rate": "4.5"
+          },
+          "selected": true,
+          "status": "accepted",
+          "createdAt": "2026-02-10T10:31:59.222Z",
+          "acceptedAt": "2026-02-10T10:32:18.599Z"
+        }
+      ],
+      "activityHistory": [
+        {
+          "timestamp": "2026-02-10T10:31:59.222Z",
+          "action": "offer_submitted",
+          "description": "Company Mohamed Shipping Co submitted an offer of $12",
+          "companyName": "Mohamed Shipping Co",
+          "cost": 12
+        },
+        {
+          "timestamp": "2026-02-10T10:32:18.599Z",
+          "action": "offer_accepted",
+          "description": "Client accepted offer from Mohamed Shipping Co for $12",
+          "companyName": "Mohamed Shipping Co",
+          "companyRate": "4.5",
+          "cost": 12
+        },
+        {
+          "timestamp": "2026-02-10T10:33:06.155Z",
+          "action": "warehouse_assigned",
+          "description": "Warehouse \"Cairo Main Warehouse\" assigned as pickup location"
+        }
+      ],
+      "assignedCompanyId": "company-001",
+      "selectedCompany": {
+        "name": "Mohamed Shipping Co",
+        "rate": "4.5",
+        "cost": 12
+      },
+      "assignedWarehouseId": "wh-company-001",
+      "assignedWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        }
+      },
+      "pickupWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-10T10:33:06.155Z"
+      }
+    },
+    {
+      "id": "REQ-1770720458898",
+      "userId": "walid-client-001",
+      "source": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Sidi Beshr Mosque Street",
+        "building": "2",
+        "city": "Alexandria",
+        "district": "Miami",
+        "governorate": "Alexandria",
+        "postalCode": "21613",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 31.260354922900014,
+          "longitude": 29.9871683116362
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "taha hessin",
+        "building": "2",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11351",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.117248422464215,
+          "longitude": 31.38808250339935
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770720437613-d1hvp4pon",
+          "item": "egypt",
+          "name": "egypt",
+          "category": "Books",
+          "dimensions": "10x20x5",
+          "weight": "0.99",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Normal",
+      "startTime": "2026-02-10T10:46:00.000Z",
+      "primaryCost": "7.92",
+      "cost": "10.00",
+      "requestStatus": "Assigned to Company",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-10T10:47:38.898Z",
+      "updatedAt": "2026-02-10T10:54:55.103Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-10T10:48:26.398Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        },
+        {
+          "status": "Assigned to Company",
+          "changedAt": "2026-02-10T10:53:58.301Z",
+          "changedBy": "walid-client-001",
+          "role": "client",
+          "note": "Assigned to Mohamed Shipping Co"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ],
+      "costOffers": [
+        {
+          "cost": 10,
+          "comment": "in 2 days",
+          "company": {
+            "id": "company-001",
+            "name": "Mohamed Shipping Co",
+            "phoneNumber": "+20123456789",
+            "email": "mohamedprovider@cepac.com",
+            "address": "123 Main Street, Cairo",
+            "rate": "4.5"
+          },
+          "selected": true,
+          "status": "accepted",
+          "createdAt": "2026-02-10T10:49:29.473Z",
+          "acceptedAt": "2026-02-10T10:53:58.301Z"
+        }
+      ],
+      "activityHistory": [
+        {
+          "timestamp": "2026-02-10T10:49:29.473Z",
+          "action": "offer_submitted",
+          "description": "Company Mohamed Shipping Co submitted an offer of $10",
+          "companyName": "Mohamed Shipping Co",
+          "cost": 10
+        },
+        {
+          "timestamp": "2026-02-10T10:53:58.301Z",
+          "action": "offer_accepted",
+          "description": "Client accepted offer from Mohamed Shipping Co for $10",
+          "companyName": "Mohamed Shipping Co",
+          "companyRate": "4.5",
+          "cost": 10
+        },
+        {
+          "timestamp": "2026-02-10T10:54:55.103Z",
+          "action": "warehouse_assigned",
+          "description": "Warehouse \"Cairo Main Warehouse\" assigned as pickup location"
+        }
+      ],
+      "assignedCompanyId": "company-001",
+      "selectedCompany": {
+        "name": "Mohamed Shipping Co",
+        "rate": "4.5",
+        "cost": 10
+      },
+      "assignedWarehouseId": "wh-company-001",
+      "assignedWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        }
+      },
+      "pickupWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-10T10:54:55.103Z"
+      }
+    },
+    {
+      "id": "REQ-1770733429440",
+      "userId": "walid-client-001",
+      "source": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Al Horeya Street",
+        "building": "2",
+        "city": "El Karma 2",
+        "district": "",
+        "governorate": "Giza",
+        "postalCode": "12588",
+        "landmark": "near to Zaid",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.04126278549466,
+          "longitude": 31.003475188335877
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "+123455677",
+        "street": "Nabeih Street",
+        "building": "",
+        "city": "Port Said",
+        "district": "",
+        "governorate": "Port Said",
+        "postalCode": "42515",
+        "landmark": "",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 31.268440536157048,
+          "longitude": 32.29248024523258
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770733422878-vp4rcmj2b",
+          "item": "book",
+          "name": "book",
+          "category": "Books",
+          "dimensions": "10",
+          "weight": "1",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Normal",
+      "startTime": "2026-02-10T14:23:00.000Z",
+      "primaryCost": "8.00",
+      "cost": "10.00",
+      "requestStatus": "Assigned to Company",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-10T14:23:49.441Z",
+      "updatedAt": "2026-02-10T14:25:14.696Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-10T14:23:56.765Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        },
+        {
+          "status": "Assigned to Company",
+          "changedAt": "2026-02-10T14:24:41.555Z",
+          "changedBy": "walid-client-001",
+          "role": "client",
+          "note": "Assigned to Mohamed Shipping Co"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ],
+      "costOffers": [
+        {
+          "cost": 10,
+          "comment": "",
+          "company": {
+            "id": "company-001",
+            "name": "Mohamed Shipping Co",
+            "phoneNumber": "+20123456789",
+            "email": "mohamedprovider@cepac.com",
+            "address": "123 Main Street, Cairo",
+            "rate": "4.5"
+          },
+          "selected": true,
+          "status": "accepted",
+          "createdAt": "2026-02-10T14:24:23.662Z",
+          "acceptedAt": "2026-02-10T14:24:41.555Z"
+        }
+      ],
+      "activityHistory": [
+        {
+          "timestamp": "2026-02-10T14:24:23.662Z",
+          "action": "offer_submitted",
+          "description": "Company Mohamed Shipping Co submitted an offer of $10",
+          "companyName": "Mohamed Shipping Co",
+          "cost": 10
+        },
+        {
+          "timestamp": "2026-02-10T14:24:41.555Z",
+          "action": "offer_accepted",
+          "description": "Client accepted offer from Mohamed Shipping Co for $10",
+          "companyName": "Mohamed Shipping Co",
+          "companyRate": "4.5",
+          "cost": 10
+        },
+        {
+          "timestamp": "2026-02-10T14:25:11.124Z",
+          "action": "warehouse_assigned",
+          "description": "Warehouse \"Cairo Main Warehouse\" assigned as pickup location"
+        },
+        {
+          "timestamp": "2026-02-10T14:25:14.696Z",
+          "action": "warehouse_assigned",
+          "description": "Warehouse \"Sheraton warehouse\" assigned as delivery location"
+        }
+      ],
+      "assignedCompanyId": "company-001",
+      "selectedCompany": {
+        "name": "Mohamed Shipping Co",
+        "rate": "4.5",
+        "cost": 10
+      },
+      "sourceWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-10T14:25:11.124Z"
+      },
+      "assignedWarehouseId": "wh-company-001",
+      "assignedWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-10T14:25:11.124Z"
+      },
+      "pickupWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-10T14:25:11.124Z"
+      },
+      "destinationWarehouse": {
+        "id": "wh-company-1770729041415",
+        "name": "Sheraton warehouse",
+        "address": "near to sun city mall ",
+        "city": "Nasr City",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.103871929795925,
+          "longitude": 31.382979154559507
+        },
+        "assignedAt": "2026-02-10T14:25:14.696Z"
+      }
+    },
+    {
+      "id": "REQ-1770799143358",
+      "userId": "1769861366877",
+      "source": {
+        "country": "Saudi Arabia",
+        "countryCode": "",
+        "fullName": "Mohamed Ahmed ",
+        "mobile": "01006591234",
+        "street": "Al Washm",
+        "building": "21",
+        "city": "Riyadh",
+        "district": "Al Murabba`",
+        "governorate": "Riyadh Region",
+        "postalCode": "12612",
+        "landmark": "near to abu fahd",
+        "addressType": "Home",
+        "deliveryInstructions": "total gas station ",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 24.65237975270708,
+          "longitude": 46.71020505018533
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Mohamed Ahmed ",
+        "mobile": "01006591234",
+        "street": "Doctor Hassn Al Sherif Street",
+        "building": "65",
+        "city": "Nasr City",
+        "district": "Nasr City",
+        "governorate": "Cairo",
+        "postalCode": "11765",
+        "landmark": "alsalam mosque",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 30.048492990706322,
+          "longitude": 31.356245325278817
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770799135208-m6dqdbfls",
+          "item": "duck",
+          "name": "duck",
+          "category": "Books",
+          "dimensions": "5x5x5",
+          "weight": "1",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "self",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Normal",
+      "startTime": "2026-02-11T08:38:00.000Z",
+      "primaryCost": "8.00",
+      "cost": "5.00",
+      "requestStatus": "Assigned to Company",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-11T08:39:03.358Z",
+      "updatedAt": "2026-02-11T09:22:08.813Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-11T09:17:15.243Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        },
+        {
+          "status": "Assigned to Company",
+          "changedAt": "2026-02-11T09:21:46.639Z",
+          "changedBy": "1769861366877",
+          "role": "client",
+          "note": "Assigned to Mohamed Shipping Co"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ],
+      "costOffers": [
+        {
+          "cost": 5,
+          "comment": "in one day",
+          "company": {
+            "id": "company-001",
+            "name": "Mohamed Shipping Co",
+            "phoneNumber": "+20123456789",
+            "email": "mohamedprovider@cepac.com",
+            "address": "123 Main Street, Cairo",
+            "rate": "4.5"
+          },
+          "selected": true,
+          "status": "accepted",
+          "createdAt": "2026-02-11T09:21:16.165Z",
+          "acceptedAt": "2026-02-11T09:21:46.639Z"
+        }
+      ],
+      "activityHistory": [
+        {
+          "timestamp": "2026-02-11T09:21:16.165Z",
+          "action": "offer_submitted",
+          "description": "Company Mohamed Shipping Co submitted an offer of $5",
+          "companyName": "Mohamed Shipping Co",
+          "cost": 5
+        },
+        {
+          "timestamp": "2026-02-11T09:21:46.639Z",
+          "action": "offer_accepted",
+          "description": "Client accepted offer from Mohamed Shipping Co for $5",
+          "companyName": "Mohamed Shipping Co",
+          "companyRate": "4.5",
+          "cost": 5
+        },
+        {
+          "timestamp": "2026-02-11T09:22:06.563Z",
+          "action": "warehouse_assigned",
+          "description": "Warehouse \"Cairo Main Warehouse\" assigned as pickup location"
+        },
+        {
+          "timestamp": "2026-02-11T09:22:08.813Z",
+          "action": "warehouse_assigned",
+          "description": "Warehouse \"Sheraton warehouse\" assigned as delivery location"
+        }
+      ],
+      "assignedCompanyId": "company-001",
+      "selectedCompany": {
+        "name": "Mohamed Shipping Co",
+        "rate": "4.5",
+        "cost": 5
+      },
+      "sourceWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-11T09:22:06.563Z"
+      },
+      "assignedWarehouseId": "wh-company-001",
+      "assignedWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-11T09:22:06.563Z"
+      },
+      "pickupWarehouse": {
+        "id": "wh-company-001",
+        "name": "Cairo Main Warehouse",
+        "address": "10 Industrial Zone",
+        "city": "Cairo",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.0444,
+          "longitude": 31.2357
+        },
+        "assignedAt": "2026-02-11T09:22:06.563Z"
+      },
+      "destinationWarehouse": {
+        "id": "wh-company-1770729041415",
+        "name": "Sheraton warehouse",
+        "address": "near to sun city mall ",
+        "city": "Nasr City",
+        "country": "Egypt",
+        "coordinates": {
+          "latitude": 30.103871929795925,
+          "longitude": 31.382979154559507
+        },
+        "assignedAt": "2026-02-11T09:22:08.813Z"
+      }
+    },
+    {
+      "id": "REQ-1770801579914",
+      "userId": "1769861366877",
+      "source": {
+        "country": "Saudi Arabia",
+        "countryCode": "",
+        "fullName": "Mohamed Ahmed ",
+        "mobile": "01006591234",
+        "street": "Al Washm",
+        "building": "21",
+        "city": "Riyadh",
+        "district": "Al Murabba`",
+        "governorate": "Riyadh Region",
+        "postalCode": "12612",
+        "landmark": "near to abu fahd",
+        "addressType": "Home",
+        "deliveryInstructions": "total gas station ",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 24.65237975270708,
+          "longitude": 46.71020505018533
+        }
+      },
+      "destination": {
+        "country": "Saudi Arabia",
+        "countryCode": "",
+        "fullName": "Mohamed Ahmed ",
+        "mobile": "01006591234",
+        "street": "Amir Muhammad Ibn Abdulrahman",
+        "building": "3",
+        "city": "Riyadh",
+        "district": "Al Mansurah District",
+        "governorate": "Riyadh Region",
+        "postalCode": "22242",
+        "landmark": "next to abu abdallah",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 24.61357557156029,
+          "longitude": 46.73315048130463
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770801573154-m31xgtijm",
+          "item": "pc",
+          "name": "pc",
+          "category": "Electronics",
+          "dimensions": "5x5x5",
+          "weight": "0.99",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Normal",
+      "startTime": "2026-02-11T09:19:00.000Z",
+      "primaryCost": "29.70",
+      "cost": "29.70",
+      "requestStatus": "Accepted",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-11T09:19:39.914Z",
+      "updatedAt": "2026-02-11T09:20:20.774Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-11T09:20:20.774Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ]
+    },
+    {
+      "id": "REQ-1770802931087",
+      "userId": "1769861366877",
+      "source": {
+        "country": "Saudi Arabia",
+        "countryCode": "",
+        "fullName": "Mohamed Ahmed ",
+        "mobile": "01006591234",
+        "street": "Al Washm",
+        "building": "21",
+        "city": "Riyadh",
+        "district": "Al Murabba`",
+        "governorate": "Riyadh Region",
+        "postalCode": "12612",
+        "landmark": "near to abu fahd",
+        "addressType": "Home",
+        "deliveryInstructions": "total gas station ",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 24.65237975270708,
+          "longitude": 46.71020505018533
+        }
+      },
+      "destination": {
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Mohamed Ahmed ",
+        "mobile": "01006591234",
+        "street": "Doctor Hassn Al Sherif Street",
+        "building": "65",
+        "city": "Nasr City",
+        "district": "Nasr City",
+        "governorate": "Cairo",
+        "postalCode": "11765",
+        "landmark": "alsalam mosque",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.048492990706322,
+          "longitude": 31.356245325278817
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770802921386-7cd7thunc",
+          "item": "water",
+          "name": "water",
+          "category": "Food & Beverages",
+          "dimensions": "5",
+          "weight": "0.99",
+          "quantity": 1,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Normal",
+      "startTime": "2026-02-11T09:42:00.000Z",
+      "primaryCost": "11.88",
+      "cost": "2.00",
+      "requestStatus": "Assigned to Company",
+      "deliveryStatus": "Pending",
+      "comment": "",
+      "createdAt": "2026-02-11T09:42:11.088Z",
+      "updatedAt": "2026-02-11T09:43:38.383Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-11T09:42:19.106Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        },
+        {
+          "status": "Assigned to Company",
+          "changedAt": "2026-02-11T09:43:38.383Z",
+          "changedBy": "1769861366877",
+          "role": "client",
+          "note": "Assigned to Mohamed Shipping Co"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ],
+      "costOffers": [
+        {
+          "cost": 2,
+          "comment": "",
+          "company": {
+            "id": "company-001",
+            "name": "Mohamed Shipping Co",
+            "phoneNumber": "+20123456789",
+            "email": "mohamedprovider@cepac.com",
+            "address": "123 Main Street, Cairo",
+            "rate": "4.5"
+          },
+          "selected": true,
+          "status": "accepted",
+          "createdAt": "2026-02-11T09:43:13.103Z",
+          "acceptedAt": "2026-02-11T09:43:38.383Z"
+        }
+      ],
+      "activityHistory": [
+        {
+          "timestamp": "2026-02-11T09:43:13.103Z",
+          "action": "offer_submitted",
+          "description": "Company Mohamed Shipping Co submitted an offer of $2",
+          "companyName": "Mohamed Shipping Co",
+          "cost": 2
+        },
+        {
+          "timestamp": "2026-02-11T09:43:38.383Z",
+          "action": "offer_accepted",
+          "description": "Client accepted offer from Mohamed Shipping Co for $2",
+          "companyName": "Mohamed Shipping Co",
+          "companyRate": "4.5",
+          "cost": 2
+        }
+      ],
+      "assignedCompanyId": "company-001",
+      "selectedCompany": {
+        "name": "Mohamed Shipping Co",
+        "rate": "4.5",
+        "cost": 2
+      }
+    },
+    {
+      "id": "REQ-1770897569740",
+      "userId": "walid-client-001",
+      "source": {
+        "id": "LOC-24",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "+123546789663",
+        "street": "Doctor Hassn Al Sherif Street",
+        "building": "7",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11765",
+        "landmark": "Metawee",
+        "addressType": "Office",
+        "deliveryInstructions": "Call on arrival",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.048428651509308,
+          "longitude": 31.356266974522843
+        }
+      },
+      "destination": {
+        "id": "LOC-10",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Sidi Beshr Mosque Street",
+        "building": "2",
+        "city": "Alexandria",
+        "district": "Miami",
+        "governorate": "Alexandria",
+        "postalCode": "21613",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 31.260354922900014,
+          "longitude": 29.9871683116362
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770897114242-imzpepmm0",
+          "item": "Graphics Card Nvedia RTX 5090",
+          "name": "Graphics Card Nvedia RTX 5090",
+          "category": "Electronics",
+          "dimensions": "12X22X10",
+          "weight": "0.250",
+          "quantity": 1,
+          "note": "Handle with care please",
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
+        },
+        {
+          "id": "ITEM-1770897395931-hm52rwpi9",
+          "item": "Office Disk",
+          "name": "Office Disk",
+          "category": "Office Supplies",
+          "dimensions": "150X70X100",
+          "weight": "15",
+          "quantity": 2,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Urgent",
+      "startTime": "2026-02-14T12:00:00.000Z",
+      "primaryCost": "6.25",
+      "cost": "6.25",
+      "requestStatus": "Action needed",
+      "deliveryStatus": "Pending",
+      "comment": "Be careful when transporting the items.",
+      "createdAt": "2026-02-12T11:59:29.741Z",
+      "updatedAt": "2026-02-12T14:58:28.644Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-12T13:10:16.768Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ],
+      "costOffers": [
+        {
+          "cost": 17,
+          "comment": "Test Comment",
+          "company": {
+            "id": "company-001",
+            "name": "Mohamed Shipping Co",
+            "phoneNumber": "+20123456789",
+            "email": "mohamedprovider@cepac.com",
+            "address": "123 Main Street, Cairo",
+            "rate": "4.5"
+          },
+          "selected": false,
+          "status": "pending",
+          "createdAt": "2026-02-12T14:58:28.644Z"
+        }
+      ],
+      "activityHistory": [
+        {
+          "timestamp": "2026-02-12T14:58:28.644Z",
+          "action": "offer_submitted",
+          "description": "Company Mohamed Shipping Co submitted an offer of $17",
+          "companyName": "Mohamed Shipping Co",
+          "cost": 17
+        }
+      ]
+    },
+    {
+      "id": "REQ-1770914168460",
+      "userId": "walid-client-001",
+      "source": {
+        "id": "LOC-10",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Sidi Beshr Mosque Street",
+        "building": "2",
+        "city": "Alexandria",
+        "district": "Miami",
+        "governorate": "Alexandria",
+        "postalCode": "21613",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 31.260354922900014,
+          "longitude": 29.9871683116362
+        }
+      },
+      "destination": {
+        "id": "LOC-24",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "+123546789663",
+        "street": "Doctor Hassn Al Sherif Street",
+        "building": "7",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11765",
+        "landmark": "Metawee",
+        "addressType": "Office",
+        "deliveryInstructions": "Call on arrival",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.048428651509308,
+          "longitude": 31.356266974522843
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770914019253-8ite86blp",
+          "item": "Nvedia GTX 3060 TI",
+          "name": "Nvedia GTX 3060 TI",
+          "category": "Electronics",
+          "dimensions": "12X20X10",
+          "weight": "0.210",
+          "quantity": 1,
+          "media": [
+            {
+              "url": "/assets/images/items/item-1770914168389-rhhw7s.jpg",
+              "existing": false
+            }
+          ],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Urgent",
+      "startTime": "2026-02-14T16:35:00.000Z",
+      "primaryCost": "",
+      "cost": "",
+      "requestStatus": "Accepted",
+      "deliveryStatus": "Pending",
+      "comment": "Care",
+      "createdAt": "2026-02-12T16:36:08.460Z",
+      "updatedAt": "2026-02-12T17:18:39.059Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-12T17:18:39.059Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
       ]
     }
   ]
