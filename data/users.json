@@ -8,26 +8,7 @@
       "name": "John Doe",
       "username": "johndoe",
       "mobile": "+12345678901",
-      "profilePicture": "https://example.com/profiles/johndoe.jpg",
       "role": "client",
-      "locations": [
-        {
-          "country": "United States",
-          "countryCode": "+1",
-          "fullName": "John Doe",
-          "mobile": "+12345678901",
-          "street": "123 Main St",
-          "building": "",
-          "city": "New York",
-          "district": "Manhattan",
-          "governorate": "New York",
-          "postalCode": "10001",
-          "landmark": "Central Park",
-          "addressType": "Home",
-          "deliveryInstructions": "Leave at the door",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2024-01-15T10:30:00Z"
     },
@@ -39,26 +20,7 @@
       "name": "Jane Smith",
       "username": "janesmith",
       "mobile": "+14165551234",
-      "profilePicture": "https://example.com/profiles/janesmith.jpg",
       "role": "client",
-      "locations": [
-        {
-          "country": "Canada",
-          "countryCode": "+1",
-          "fullName": "Jane Smith",
-          "mobile": "+14165551234",
-          "street": "456 Queen St",
-          "building": "",
-          "city": "Toronto",
-          "district": "Old Toronto",
-          "governorate": "Ontario",
-          "postalCode": "M5V2B6",
-          "landmark": "CN Tower",
-          "addressType": "Home",
-          "deliveryInstructions": "Call on arrival",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2024-01-16T14:20:00Z"
     },
@@ -70,26 +32,7 @@
       "name": "Admin User",
       "username": "adminuser",
       "mobile": "+12345678901",
-      "profilePicture": "https://example.com/profiles/adminuser.jpg",
       "role": "admin",
-      "locations": [
-        {
-          "country": "United Kingdom",
-          "countryCode": "+44",
-          "fullName": "Admin User",
-          "mobile": "+447911123456",
-          "street": "789 Admin Rd",
-          "building": "",
-          "city": "London",
-          "district": "Westminster",
-          "governorate": "London",
-          "postalCode": "SW1A1AA",
-          "landmark": "Big Ben",
-          "addressType": "Office",
-          "deliveryInstructions": "Reception desk",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2024-01-10T08:00:00Z"
     },
@@ -101,26 +44,7 @@
       "name": "Mike Johnson",
       "username": "mikejohnson",
       "mobile": "+12345678901",
-      "profilePicture": "https://example.com/profiles/mikejohnson.jpg",
       "role": "driver",
-      "locations": [
-        {
-          "country": "United States",
-          "countryCode": "+1",
-          "fullName": "Mike Johnson",
-          "mobile": "+13235556789",
-          "street": "321 Driver Ave",
-          "building": "",
-          "city": "Los Angeles",
-          "district": "Central LA",
-          "governorate": "California",
-          "postalCode": "90001",
-          "landmark": "Staples Center",
-          "addressType": "Home",
-          "deliveryInstructions": "Ring bell twice",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2024-01-12T10:00:00Z"
     },
@@ -132,26 +56,7 @@
       "name": "Sarah Williams",
       "username": "sarahwilliams",
       "mobile": "+16045551234",
-      "profilePicture": "https://example.com/profiles/sarahwilliams.jpg",
       "role": "driver",
-      "locations": [
-        {
-          "country": "Canada",
-          "countryCode": "+1",
-          "fullName": "Sarah Williams",
-          "mobile": "+16045551234",
-          "street": "654 Maple Rd",
-          "building": "",
-          "city": "Vancouver",
-          "district": "Downtown",
-          "governorate": "British Columbia",
-          "postalCode": "V5K0A1",
-          "landmark": "Stanley Park",
-          "addressType": "Home",
-          "deliveryInstructions": "Leave with concierge",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2024-01-13T14:00:00Z"
     },
@@ -163,26 +68,7 @@
       "name": "Marcus Schmidt",
       "username": "marcusschmidt",
       "mobile": "+4915112345678",
-      "profilePicture": "https://example.com/profiles/marcusschmidt.jpg",
       "role": "driver",
-      "locations": [
-        {
-          "country": "Germany",
-          "countryCode": "+49",
-          "fullName": "Marcus Schmidt",
-          "mobile": "+4915112345678",
-          "street": "987 Fahrer Str",
-          "building": "",
-          "city": "Berlin",
-          "district": "Mitte",
-          "governorate": "Berlin",
-          "postalCode": "10115",
-          "landmark": "Brandenburg Gate",
-          "addressType": "Home",
-          "deliveryInstructions": "Call before arrival",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2024-01-14T09:00:00Z"
     },
@@ -194,26 +80,7 @@
       "name": "Pierre Dupont",
       "username": "pierredupont",
       "mobile": "+33612345678",
-      "profilePicture": "https://example.com/profiles/pierredupont.jpg",
       "role": "driver",
-      "locations": [
-        {
-          "country": "France",
-          "countryCode": "+33",
-          "fullName": "Pierre Dupont",
-          "mobile": "+33612345678",
-          "street": "159 Rue de Paris",
-          "building": "",
-          "city": "Paris",
-          "district": "1st arrondissement",
-          "governorate": "Île-de-France",
-          "postalCode": "75001",
-          "landmark": "Louvre Museum",
-          "addressType": "Home",
-          "deliveryInstructions": "Leave at security",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2024-01-15T11:00:00Z"
     },
@@ -225,26 +92,7 @@
       "name": "Walid Mohamed",
       "username": "walidmohamed",
       "mobile": "+201001234567",
-      "profilePicture": "https://example.com/profiles/walidmohamed.jpg",
       "role": "client",
-      "locations": [
-        {
-          "country": "Egypt",
-          "countryCode": "+20",
-          "fullName": "Walid Mohamed",
-          "mobile": "+201001234567",
-          "street": "10 Nile St",
-          "building": "",
-          "city": "Cairo",
-          "district": "El Nozha",
-          "governorate": "Cairo",
-          "postalCode": "11511",
-          "landmark": "Cairo festival city",
-          "addressType": "Home",
-          "deliveryInstructions": "Call on arrival",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2026-01-22T09:54:07.206Z"
     },
@@ -256,98 +104,7 @@
       "name": "Walid Mohamed",
       "username": "walidmohamed",
       "mobile": "12345678",
-      "profilePicture": "https://example.com/profiles/walidclient.jpg",
       "role": "client",
-      "locations": [
-        {
-          "country": "Egypt",
-          "countryCode": "",
-          "fullName": "Walid Mohamed",
-          "mobile": "12345678",
-          "street": "Al Horeya Street",
-          "building": "2",
-          "city": "El Karma 2",
-          "district": "",
-          "governorate": "Giza",
-          "postalCode": "12588",
-          "landmark": "near to Zaid",
-          "addressType": "Home",
-          "deliveryInstructions": "",
-          "primary": false,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 30.04126278549466,
-            "longitude": 31.003475188335877
-          }
-        },
-        {
-          "country": "Egypt",
-          "countryCode": "",
-          "fullName": "Walid Mohamed",
-          "mobile": "12345678",
-          "street": "Sidi Beshr Mosque Street",
-          "building": "2",
-          "city": "Alexandria",
-          "district": "Miami",
-          "governorate": "Alexandria",
-          "postalCode": "21613",
-          "landmark": "near to shehab",
-          "addressType": "Home",
-          "deliveryInstructions": "",
-          "primary": false,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 31.260354922900014,
-            "longitude": 29.9871683116362
-          }
-        },
-        {
-          "country": "Egypt",
-          "countryCode": "",
-          "fullName": "Walid Mohamed",
-          "mobile": "12345678",
-          "street": "taha hessin",
-          "building": "2",
-          "city": "Nasr City",
-          "district": "",
-          "governorate": "Cairo",
-          "postalCode": "11351",
-          "landmark": "near to shehab",
-          "addressType": "Home",
-          "deliveryInstructions": "",
-          "primary": true,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 30.117248422464215,
-            "longitude": 31.38808250339935
-          }
-        },
-        {
-          "country": "Egypt",
-          "countryCode": "",
-          "fullName": "Walid Mohamed",
-          "mobile": "+123455677",
-          "street": "Nabeih Street",
-          "building": "",
-          "city": "Port Said",
-          "district": "",
-          "governorate": "Port Said",
-          "postalCode": "42515",
-          "landmark": "",
-          "addressType": "Home",
-          "deliveryInstructions": "",
-          "primary": false,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 31.268440536157048,
-            "longitude": 32.29248024523258
-          }
-        }
-      ],
       "status": "active",
       "createdAt": "2026-01-22T10:00:00Z"
     },
@@ -359,26 +116,7 @@
       "name": "Walid Mohamed",
       "username": "walidmohamed",
       "mobile": "+201223344556",
-      "profilePicture": "https://example.com/profiles/walidadmin.jpg",
       "role": "admin",
-      "locations": [
-        {
-          "country": "Egypt",
-          "countryCode": "+20",
-          "fullName": "Walid Mohamed",
-          "mobile": "+201223344556",
-          "street": "30 Admin Ave",
-          "building": "",
-          "city": "Giza",
-          "district": "Dokki",
-          "governorate": "Giza",
-          "postalCode": "12511",
-          "landmark": "Giza Zoo",
-          "addressType": "Office",
-          "deliveryInstructions": "Reception desk",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2026-01-22T10:01:00Z"
     },
@@ -390,26 +128,7 @@
       "name": "Walid Mohamed",
       "username": "walidmohamed",
       "mobile": "+201223344556",
-      "profilePicture": "https://example.com/profiles/walidoperator.jpg",
       "role": "operator",
-      "locations": [
-        {
-          "country": "Egypt",
-          "countryCode": "+20",
-          "fullName": "Walid Mohamed",
-          "mobile": "+201223344556",
-          "street": "30 Admin Ave",
-          "building": "",
-          "city": "Giza",
-          "district": "Dokki",
-          "governorate": "Giza",
-          "postalCode": "12511",
-          "landmark": "Giza Zoo",
-          "addressType": "Office",
-          "deliveryInstructions": "Reception desk",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2026-01-22T10:01:00Z"
     },
@@ -421,26 +140,7 @@
       "name": "Walid Mohamed",
       "username": "walidmohamed",
       "mobile": "+201334455667",
-      "profilePicture": "https://example.com/profiles/waliddriver.jpg",
       "role": "driver",
-      "locations": [
-        {
-          "country": "Egypt",
-          "countryCode": "+20",
-          "fullName": "Walid Mohamed",
-          "mobile": "+201334455667",
-          "street": "40 Driver Blvd",
-          "building": "",
-          "city": "Mansoura",
-          "district": "El Gamaa",
-          "governorate": "Dakahlia",
-          "postalCode": "35511",
-          "landmark": "Mansoura University",
-          "addressType": "Home",
-          "deliveryInstructions": "Call before arrival",
-          "primary": true
-        }
-      ],
       "status": "active",
       "createdAt": "2026-01-22T10:02:00Z"
     },
@@ -452,75 +152,6 @@
       "name": "Mohamed Ahmed",
       "username": "mohamedahmed",
       "mobile": "01006591234",
-      "profilePicture": "https://example.com/profiles/mohamedahmed.jpg",
-      "locations": [
-        {
-          "country": "Saudi Arabia",
-          "countryCode": "",
-          "fullName": "Mohamed Ahmed ",
-          "mobile": "01006591234",
-          "street": "Al Washm",
-          "building": "21",
-          "city": "Riyadh",
-          "district": "Al Murabba`",
-          "governorate": "Riyadh Region",
-          "postalCode": "12612",
-          "landmark": "near to abu fahd",
-          "addressType": "Home",
-          "deliveryInstructions": "total gas station ",
-          "primary": false,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 24.65237975270708,
-            "longitude": 46.71020505018533
-          }
-        },
-        {
-          "country": "Egypt",
-          "countryCode": "",
-          "fullName": "Mohamed Ahmed ",
-          "mobile": "01006591234",
-          "street": "Doctor Hassn Al Sherif Street",
-          "building": "65",
-          "city": "Nasr City",
-          "district": "Nasr City",
-          "governorate": "Cairo",
-          "postalCode": "11765",
-          "landmark": "alsalam mosque",
-          "addressType": "Home",
-          "deliveryInstructions": "",
-          "primary": true,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 30.048492990706322,
-            "longitude": 31.356245325278817
-          }
-        },
-        {
-          "country": "Saudi Arabia",
-          "countryCode": "",
-          "fullName": "Mohamed Ahmed ",
-          "mobile": "01006591234",
-          "street": "Amir Muhammad Ibn Abdulrahman",
-          "building": "3",
-          "city": "Riyadh",
-          "district": "Al Mansurah District",
-          "governorate": "Riyadh Region",
-          "postalCode": "22242",
-          "landmark": "next to abu abdallah",
-          "addressType": "Home",
-          "deliveryInstructions": "",
-          "primary": false,
-          "warehouseId": "",
-          "pickupMode": "Self",
-          "coordinates": {
-            "latitude": 24.61357557156029,
-            "longitude": 46.73315048130463
-          }
-        }
-      ],
       "role": "client",
       "status": "active",
       "createdAt": "2026-01-31T12:09:26.877Z"
@@ -533,18 +164,8 @@
       "fullName": "Mohamed Provider",
       "username": "mohamedprovider",
       "mobile": "+201223344556",
-      "profilePicture": "https://example.com/profiles/mohamedprovider.jpg",
-      "locations": [
-        {
-          "address": "123 main street",
-          "country": "Egypt",
-          "countryCode": "+20",
-          "postalCode": "21232",
-          "mobile": "21321324132",
-          "primary": true
-        }
-      ],
-      "role": "provider",
+      "role": "company",
+      "status": "active",
       "createdAt": "2026-02-09T09:32:16.936Z"
     },
     {
@@ -555,25 +176,6 @@
       "fullName": "Sarah Wilson",
       "username": "sarahwilson",
       "mobile": "+14155551001",
-      "profilePicture": "https://example.com/profiles/sarahwilson.jpg",
-      "locations": [
-        {
-          "country": "United States",
-          "countryCode": "+1",
-          "fullName": "Sarah Wilson",
-          "mobile": "+14155551001",
-          "street": "789 Oak Ave",
-          "building": "Apt 204",
-          "city": "San Francisco",
-          "district": "Marina District",
-          "governorate": "California",
-          "postalCode": "94123",
-          "landmark": "Near Golden Gate Park",
-          "addressType": "Home",
-          "deliveryInstructions": "Ring doorbell twice",
-          "primary": true
-        }
-      ],
       "role": "client",
       "status": "active",
       "createdAt": "2026-02-10T08:15:30Z"
@@ -586,25 +188,6 @@
       "fullName": "James Martinez",
       "username": "jamesmartinez",
       "mobile": "+13105552045",
-      "profilePicture": "https://example.com/profiles/jamesmartinez.jpg",
-      "locations": [
-        {
-          "country": "United States",
-          "countryCode": "+1",
-          "fullName": "James Martinez",
-          "mobile": "+13105552045",
-          "street": "456 Sunset Blvd",
-          "building": "Suite 500",
-          "city": "Los Angeles",
-          "district": "Hollywood",
-          "governorate": "California",
-          "postalCode": "90028",
-          "landmark": "Hollywood Sign visible",
-          "addressType": "Office",
-          "deliveryInstructions": "Call on arrival",
-          "primary": true
-        }
-      ],
       "role": "client",
       "status": "active",
       "createdAt": "2026-02-10T09:42:15Z"
@@ -617,25 +200,6 @@
       "fullName": "Elizabeth Chen",
       "username": "elizabethchen",
       "mobile": "+12125553892",
-      "profilePicture": "https://example.com/profiles/elizabethchen.jpg",
-      "locations": [
-        {
-          "country": "United States",
-          "countryCode": "+1",
-          "fullName": "Elizabeth Chen",
-          "mobile": "+12125553892",
-          "street": "321 Park Avenue",
-          "building": "Penthouse 2A",
-          "city": "New York",
-          "district": "Midtown Manhattan",
-          "governorate": "New York",
-          "postalCode": "10022",
-          "landmark": "Near Central Park South",
-          "addressType": "Home",
-          "deliveryInstructions": "Use building's main entrance",
-          "primary": true
-        }
-      ],
       "role": "client",
       "status": "active",
       "createdAt": "2026-02-10T10:27:45Z"
@@ -648,25 +212,6 @@
       "fullName": "Michael Thompson",
       "username": "michaelthompson",
       "mobile": "+17135554521",
-      "profilePicture": "https://example.com/profiles/michaelthompson.jpg",
-      "locations": [
-        {
-          "country": "United States",
-          "countryCode": "+1",
-          "fullName": "Michael Thompson",
-          "mobile": "+17135554521",
-          "street": "2847 Westheimer Rd",
-          "building": "Unit 301",
-          "city": "Houston",
-          "district": "Midtown",
-          "governorate": "Texas",
-          "postalCode": "77006",
-          "landmark": "Near Memorial Park",
-          "addressType": "Home",
-          "deliveryInstructions": "Leave at front gate",
-          "primary": true
-        }
-      ],
       "role": "client",
       "status": "active",
       "createdAt": "2026-02-10T11:03:20Z"

@@ -12,13 +12,13 @@ function normalizeItems(req: LegacyRequest) {
       let normalizedMedia = [];
       if (Array.isArray(it.media)) {
         normalizedMedia = it.media.map((m: any) => {
-          if (typeof m === 'string') {
+          if (typeof m === "string") {
             return { url: m, existing: true };
           }
           return m; // Already in MediaItem format
         });
       }
-      
+
       return {
         id: it.id || `ITEM-${req.id || Date.now()}-${idx + 1}`,
         item: it.item ?? it.name ?? "-",
@@ -29,17 +29,28 @@ function normalizeItems(req: LegacyRequest) {
         quantity: Number(it.quantity ?? 1) || 1,
         note: it.note || undefined,
         media: normalizedMedia.slice(0, 4),
-        services: it.services || { assemblyDisassembly: false, packaging: false },
+        services: it.services || {
+          assemblyDisassembly: false,
+          packaging: false,
+        },
       };
     });
   }
 
   // Legacy: single-item fields
-  if (req.item || req.category || req.dimensions || req.weight || req.quantity) {
-    const media = Array.isArray(req.media) 
-      ? req.media.map((m: any) => typeof m === 'string' ? { url: m, existing: true } : m)
+  if (
+    req.item ||
+    req.category ||
+    req.dimensions ||
+    req.weight ||
+    req.quantity
+  ) {
+    const media = Array.isArray(req.media)
+      ? req.media.map((m: any) =>
+          typeof m === "string" ? { url: m, existing: true } : m,
+        )
       : [];
-      
+
     return [
       {
         id: `ITEM-${req.id || Date.now()}-1`,
@@ -61,7 +72,9 @@ function normalizeItems(req: LegacyRequest) {
 }
 
 function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
-  const v = String(value || "").toLowerCase().trim();
+  const v = String(value || "")
+    .toLowerCase()
+    .trim();
   if (v === "urgent" || v === "fast") return "Urgent";
   if (v === "normal") return "Normal";
   return undefined;
@@ -78,7 +91,7 @@ function normalizeRequest(req: LegacyRequest) {
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
-  
+
   return {
     id: req.id,
     userId: req.userId,
@@ -118,20 +131,30 @@ export async function GET(request: NextRequest) {
       : requestsData.requests;
 
     // Always return the FINAL structure (normalized), even for legacy records.
-    const normalized = filteredRequests.map((req: any) => normalizeRequest(req));
-    
+    const normalized = filteredRequests.map((req: any) =>
+      normalizeRequest(req),
+    );
+
     // Get user data for each request
     const usersPath = path.join(process.cwd(), "data", "users.json");
     const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
-    
+
+    // Get locations for each user
+    const locationsPath = path.join(process.cwd(), "data", "locations.json");
+    const locationsData = JSON.parse(fs.readFileSync(locationsPath, "utf-8"));
+
     const withUserData = normalized.map((req: any) => {
       const user = usersData.users.find((u: any) => u.id === req.userId);
+      const userLocations = locationsData.locations.filter(
+        (loc: any) => loc.userId === req.userId,
+      );
       return {
         ...req,
-        user: user || null
+        user: user || null,
+        locations: userLocations,
       };
     });
-    
+
     return NextResponse.json({ requests: withUserData }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -214,7 +237,9 @@ export async function POST(request: NextRequest) {
       source: sourceAddr,
       destination: destAddr,
       items: items.map((item: any) => ({
-        id: item.id || `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          item.id ||
+          `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         item: item.item || item.name,
         name: item.name || item.item,
         category: item.category,
@@ -223,7 +248,10 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         note: item.note || undefined,
         media: Array.isArray(item.media) ? item.media.slice(0, 4) : [],
-        services: item.services || { assemblyDisassembly: false, packaging: false },
+        services: item.services || {
+          assemblyDisassembly: false,
+          packaging: false,
+        },
       })),
       deliveryType: normalizedDeliveryType,
       startTime: finalStartTime,

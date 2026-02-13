@@ -53,12 +53,7 @@
           "weight": "0.13",
           "quantity": 1,
           "note": "Fragile. Handle with care",
-          "media": [
-            {
-              "url": "https://cdn.example.com/img.jpg",
-              "existing": true
-            }
-          ]
+          "media": []
         }
       ],
       "estimatedCost": "2.60",
@@ -1390,6 +1385,237 @@
         "rate": "4.5",
         "cost": 2
       }
+    },
+    {
+      "id": "REQ-1770897569740",
+      "userId": "walid-client-001",
+      "source": {
+        "id": "LOC-24",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "+123546789663",
+        "street": "Doctor Hassn Al Sherif Street",
+        "building": "7",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11765",
+        "landmark": "Metawee",
+        "addressType": "Office",
+        "deliveryInstructions": "Call on arrival",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.048428651509308,
+          "longitude": 31.356266974522843
+        }
+      },
+      "destination": {
+        "id": "LOC-10",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Sidi Beshr Mosque Street",
+        "building": "2",
+        "city": "Alexandria",
+        "district": "Miami",
+        "governorate": "Alexandria",
+        "postalCode": "21613",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 31.260354922900014,
+          "longitude": 29.9871683116362
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770897114242-imzpepmm0",
+          "item": "Graphics Card Nvedia RTX 5090",
+          "name": "Graphics Card Nvedia RTX 5090",
+          "category": "Electronics",
+          "dimensions": "12X22X10",
+          "weight": "0.250",
+          "quantity": 1,
+          "note": "Handle with care please",
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
+        },
+        {
+          "id": "ITEM-1770897395931-hm52rwpi9",
+          "item": "Office Disk",
+          "name": "Office Disk",
+          "category": "Office Supplies",
+          "dimensions": "150X70X100",
+          "weight": "15",
+          "quantity": 2,
+          "media": [],
+          "services": {
+            "canBeAssembledDisassembled": true,
+            "assemblyDisassemblyHandler": "company",
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Urgent",
+      "startTime": "2026-02-14T12:00:00.000Z",
+      "primaryCost": "6.25",
+      "cost": "6.25",
+      "requestStatus": "Action needed",
+      "deliveryStatus": "Pending",
+      "comment": "Be careful when transporting the items.",
+      "createdAt": "2026-02-12T11:59:29.741Z",
+      "updatedAt": "2026-02-12T14:58:28.644Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-12T13:10:16.768Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ],
+      "costOffers": [
+        {
+          "cost": 17,
+          "comment": "Test Comment",
+          "company": {
+            "id": "company-001",
+            "name": "Mohamed Shipping Co",
+            "phoneNumber": "+20123456789",
+            "email": "mohamedprovider@cepac.com",
+            "address": "123 Main Street, Cairo",
+            "rate": "4.5"
+          },
+          "selected": false,
+          "status": "pending",
+          "createdAt": "2026-02-12T14:58:28.644Z"
+        }
+      ],
+      "activityHistory": [
+        {
+          "timestamp": "2026-02-12T14:58:28.644Z",
+          "action": "offer_submitted",
+          "description": "Company Mohamed Shipping Co submitted an offer of $17",
+          "companyName": "Mohamed Shipping Co",
+          "cost": 17
+        }
+      ]
+    },
+    {
+      "id": "REQ-1770914168460",
+      "userId": "walid-client-001",
+      "source": {
+        "id": "LOC-10",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "12345678",
+        "street": "Sidi Beshr Mosque Street",
+        "building": "2",
+        "city": "Alexandria",
+        "district": "Miami",
+        "governorate": "Alexandria",
+        "postalCode": "21613",
+        "landmark": "near to shehab",
+        "addressType": "Home",
+        "deliveryInstructions": "",
+        "primary": false,
+        "warehouseId": "",
+        "pickupMode": "Self",
+        "coordinates": {
+          "latitude": 31.260354922900014,
+          "longitude": 29.9871683116362
+        }
+      },
+      "destination": {
+        "id": "LOC-24",
+        "userId": "walid-client-001",
+        "country": "Egypt",
+        "countryCode": "",
+        "fullName": "Walid Mohamed",
+        "mobile": "+123546789663",
+        "street": "Doctor Hassn Al Sherif Street",
+        "building": "7",
+        "city": "Nasr City",
+        "district": "",
+        "governorate": "Cairo",
+        "postalCode": "11765",
+        "landmark": "Metawee",
+        "addressType": "Office",
+        "deliveryInstructions": "Call on arrival",
+        "primary": true,
+        "warehouseId": "",
+        "pickupMode": "Delegate",
+        "coordinates": {
+          "latitude": 30.048428651509308,
+          "longitude": 31.356266974522843
+        }
+      },
+      "items": [
+        {
+          "id": "ITEM-1770914019253-8ite86blp",
+          "item": "Nvedia GTX 3060 TI",
+          "name": "Nvedia GTX 3060 TI",
+          "category": "Electronics",
+          "dimensions": "12X20X10",
+          "weight": "0.210",
+          "quantity": 1,
+          "media": [
+            {
+              "url": "/assets/images/items/item-1770914168389-rhhw7s.jpg",
+              "existing": false
+            }
+          ],
+          "services": {
+            "canBeAssembledDisassembled": false,
+            "packaging": true
+          }
+        }
+      ],
+      "deliveryType": "Urgent",
+      "startTime": "2026-02-14T16:35:00.000Z",
+      "primaryCost": "",
+      "cost": "",
+      "requestStatus": "Accepted",
+      "deliveryStatus": "Pending",
+      "comment": "Care",
+      "createdAt": "2026-02-12T16:36:08.460Z",
+      "updatedAt": "2026-02-12T17:18:39.059Z",
+      "requestStatusHistory": [
+        {
+          "status": "Accepted",
+          "changedAt": "2026-02-12T17:18:39.059Z",
+          "changedBy": "operator-001",
+          "role": "operator",
+          "note": "Request accepted by operator"
+        }
+      ],
+      "orderFlow": [
+        "Accepted"
+      ],
+      "orderCompletedStatuses": [
+        "Accepted"
+      ]
     }
   ]
 }

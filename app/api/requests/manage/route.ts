@@ -9,9 +9,11 @@ export async function GET(request: NextRequest) {
 
     const requestsPath = path.join(process.cwd(), "data", "requests.json");
     const usersPath = path.join(process.cwd(), "data", "users.json");
+    const locationsPath = path.join(process.cwd(), "data", "locations.json");
 
     const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
     const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
+    const locationsData = JSON.parse(fs.readFileSync(locationsPath, "utf-8"));
 
     let results = requestsData.requests;
     if (status) {
@@ -23,6 +25,10 @@ export async function GET(request: NextRequest) {
     // Populate user information for each request
     const resultsWithUsers = results.map((req: any) => {
       const user = usersData.users.find((u: any) => u.id === req.userId);
+      // Get user locations
+      const userLocations = locationsData.locations.filter(
+        (loc: any) => loc.userId === req.userId,
+      );
       return {
         ...req,
         user: user
@@ -35,6 +41,7 @@ export async function GET(request: NextRequest) {
               role: user.role,
             }
           : null,
+        locations: userLocations,
       };
     });
 

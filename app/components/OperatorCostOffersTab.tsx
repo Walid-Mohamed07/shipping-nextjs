@@ -4,34 +4,20 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Plus, Trash2 } from "lucide-react";
-
-interface CostOffer {
-  cost: number;
-  company: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  comment: string;
-  selected: boolean;
-}
-
-interface Request {
-  id: string;
-  user: { id: string; fullName: string; email: string; profilePicture: string };
-  source: { country: string; city: string };
-  destination: { country: string; city: string };
-  items: Array<{ item: string; category: string }>;
-  requestStatus: string;
-  costOffers: CostOffer[];
-}
+import Image from "next/image";
+import { Request } from "@/types";
 
 export function OperatorCostOffersTab() {
   const [requests, setRequests] = useState<Request[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [newOffers, setNewOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "user">("date");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +38,31 @@ export function OperatorCostOffersTab() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    let filtered = requests.filter(
+      (req) =>
+        searchQuery === "" ||
+        req.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (req.user &&
+          req.user.fullName.toLowerCase().includes(searchQuery.toLowerCase())),
+    );
+
+    filtered.sort((a, b) => {
+      if (sortBy === "date") {
+        return (
+          new Date(b.createdAt || "").getTime() -
+          new Date(a.createdAt || "").getTime()
+        );
+      } else if (sortBy === "user") {
+        return (a.user?.fullName || "").localeCompare(b.user?.fullName || "");
+      }
+      return 0;
+    });
+
+    setFilteredRequests(filtered);
+    setCurrentPage(1);
+  }, [requests, searchQuery, sortBy]);
 
   const handleAddOffer = () => {
     setNewOffers([...newOffers, { cost: 0, company: null, comment: "" }]);
@@ -97,20 +108,61 @@ export function OperatorCostOffersTab() {
 
   if (loading) return <div className="text-center py-8">Loading...</div>;
 
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedRequests = filteredRequests.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
+
   return (
     <div className="space-y-6">
-      <div className="text-sm text-muted-foreground">
-        Select accepted requests to set cost offers. Once submitted, the request
-        status will change to "Action needed"
-      </div>
+      {!selectedRequest && (
+        <>
+          <div className="text-sm text-muted-foreground">
+            Select accepted requests to set cost offers. Once submitted, the
+            request status will change to "Action needed"
+          </div>
+
+          {/* Search and Sort */}
+          <Card className="p-4 bg-slate-50 dark:bg-slate-900/50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2 md:col-span-2">
+                <input
+                  type="text"
+                  placeholder="Search by request ID or customer name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
+                >
+                  <option value="date">Date (Newest)</option>
+                  <option value="user">Customer (A-Z)</option>
+                </select>
+              </div>
+            </div>
+          </Card>
+        </>
+      )}
 
       {selectedRequest ? (
         <Card className="p-6 border-primary/50 bg-primary/5">
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">{selectedRequest.id}</h3>
             <p className="text-sm text-muted-foreground">
-              {selectedRequest.user.fullName} - {selectedRequest.source.country}{" "}
-              → {selectedRequest.destination.country}
+              {selectedRequest.user!.fullName} -{" "}
+              {selectedRequest.source.country} →{" "}
+              {selectedRequest.destination.country}
             </p>
           </div>
 
@@ -224,60 +276,140 @@ export function OperatorCostOffersTab() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {requests.length === 0 ? (
+          {filteredRequests.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No accepted requests available
             </div>
           ) : (
-            requests.map((req) => (
-              <Card
-                key={req.id}
-                className="p-4 hover:border-primary transition-colors cursor-pointer"
-              >
-                <div
-                  onClick={() => {
-                    setSelectedRequest(req);
-                    setNewOffers([]);
-                  }}
-                  className="flex items-start justify-between"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      {req.user.profilePicture ? (
-                        <img
-                          src={req.user.profilePicture || "/placeholder.svg"}
-                          alt={req.user.fullName}
-                          className="w-10 h-10 rounded-full"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                          {req.user.fullName.charAt(0)}
+            <>
+              <div className="space-y-3">
+                {paginatedRequests.map((req) => (
+                  <Card
+                    key={req.id}
+                    className="p-4 hover:border-primary transition-colors cursor-pointer"
+                  >
+                    <div
+                      onClick={() => {
+                        setSelectedRequest(req);
+                        setNewOffers([]);
+                      }}
+                      className="flex items-start justify-between"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Image
+                            src={
+                              req.user!.profilePicture ||
+                              "/assets/images/users/unknown.webp"
+                            }
+                            alt={req.user!.fullName}
+                            className="w-10 h-10 rounded-full"
+                            width={40}
+                            height={40}
+                          />
+                          <div>
+                            <p className="font-medium">{req.id}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {req.user!.fullName}
+                            </p>
+                          </div>
+                        </div>
+                        {/* <p className="text-sm text-muted-foreground"> */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="font-medium text-foreground mb-1">
+                              From
+                            </p>
+                            <div className="text-sm">
+                              <p className="font-medium text-muted-foreground">
+                                {req.source.country}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {req.source.city}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {req.source.street}
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground mb-1">
+                              To
+                            </p>
+                            <div className="text-sm">
+                              <p className="font-medium text-muted-foreground">
+                                {req.destination.country}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {req.destination.city}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {req.destination.street}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        {/* </p> */}
+                      </div>
+                      {req.costOffers && req.costOffers.length > 0 && (
+                        <div className="ml-4 text-right">
+                          <p className="text-sm font-medium">
+                            {req.costOffers.length} offers
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {req.requestStatus}
+                          </p>
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium">{req.id}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {req.user.fullName}
-                        </p>
-                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {req.source.country} → {req.destination.country}
-                    </p>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum = i + 1;
+                      if (totalPages > 5 && currentPage > 3) {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={
+                            currentPage === pageNum ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          disabled={pageNum > totalPages}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
                   </div>
-                  {req.costOffers.length > 0 && (
-                    <div className="ml-4 text-right">
-                      <p className="text-sm font-medium">
-                        {req.costOffers.length} offers
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {req.requestStatus}
-                      </p>
-                    </div>
-                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
                 </div>
-              </Card>
-            ))
+              )}
+            </>
           )}
         </div>
       )}

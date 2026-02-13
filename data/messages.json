@@ -1,79 +1,96 @@
 {
-    "messages": [
-        {
-            "id": "msg-001",
-            "senderId": "550e8400-e29b-41d4-a716-446655440001",
-            "senderName": "John Doe",
-            "senderEmail": "john@example.com",
-            "recipientEmail": "company@example.com",
-            "recipientName": "Company User",
-            "subject": "Inquiry about shipping rates",
-            "message": "Hello, I would like to know more about your shipping services.",
-            "status": "sent",
-            "priority": "normal",
-            "attachments": [],
-            "links": [],
-            "createdAt": "2026-02-01T10:30:00Z",
-            "readAt": null,
-            "repliedAt": null
-        },
-        {
-            "id": "msg-002",
-            "senderId": "550e8400-e29b-41d4-a716-446655440004",
-            "senderName": "Mike Johnson",
-            "senderEmail": "driver1@example.com",
-            "recipientEmail": "admin@example.com",
-            "recipientName": "Admin User",
-            "subject": "Delivery completed",
-            "message": "The shipment has been successfully delivered to the customer.",
-            "status": "read",
-            "priority": "normal",
-            "attachments": [],
-            "links": [
-                "https://tracking.example.com/deliver/12345"
-            ],
-            "createdAt": "2026-02-02T14:20:00Z",
-            "readAt": "2026-02-02T15:00:00Z",
-            "repliedAt": null
-        },
-        {
-            "id": "msg-003",
-            "senderId": "550e8400-e29b-41d4-a716-446655440002",
-            "senderName": "Jane Smith",
-            "senderEmail": "jane@example.com",
-            "recipientEmail": "john@example.com",
-            "recipientName": "John Doe",
-            "subject": "Re: Shipping inquiry",
-            "message": "Thanks for reaching out. I can help you with your shipping needs.",
-            "status": "unread",
-            "priority": "high",
-            "attachments": [],
-            "links": [],
-            "createdAt": "2026-02-03T09:15:00Z",
-            "readAt": null,
-            "repliedAt": null
-        },
-        {
-            "id": "msg-004",
-            "senderId": "550e8400-e29b-41d4-a716-446655440003",
-            "senderName": "Admin User",
-            "senderEmail": "admin@example.com",
-            "recipientEmail": "external.company@example.com",
-            "recipientName": "External Company",
-            "subject": "New shipping partnership opportunity",
-            "message": "We are interested in collaborating with your company. Please review the attached proposal.",
-            "status": "sent",
-            "priority": "high",
-            "attachments": [
-                "proposal.pdf",
-                "partnership-terms.docx"
-            ],
-            "links": [
-                "https://docs.example.com/partnership-proposal"
-            ],
-            "createdAt": "2026-02-04T11:45:00Z",
-            "readAt": null,
-            "repliedAt": null
-        }
-    ]
+  "messages": [
+    {
+      "id": "msg-001",
+      "senderId": "550e8400-e29b-41d4-a716-446655440001",
+      "senderName": "John Doe",
+      "senderEmail": "john@example.com",
+      "recipientEmail": "company@example.com",
+      "recipientName": "Company User",
+      "subject": "Inquiry about shipping rates",
+      "message": "Hello, I would like to know more about your shipping services.",
+      "status": "sent",
+      "priority": "normal",
+      "attachments": [],
+      "links": [],
+      "createdAt": "2026-02-01T10:30:00Z",
+      "readAt": null,
+      "repliedAt": null
+    },
+    {
+      "id": "msg-002",
+      "senderId": "550e8400-e29b-41d4-a716-446655440004",
+      "senderName": "Mike Johnson",
+      "senderEmail": "driver1@example.com",
+      "recipientEmail": "admin@example.com",
+      "recipientName": "Admin User",
+      "subject": "Delivery completed",
+      "message": "The shipment has been successfully delivered to the customer.",
+      "status": "read",
+      "priority": "normal",
+      "attachments": [],
+      "links": [
+        "https://tracking.example.com/deliver/12345"
+      ],
+      "createdAt": "2026-02-02T14:20:00Z",
+      "readAt": "2026-02-02T15:00:00Z",
+      "repliedAt": null
+    },
+    {
+      "id": "msg-003",
+      "senderId": "550e8400-e29b-41d4-a716-446655440002",
+      "senderName": "Jane Smith",
+      "senderEmail": "jane@example.com",
+      "recipientEmail": "john@example.com",
+      "recipientName": "John Doe",
+      "subject": "Re: Shipping inquiry",
+      "message": "Thanks for reaching out. I can help you with your shipping needs.",
+      "status": "unread",
+      "priority": "high",
+      "attachments": [],
+      "links": [],
+      "createdAt": "2026-02-03T09:15:00Z",
+      "readAt": null,
+      "repliedAt": null
+    },
+    {
+      "id": "msg-004",
+      "senderId": "550e8400-e29b-41d4-a716-446655440003",
+      "senderName": "Admin User",
+      "senderEmail": "admin@example.com",
+      "recipientEmail": "external.company@example.com",
+      "recipientName": "External Company",
+      "subject": "New shipping partnership opportunity",
+      "message": "We are interested in collaborating with your company. Please review the attached proposal.",
+      "status": "sent",
+      "priority": "high",
+      "attachments": [
+        "proposal.pdf",
+        "partnership-terms.docx"
+      ],
+      "links": [
+        "https://docs.example.com/partnership-proposal"
+      ],
+      "createdAt": "2026-02-04T11:45:00Z",
+      "readAt": null,
+      "repliedAt": null
+    },
+    {
+      "id": "msg-13a2a679",
+      "senderId": "walid-client-001",
+      "senderName": "Walid Mohamed",
+      "senderEmail": "walid.client@cepac-eg.com",
+      "recipientEmail": "jane@example.com",
+      "recipientName": "Unknown",
+      "subject": "Re: Re: Shipping inquiry",
+      "message": "Thank you!",
+      "status": "read",
+      "priority": "normal",
+      "attachments": [],
+      "links": [],
+      "createdAt": "2026-02-12T15:22:43.072Z",
+      "readAt": null,
+      "repliedAt": null
+    }
+  ]
 }

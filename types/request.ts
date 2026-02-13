@@ -6,7 +6,9 @@ export type RequestStatus =
   | "Rejected"
   | "Cancelled"
   | "Action needed"
-  | "Assigned to Company";
+  | "Assigned to Company"
+  | "In Progress"
+  | "Completed";
 
 export enum RequestDeliveryStatus {
   PENDING = "Pending",
@@ -38,6 +40,7 @@ export interface Item {
   quantity: number;
   note?: string;
   media?: MediaItem[];
+  mediaFiles?: File[]; // Temporary storage for files before upload
   services?: {
     canBeAssembledDisassembled?: boolean;
     assemblyDisassemblyHandler?: "self" | "company";
@@ -86,13 +89,14 @@ export interface ActivityHistory {
 }
 
 export interface Request {
-  id?: string;
+  id: string;
   userId: string;
   user?: {
     id: string;
     fullName: string;
     username: string;
     email: string;
+    mobile: string | null;
     nationalOrPassportNumber: string | null;
     birthDate: string;
     idImage: string | null;
@@ -112,7 +116,7 @@ export interface Request {
   primaryCost?: string;
   requestStatus: RequestStatus;
   deliveryStatus: DeliveryStatus;
-  comment?: string; 
+  comment?: string;
   createdAt?: string;
   updatedAt?: string;
   costOffers?: CostOffer[];

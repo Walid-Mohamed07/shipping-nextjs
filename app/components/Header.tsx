@@ -37,15 +37,30 @@ export function Header() {
                   My Requests
                 </Link>
               )}
-              {user.role === "admin" ||
-                (user.role === "operator" && (
-                  <Link
-                    href="/admin/dashboard"
-                    className="text-foreground hover:text-primary transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                ))}
+              {user.role === "admin" && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
+              {user.role === "operator" && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
+              {user.role === "company" && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
               {user.role === "driver" && (
                 <Link
                   href="/driver/orders"
