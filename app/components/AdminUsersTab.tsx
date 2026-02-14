@@ -99,7 +99,6 @@ export function AdminUsersTab() {
     try {
       const now = new Date().toISOString();
       const newUser: User = {
-        id: Date.now().toString(),
         name: formData.fullName,
         fullName: formData.fullName,
         username: formData.username,
@@ -120,7 +119,7 @@ export function AdminUsersTab() {
 
       const updatedUsers = editingId
         ? users.map((u) =>
-            u.id === editingId ? { ...u, ...formData, updatedAt: now } : u,
+            u._id === editingId ? { ...u, ...formData, updatedAt: now } : u,
           )
         : [...users, newUser];
 
@@ -135,7 +134,7 @@ export function AdminUsersTab() {
 
   const handleDelete = (id: string) => {
     if (!confirm("Are you sure?")) return;
-    setUsers(users.filter((u) => u.id !== id));
+    setUsers(users.filter((u) => u._id !== id));
     alert("User deleted");
   };
 
@@ -150,7 +149,7 @@ export function AdminUsersTab() {
       status: user.status,
       role: typeof user.role === "string" ? user.role : (user.role as any).name,
     });
-    setEditingId(user.id);
+    setEditingId(user._id!);
     setShowForm(true);
   };
 
@@ -367,7 +366,7 @@ export function AdminUsersTab() {
                   user.locations[0]
                 : null;
             return (
-              <Card key={user.id} className="p-4">
+              <Card key={user._id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -409,7 +408,7 @@ export function AdminUsersTab() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDelete(user.id)}
+                      onClick={() => handleDelete(user._id!)}
                       className="gap-2"
                     >
                       <Trash2 className="w-4 h-4" />

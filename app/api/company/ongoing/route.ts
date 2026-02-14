@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Request } from "@/lib/models";
 
 /**
- * Company Ongoing Requests API
- * 
- * Fetch ongoing requests for a specific company.
- * These are requests where:
- * - assignedCompanyId matches the company
- * - requestStatus is "Assigned to Company"
+ * @swagger
+ * /api/company/ongoing:
+ *   get:
+ *     summary: Get ongoing requests for a company
+ *     tags: [Company]
+ *     parameters:
+ *       - in: query
+ *         name: companyId\n *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of ongoing requests
+ *       400:
+ *         description: Missing companyId
+ *       500:
+ *         description: Failed to fetch ongoing requests
  */
 
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
     const searchParams = request.nextUrl.searchParams;
     const companyId = searchParams.get("companyId");
 
@@ -23,11 +35,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
+    // Find ongoing requests assigned to this company
+    const ongoingRequests = await Request.find({
+      assignedCompanyId: companyId,
+      requestStatus: { $in: ["Assigned to Company", "In Transit", "Delivered"] }
+    })
+      .populate("userId", "email fullName")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Also get the company info to match by userId or id
-    const companiesPath = path.join(process.cwd(), "data", "companies.json");
+    return NextResponse.json({ requests: ongoingRequests }, { status: 200 });
+  } catch (error) {
+    return handleError(error);
+  }
+}
     const companiesData = JSON.parse(fs.readFileSync(companiesPath, "utf-8"));
     
     const company = companiesData.companies.find(

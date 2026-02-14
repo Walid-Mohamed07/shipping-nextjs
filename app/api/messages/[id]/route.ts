@@ -1,17 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Message } from "@/lib/models";
+
+/**
+ * @swagger\n * /api/messages/:id:
+ *   get:
+ *     summary: Get a specific message by ID
+ *     tags: [Messages]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Message details
+ *       404:
+ *         description: Message not found
+ *       500:
+ *         description: Failed to fetch message
+ *   put:
+ *     summary: Update message (mark as read, etc)
+ *     tags: [Messages]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *               readAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Message updated successfully
+ *       500:
+ *         description: Failed to update message
+ */
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await connectDB();
     const { id } = await params;
-    const messagesPath = path.join(process.cwd(), "data", "messages.json");
-    const messagesData = JSON.parse(fs.readFileSync(messagesPath, "utf-8"));
 
-    const message = messagesData.messages.find((m: any) => m.id === id);
+    const message = await Message.findById(id).lean();
 
     if (!message) {
       return NextResponse.json({ error: "Message not found" }, { status: 404 });
@@ -19,27 +58,35 @@ export async function GET(
 
     return NextResponse.json(message, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch message" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await connectDB();
     const { id } = await params;
     const body = await request.json();
     const { status, readAt } = body;
 
-    const messagesPath = path.join(process.cwd(), "data", "messages.json");
-    const messagesData = JSON.parse(fs.readFileSync(messagesPath, "utf-8"));
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (readAt) updateData.readAt = new Date(readAt);
+    updateData.updatedAt = new Date();
+
+    const updatedMessage = await Message.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
+    if (!updatedMessage) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
 
     const messageIndex = messagesData.messages.findIndex(
-      (m: any) => m.id === id
+      (m: any) => m.id === id,
     );
 
     if (messageIndex === -1) {
@@ -63,7 +110,7 @@ export async function PUT(
     console.error("Failed to update message:", error);
     return NextResponse.json(
       { error: "Failed to update message" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

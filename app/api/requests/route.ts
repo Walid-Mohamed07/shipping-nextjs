@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB } from "@/lib/db";
+import { Request, User } from "@/lib/models";
+import { handleError, handleValidationError } from "@/lib/apiHelpers";
 
 type LegacyRequest = any;
 
 function normalizeItems(req: LegacyRequest) {
-  // Preferred: items[] already exists
   if (Array.isArray(req.items) && req.items.length > 0) {
     return req.items.map((it: any, idx: number) => {
-      // Normalize media to handle both string[] and MediaItem[] formats
       let normalizedMedia = [];
       if (Array.isArray(it.media)) {
         normalizedMedia = it.media.map((m: any) => {
           if (typeof m === "string") {
             return { url: m, existing: true };
           }
-          return m; // Already in MediaItem format
+          return m;
         });
       }
 
@@ -37,7 +36,6 @@ function normalizeItems(req: LegacyRequest) {
     });
   }
 
-  // Legacy: single-item fields
   if (
     req.item ||
     req.category ||
@@ -67,7 +65,6 @@ function normalizeItems(req: LegacyRequest) {
     ];
   }
 
-  // No items
   return [];
 }
 
@@ -80,7 +77,7 @@ function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
   return undefined;
 }
 
-function normalizeRequest(req: LegacyRequest) {
+function normalizeRequest(req: any) {
   const from = req.from ?? req.source;
   const to = req.to ?? req.destination;
   const source = req.source ?? req.from;
@@ -93,20 +90,19 @@ function normalizeRequest(req: LegacyRequest) {
   const requestStatus = req.requestStatus ?? req.orderStatus;
 
   return {
-    id: req.id,
+    id: req._id || req.id,
     userId: req.userId,
-    // Include both old and new field names for compatibility
     from,
     to,
     source,
     destination,
     deliveryType,
     startTime,
-    whenToStart: startTime, // Legacy support
+    whenToStart: startTime,
     primaryCost,
     cost,
     requestStatus,
-    orderStatus: requestStatus, // Legacy support
+    orderStatus: requestStatus,
     deliveryStatus: req.deliveryStatus,
     comment: req.comment,
     items,
@@ -118,56 +114,94 @@ function normalizeRequest(req: LegacyRequest) {
   };
 }
 
+/**
+ * @swagger
+ * /api/requests:
+ *   get:
+ *     summary: Get all requests
+ *     description: Fetch shipping requests, optionally filtered by userId
+ *     tags:
+ *       - Requests
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         description: Filter requests by user ID
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved requests
+ *       500:
+ *         description: Failed to fetch requests
+ */
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
 
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
+    const query = userId ? { userId } : {};
+    const requests = await Request.find(query);
 
-    const filteredRequests = userId
-      ? requestsData.requests.filter((req: any) => req.userId === userId)
-      : requestsData.requests;
+    const normalized = requests.map((req: any) => normalizeRequest(req));
 
-    // Always return the FINAL structure (normalized), even for legacy records.
-    const normalized = filteredRequests.map((req: any) =>
-      normalizeRequest(req),
+    const withUserData = await Promise.all(
+      normalized.map(async (req: any) => {
+        const user = await User.findById(req.userId);
+        return {
+          ...req,
+          user: user ? { email: user.email, name: user.name } : null,
+        };
+      }),
     );
-
-    // Get user data for each request
-    const usersPath = path.join(process.cwd(), "data", "users.json");
-    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
-
-    // Get locations for each user
-    const locationsPath = path.join(process.cwd(), "data", "locations.json");
-    const locationsData = JSON.parse(fs.readFileSync(locationsPath, "utf-8"));
-
-    const withUserData = normalized.map((req: any) => {
-      const user = usersData.users.find((u: any) => u.id === req.userId);
-      const userLocations = locationsData.locations.filter(
-        (loc: any) => loc.userId === req.userId,
-      );
-      return {
-        ...req,
-        user: user || null,
-        locations: userLocations,
-      };
-    });
 
     return NextResponse.json({ requests: withUserData }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch requests" },
-      { status: 500 },
-    );
+    return handleError(error, "Failed to fetch requests");
   }
 }
 
+/**
+ * @swagger
+ * /api/requests:
+ *   post:
+ *     summary: Create a new request
+ *     description: Submit a new shipping request
+ *     tags:
+ *       - Requests
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               source:
+ *                 type: object
+ *               destination:
+ *                 type: object
+ *               items:
+ *                 type: array
+ *               deliveryType:
+ *                 type: string
+ *               startTime:
+ *                 type: string
+ *               cost:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Request created successfully
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Server error
+ */
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
-    // Support both old and new field names
     const {
       userId,
       from,
@@ -187,10 +221,6 @@ export async function POST(request: NextRequest) {
       comment,
     } = body;
 
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
-
-    // Use new field names, fallback to old ones
     const sourceAddr = source ?? from;
     const destAddr = destination ?? to;
     const finalStartTime = startTime ?? whenToStart;
@@ -198,60 +228,33 @@ export async function POST(request: NextRequest) {
     const finalCost = cost ?? finalPrimaryCost;
     const finalStatus = requestStatus ?? orderStatus;
 
-    // Validate required request-level fields
     const normalizedDeliveryType = normalizeDeliveryType(deliveryType);
     if (!normalizedDeliveryType) {
-      return NextResponse.json(
-        { error: "deliveryType is required (normal | fast)" },
-        { status: 400 },
-      );
+      return handleValidationError("deliveryType is required (normal | fast)");
     }
     if (!finalStartTime) {
-      return NextResponse.json(
-        { error: "startTime is required" },
-        { status: 400 },
-      );
+      return handleValidationError("startTime is required");
     }
-    // Validate items array
     if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { error: "At least one item is required" },
-        { status: 400 },
-      );
+      return handleValidationError("At least one item is required");
     }
 
-    // Validate media length <= 4 per item
     for (const it of items) {
       const mediaArr = Array.isArray(it?.media) ? it.media : [];
       if (mediaArr.length > 4) {
-        return NextResponse.json(
-          { error: "media.length must be <= 4 per item" },
-          { status: 400 },
-        );
+        return handleValidationError("media.length must be <= 4 per item");
       }
     }
 
-    const newRequest = {
-      id: `REQ-${Date.now()}`,
+    const newRequest = await Request.create({
       userId,
       source: sourceAddr,
       destination: destAddr,
       items: items.map((item: any) => ({
-        id:
-          item.id ||
-          `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        item: item.item || item.name,
-        name: item.name || item.item,
         category: item.category,
-        dimensions: item.dimensions,
         weight: item.weight,
+        dimensions: item.dimensions,
         quantity: item.quantity,
-        note: item.note || undefined,
-        media: Array.isArray(item.media) ? item.media.slice(0, 4) : [],
-        services: item.services || {
-          assemblyDisassembly: false,
-          packaging: false,
-        },
       })),
       deliveryType: normalizedDeliveryType,
       startTime: finalStartTime,
@@ -260,22 +263,13 @@ export async function POST(request: NextRequest) {
       requestStatus: finalStatus || "Pending",
       deliveryStatus: deliveryStatus || "Pending",
       comment: comment || "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    requestsData.requests.push(newRequest);
-    fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
+    });
 
     return NextResponse.json(
-      { success: true, request: newRequest },
+      { success: true, request: normalizeRequest(newRequest) },
       { status: 201 },
     );
   } catch (error) {
-    console.error("Failed to create request:", error);
-    return NextResponse.json(
-      { error: "Failed to create request" },
-      { status: 500 },
-    );
+    return handleError(error, "Failed to create request");
   }
 }

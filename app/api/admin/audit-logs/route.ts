@@ -1,39 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { AuditLog } from "@/lib/models";
 
-interface VehicleRule {
-  id: string;
-  vehicleId: string;
-  vehicleName: string;
-  maxWeight: number;
-  maxDimensions: string;
-  allowedCategories: string[];
-  minDeliveryDays: number;
-  maxDeliveryDays: number;
-  createdAt: string;
-}
+/**
+ * @swagger
+ * /api/admin/audit-logs:
+ *   get:
+ *     summary: Get all audit logs
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: action
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           default: 100
+ *     responses:
+ *       200:
+ *         description: List of audit logs
+ *       500:
+ *         description: Failed to fetch audit logs
+ */
 
-const rulesFilePath = path.join(process.cwd(), "data", "vehicle-rules.json");
-
-const ensureRulesFile = () => {
-  if (!fs.existsSync(rulesFilePath)) {
-    fs.writeFileSync(rulesFilePath, JSON.stringify({ rules: [] }, null, 2));
-  }
-};
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    ensureRulesFile();
-    const data = JSON.parse(fs.readFileSync(rulesFilePath, "utf-8"));
-    return NextResponse.json({ rules: data.rules || [] }, { status: 200 });
+    await connectDB();
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get("userId");
+    const action = searchParams.get("action");
+    const limit = parseInt(searchParams.get("limit") || "100");
+
+    const filter: any = {};
+    if (userId) filter.userId = userId;
+    if (action) filter.action = action;
+
+    const logs = await AuditLog.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    return NextResponse.json({ logs }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch rules" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
-}
+}}
 
 export async function POST(request: NextRequest) {
   try {

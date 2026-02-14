@@ -9,7 +9,7 @@ export type UserRole =
   | "company";
 
 export interface User {
-  id: string;
+  _id?: string;
   fullName: string;
   username: string;
   name: string;

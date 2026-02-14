@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Request } from "@/lib/models";
 
 type LegacyRequest = any;
 
@@ -95,13 +95,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await connectDB();
     const { id } = await params;
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
 
-    const foundRequest = requestsData.requests.find(
-      (req: any) => req.id === id,
-    );
+    const foundRequest = await Request.findById(id)
+      .populate("userId", "email fullName")
+      .lean();
 
     if (!foundRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
@@ -113,9 +112,6 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch request" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }

@@ -12,7 +12,7 @@ import {
   ChevronRight,
   X as XIcon,
 } from "lucide-react";
-import { User as ClientInfo, Request } from "@/types";
+import { Request } from "@/types";
 import { useAuth } from "../context/AuthContext";
 import Image from "next/image";
 
@@ -131,14 +131,14 @@ export function AdminRequestsTab() {
         body: JSON.stringify({
           requestId,
           requestStatus: "Accepted",
-          changedBy: user?.id,
+          changedBy: user?._id,
           role: user?.role,
           note: `Request accepted by ${user?.role}`,
         }),
       });
 
       if (response.ok) {
-        setRequests(requests.filter((r) => r.id !== requestId));
+        setRequests(requests.filter((r) => r._id !== requestId));
       }
     } catch (error) {
       console.error("Failed to accept request:", error);
@@ -156,14 +156,14 @@ export function AdminRequestsTab() {
         body: JSON.stringify({
           requestId,
           requestStatus: "Rejected",
-          changedBy: user?.id,
+          changedBy: user?._id,
           role: user?.role,
           note: `Request rejected by ${user?.role}`,
         }),
       });
 
       if (response.ok) {
-        setRequests(requests.filter((r) => r.id !== requestId));
+        setRequests(requests.filter((r) => r._id !== requestId));
       }
     } catch (error) {
       console.error("Failed to reject request:", error);
@@ -234,7 +234,7 @@ export function AdminRequestsTab() {
 
           return (
             <Card
-              key={request.id}
+              key={request._id}
               className="p-6 border border-border hover:border-primary/50 transition-colors"
             >
               {/* Client Info Header */}
@@ -263,7 +263,7 @@ export function AdminRequestsTab() {
                     {request.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Request ID: {request.id}
+                    Request ID: {request._id}
                   </p>
                 </div>
               </div>
@@ -319,7 +319,7 @@ export function AdminRequestsTab() {
                   onClick={() => setSelectedRequest(request)}
                   variant="outline"
                   className="flex-1 gap-2 bg-transparent"
-                  disabled={processingId === request.id}
+                  disabled={processingId === request._id}
                 >
                   <Eye className="w-4 h-4" />
                   Details
@@ -327,17 +327,17 @@ export function AdminRequestsTab() {
                 {isPending ? (
                   <>
                     <Button
-                      onClick={() => handleAccept(request.id)}
-                      disabled={processingId === request.id}
+                      onClick={() => handleAccept(request._id)}
+                      disabled={processingId === request._id}
                       className="flex-1 gap-2"
                     >
                       <Check className="w-4 h-4" />
                       Accept
                     </Button>
                     <Button
-                      onClick={() => handleReject(request.id)}
+                      onClick={() => handleReject(request._id)}
                       variant="destructive"
-                      disabled={processingId === request.id}
+                      disabled={processingId === request._id}
                       className="flex-1 gap-2"
                     >
                       <X className="w-4 h-4" />
@@ -609,7 +609,10 @@ export function AdminRequestsTab() {
             setSelectedImageUrl(null);
           }}
         >
-          <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={selectedImageUrl}
               alt="Zoomed image"

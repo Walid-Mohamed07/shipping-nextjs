@@ -1,15 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Company, User } from "@/lib/models";
 
-/**
- * Company Profile API
- * 
- * Get company profile information associated with a user ID
+/**\n * @swagger
+ * /api/company/profile:
+ *   get:
+ *     summary: Get company profile by userId
+ *     tags: [Company]
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Company profile details
+ *       404:
+ *         description: Company not found
+ *       500:
+ *         description: Failed to fetch profile
+ *   put:
+ *     summary: Update company profile
+ *     tags: [Company]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       500:
+ *         description: Failed to update profile
  */
 
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
 
@@ -20,34 +49,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const companiesPath = path.join(process.cwd(), "data", "companies.json");
-    const companiesData = JSON.parse(fs.readFileSync(companiesPath, "utf-8"));
-
     // Try to find company by userId association
-    let company = companiesData.companies.find(
-      (c: any) => c.userId === userId
-    );
+    let company = await Company.findOne({ userId }).populate("warehouses");
 
-    // If not found by userId, try to match by email from users
+    // If not found by userId, try to match by email
     if (!company) {
-      const usersPath = path.join(process.cwd(), "data", "users.json");
-      const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
-      const user = usersData.users.find((u: any) => u.id === userId);
-      
+      const user = await User.findById(userId);
       if (user) {
-        company = companiesData.companies.find(
-          (c: any) => c.email === user.email
-        );
+        company = await Company.findOne({ email: user.email }).populate("warehouses");
       }
     }
 
     if (!company) {
-      // Return a default company profile based on user info
-      const usersPath = path.join(process.cwd(), "data", "users.json");
-      const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
-      const user = usersData.users.find((u: any) => u.id === userId);
-
-      if (user) {
+      return NextResponse.json(
+        { error: "Company not found" },
+        { status: 404 }
+      );
+    }
         return NextResponse.json({
           id: userId,
           name: user.fullName || user.name || "Company",

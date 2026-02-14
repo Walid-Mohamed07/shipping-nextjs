@@ -1,124 +1,126 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Request } from "@/lib/models";
 
 /**
- * Company Requests API
- * 
- * Visibility Rules:
- * - Companies can only see requests that are:
- *   - Created by clients
- *   - Approved/accepted by admin OR operator
- * - Companies must NOT see:
- *   - Pending requests
- *   - Rejected requests
- *   - Requests already accepted by another company (assigned)
- *   - Requests they have rejected
+ * @swagger
+ * /api/company/requests:
+ *   get:
+ *     summary: Get requests visible to company with filtering rules
+ *     tags: [Company]
+ *     parameters:
+ *       - in: query
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of visible requests for company
+ *       400:
+ *         description: Missing companyId
+ *       500:
+ *         description: Failed to fetch requests
+ *   post:
+ *     summary: Company actions on requests (submit offer, reject)
+ *     tags: [Company]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [action, requestId, companyId]
+ *             properties:
+ *               action:
+ *                 type: string
+ *               requestId:
+ *                 type: string
+ *               companyId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Action completed successfully
+ *       500:
+ *         description: Failed to process action
  */
 
-// GET - Fetch requests visible to this company
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
     const searchParams = request.nextUrl.searchParams;
     const companyId = searchParams.get("companyId");
 
     if (!companyId) {
       return NextResponse.json(
         { error: "companyId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
-
     // Filter requests based on visibility rules
-    const visibleRequests = requestsData.requests.filter((req: any) => {
-      // Rule 1: Only show "Accepted" or "Action needed" status requests
-      // (These are approved by admin/operator)
-      const validStatuses = ["Accepted", "Action needed"];
-      if (!validStatuses.includes(req.requestStatus)) {
-        return false;
-      }
-
-      // Rule 2: Don't show requests already assigned to another company
-      if (req.assignedCompanyId && req.assignedCompanyId !== companyId) {
-        return false;
-      }
-
-      // Rule 3: Don't show if this company already rejected it
-      if (req.rejectedByCompanies && req.rejectedByCompanies.includes(companyId)) {
-        return false;
-      }
-
-      // Rule 4: Don't show if the request status is "Assigned to Company" 
-      // and it's assigned to a different company
-      if (req.requestStatus === "Assigned to Company" && req.assignedCompanyId !== companyId) {
-        return false;
-      }
-
-      // Rule 5: Show requests that are either:
-      // - Not assigned yet (open for offers)
-      // - Or the company has already submitted an offer that's still pending
-      const hasMyPendingOffer = req.costOffers?.some(
-        (offer: any) => 
-          offer.company?.id === companyId && 
-          offer.status !== "rejected"
-      );
-
-      // If already assigned to another company (even with my offer), don't show
-      if (req.assignedCompanyId && req.assignedCompanyId !== companyId) {
-        return false;
-      }
-
-      return true;
-    });
+    const visibleRequests = await Request.find({
+      $and: [
+        {
+          requestStatus: { $in: ["Accepted", "Action needed"] },
+        },
+        {
+          $or: [
+            { assignedCompanyId: { $exists: false } },
+            { assignedCompanyId: null },
+            { assignedCompanyId: companyId },
+          ],
+        },
+        {
+          $or: [
+            { rejectedByCompanies: { $nin: [companyId] } },
+            { rejectedByCompanies: { $exists: false } },
+          ],
+        },
+      ],
+    })
+      .populate("userId", "email fullName")
+      .lean();
 
     return NextResponse.json({ requests: visibleRequests }, { status: 200 });
   } catch (error) {
-    console.error("Error fetching company requests:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch requests" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 
-// POST - Handle company actions (add-offer, reject-request)
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
-    const { action, requestId, companyId, company, offer } = body;
+    const { action, requestId, companyId, offer } = body;
 
     if (!action || !requestId || !companyId) {
       return NextResponse.json(
         { error: "action, requestId, and companyId are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
     const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
 
     const requestIndex = requestsData.requests.findIndex(
-      (r: any) => r.id === requestId
+      (r: any) => r.id === requestId,
     );
 
     if (requestIndex === -1) {
-      return NextResponse.json(
-        { error: "Request not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
     const currentRequest = requestsData.requests[requestIndex];
     const now = new Date().toISOString();
 
     // Verify request is still available for this company
-    if (currentRequest.assignedCompanyId && currentRequest.assignedCompanyId !== companyId) {
+    if (
+      currentRequest.assignedCompanyId &&
+      currentRequest.assignedCompanyId !== companyId
+    ) {
       return NextResponse.json(
         { error: "This request has already been assigned to another company" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -127,13 +129,13 @@ export async function POST(request: NextRequest) {
       if (!offer || typeof offer.cost !== "number" || offer.cost <= 0) {
         return NextResponse.json(
           { error: "Valid cost amount is required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       // Check if company already has an offer on this request
       const existingOfferIndex = currentRequest.costOffers?.findIndex(
-        (o: any) => o.company?.id === companyId
+        (o: any) => o.company?.id === companyId,
       );
 
       const newOffer = {
@@ -186,7 +188,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { success: true, message: "Offer submitted successfully" },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -215,19 +217,16 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { success: true, message: "Request rejected" },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
-    return NextResponse.json(
-      { error: "Invalid action" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
     console.error("Error handling company action:", error);
     return NextResponse.json(
       { error: "Failed to process action" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

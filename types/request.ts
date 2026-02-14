@@ -31,7 +31,6 @@ export interface MediaItem {
 }
 
 export interface Item {
-  id?: string;
   item?: string;
   name?: string;
   category: string;
@@ -89,10 +88,10 @@ export interface ActivityHistory {
 }
 
 export interface Request {
-  id: string;
+  _id: string;
   userId: string;
   user?: {
-    id: string;
+    _id: string;
     fullName: string;
     username: string;
     email: string;

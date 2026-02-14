@@ -1,28 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Company } from "@/lib/models";
+
+/**
+ * @swagger
+ * /api/admin/companies:
+ *   get:
+ *     summary: Get all companies
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: List of all companies
+ *       500:
+ *         description: Failed to fetch companies
+ *   post:
+ *     summary: Create a new company
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, phoneNumber]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               rating:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Company created successfully
+ *       400:
+ *         description: Missing required fields
+ *       500:
+ *         description: Failed to create company
+ */
 
 export async function GET(request: NextRequest) {
   try {
-    const companiesPath = path.join(process.cwd(), "data", "companies.json");
-    const companiesData = JSON.parse(fs.readFileSync(companiesPath, "utf-8"));
+    await connectDB();
+    const companies = await Company.find({}).populate("warehouses").lean();
 
-    return NextResponse.json(companiesData.companies, { status: 200 });
+    return NextResponse.json(companies, { status: 200 });
   } catch (error) {
-    console.error("Error fetching companies:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch companies" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
-    const { name, phoneNumber, email, address, rate } = body;
+    const { name, phoneNumber, email, rating, userId } = body;
 
-    if (!name || !phoneNumber || !email || !address || !rate) {
+    if (!name || !phoneNumber || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
