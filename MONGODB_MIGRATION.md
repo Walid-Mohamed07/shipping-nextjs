@@ -10,11 +10,6 @@ This guide explains how to migrate all API routes from JSON file storage to Mong
 
 Your `.env` file already contains the MongoDB credentials:
 
-```
-MONGODB_URI="mongodb+srv://Walid:Wal123@cluster0.f3h3jin.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-DB_NAME="shiphub"
-```
-
 ### 2. Seed Initial Data
 
 To migrate your existing JSON data to MongoDB:
