@@ -180,10 +180,6 @@ Visit: `http://localhost:3000/swagger`
 
 **Solution**: Verify `.env` file has correct credentials:
 
-```
-MONGODB_URI="mongodb+srv://Walid:Wal123@cluster0.f3h3jin.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-```
-
 ### Issue: "Seed command fails"
 
 **Solution**: Clear collections and retry:
