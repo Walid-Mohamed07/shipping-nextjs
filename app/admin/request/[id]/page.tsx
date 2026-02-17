@@ -34,7 +34,6 @@ interface StatusHistory {
 
 interface RequestDetail {
   id: string;
-  userId: string;
   user: {
     id: string;
     fullName: string;

@@ -42,7 +42,14 @@ interface ReviewModalProps {
 
 const formatAddress = (addr: Address | null) => {
   if (!addr) return "Not selected";
-  const parts = [addr.street, addr.city, addr.governorate, addr.country].filter(Boolean);
+  const parts = [
+    addr.street,
+    addr.building,
+    addr.district,
+    addr.city,
+    addr.governorate,
+    addr.country,
+  ].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : "Not selected";
 };
 
@@ -65,8 +72,12 @@ export default function ReviewModal({
               <CheckCircle2 className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">Review Your Order</h2>
-              <p className="text-sm text-muted-foreground">Please confirm all details before submitting</p>
+              <h2 className="text-xl font-bold text-foreground">
+                Review Your Order
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Please confirm all details before submitting
+              </p>
             </div>
           </div>
           <button
@@ -89,7 +100,7 @@ export default function ReviewModal({
             <div className="space-y-2">
               {data.items.map((item, idx) => (
                 <div
-                  key={item.id || idx}
+                  key={item._id || idx}
                   className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3"
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
@@ -97,36 +108,51 @@ export default function ReviewModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground truncate">{item.name}</span>
-                      <Badge variant="secondary" className="text-[11px]">{item.category}</Badge>
+                      <span className="font-medium text-foreground truncate">
+                        {item.name}
+                      </span>
+                      <Badge variant="secondary" className="text-[11px]">
+                        {item.category}
+                      </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {item.dimensions} · {item.weight} kg · ×{item.quantity}
                     </p>
                     {item.note && (
-                      <p className="text-xs text-muted-foreground italic mt-0.5">Note: {item.note}</p>
+                      <p className="text-xs text-muted-foreground italic mt-0.5">
+                        Note: {item.note}
+                      </p>
                     )}
-                    {item.services && (item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly || item.services.packaging) && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {(item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly) && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                            <Wrench className="w-2.5 h-2.5" />
-                            Assembly
-                            {item.services.assemblyDisassemblyHandler && (
-                              <span className="ml-0.5">
-                                ({item.services.assemblyDisassemblyHandler === "self" ? "Self" : "Company"})
-                              </span>
-                            )}
-                          </span>
-                        )}
-                        {item.services.packaging && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                            <BoxSelect className="w-2.5 h-2.5" />
-                            Packaging
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    {item.services &&
+                      (item.services.canBeAssembledDisassembled ||
+                        item.services.assemblyDisassembly ||
+                        item.services.packaging) && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {(item.services.canBeAssembledDisassembled ||
+                            item.services.assemblyDisassembly) && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              <Wrench className="w-2.5 h-2.5" />
+                              Assembly
+                              {item.services.assemblyDisassemblyHandler && (
+                                <span className="ml-0.5">
+                                  (
+                                  {item.services.assemblyDisassemblyHandler ===
+                                  "self"
+                                    ? "Self"
+                                    : "Company"}
+                                  )
+                                </span>
+                              )}
+                            </span>
+                          )}
+                          {item.services.packaging && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                              <BoxSelect className="w-2.5 h-2.5" />
+                              Packaging
+                            </span>
+                          )}
+                        </div>
+                      )}
                   </div>
                 </div>
               ))}
@@ -141,14 +167,46 @@ export default function ReviewModal({
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Pickup (Source)</p>
-                <p className="text-sm font-medium text-foreground">{formatAddress(data.sourceAddress)}</p>
-                <p className="text-xs text-muted-foreground mt-1">Mode: {data.sourcePickupMode}</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Pickup (Source)
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  {formatAddress(data.sourceAddress)}
+                </p>
+                {data.sourceAddress?.fullName && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {data.sourceAddress.fullName}
+                  </p>
+                )}
+                {data.sourceAddress?.mobile && (
+                  <p className="text-xs text-muted-foreground">
+                    {data.sourceAddress.mobile}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mode: {data.sourcePickupMode}
+                </p>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Delivery (Destination)</p>
-                <p className="text-sm font-medium text-foreground">{formatAddress(data.destinationAddress)}</p>
-                <p className="text-xs text-muted-foreground mt-1">Mode: {data.destPickupMode}</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Delivery (Destination)
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  {formatAddress(data.destinationAddress)}
+                </p>
+                {data.destinationAddress?.fullName && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {data.destinationAddress.fullName}
+                  </p>
+                )}
+                {data.destinationAddress?.mobile && (
+                  <p className="text-xs text-muted-foreground">
+                    {data.destinationAddress.mobile}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mode: {data.destPickupMode}
+                </p>
               </div>
             </div>
           </section>
@@ -161,20 +219,28 @@ export default function ReviewModal({
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Delivery Type</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Delivery Type
+                </p>
                 <p className="text-sm font-medium text-foreground">
                   {data.deliveryType === "Urgent" ? "🔥 Urgent" : "Normal"}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Primary Cost</p>
-                <p className="text-sm font-bold text-primary">
-                  {data.primaryCost ? `$${data.primaryCost}` : "—"}
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Cost
+                </p>
+                <p className="text-sm font-bold text-primary flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />
+                  {data.primaryCost ? data.primaryCost : "—"}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Start Date</p>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Start Date
+                </p>
+                <p className="text-sm font-medium text-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
                   {data.whenToStart
                     ? new Date(data.whenToStart).toLocaleDateString("en-US", {
                         month: "short",
@@ -185,7 +251,9 @@ export default function ReviewModal({
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Contact</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Contact
+                </p>
                 <p className="text-sm font-medium text-foreground flex items-center gap-1">
                   <Phone className="w-3 h-3" />
                   {data.mobile || "—"}
@@ -202,7 +270,9 @@ export default function ReviewModal({
                 Additional Notes
               </h3>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-sm text-foreground whitespace-pre-wrap">{data.comments}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">
+                  {data.comments}
+                </p>
               </div>
             </section>
           )}

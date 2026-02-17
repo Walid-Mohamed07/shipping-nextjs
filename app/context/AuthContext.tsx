@@ -66,12 +66,12 @@ interface AuthContextType {
   signup: (
     email: string,
     password: string,
-    name: string,
-    address: string,
-    country: string,
-    countryCode: string,
-    postalCode: string,
+    fullName: string,
+    username: string,
     mobile: string,
+    profilePicture: string,
+    birthDate: string,
+    address: any,
   ) => Promise<void>;
   logout: () => void;
 }
@@ -124,12 +124,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (
     email: string,
     password: string,
-    name: string,
-    address: string,
-    country: string,
-    countryCode: string,
-    postalCode: string,
+    fullName: string,
+    username: string,
     mobile: string,
+    profilePicture: string,
+    birthDate: string,
+    address: any,
   ) => {
     const response = await fetch("/api/auth/signup", {
       method: "POST",
@@ -137,12 +137,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({
         email,
         password,
-        name,
-        address,
-        country,
-        countryCode,
-        postalCode,
+        fullName,
+        username,
         mobile,
+        profilePicture,
+        birthDate,
+        address,
       }),
     });
 

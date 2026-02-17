@@ -12,9 +12,10 @@ import {
   ChevronRight,
   X as XIcon,
 } from "lucide-react";
-import { User as ClientInfo, Request } from "@/types";
+import { RequestResponse } from "@/types/request";
 import { useAuth } from "../context/AuthContext";
 import Image from "next/image";
+import { useToast, getErrorMessage } from "@/lib/useToast";
 
 const STATUS_COLORS: Record<
   string,
@@ -54,12 +55,13 @@ const STATUS_COLORS: Record<
 
 export function AdminRequestsTab() {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<Request[]>([]);
+  const toast = useToast();
+  const [requests, setRequests] = useState<RequestResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<RequestResponse | null>(null);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const itemsPerPage = 10;
@@ -76,6 +78,7 @@ export function AdminRequestsTab() {
         }
       } catch (error) {
         console.error("Failed to fetch requests:", error);
+        toast.error(getErrorMessage(error));
         setRequests([]);
       } finally {
         setLoading(false);
@@ -131,17 +134,21 @@ export function AdminRequestsTab() {
         body: JSON.stringify({
           requestId,
           requestStatus: "Accepted",
-          changedBy: user?.id,
+          changedBy: user?.id || user?._id,
           role: user?.role,
           note: `Request accepted by ${user?.role}`,
         }),
       });
 
       if (response.ok) {
-        setRequests(requests.filter((r) => r.id !== requestId));
+        setRequests(requests.filter((r) => r._id !== requestId));
+        toast.update("Request accepted successfully");
+      } else {
+        toast.error("Failed to accept request");
       }
     } catch (error) {
       console.error("Failed to accept request:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setProcessingId(null);
     }
@@ -156,17 +163,21 @@ export function AdminRequestsTab() {
         body: JSON.stringify({
           requestId,
           requestStatus: "Rejected",
-          changedBy: user?.id,
+          changedBy: user?.id || user?._id,
           role: user?.role,
           note: `Request rejected by ${user?.role}`,
         }),
       });
 
       if (response.ok) {
-        setRequests(requests.filter((r) => r.id !== requestId));
+        setRequests(requests.filter((r) => r._id !== requestId));
+        toast.delete("Request rejected successfully");
+      } else {
+        toast.error("Failed to reject request");
       }
     } catch (error) {
       console.error("Failed to reject request:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setProcessingId(null);
     }
@@ -234,7 +245,7 @@ export function AdminRequestsTab() {
 
           return (
             <Card
-              key={request.id}
+              key={request._id}
               className="p-6 border border-border hover:border-primary/50 transition-colors"
             >
               {/* Client Info Header */}
@@ -263,7 +274,7 @@ export function AdminRequestsTab() {
                     {request.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Request ID: {request.id}
+                    Request ID: {request._id}
                   </p>
                 </div>
               </div>
@@ -319,7 +330,7 @@ export function AdminRequestsTab() {
                   onClick={() => setSelectedRequest(request)}
                   variant="outline"
                   className="flex-1 gap-2 bg-transparent"
-                  disabled={processingId === request.id}
+                  disabled={processingId === request._id}
                 >
                   <Eye className="w-4 h-4" />
                   Details
@@ -327,17 +338,17 @@ export function AdminRequestsTab() {
                 {isPending ? (
                   <>
                     <Button
-                      onClick={() => handleAccept(request.id)}
-                      disabled={processingId === request.id}
+                      onClick={() => handleAccept(request._id)}
+                      disabled={processingId === request._id}
                       className="flex-1 gap-2"
                     >
                       <Check className="w-4 h-4" />
                       Accept
                     </Button>
                     <Button
-                      onClick={() => handleReject(request.id)}
+                      onClick={() => handleReject(request._id)}
                       variant="destructive"
-                      disabled={processingId === request.id}
+                      disabled={processingId === request._id}
                       className="flex-1 gap-2"
                     >
                       <X className="w-4 h-4" />
@@ -443,13 +454,48 @@ export function AdminRequestsTab() {
               </div>
             </div>
 
-            {/* Request Status */}
-            <div className="mb-6">
-              <p className="text-xs text-muted-foreground mb-2">Status</p>
-              <div
-                className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.requestStatus).bg} ${getStatusColors(selectedRequest.requestStatus).text} ${getStatusColors(selectedRequest.requestStatus).border}`}
-              >
-                {selectedRequest.requestStatus}
+            {/* Request Status & Delivery Status */}
+            <div className="mb-6 pb-6 border-b border-border">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Request Status</p>
+                  <div
+                    className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.requestStatus).bg} ${getStatusColors(selectedRequest.requestStatus).text} ${getStatusColors(selectedRequest.requestStatus).border}`}
+                  >
+                    {selectedRequest.requestStatus}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Delivery Status</p>
+                  <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.deliveryStatus).bg} ${getStatusColors(selectedRequest.deliveryStatus).text} ${getStatusColors(selectedRequest.deliveryStatus).border}`}>
+                    {selectedRequest.deliveryStatus}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Delivery Details */}
+            <div className="mb-6 pb-6 border-b border-border">
+              <h3 className="font-semibold text-foreground mb-4">Delivery Details</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Type</p>
+                  <p className="text-foreground font-medium">{selectedRequest.deliveryType}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Start Time</p>
+                  <p className="text-foreground font-medium">
+                    {selectedRequest.startTime ? new Date(selectedRequest.startTime).toLocaleString() : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Primary Cost</p>
+                  <p className="text-foreground font-medium">${selectedRequest.primaryCost || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Actual Cost</p>
+                  <p className="text-foreground font-medium">${selectedRequest.cost || "Pending"}</p>
+                </div>
               </div>
             </div>
 
@@ -585,12 +631,195 @@ export function AdminRequestsTab() {
                         {offer.cost && (
                           <p className="text-foreground">Cost: ${offer.cost}</p>
                         )}
+                        {offer.comment && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">
+                            {offer.comment}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Status: <span className="font-medium">{offer.status}</span>
+                        </p>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : null
             ) : null}
+
+            {/* Activity History */}
+            {selectedRequest.activityHistory &&
+              selectedRequest.activityHistory.length > 0 && (
+                <div className="mb-6 pb-6 border-b border-border">
+                  <h3 className="font-semibold text-foreground mb-3">
+                    Activity History
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedRequest.activityHistory.map((activity, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 bg-muted/50 rounded-lg border border-border text-sm"
+                      >
+                        <p className="font-medium text-foreground">
+                          {activity.action}
+                        </p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          {activity.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          📅 {new Date(activity.timestamp).toLocaleString()}
+                        </p>
+                        {activity.companyName && (
+                          <p className="text-xs text-muted-foreground">
+                            Company: {activity.companyName}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Selected Company */}
+            {selectedRequest.selectedCompany && (
+              <div className="mb-6 pb-6 border-b border-border">
+                <h3 className="font-semibold text-foreground mb-3">
+                  Selected Company
+                </h3>
+                <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                  <p className="font-medium text-foreground">
+                    {selectedRequest.selectedCompany.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Rate: {selectedRequest.selectedCompany.rate}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Cost: ${selectedRequest.selectedCompany.cost}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Warehouse Assignments */}
+            {(selectedRequest.sourceWarehouse ||
+              selectedRequest.destinationWarehouse) && (
+              <div className="mb-6 pb-6 border-b border-border">
+                <h3 className="font-semibold text-foreground mb-3">
+                  Warehouse Assignments
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedRequest.sourceWarehouse && (
+                    <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm">
+                      <p className="font-medium text-foreground mb-1">
+                        Source Warehouse
+                      </p>
+                      <p className="text-muted-foreground">
+                        {selectedRequest.sourceWarehouse.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedRequest.sourceWarehouse.city},{" "}
+                        {selectedRequest.sourceWarehouse.country}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedRequest.sourceWarehouse.address}
+                      </p>
+                      {selectedRequest.sourceWarehouse.assignedAt && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Assigned:{" "}
+                          {new Date(
+                            selectedRequest.sourceWarehouse.assignedAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {selectedRequest.destinationWarehouse && (
+                    <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm">
+                      <p className="font-medium text-foreground mb-1">
+                        Destination Warehouse
+                      </p>
+                      <p className="text-muted-foreground">
+                        {selectedRequest.destinationWarehouse.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedRequest.destinationWarehouse.city},{" "}
+                        {selectedRequest.destinationWarehouse.country}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedRequest.destinationWarehouse.address}
+                      </p>
+                      {selectedRequest.destinationWarehouse.assignedAt && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Assigned:{" "}
+                          {new Date(
+                            selectedRequest.destinationWarehouse.assignedAt
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Pickup Modes */}
+            {(selectedRequest.sourcePickupMode ||
+              selectedRequest.destinationPickupMode) && (
+              <div className="mb-6 pb-6 border-b border-border">
+                <h3 className="font-semibold text-foreground mb-3">
+                  Pickup Modes
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {selectedRequest.sourcePickupMode && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        From
+                      </p>
+                      <p className="font-medium text-foreground">
+                        {selectedRequest.sourcePickupMode}
+                      </p>
+                    </div>
+                  )}
+                  {selectedRequest.destinationPickupMode && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">To</p>
+                      <p className="font-medium text-foreground">
+                        {selectedRequest.destinationPickupMode}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Comment */}
+            {selectedRequest.comment && (
+              <div className="mb-6 pb-6 border-b border-border">
+                <h3 className="font-semibold text-foreground mb-2">Comment</h3>
+                <p className="text-sm text-muted-foreground italic bg-muted/50 p-3 rounded-lg border border-border">
+                  {selectedRequest.comment}
+                </p>
+              </div>
+            )}
+
+            {/* Rejected By Companies */}
+            {selectedRequest.rejectedByCompanies &&
+              selectedRequest.rejectedByCompanies.length > 0 && (
+                <div className="mb-6 pb-6 border-b border-border">
+                  <h3 className="font-semibold text-foreground mb-3">
+                    Rejected By
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRequest.rejectedByCompanies.map((companyId) => (
+                      <span
+                        key={companyId}
+                        className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-sm border border-red-300 dark:border-red-800"
+                      >
+                        {companyId}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             {/* Close Button */}
             <Button onClick={() => setSelectedRequest(null)} className="w-full">
@@ -609,7 +838,10 @@ export function AdminRequestsTab() {
             setSelectedImageUrl(null);
           }}
         >
-          <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={selectedImageUrl}
               alt="Zoomed image"

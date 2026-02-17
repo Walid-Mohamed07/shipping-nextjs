@@ -3,12 +3,35 @@
 import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, User, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { MessageNotification } from "./MessageNotification";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const { user, logout } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showProfileMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showProfileMenu]);
 
   return (
     <header className="w-full bg-white dark:bg-slate-950 border-b border-border">
@@ -92,18 +115,58 @@ export function Header() {
                 </>
               )}
               <MessageNotification />
-              <span className="text-muted-foreground text-sm">
+
+              <span className="text-muted-foreground text-sm hidden sm:inline">
                 {user.name} ({user.role})
               </span>
-              <Button
-                onClick={logout}
-                variant="outline"
-                size="sm"
-                className="gap-2 bg-transparent cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </Button>
+              {/* Profile Picture Dropdown */}
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                  aria-label="Profile menu"
+                >
+                  {user.profilePicture ? (
+                    <img
+                      src={user.profilePicture}
+                      alt={user.name || "Profile"}
+                      className="w-9 h-9 rounded-full object-cover border border-border"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border border-border">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                  )}
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50 py-2">
+                    <button
+                      onClick={() => {
+                        router.push("/profile");
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-muted transition-colors text-foreground"
+                    >
+                      <User className="w-4 h-4" />
+                      Profile
+                    </button>
+                    <div className="border-t border-border my-1" />
+                    <button
+                      onClick={() => {
+                        logout();
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-muted transition-colors text-foreground"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>

@@ -17,44 +17,7 @@ import { AdminDriversTab } from "@/app/components/AdminDriversTab";
 import { OperatorCostOffersTab } from "@/app/components/OperatorCostOffersTab";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  LayoutDashboard,
-  Package,
-  Users,
-  Truck,
-  BarChart3,
-  Lock,
-  Building2,
-} from "lucide-react";
-
-const navItems = [
-  { label: "Requests", href: "/admin/dashboard/requests", icon: Package },
-  // {
-  //   label: "Assignments",
-  //   href: "/admin/dashboard/assignments",
-  //   icon: LayoutDashboard,
-  // },
-  // { label: "Vehicles", href: "/admin/dashboard/vehicles", icon: Truck },
-  // {
-  //   label: "Vehicle Rules",
-  //   href: "/admin/dashboard/vehicle-rules",
-  //   icon: Settings,
-  // },
-  { label: "Users", href: "/admin/dashboard/users", icon: Users },
-  { label: "Drivers", href: "/admin/dashboard/drivers", icon: Truck },
-  { label: "Companies", href: "/admin/dashboard/companies", icon: Building2 },
-  {
-    label: "Cost Offers",
-    href: "/admin/dashboard/cost-offers",
-    icon: BarChart3,
-  },
-  // { label: "Map", href: "/admin/dashboard/map", icon: Map },
-  { label: "Override", href: "/admin/dashboard/override", icon: Lock },
-  { label: "Metrics", href: "/admin/dashboard/metrics", icon: BarChart3 },
-  { label: "Audit", href: "/admin/dashboard/audit", icon: LayoutDashboard },
-];
+import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
 
 const sectionTitles: Record<string, string> = {
   requests: "Requests Management",
@@ -134,35 +97,11 @@ export default function DashboardSection({
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-border min-h-[calc(100vh-64px)] p-6">
-          <Link
-            href="/admin/dashboard"
-            className="flex items-center gap-2 mb-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
-          <nav className="space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = `/admin/dashboard/${section}` === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-accent text-foreground"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        <AdminDashboardNav
+          userRole={user.role}
+          currentSection={section}
+          showBackButton={true}
+        />
 
         {/* Main Content */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">

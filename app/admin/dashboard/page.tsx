@@ -3,44 +3,8 @@
 import { useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { Header } from "@/app/components/Header";
-import Link from "next/link";
+import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
 import { useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  Package,
-  Users,
-  Truck,
-  BarChart3,
-  Lock,
-  Building2,
-} from "lucide-react";
-
-const navItems = [
-  { label: "Requests", href: "/admin/dashboard/requests", icon: Package },
-  // {
-  //   label: "Assignments",
-  //   href: "/admin/dashboard/assignments",
-  //   icon: LayoutDashboard,
-  // },
-  // { label: "Vehicles", href: "/admin/dashboard/vehicles", icon: Truck },
-  // {
-  //   label: "Vehicle Rules",
-  //   href: "/admin/dashboard/vehicle-rules",
-  //   icon: Settings,
-  // },
-  { label: "Users", href: "/admin/dashboard/users", icon: Users },
-  { label: "Drivers", href: "/admin/dashboard/drivers", icon: Truck },
-  { label: "Companies", href: "/admin/dashboard/companies", icon: Building2 },
-  {
-    label: "Cost Offers",
-    href: "/admin/dashboard/cost-offers",
-    icon: BarChart3,
-  },
-  // { label: "Map", href: "/admin/dashboard/map", icon: Map },
-  { label: "Override", href: "/admin/dashboard/override", icon: Lock },
-  { label: "Metrics", href: "/admin/dashboard/metrics", icon: BarChart3 },
-  { label: "Audit", href: "/admin/dashboard/audit", icon: LayoutDashboard },
-];
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
@@ -73,23 +37,7 @@ export default function AdminDashboard() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="sticky top-16 w-64 bg-white border-r border-border h-[calc(100vh-64px)] overflow-y-auto p-6">
-          <nav className="space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors text-foreground hover:text-foreground"
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        <AdminDashboardNav userRole={user.role} isSticky={true} />
 
         {/* Main Content */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">

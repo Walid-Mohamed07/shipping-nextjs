@@ -9,7 +9,8 @@ export type UserRole =
   | "company";
 
 export interface User {
-  id: string;
+  _id?: string;
+  id?: string;
   fullName: string;
   username: string;
   name: string;
@@ -25,6 +26,7 @@ export interface User {
   status: "active" | "inactive" | "suspended";
   role: UserRole;
   locations?: Address[];
+  company?: string | { _id: string; name: string; email: string; phoneNumber: string; address?: string; rate?: string } | null;
   createdAt: string;
   updatedAt?: string;
 }
