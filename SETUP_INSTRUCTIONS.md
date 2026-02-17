@@ -58,13 +58,6 @@
 
 Make sure your `.env` has MongoDB credentials:
 
-```
-MONGODB_URI="mongodb+srv://Walid:Wal123@cluster0.f3h3jin.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-DB_NAME="shiphub"
-JWT_SECRET="codingwithwalid"
-JWT_EXPIRES="120m"
-```
-
 ### Step 2: Seed the Database
 
 Migrate your existing JSON data to MongoDB:
