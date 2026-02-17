@@ -1,17 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 import jwt from "jsonwebtoken";
+import { connectDB } from "@/lib/db";
+import { User } from "@/lib/models";
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticate user with email and password
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
     const { email, password } = body;
 
-    const usersPath = path.join(process.cwd(), "data", "users.json");
-    const usersData = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
-
-    const user = usersData.users.find((u: any) => u.email === email);
+    const user = await User.findOne({ email });
 
     if (!user || user.password !== password) {
       return NextResponse.json(
@@ -23,30 +49,43 @@ export async function POST(request: NextRequest) {
     const primaryLocation = Array.isArray(user.locations)
       ? user.locations.find((loc: any) => loc.primary) || user.locations[0]
       : {};
-    // Generate JWT token with user context
+
     const JWT_SECRET = process.env.JWT_SECRET || "demo_secret";
-    const token = jwt.sign({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      locations: user.locations,
-      role: user.role,
-    }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        mobile: user.mobile,
+        name: user.name,
+        birthDate: user.birthDate,
+        profilePicture: user.profilePicture,
+        role: user.role,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
     return NextResponse.json(
       {
         success: true,
         user: {
-          id: user.id,
+          id: user._id,
           email: user.email,
           name: user.name,
-          locations: user.locations,
+          username: user.username,
+          mobile: user.mobile,
+          birthDate: user.birthDate,
+          profilePicture: user.profilePicture,
           role: user.role,
+          status: user.status,
         },
         token,
       },
       { status: 200 },
     );
   } catch (error) {
+    console.error("Login error:", error);
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
 }

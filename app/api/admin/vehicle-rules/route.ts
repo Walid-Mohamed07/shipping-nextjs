@@ -1,42 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { VehicleRule, Vehicle } from "@/lib/models";
 
-interface VehicleRule {
-  id: string;
-  vehicleId: string;
-  vehicleName: string;
-  maxWeight: number;
-  maxDimensions: string;
-  allowedCategories: string[];
-  minDeliveryDays: number;
-  maxDeliveryDays: number;
-  createdAt: string;
-}
-
-const rulesFilePath = path.join(process.cwd(), "data", "vehicle-rules.json");
-
-const ensureRulesFile = () => {
-  if (!fs.existsSync(rulesFilePath)) {
-    fs.writeFileSync(rulesFilePath, JSON.stringify({ rules: [] }, null, 2));
-  }
-};
+/**
+ * @swagger
+ * /api/admin/vehicle-rules:
+ *   get:
+ *     summary: Get all vehicle rules
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: List of vehicle rules
+ *       500:
+ *         description: Failed to fetch rules
+ *   post:
+ *     summary: Create a new vehicle rule
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [vehicleId, maxWeight]
+ *             properties:
+ *               vehicleId:
+ *                 type: string
+ *               maxWeight:
+ *                 type: number
+ *               maxDimensions:
+ *                 type: string
+ *               allowedCategories:
+ *                 type: array
+ *     responses:
+ *       201:
+ *         description: Rule created successfully
+ *       500:
+ *         description: Failed to create rule
+ */
 
 export async function GET() {
   try {
-    ensureRulesFile();
-    const data = JSON.parse(fs.readFileSync(rulesFilePath, "utf-8"));
-    return NextResponse.json({ rules: data.rules || [] }, { status: 200 });
+    await connectDB();
+    const rules = await VehicleRule.find({})
+      .populate("vehicleId", "type plateNumber")
+      .lean();
+    return NextResponse.json({ rules }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch rules" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
     const {
       vehicleId,
@@ -47,27 +64,20 @@ export async function POST(request: NextRequest) {
       maxDeliveryDays,
     } = body;
 
-    ensureRulesFile();
-    const data = JSON.parse(fs.readFileSync(rulesFilePath, "utf-8"));
+    // Verify vehicle exists
+    const vehicle = await Vehicle.findById(vehicleId);
+    if (!vehicle) {
+      return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
+    }
 
-    // Get vehicle name from the main vehicles file
-    const vehiclesPath = path.join(process.cwd(), "data", "vehicles.json");
-    const vehiclesData = JSON.parse(fs.readFileSync(vehiclesPath, "utf-8"));
-    const vehicle = vehiclesData.vehicles.find((v: any) => v.id === vehicleId);
-    const vehicleName = vehicle?.name || "Unknown Vehicle";
-
-    const newRule: VehicleRule = {
-      id: `RULE-${Date.now()}`,
+    const newRule = await VehicleRule.create({
       vehicleId,
-      vehicleName,
       maxWeight,
-      maxDimensions,
-      allowedCategories,
-      minDeliveryDays,
-      maxDeliveryDays,
-      createdAt: new Date().toISOString(),
-    };
-
+      maxDimensions: maxDimensions || "N/A",
+      allowedCategories: allowedCategories || [],
+      minDeliveryDays: minDeliveryDays || 1,
+      maxDeliveryDays: maxDeliveryDays || 7,
+    });
     data.rules.push(newRule);
     fs.writeFileSync(rulesFilePath, JSON.stringify(data, null, 2));
 

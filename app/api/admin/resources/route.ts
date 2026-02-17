@@ -1,29 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { NextRequest, NextResponse } from "next/server";
+import { connectDB, handleError } from "@/lib/db";
+import { Vehicle, User } from "@/lib/models";
+
+/**
+ * @swagger
+ * /api/admin/resources:
+ *   get:
+ *     summary: Get system resources (vehicles, drivers)
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: Resources list
+ *       500:
+ *         description: Failed to fetch resources
+ */
 
 export async function GET(request: NextRequest) {
   try {
-    const vehiclesPath = path.join(process.cwd(), 'data', 'vehicles.json')
-    const vehiclesData = JSON.parse(fs.readFileSync(vehiclesPath, 'utf-8'))
-
-    const usersPath = path.join(process.cwd(), 'data', 'users.json')
-    const usersData = JSON.parse(fs.readFileSync(usersPath, 'utf-8'))
-
-    // Get drivers only
-    const drivers = usersData.users.filter((u: any) => u.role === 'driver')
+    await connectDB();
+    const vehicles = await Vehicle.find({}).lean();
+    const drivers = await User.find({ role: "driver" })
+      .select("fullName email status")
+      .lean();
 
     return NextResponse.json(
       {
-        vehicles: vehiclesData.vehicles,
+        vehicles,
         drivers,
       },
-      { status: 200 }
-    )
+      { status: 200 },
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch resources' },
-      { status: 500 }
-    )
+    return handleError(error);
   }
 }

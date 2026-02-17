@@ -54,8 +54,10 @@ const formatters = {
 
 const LocationMapPicker = dynamic(
   () =>
-    import("@/app/components/LocationMapPicker").then((m) => m.LocationMapPicker),
-  { ssr: false }
+    import("@/app/components/LocationMapPicker").then(
+      (m) => m.LocationMapPicker,
+    ),
+  { ssr: false },
 );
 
 interface AddAddressDialogProps {
@@ -93,13 +95,17 @@ export default function AddAddressDialog({
     primary: false,
     warehouseId: "",
     pickupMode: "Self",
-    coordinates: undefined as { latitude: number; longitude: number } | undefined,
+    coordinates: undefined as
+      | { latitude: number; longitude: number }
+      | undefined,
   });
 
   const [form, setForm] = useState(getInitialFormState());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [showMap, setShowMap] = useState(false);
   const [mapEditable, setMapEditable] = useState(true);
 
@@ -122,11 +128,13 @@ export default function AddAddressDialog({
   // Update fullName when userName changes (but preserve other fields)
   useEffect(() => {
     if (open && userName) {
-      setForm(prev => ({ ...prev, fullName: userName }));
+      setForm((prev) => ({ ...prev, fullName: userName }));
     }
   }, [userName, open]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement;
     const { name, value, type: inputType } = target;
     const checked = (target as HTMLInputElement).checked;
@@ -146,7 +154,17 @@ export default function AddAddressDialog({
           formattedValue = formatters.formatPhone(value);
         } else if (name === "postalCode") {
           formattedValue = formatters.formatPostalCode(value);
-        } else if (["city", "street", "building", "district", "governorate", "landmark", "fullName"].includes(name)) {
+        } else if (
+          [
+            "city",
+            "street",
+            "building",
+            "district",
+            "governorate",
+            "landmark",
+            "fullName",
+          ].includes(name)
+        ) {
           formattedValue = formatters.formatAddress(value);
         } else if (name === "deliveryInstructions") {
           formattedValue = formatters.trim(value);
@@ -162,7 +180,7 @@ export default function AddAddressDialog({
   const handleSave = async () => {
     // Reset validation errors
     setValidationErrors({});
-    const errors: {[key: string]: boolean} = {};
+    const errors: { [key: string]: boolean } = {};
 
     // Validate required fields
     if (!form.country) {
@@ -204,34 +222,38 @@ export default function AddAddressDialog({
         mobile: formatters.formatPhone(form.mobile),
         landmark: formatters.formatAddress(form.landmark),
         deliveryInstructions: formatters.trim(form.deliveryInstructions),
-        coordinates: form.coordinates?.latitude != null && form.coordinates?.longitude != null
-          ? form.coordinates
-          : undefined,
+        coordinates:
+          form.coordinates?.latitude != null &&
+          form.coordinates?.longitude != null
+            ? form.coordinates
+            : undefined,
       };
       const response = await fetch("/api/user/addresses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, address: addressToSave }),
+        body: JSON.stringify({ userId, ...addressToSave }),
       });
       if (!response.ok) {
         throw new Error("Failed to save address");
       }
       const resData = await response.json();
-      const savedAddress = resData.locations?.[resData.locations.length - 1] ?? addressToSave;
-      
+      const savedAddress =
+        resData.addresses?.[resData.addresses.length - 1] ?? addressToSave;
+
       toast.success("Address saved successfully!");
-      
+
       // Call parent's onSave callback and wait for it to complete
       await Promise.resolve(onSave(savedAddress as Address));
-      
+
       setLoading(false);
-      
+
       // Close dialog after a short delay to ensure state updates complete
       setTimeout(() => {
         onOpenChange(false);
       }, 100);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to save address";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to save address";
       setError(errorMessage);
       toast.error(errorMessage);
       setLoading(false);
@@ -249,7 +271,11 @@ export default function AddAddressDialog({
           <Dialog.Title className="text-lg font-bold mb-4">
             Add New Address ({type === "source" ? "Source" : "Destination"})
           </Dialog.Title>
-          {error && <div className="mb-2 text-red-600 dark:text-red-400 text-sm">{error}</div>}
+          {error && (
+            <div className="mb-2 text-red-600 dark:text-red-400 text-sm">
+              {error}
+            </div>
+          )}
 
           {/* Location capture - store lat/long for map display */}
           <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30">
@@ -305,7 +331,10 @@ export default function AddAddressDialog({
                 <LocationMapPicker
                   position={
                     form.coordinates
-                      ? { lat: form.coordinates.latitude, lng: form.coordinates.longitude }
+                      ? {
+                          lat: form.coordinates.latitude,
+                          lng: form.coordinates.longitude,
+                        }
                       : null
                   }
                   onPositionChange={(lat, lng) => {
@@ -313,18 +342,31 @@ export default function AddAddressDialog({
                     if (lat === 0 && lng === 0) {
                       setForm((f) => ({ ...f, coordinates: undefined }));
                     } else {
-                      setForm((f) => ({ ...f, coordinates: { latitude: lat, longitude: lng } }));
+                      setForm((f) => ({
+                        ...f,
+                        coordinates: { latitude: lat, longitude: lng },
+                      }));
                     }
                   }}
                   onAddressData={(addressData: AddressData) => {
                     setForm((prev) => ({
                       ...prev,
-                      street: formatters.formatAddress(addressData.street ?? prev.street),
-                      city: formatters.formatAddress(addressData.city ?? prev.city),
-                      district: formatters.formatAddress(addressData.district ?? prev.district),
-                      governorate: formatters.formatAddress(addressData.governorate ?? prev.governorate),
+                      street: formatters.formatAddress(
+                        addressData.street ?? prev.street,
+                      ),
+                      city: formatters.formatAddress(
+                        addressData.city ?? prev.city,
+                      ),
+                      district: formatters.formatAddress(
+                        addressData.district ?? prev.district,
+                      ),
+                      governorate: formatters.formatAddress(
+                        addressData.governorate ?? prev.governorate,
+                      ),
                       country: addressData.country ?? prev.country,
-                      postalCode: formatters.formatPostalCode(addressData.postalCode ?? prev.postalCode),
+                      postalCode: formatters.formatPostalCode(
+                        addressData.postalCode ?? prev.postalCode,
+                      ),
                     }));
                   }}
                   editable={mapEditable}
@@ -361,7 +403,7 @@ export default function AddAddressDialog({
               onChange={handleChange}
               required
               className={`block w-full rounded border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary bg-background ${
-                validationErrors.country ? 'border-red-500' : 'border-border'
+                validationErrors.country ? "border-red-500" : "border-border"
               }`}
             >
               <option value="" disabled>
@@ -397,7 +439,7 @@ export default function AddAddressDialog({
               value={form.street}
               onChange={handleChange}
               required
-              className={validationErrors.street ? 'border-red-500' : ''}
+              className={validationErrors.street ? "border-red-500" : ""}
             />
 
             <label className="block text-sm font-medium text-foreground mb-1">
@@ -439,7 +481,7 @@ export default function AddAddressDialog({
               value={form.postalCode}
               onChange={handleChange}
               required
-              className={validationErrors.postalCode ? 'border-red-500' : ''}
+              className={validationErrors.postalCode ? "border-red-500" : ""}
             />
 
             <label className="block text-sm font-medium text-foreground mb-1">
@@ -451,7 +493,7 @@ export default function AddAddressDialog({
               value={form.mobile}
               onChange={handleChange}
               required
-              className={validationErrors.mobile ? 'border-red-500' : ''}
+              className={validationErrors.mobile ? "border-red-500" : ""}
             />
 
             <label className="block text-sm font-medium text-foreground mb-1">
