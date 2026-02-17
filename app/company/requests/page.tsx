@@ -301,6 +301,7 @@ export default function CompanyRequestsPage() {
             {requests.map((request) => {
               const myOffer = getMyOffer(request);
               const hasOffer = hasExistingOffer(request);
+              console.log("Request:", request);
 
               return (
                 <Card
