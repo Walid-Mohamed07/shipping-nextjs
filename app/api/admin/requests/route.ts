@@ -41,10 +41,18 @@ import { Request } from "@/lib/models";
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get("status");
+
+    const filter: any = {};
+    if (status) {
+      filter.$or = [{ requestStatus: status }, { deliveryStatus: status }];
+    }
 
     // Return all requests with populated user data
-    const requests = await Request.find({})
-      .populate("userId", "email fullName")
+    const requests = await Request.find(filter)
+      .populate("userId", "fullName email mobile profilePicture role")
+      .sort({ createdAt: -1 })
       .lean();
 
     return NextResponse.json({ requests }, { status: 200 });

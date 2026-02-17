@@ -56,7 +56,6 @@ interface CostOffer {
 
 interface Request {
   id: string;
-  userId: string;
   user: { id: string; fullName: string; email: string };
   source: Location;
   destination: Location;
@@ -114,7 +113,9 @@ export default function CompanyRequestsPage() {
     try {
       setLoading(true);
       // Fetch only requests that are visible to this company
-      const response = await fetch(`/api/company/requests?companyId=${user.id}`);
+      const response = await fetch(
+        `/api/company/requests?companyId=${user.id}`,
+      );
       if (response.ok) {
         const data = await response.json();
         setRequests(data.requests || []);
@@ -171,7 +172,9 @@ export default function CompanyRequestsPage() {
       });
 
       if (response.ok) {
-        alert("Offer submitted successfully! The client will review your offer.");
+        alert(
+          "Offer submitted successfully! The client will review your offer.",
+        );
         setOfferModal({ isOpen: false, requestId: null });
         setOfferData({ cost: "", comment: "" });
         await fetchRequests();
@@ -188,7 +191,11 @@ export default function CompanyRequestsPage() {
   };
 
   const handleRejectRequest = async (requestId: string) => {
-    if (!confirm("Are you sure you want to reject this request? You won't be able to see it again.")) {
+    if (
+      !confirm(
+        "Are you sure you want to reject this request? You won't be able to see it again.",
+      )
+    ) {
       return;
     }
 
@@ -226,21 +233,19 @@ export default function CompanyRequestsPage() {
   };
 
   const getPickupModeBadgeColor = (mode?: string) => {
-    if (mode === "Delegate") return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
-    if (mode === "Self") return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200";
+    if (mode === "Delegate")
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
+    if (mode === "Self")
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200";
     return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200";
   };
 
   const hasExistingOffer = (request: Request) => {
-    return request.costOffers?.some(
-      (offer) => offer.company.id === user?.id
-    );
+    return request.costOffers?.some((offer) => offer.company.id === user?.id);
   };
 
   const getMyOffer = (request: Request) => {
-    return request.costOffers?.find(
-      (offer) => offer.company.id === user?.id
-    );
+    return request.costOffers?.find((offer) => offer.company.id === user?.id);
   };
 
   if (!user || user.role !== "company") {
@@ -298,12 +303,15 @@ export default function CompanyRequestsPage() {
               const hasOffer = hasExistingOffer(request);
 
               return (
-                <Card key={request.id} className="p-0 flex flex-col overflow-hidden hover:shadow-lg transition-shadow h-full">
+                <Card
+                  key={request.id}
+                  className="p-0 flex flex-col overflow-hidden hover:shadow-lg transition-shadow h-full"
+                >
                   {/* Header */}
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 px-4 py-2 flex items-center justify-between border-b border-border">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-bold text-foreground">
-                        #{request.id.slice(0, 6)}
+                        #{request.id}
                       </h3>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 font-medium">
                         {request.requestStatus}
@@ -324,13 +332,19 @@ export default function CompanyRequestsPage() {
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">From</p>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                            From
+                          </p>
                           <p className="font-semibold text-xs mt-0.5">
                             {request.source.city}, {request.source.country}
                           </p>
                           <div className="flex items-center gap-1 mt-1">
-                            <span className={`inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200`}>
-                              {request.sourcePickupMode === "Self" ? "Self" : "Company"}
+                            <span
+                              className={`inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200`}
+                            >
+                              {request.sourcePickupMode === "Self"
+                                ? "Self"
+                                : "Company"}
                             </span>
                           </div>
                         </div>
@@ -343,13 +357,20 @@ export default function CompanyRequestsPage() {
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">To</p>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                            To
+                          </p>
                           <p className="font-semibold text-xs mt-0.5">
-                            {request.destination.city}, {request.destination.country}
+                            {request.destination.city},{" "}
+                            {request.destination.country}
                           </p>
                           <div className="flex items-center gap-1 mt-1">
-                            <span className={`inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200`}>
-                              {request.destinationPickupMode === "Self" ? "Self" : "Company"}
+                            <span
+                              className={`inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200`}
+                            >
+                              {request.destinationPickupMode === "Self"
+                                ? "Self"
+                                : "Company"}
                             </span>
                           </div>
                         </div>
@@ -359,29 +380,44 @@ export default function CompanyRequestsPage() {
                     {/* Items & Cost & Client Row */}
                     <div className="grid grid-cols-3 gap-2 pb-2 border-b border-border/50">
                       <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Items</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Items
+                        </p>
                         <p className="text-base font-bold text-foreground mt-0.5">
                           {request.items.length}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {request.items.reduce((sum, item) => sum + item.quantity, 0)} units
+                          {request.items.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0,
+                          )}{" "}
+                          units
                         </p>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cost</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Cost
+                        </p>
                         {request.primaryCost ? (
                           <>
                             <p className="text-base font-bold text-primary mt-0.5">
                               ${request.primaryCost}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {request.costOffers && request.costOffers.length > 0 ? `${request.costOffers.length} offer(s)` : 'Primary'}
+                              {request.costOffers &&
+                              request.costOffers.length > 0
+                                ? `${request.costOffers.length} offer(s)`
+                                : "Primary"}
                             </p>
                           </>
-                        ) : request.costOffers && request.costOffers.length > 0 ? (
+                        ) : request.costOffers &&
+                          request.costOffers.length > 0 ? (
                           <>
                             <p className="text-base font-bold text-primary mt-0.5">
-                              ${Math.min(...request.costOffers.map(o => o.cost)).toFixed(2)}
+                              $
+                              {Math.min(
+                                ...request.costOffers.map((o) => o.cost),
+                              ).toFixed(2)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {request.costOffers.length} offer(s)
@@ -402,7 +438,7 @@ export default function CompanyRequestsPage() {
                         <div className="flex items-center gap-1">
                           <UserIcon className="w-3 h-3 text-muted-foreground" />
                           <span className="text-xs font-medium text-foreground truncate">
-                            {request.user?.fullName?.split(' ')[0] || "User"}
+                            {request.user?.fullName?.split(" ")[0] || "User"}
                           </span>
                         </div>
                       </div>
@@ -411,10 +447,15 @@ export default function CompanyRequestsPage() {
                     {/* Items Details - Compact */}
                     {request.items.length > 0 && (
                       <div className="bg-slate-50/50 dark:bg-slate-900/20 rounded p-2 border border-border/30">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Details</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                          Details
+                        </p>
                         <div className="space-y-0.5">
                           {request.items.slice(0, 2).map((item, idx) => (
-                            <div key={idx} className="flex justify-between gap-2 text-xs">
+                            <div
+                              key={idx}
+                              className="flex justify-between gap-2 text-xs"
+                            >
                               <span className="font-medium truncate">
                                 {item.quantity}x {item.item || item.name}
                               </span>
@@ -437,7 +478,12 @@ export default function CompanyRequestsPage() {
                       {!hasOffer ? (
                         <div className="flex gap-2">
                           <Button
-                            onClick={() => setOfferModal({ isOpen: true, requestId: request.id })}
+                            onClick={() =>
+                              setOfferModal({
+                                isOpen: true,
+                                requestId: request.id,
+                              })
+                            }
                             disabled={processingId === request.id}
                             size="sm"
                             className="flex-1 gap-1"
@@ -485,7 +531,7 @@ export default function CompanyRequestsPage() {
               <DollarSign className="w-5 h-5" />
               Submit Cost Offer
             </h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -495,14 +541,16 @@ export default function CompanyRequestsPage() {
                   type="number"
                   placeholder="Enter your offer amount"
                   value={offerData.cost}
-                  onChange={(e) => setOfferData({ ...offerData, cost: e.target.value })}
+                  onChange={(e) =>
+                    setOfferData({ ...offerData, cost: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   min="0"
                   step="0.01"
                   autoFocus
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Comments (Optional)
@@ -510,7 +558,9 @@ export default function CompanyRequestsPage() {
                 <textarea
                   placeholder="Add any additional details about your offer..."
                   value={offerData.comment}
-                  onChange={(e) => setOfferData({ ...offerData, comment: e.target.value })}
+                  onChange={(e) =>
+                    setOfferData({ ...offerData, comment: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-border rounded-md bg-background resize-none"
                   rows={3}
                 />
@@ -530,10 +580,14 @@ export default function CompanyRequestsPage() {
               </Button>
               <Button
                 onClick={handleAddOffer}
-                disabled={processingId === offerModal.requestId || !offerData.cost}
+                disabled={
+                  processingId === offerModal.requestId || !offerData.cost
+                }
                 className="flex-1"
               >
-                {processingId === offerModal.requestId ? "Submitting..." : "Submit Offer"}
+                {processingId === offerModal.requestId
+                  ? "Submitting..."
+                  : "Submit Offer"}
               </Button>
             </div>
           </div>

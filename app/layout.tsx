@@ -2,6 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import "./globals.css";
 
@@ -53,6 +54,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <AuthProvider>{children}</AuthProvider>
+        <Toaster position="top-right" richColors />
         <Analytics />
       </body>
     </html>

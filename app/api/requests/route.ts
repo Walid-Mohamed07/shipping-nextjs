@@ -19,7 +19,6 @@ function normalizeItems(req: LegacyRequest) {
       }
 
       return {
-        id: it.id || `ITEM-${req.id || Date.now()}-${idx + 1}`,
         item: it.item ?? it.name ?? "-",
         name: it.name ?? it.item ?? "-",
         category: it.category ?? "",
@@ -51,7 +50,6 @@ function normalizeItems(req: LegacyRequest) {
 
     return [
       {
-        id: `ITEM-${req.id || Date.now()}-1`,
         item: req.item ?? "-",
         name: req.item ?? "-",
         category: req.category ?? "",
@@ -78,27 +76,22 @@ function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
 }
 
 function normalizeRequest(req: any) {
-  const from = req.from ?? req.source;
-  const to = req.to ?? req.destination;
-  const source = req.source ?? req.from;
-  const destination = req.destination ?? req.to;
+  const source = req.source;
+  const destination = req.destination;
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
-  const startTime = req.startTime ?? req.whenToStart;
+  const startTime = req.startTime;
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
 
   return {
     id: req._id || req.id,
-    userId: req.userId,
-    from,
-    to,
+    user: req.user,
     source,
     destination,
     deliveryType,
     startTime,
-    whenToStart: startTime,
     primaryCost,
     cost,
     requestStatus,
@@ -140,22 +133,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
 
-    const query = userId ? { userId } : {};
-    const requests = await Request.find(query);
+    // If no userId provided, this endpoint requires it
+    if (!userId) {
+      return handleValidationError("userId query parameter is required");
+    }
+
+    const requests = await Request.find({ user: userId })
+      .populate("user", "fullName email mobile profilePicture role")
+      .lean();
 
     const normalized = requests.map((req: any) => normalizeRequest(req));
 
-    const withUserData = await Promise.all(
-      normalized.map(async (req: any) => {
-        const user = await User.findById(req.userId);
-        return {
-          ...req,
-          user: user ? { email: user.email, name: user.name } : null,
-        };
-      }),
-    );
-
-    return NextResponse.json({ requests: withUserData }, { status: 200 });
+    return NextResponse.json({ requests: normalized }, { status: 200 });
   } catch (error) {
     return handleError(error, "Failed to fetch requests");
   }
@@ -203,14 +192,11 @@ export async function POST(request: NextRequest) {
     await connectDB();
     const body = await request.json();
     const {
-      userId,
-      from,
-      to,
+      user,
       source,
       destination,
       items,
       deliveryType,
-      whenToStart,
       startTime,
       cost,
       primaryCost,
@@ -221,9 +207,9 @@ export async function POST(request: NextRequest) {
       comment,
     } = body;
 
-    const sourceAddr = source ?? from;
-    const destAddr = destination ?? to;
-    const finalStartTime = startTime ?? whenToStart;
+    const sourceAddr = source;
+    const destAddr = destination;
+    const finalStartTime = startTime;
     const finalPrimaryCost = primaryCost ?? estimatedCost;
     const finalCost = cost ?? finalPrimaryCost;
     const finalStatus = requestStatus ?? orderStatus;
@@ -246,15 +232,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Extract pickup modes from source and destination
+    const sourcePickupMode = sourceAddr?.pickupMode || "Self";
+    const destinationPickupMode = destAddr?.pickupMode || "Self";
+
     const newRequest = await Request.create({
-      userId,
+      user: user,
       source: sourceAddr,
       destination: destAddr,
       items: items.map((item: any) => ({
-        category: item.category,
-        weight: item.weight,
-        dimensions: item.dimensions,
-        quantity: item.quantity,
+        item: item.item ?? item.name ?? "-",
+        name: item.name ?? item.item ?? "-",
+        category: item.category || "",
+        weight: item.weight || "",
+        dimensions: item.dimensions || "",
+        quantity: Number(item.quantity ?? 1) || 1,
+        note: item.note || undefined,
+        media: Array.isArray(item.media) ? item.media.slice(0, 4) : [],
+        services: item.services || {
+          canBeAssembledDisassembled: false,
+          assemblyDisassemblyHandler: undefined,
+          packaging: false,
+        },
       })),
       deliveryType: normalizedDeliveryType,
       startTime: finalStartTime,
@@ -263,6 +262,8 @@ export async function POST(request: NextRequest) {
       requestStatus: finalStatus || "Pending",
       deliveryStatus: deliveryStatus || "Pending",
       comment: comment || "",
+      sourcePickupMode,
+      destinationPickupMode,
     });
 
     return NextResponse.json(

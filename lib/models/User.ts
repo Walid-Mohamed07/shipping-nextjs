@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
@@ -34,44 +34,28 @@ const userSchema = new mongoose.Schema(
     criminalRecord: String,
     role: {
       type: String,
-      enum: ['client', 'admin', 'driver', 'operator', 'company', 'warehouse_manager'],
-      default: 'client',
+      enum: [
+        "client",
+        "admin",
+        "driver",
+        "operator",
+        "company",
+        "warehouse_manager",
+      ],
+      default: "client",
     },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'suspended'],
-      default: 'active',
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
     },
-    locations: [
-      {
-        id: String,
-        country: String,
-        countryCode: String,
-        fullName: String,
-        mobile: String,
-        street: String,
-        building: String,
-        city: String,
-        district: String,
-        governorate: String,
-        postalCode: String,
-        landmark: String,
-        addressType: {
-          type: String,
-          enum: ['Home', 'Office', 'Other'],
-        },
-        deliveryInstructions: String,
-        primary: Boolean,
-        warehouseId: String,
-        pickupMode: String,
-        coordinates: {
-          latitude: Number,
-          longitude: Number,
-        },
-      },
-    ],
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: null,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const User = mongoose.models.User || mongoose.model('User', userSchema);
+export const User = mongoose.models.User || mongoose.model("User", userSchema);

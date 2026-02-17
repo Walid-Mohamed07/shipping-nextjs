@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
-import { User } from "@/lib/models";
+import { Address } from "@/lib/models";
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,10 +10,8 @@ export async function GET(req: NextRequest) {
     if (!userId)
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
 
-    const user = await User.findById(userId).select("locations").lean();
-    const locations = user?.locations || [];
-
-    return NextResponse.json({ locations });
+    const addresses = await Address.find({ userId }).lean();
+    return NextResponse.json({ addresses });
   } catch (error) {
     return handleError(error);
   }
@@ -23,24 +21,42 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { userId, location } = body;
+    const { userId } = body;
+    console.log("New address data received:", body);
 
-    if (!userId || !location) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields: userId" },
         { status: 400 },
       );
     }
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $push: { locations: location } },
-      { new: true },
-    )
-      .select("locations")
-      .lean();
+    const newAddress = await Address.create(body);
+    return NextResponse.json({ address: newAddress }, { status: 201 });
+  } catch (error) {
+    return handleError(error);
+  }
+}
 
-    return NextResponse.json({ locations: user?.locations }, { status: 201 });
+export async function DELETE(req: NextRequest) {
+  try {
+    await connectDB();
+    const body = await req.json();
+    const { userId, addressId } = body;
+
+    if (!userId || !addressId) {
+      return NextResponse.json(
+        { error: "Missing required fields: userId or addressId" },
+        { status: 400 },
+      );
+    }
+
+    // Delete the address
+    await Address.findByIdAndDelete(addressId);
+
+    // Return updated addresses list
+    const addresses = await Address.find({ userId }).lean();
+    return NextResponse.json({ addresses });
   } catch (error) {
     return handleError(error);
   }

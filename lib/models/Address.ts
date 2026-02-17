@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 const addressSchema = new mongoose.Schema(
   {
-    id: String,
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -15,7 +14,6 @@ const addressSchema = new mongoose.Schema(
     building: String,
     city: String,
     district: String,
-    governorate: String,
     postalCode: String,
     landmark: String,
     addressType: {

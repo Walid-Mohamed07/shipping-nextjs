@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         },
       ],
     })
-      .populate("userId", "email fullName")
+      .populate("user", "email fullName")
       .lean();
 
     return NextResponse.json({ requests: visibleRequests }, { status: 200 });
@@ -100,23 +100,16 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
 
-    const requestIndex = requestsData.requests.findIndex(
-      (r: any) => r.id === requestId,
-    );
-
-    if (requestIndex === -1) {
+    const currentRequest = await Request.findById(requestId);
+    if (!currentRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
-
-    const currentRequest = requestsData.requests[requestIndex];
-    const now = new Date().toISOString();
 
     // Verify request is still available for this company
     if (
       currentRequest.assignedCompanyId &&
-      currentRequest.assignedCompanyId !== companyId
+      currentRequest.assignedCompanyId.toString() !== companyId
     ) {
       return NextResponse.json(
         { error: "This request has already been assigned to another company" },
@@ -142,16 +135,12 @@ export async function POST(request: NextRequest) {
         cost: offer.cost,
         comment: offer.comment || "",
         company: {
-          id: company?.id || companyId,
-          name: company?.name || "Unknown Company",
-          phoneNumber: company?.phoneNumber || "",
-          email: company?.email || "",
-          address: company?.address || "",
-          rate: company?.rate || "N/A",
+          id: companyId,
+          name: offer.companyName || "Company",
         },
         selected: false,
-        status: "pending" as const,
-        createdAt: now,
+        status: "pending",
+        createdAt: new Date(),
       };
 
       if (!currentRequest.costOffers) {
@@ -159,32 +148,17 @@ export async function POST(request: NextRequest) {
       }
 
       if (existingOfferIndex !== undefined && existingOfferIndex >= 0) {
-        // Update existing offer
         currentRequest.costOffers[existingOfferIndex] = newOffer;
       } else {
-        // Add new offer
         currentRequest.costOffers.push(newOffer);
       }
 
-      // Update request status to indicate offers are available
       if (currentRequest.requestStatus === "Accepted") {
         currentRequest.requestStatus = "Action needed";
       }
 
-      // Add to activity history
-      if (!currentRequest.activityHistory) {
-        currentRequest.activityHistory = [];
-      }
-      currentRequest.activityHistory.push({
-        timestamp: now,
-        action: "offer_submitted",
-        description: `Company ${company?.name || companyId} submitted an offer of $${offer.cost}`,
-        companyName: company?.name,
-        cost: offer.cost,
-      });
-
-      currentRequest.updatedAt = now;
-      fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
+      currentRequest.updatedAt = new Date();
+      await currentRequest.save();
 
       return NextResponse.json(
         { success: true, message: "Offer submitted successfully" },
@@ -193,7 +167,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "reject-request") {
-      // Add company to the rejected list
       if (!currentRequest.rejectedByCompanies) {
         currentRequest.rejectedByCompanies = [];
       }
@@ -202,18 +175,8 @@ export async function POST(request: NextRequest) {
         currentRequest.rejectedByCompanies.push(companyId);
       }
 
-      // Add to activity history
-      if (!currentRequest.activityHistory) {
-        currentRequest.activityHistory = [];
-      }
-      currentRequest.activityHistory.push({
-        timestamp: now,
-        action: "company_rejected",
-        description: `Company ${companyId} rejected this request`,
-      });
-
-      currentRequest.updatedAt = now;
-      fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
+      currentRequest.updatedAt = new Date();
+      await currentRequest.save();
 
       return NextResponse.json(
         { success: true, message: "Request rejected" },
@@ -223,10 +186,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
-    console.error("Error handling company action:", error);
-    return NextResponse.json(
-      { error: "Failed to process action" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     const results = await Request.find(filter)
-      .populate("userId", "fullName email")
+      .populate("user", "fullName email mobile profilePicture role")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest) {
       {
         new: true,
       },
-    ).populate("userId", "fullName email");
+    ).populate("user", "fullName email");
 
     if (!updatedRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });

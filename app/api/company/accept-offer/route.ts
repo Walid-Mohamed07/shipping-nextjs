@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!requestId || !companyId) {
       return NextResponse.json(
         { error: "requestId and companyId are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -20,30 +20,23 @@ export async function POST(request: NextRequest) {
       {
         assignedCompanyId: companyId,
         requestStatus: "Assigned to Company",
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedRequest) {
-      return NextResponse.json(
-        { error: "Request not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
-          acceptedAt: now,
-        };
-      } else {
-        return {
-          ...offer,
-          selected: false,
-          status: "rejected",
-          rejectedAt: now,
-    return NextResponse.json({
-      success: true,
-      message: "Offer accepted successfully",
-      request: updatedRequest,
-    }, { status: 200 });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Offer accepted successfully",
+        request: updatedRequest,
+      },
+      { status: 200 },
+    );
   } catch (error) {
     return handleError(error);
   }
