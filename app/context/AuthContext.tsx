@@ -83,42 +83,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Only run on client
-    if (typeof window !== "undefined") {
-      const token = getCookie("user_token");
-      if (token) {
-        const decoded = decodeJWT(token);
-        if (decoded) {
-          setUser(decoded);
+    // Restore user from HTTP-only cookie by calling /api/auth/me
+    const restoreUser = async () => {
+      try {
+        console.log("AuthContext: Attempting to restore user from cookie...");
+
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include", // Important: include cookies in request
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log(
+          "AuthContext: /api/auth/me response status:",
+          response.status,
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("AuthContext: User restored from cookie:", data.user);
+          setUser(data.user);
+        } else {
+          console.log(
+            "AuthContext: Token is invalid or expired (status:",
+            response.status,
+            ")",
+          );
+          const errorData = await response.json().catch(() => null);
+          console.log("AuthContext: Error data:", errorData);
+          setUser(null);
         }
+      } catch (error) {
+        console.error("AuthContext: Failed to restore user:", error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }
+    };
+
+    restoreUser();
   }, []);
 
-  // Only render children after hydration
-  if (isLoading) {
-    return null; // or a loading spinner
-  }
-
   const login = async (email: string, password: string) => {
+    console.log("AuthContext: Login attempt for user:", email);
+
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      credentials: "include", // Important: include cookies
     });
 
     if (!response.ok) {
       const error = await response.json();
+      console.error("AuthContext: Login failed:", error);
       throw new Error(error.error || "Login failed");
     }
 
     const data = await response.json();
+    console.log("AuthContext: Login successful for user:", email);
     setUser(data.user);
-    // Store backend JWT in cookie
-    if (data.token) {
-      setCookie("user_token", data.token, 7);
-    }
+    // Token is already set as HTTP-only cookie by the server
   };
 
   const signup = async (
@@ -131,6 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     birthDate: string,
     address: any,
   ) => {
+    console.log("AuthContext: Signup attempt for user:", email);
+
     const response = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -144,25 +173,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         birthDate,
         address,
       }),
+      credentials: "include", // Important: include cookies
     });
 
     if (!response.ok) {
       const error = await response.json();
+      console.error("AuthContext: Signup failed:", error);
       throw new Error(error.error || "Signup failed");
     }
 
     const data = await response.json();
+    console.log("AuthContext: Signup successful for user:", email);
     setUser(data.user);
-    // Store backend JWT in cookie
-    if (data.token) {
-      setCookie("user_token", data.token, 7);
-    }
+    // Token is already set as HTTP-only cookie by the server
   };
 
   const logout = () => {
+    console.log("AuthContext: User logout initiated");
     setUser(null);
     localStorage.removeItem("user");
     removeCookie("user_token");
+    // The HTTP-only cookie will be cleared by the server logout endpoint
+    fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    })
+      .then(() => console.log("AuthContext: Server-side logout completed"))
+      .catch((err) => console.error("AuthContext: Logout error:", err));
   };
 
   return (
@@ -177,12 +214,5 @@ export function useAuth() {
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  // Get JWT from cookie and decode user context
-  const token = getCookie("user_token");
-  let jwtUser: User | null = null;
-  if (token) {
-    jwtUser = decodeJWT(token);
-  }
-  // Return context with user from JWT if available
-  return { ...context, user: jwtUser ?? context.user };
+  return context;
 }

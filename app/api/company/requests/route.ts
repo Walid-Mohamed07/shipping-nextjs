@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         },
       ],
     })
-      .populate("user", "email fullName")
+      .populate("user", "email fullName phoneNumber profilePicture")
       .lean();
 
     return NextResponse.json({ requests: visibleRequests }, { status: 200 });

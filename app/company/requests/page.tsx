@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,12 @@ import {
   User as UserIcon,
   Scale,
   Box,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { Request } from "@/types";
+import { useToast } from "@/lib/useToast";
 
 interface Item {
   item: string;
@@ -54,24 +59,6 @@ interface CostOffer {
   createdAt?: string;
 }
 
-interface Request {
-  id: string;
-  user: { id: string; fullName: string; email: string };
-  source: Location;
-  destination: Location;
-  items: Item[];
-  requestStatus: string;
-  deliveryStatus: string;
-  costOffers?: CostOffer[];
-  createdAt: string;
-  updatedAt: string;
-  sourcePickupMode?: string;
-  destinationPickupMode?: string;
-  assignedCompanyId?: string;
-  rejectedByCompanies?: string[];
-  primaryCost?: string;
-}
-
 interface CompanyInfo {
   id: string;
   name: string;
@@ -82,8 +69,9 @@ interface CompanyInfo {
 }
 
 export default function CompanyRequestsPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
+  const { create, error: showError } = useToast();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
@@ -93,6 +81,17 @@ export default function CompanyRequestsPage() {
   }>({ isOpen: false, requestId: null });
   const [offerData, setOfferData] = useState({ cost: "", comment: "" });
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterDeliveryStatus, setFilterDeliveryStatus] =
+    useState<string>("all");
+  const [filterPickupMode, setFilterPickupMode] = useState<string>("all");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
 
   const fetchCompanyInfo = useCallback(async () => {
     if (!user?.id) return;
@@ -128,6 +127,9 @@ export default function CompanyRequestsPage() {
   }, [user?.id]);
 
   useEffect(() => {
+    if (isLoading) {
+      return; // Wait for auth to load
+    }
     if (!user || user.role !== "company") {
       router.push("/");
       return;
@@ -136,17 +138,19 @@ export default function CompanyRequestsPage() {
     fetchCompanyInfo();
     fetchRequests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, isLoading]);
 
   const handleAddOffer = async () => {
+    console.log("OfferModal:", offerModal);
+    console.log("Attempting to add offer:", offerData);
     if (!offerModal.requestId || !offerData.cost) {
-      alert("Please enter a cost amount");
+      showError("Please enter a cost amount");
       return;
     }
 
     const cost = parseFloat(offerData.cost);
     if (isNaN(cost) || cost <= 0) {
-      alert("Please enter a valid cost amount");
+      showError("Please enter a valid cost amount");
       return;
     }
 
@@ -172,7 +176,7 @@ export default function CompanyRequestsPage() {
       });
 
       if (response.ok) {
-        alert(
+        create(
           "Offer submitted successfully! The client will review your offer.",
         );
         setOfferModal({ isOpen: false, requestId: null });
@@ -180,11 +184,11 @@ export default function CompanyRequestsPage() {
         await fetchRequests();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to submit offer");
+        showError(errorData.error || "Failed to submit offer");
       }
     } catch (error) {
       console.error("Failed to submit offer:", error);
-      alert("Failed to submit offer");
+      showError("Failed to submit offer");
     } finally {
       setProcessingId(null);
     }
@@ -212,15 +216,15 @@ export default function CompanyRequestsPage() {
       });
 
       if (response.ok) {
-        alert("Request rejected");
+        create("Request rejected successfully");
         await fetchRequests();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to reject request");
+        showError(errorData.error || "Failed to reject request");
       }
     } catch (error) {
       console.error("Failed to reject request:", error);
-      alert("Failed to reject request");
+      showError("Failed to reject request");
     } finally {
       setProcessingId(null);
     }
@@ -247,6 +251,65 @@ export default function CompanyRequestsPage() {
   const getMyOffer = (request: Request) => {
     return request.costOffers?.find((offer) => offer.company.id === user?.id);
   };
+
+  // Filter and paginate requests
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        (request.id || request._id)
+          .toString()
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (typeof request.user === "object" &&
+          request.user?.fullName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()));
+
+      const matchesStatus =
+        filterStatus === "all" || request.requestStatus === filterStatus;
+
+      const matchesDeliveryStatus =
+        filterDeliveryStatus === "all" ||
+        request.deliveryStatus === filterDeliveryStatus;
+
+      const matchesPickupMode =
+        filterPickupMode === "all" ||
+        request.sourcePickupMode === filterPickupMode ||
+        request.destinationPickupMode === filterPickupMode;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesDeliveryStatus &&
+        matchesPickupMode
+      );
+    });
+  }, [
+    requests,
+    searchTerm,
+    filterStatus,
+    filterDeliveryStatus,
+    filterPickupMode,
+  ]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredRequests, currentPage, itemsPerPage]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   if (!user || user.role !== "company") {
     return (
@@ -276,7 +339,7 @@ export default function CompanyRequestsPage() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">
             Available Requests
@@ -285,6 +348,122 @@ export default function CompanyRequestsPage() {
             Browse and submit offers for shipping requests
           </p>
         </div>
+
+        {/* Filter Section */}
+        <Card className="p-4 mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">Filters</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Search */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Search by ID or Customer
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
+                />
+              </div>
+
+              {/* Request Status Filter */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Request Status
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => {
+                    setFilterStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
+                >
+                  <option value="all">All Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="Action needed">Action Needed</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Delivery Status Filter */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Delivery Status
+                </label>
+                <select
+                  value={filterDeliveryStatus}
+                  onChange={(e) => {
+                    setFilterDeliveryStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="in-transit">In Transit</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Pickup Mode Filter */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Pickup Mode
+                </label>
+                <select
+                  value={filterPickupMode}
+                  onChange={(e) => {
+                    setFilterPickupMode(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
+                >
+                  <option value="all">All Modes</option>
+                  <option value="Self">Self Pickup</option>
+                  <option value="Delegate">Company Pickup</option>
+                </select>
+              </div>
+
+              {/* Reset Filters */}
+              <div className="flex items-end">
+                <Button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setFilterStatus("all");
+                    setFilterDeliveryStatus("all");
+                    setFilterPickupMode("all");
+                    setCurrentPage(1);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Reset Filters
+                </Button>
+              </div>
+            </div>
+
+            {/* Results Info */}
+            <div className="text-xs text-muted-foreground">
+              Showing{" "}
+              <span className="font-medium">{filteredRequests.length}</span> of{" "}
+              <span className="font-medium">{requests.length}</span> requests
+            </div>
+          </div>
+        </Card>
 
         {requests.length === 0 ? (
           <Card className="p-12 text-center">
@@ -296,231 +475,402 @@ export default function CompanyRequestsPage() {
               Check back later for new shipping requests
             </p>
           </Card>
+        ) : filteredRequests.length === 0 ? (
+          <Card className="p-12 text-center">
+            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              No requests match your filters
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Try adjusting your filter criteria
+            </p>
+          </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {requests.map((request) => {
-              const myOffer = getMyOffer(request);
-              const hasOffer = hasExistingOffer(request);
-              console.log("Request:", request);
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              {paginatedRequests.map((request) => {
+                const myOffer = getMyOffer(request);
+                const hasOffer = hasExistingOffer(request);
 
-              return (
-                <Card
-                  key={request.id}
-                  className="p-0 flex flex-col overflow-hidden hover:shadow-lg transition-shadow h-full"
-                >
-                  {/* Header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 px-4 py-2 flex items-center justify-between border-b border-border">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-foreground">
-                        #{request.id}
-                      </h3>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 font-medium">
-                        {request.requestStatus}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <div className="p-3 flex flex-col flex-1 space-y-3">
-                    {/* Locations Section - Horizontal */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex items-start gap-2 pb-2 border-b border-border/50">
-                        <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30">
-                            <MapPin className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            From
-                          </p>
-                          <p className="font-semibold text-xs mt-0.5">
-                            {request.source.city}, {request.source.country}
-                          </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <span
-                              className={`inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200`}
-                            >
-                              {request.sourcePickupMode === "Self"
-                                ? "Self"
-                                : "Company"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2 pb-2 border-b border-border/50">
-                        <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30">
-                            <MapPin className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            To
-                          </p>
-                          <p className="font-semibold text-xs mt-0.5">
-                            {request.destination.city},{" "}
-                            {request.destination.country}
-                          </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <span
-                              className={`inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200`}
-                            >
-                              {request.destinationPickupMode === "Self"
-                                ? "Self"
-                                : "Company"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Items & Cost & Client Row */}
-                    <div className="grid grid-cols-3 gap-2 pb-2 border-b border-border/50">
-                      <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          Items
-                        </p>
-                        <p className="text-base font-bold text-foreground mt-0.5">
-                          {request.items.length}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {request.items.reduce(
-                            (sum, item) => sum + item.quantity,
-                            0,
-                          )}{" "}
-                          units
-                        </p>
-                      </div>
-                      <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          Cost
-                        </p>
-                        {request.primaryCost ? (
-                          <>
-                            <p className="text-base font-bold text-primary mt-0.5">
-                              ${request.primaryCost}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {request.costOffers &&
-                              request.costOffers.length > 0
-                                ? `${request.costOffers.length} offer(s)`
-                                : "Primary"}
-                            </p>
-                          </>
-                        ) : request.costOffers &&
-                          request.costOffers.length > 0 ? (
-                          <>
-                            <p className="text-base font-bold text-primary mt-0.5">
-                              $
-                              {Math.min(
-                                ...request.costOffers.map((o) => o.cost),
-                              ).toFixed(2)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {request.costOffers.length} offer(s)
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mt-0.5">
-                              Pending
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              No offers
-                            </p>
-                          </>
-                        )}
-                      </div>
-                      <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 flex flex-col justify-center">
+                return (
+                  <Card
+                    key={request.id || request._id}
+                    className="p-0 flex flex-col overflow-hidden hover:shadow-lg transition-shadow h-full"
+                  >
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 px-4 py-2 flex items-center justify-between border-b border-border">
+                      <div className="flex flex-col items-start gap-2">
+                        <h3 className="text-sm font-bold text-foreground">
+                          #{request.id || request._id}
+                        </h3>
                         <div className="flex items-center gap-1">
-                          <UserIcon className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs font-medium text-foreground truncate">
-                            {request.user?.fullName?.split(" ")[0] || "User"}
+                          Request Status:{" "}
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 font-medium">
+                            {request.requestStatus}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          Delivery Status:{" "}
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 font-medium">
+                            {request.deliveryStatus}
                           </span>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Items Details - Compact */}
-                    {request.items.length > 0 && (
-                      <div className="bg-slate-50/50 dark:bg-slate-900/20 rounded p-2 border border-border/30">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                          Details
-                        </p>
-                        <div className="space-y-0.5">
-                          {request.items.slice(0, 2).map((item, idx) => (
-                            <div
-                              key={idx}
-                              className="flex justify-between gap-2 text-xs"
-                            >
-                              <span className="font-medium truncate">
-                                {item.quantity}x {item.item || item.name}
-                              </span>
-                              <span className="text-muted-foreground whitespace-nowrap">
-                                {item.weight}kg
-                              </span>
-                            </div>
-                          ))}
-                          {request.items.length > 2 && (
-                            <p className="text-xs text-muted-foreground pt-0.5">
-                              +{request.items.length - 2} more
-                            </p>
-                          )}
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground">
+                          Created:{" "}
+                          {new Date(request.createdAt!).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-muted-foreground text-opacity-75">
+                          Updated:{" "}
+                          {new Date(request.updatedAt!).toLocaleDateString()}
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-                      {!hasOffer ? (
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() =>
-                              setOfferModal({
-                                isOpen: true,
-                                requestId: request.id,
-                              })
-                            }
-                            disabled={processingId === request.id}
-                            size="sm"
-                            className="flex-1 gap-1"
-                          >
-                            <DollarSign className="w-3 h-3" />
-                            Offer
-                          </Button>
-                          <Button
-                            onClick={() => handleRejectRequest(request.id)}
-                            disabled={processingId === request.id}
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 text-destructive hover:text-destructive"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
+                    <div className="p-3 flex flex-col flex-1 space-y-3">
+                      {/* Locations Section - Full Details */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 space-y-1">
+                          <div className="flex items-center gap-2 pb-1 mb-1 border-b border-border/30">
+                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30">
+                              <MapPin className="w-2 h-2 text-green-600 dark:text-green-400" />
+                            </div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase">
+                              From
+                            </p>
+                          </div>
+                          <p className="text-xs font-medium text-foreground">
+                            {request.source.street &&
+                              `${request.source.street}, `}
+                            {request.source.city}
+                          </p>
+                          {request.source.governorate && (
+                            <p className="text-xs text-muted-foreground">
+                              {request.source.governorate}
+                            </p>
+                          )}
+                          {request.source.district && (
+                            <p className="text-xs text-muted-foreground">
+                              District: {request.source.district}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {request.source.country}
+                          </p>
+                          <span className="inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 mt-1">
+                            {request.sourcePickupMode === "Self"
+                              ? "Self Pickup"
+                              : "Company Pickup"}
+                          </span>
                         </div>
-                      ) : (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-2">
-                          <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 uppercase tracking-wide mb-1">
-                            Your Offer
+
+                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 space-y-1">
+                          <div className="flex items-center gap-2 pb-1 mb-1 border-b border-border/30">
+                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-red-100 dark:bg-red-900/30">
+                              <MapPin className="w-2 h-2 text-red-600 dark:text-red-400" />
+                            </div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase">
+                              To
+                            </p>
+                          </div>
+                          <p className="text-xs font-medium text-foreground">
+                            {request.destination.street &&
+                              `${request.destination.street}, `}
+                            {request.destination.city}
                           </p>
-                          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            ${myOffer?.cost.toFixed(2)}
+                          {request.destination.governorate && (
+                            <p className="text-xs text-muted-foreground">
+                              {request.destination.governorate}
+                            </p>
+                          )}
+                          {request.destination.district && (
+                            <p className="text-xs text-muted-foreground">
+                              District: {request.destination.district}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {request.destination.country}
                           </p>
-                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                            ⏳ Awaiting decision
+                          <span className="inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 mt-1">
+                            {request.destinationPickupMode === "Self"
+                              ? "Self Pickup"
+                              : "Company Pickup"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Client & Items Summary Row */}
+                      <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 space-y-1 border border-border/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <UserIcon className="w-3 h-3 text-muted-foreground" />
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                            Client
                           </p>
+                        </div>
+                        <div className="flex flex-row items-center gap-3 space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={
+                                typeof request.user === "object" &&
+                                request.user?.profilePicture
+                                  ? request.user.profilePicture
+                                  : "/default-avatar.png"
+                              }
+                              alt="User Avatar"
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <p className="text-xs font-medium text-foreground">
+                              {typeof request.user === "object" &&
+                              request.user?.fullName
+                                ? request.user.fullName
+                                : "Unknown"}
+                            </p>
+                            {typeof request.user === "object" &&
+                              request.user?.email && (
+                                <p className="text-xs text-muted-foreground">
+                                  {request.user.email}
+                                </p>
+                              )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Items Details - Full List */}
+                      {request.items.length > 0 && (
+                        <div className="bg-slate-50/50 dark:bg-slate-900/20 rounded p-2 border border-border/30">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Items ({request.items.length})
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {request.items.reduce(
+                                (sum, item) => sum + item.quantity,
+                                0,
+                              )}{" "}
+                              units total
+                            </p>
+                          </div>
+                          <div className="space-y-1 max-h-40 overflow-y-auto">
+                            {request.items.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="flex justify-between gap-2 text-xs bg-white dark:bg-slate-900/40 p-1.5 rounded border border-border/20"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">
+                                    {item.quantity}x {item.item || item.name}
+                                  </p>
+                                  {item.category && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Category: {item.category}
+                                    </p>
+                                  )}
+                                  {item.note && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                      Note: {item.note}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="font-medium whitespace-nowrap">
+                                    {item.weight}kg
+                                  </p>
+                                  {item.dimensions && (
+                                    <p className="text-xs text-muted-foreground whitespace-nowrap">
+                                      {item.dimensions}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
+
+                      {/* Cost Info & Offers */}
+                      <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 border border-border/30">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                          Pricing
+                        </p>
+                        {request.primaryCost ? (
+                          <div className="bg-white dark:bg-slate-900/40 p-2 rounded mb-2">
+                            <p className="text-xs text-muted-foreground">
+                              Primary Cost
+                            </p>
+                            <p className="text-lg font-bold text-primary">
+                              ${request.primaryCost}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-amber-50 dark:bg-amber-900/20 p-2 rounded mb-2 border border-amber-200 dark:border-amber-800">
+                            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                              No primary cost set - awaiting company offers
+                            </p>
+                          </div>
+                        )}
+
+                        {request.costOffers &&
+                          request.costOffers.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Company Offers ({request.costOffers.length}):
+                              </p>
+                              {request.costOffers.map((offer, idx) => (
+                                <div
+                                  key={idx}
+                                  className="bg-white dark:bg-slate-900/40 p-1.5 rounded border border-border/20 text-xs"
+                                >
+                                  <div className="flex justify-between items-start mb-0.5">
+                                    <span className="font-medium text-foreground">
+                                      {offer.company.name}
+                                    </span>
+                                    <span
+                                      className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                        offer.status === "accepted"
+                                          ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200"
+                                          : offer.status === "rejected"
+                                            ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
+                                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                                      }`}
+                                    >
+                                      {offer.status}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-bold text-primary">
+                                    ${offer.cost.toFixed(2)}
+                                  </p>
+                                  {offer.comment && (
+                                    <p className="text-xs text-muted-foreground mt-0.5 italic">
+                                      "{offer.comment}"
+                                    </p>
+                                  )}
+                                  {offer.createdAt && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {new Date(
+                                        offer.createdAt,
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
+                        {!hasOffer ? (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() =>
+                                setOfferModal({
+                                  isOpen: true,
+                                  requestId: request.id || request._id,
+                                })
+                              }
+                              disabled={
+                                processingId === request.id ||
+                                processingId === request._id
+                              }
+                              size="sm"
+                              className="flex-1 gap-1"
+                            >
+                              <DollarSign className="w-3 h-3" />
+                              Offer
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                handleRejectRequest(request.id || request._id)
+                              }
+                              disabled={processingId === request.id}
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-destructive hover:text-destructive"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-2">
+                            <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 uppercase tracking-wide mb-1">
+                              Your Offer
+                            </p>
+                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                              ${myOffer?.cost.toFixed(2)}
+                            </p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                              ⏳ Awaiting decision
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Items per page:
+                  </label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(parseInt(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="px-2 py-1 text-xs border border-border rounded bg-background"
+                  >
+                    <option value={3}>3</option>
+                    <option value={6}>6</option>
+                    <option value={12}>12</option>
+                    <option value={24}>24</option>
+                  </select>
+                </div>
+
+                <div className="text-xs text-muted-foreground">
+                  Page{" "}
+                  <span className="font-medium">
+                    {currentPage} of {totalPages === 0 ? 1 : totalPages}
+                  </span>{" "}
+                  • Total:{" "}
+                  <span className="font-medium">{filteredRequests.length}</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(totalPages || 1, prev + 1),
+                      )
+                    }
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </>
         )}
       </main>
 
