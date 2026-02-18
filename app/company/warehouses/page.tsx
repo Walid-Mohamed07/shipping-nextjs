@@ -23,8 +23,15 @@ import type { AddressData } from "@/app/components/LocationMapPicker";
 
 const LocationMapPicker = dynamic(
   () =>
-    import("@/app/components/LocationMapPicker").then((m) => m.LocationMapPicker),
-  { ssr: false, loading: () => <div className="h-[280px] rounded-lg border border-gray-300 bg-gray-100 animate-pulse" /> }
+    import("@/app/components/LocationMapPicker").then(
+      (m) => m.LocationMapPicker,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[280px] rounded-lg border border-gray-300 bg-gray-100 animate-pulse" />
+    ),
+  },
 );
 
 interface CompanyWarehouse {
@@ -47,7 +54,8 @@ export default function CompanyWarehousesPage() {
   const [warehouses, setWarehouses] = useState<CompanyWarehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<CompanyWarehouse | null>(null);
+  const [editingWarehouse, setEditingWarehouse] =
+    useState<CompanyWarehouse | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -65,7 +73,9 @@ export default function CompanyWarehousesPage() {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const response = await fetch(`/api/company/warehouses?companyId=${user.id}`);
+      const response = await fetch(
+        `/api/company/warehouses?companyId=${user.id}`,
+      );
       if (response.ok) {
         const data = await response.json();
         setWarehouses(data.warehouses || []);
@@ -113,7 +123,8 @@ export default function CompanyWarehousesPage() {
       longitude: warehouse.coordinates?.longitude?.toString() || "",
     });
     setShowMap(
-      warehouse.coordinates?.latitude != null && warehouse.coordinates?.longitude != null
+      warehouse.coordinates?.latitude != null &&
+        warehouse.coordinates?.longitude != null,
     );
     setMapEditable(false);
     setIsFormOpen(true);
@@ -121,7 +132,7 @@ export default function CompanyWarehousesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.address) {
       alert("Name and address are required");
       return;
@@ -129,16 +140,17 @@ export default function CompanyWarehousesPage() {
 
     try {
       setSaving(true);
-      
-      const coordinates = formData.latitude && formData.longitude
-        ? {
-            latitude: parseFloat(formData.latitude),
-            longitude: parseFloat(formData.longitude),
-          }
-        : null;
+
+      const coordinates =
+        formData.latitude && formData.longitude
+          ? {
+              latitude: parseFloat(formData.latitude),
+              longitude: parseFloat(formData.longitude),
+            }
+          : null;
 
       const payload = {
-        companyId: user?.id,
+        companyId: user?.company,
         name: formData.name,
         address: formData.address,
         city: formData.city,
@@ -154,7 +166,11 @@ export default function CompanyWarehousesPage() {
       });
 
       if (response.ok) {
-        alert(editingWarehouse ? "Warehouse updated successfully!" : "Warehouse created successfully!");
+        alert(
+          editingWarehouse
+            ? "Warehouse updated successfully!"
+            : "Warehouse created successfully!",
+        );
         resetForm();
         await fetchWarehouses();
       } else {
@@ -170,7 +186,11 @@ export default function CompanyWarehousesPage() {
   };
 
   const handleDelete = async (warehouseId: string) => {
-    if (!confirm("Are you sure you want to delete this warehouse? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this warehouse? This action cannot be undone.",
+      )
+    ) {
       return;
     }
 
@@ -178,7 +198,7 @@ export default function CompanyWarehousesPage() {
       setDeleting(warehouseId);
       const response = await fetch(
         `/api/company/warehouses?companyId=${user?.id}&warehouseId=${warehouseId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
       if (response.ok) {
@@ -234,10 +254,7 @@ export default function CompanyWarehousesPage() {
               Manage your warehouse locations for self-pickup orders
             </p>
           </div>
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            className="gap-2"
-          >
+          <Button onClick={() => setIsFormOpen(true)} className="gap-2">
             <Plus className="w-4 h-4" />
             Add Warehouse
           </Button>
@@ -250,15 +267,11 @@ export default function CompanyWarehousesPage() {
               <h2 className="text-xl font-bold">
                 {editingWarehouse ? "Edit Warehouse" : "Add New Warehouse"}
               </h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetForm}
-              >
+              <Button variant="ghost" size="sm" onClick={resetForm}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -268,13 +281,15 @@ export default function CompanyWarehousesPage() {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="e.g., Main Warehouse"
                     className="w-full px-3 py-2 border border-border rounded-md bg-background"
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Address *
@@ -282,26 +297,28 @@ export default function CompanyWarehousesPage() {
                   <input
                     type="text"
                     value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
                     placeholder="e.g., 123 Industrial Zone"
                     className="w-full px-3 py-2 border border-border rounded-md bg-background"
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    City
-                  </label>
+                  <label className="block text-sm font-medium mb-1">City</label>
                   <input
                     type="text"
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
                     placeholder="e.g., Cairo"
                     className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Country
@@ -309,7 +326,9 @@ export default function CompanyWarehousesPage() {
                   <input
                     type="text"
                     value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, country: e.target.value })
+                    }
                     placeholder="e.g., Egypt"
                     className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   />
@@ -416,7 +435,7 @@ export default function CompanyWarehousesPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex gap-2 pt-4">
                 <Button
                   type="button"
@@ -432,7 +451,11 @@ export default function CompanyWarehousesPage() {
                   className="flex-1 gap-2"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? "Saving..." : (editingWarehouse ? "Update" : "Create")}
+                  {saving
+                    ? "Saving..."
+                    : editingWarehouse
+                      ? "Update"
+                      : "Create"}
                 </Button>
               </div>
             </form>
@@ -447,12 +470,10 @@ export default function CompanyWarehousesPage() {
               You don't have any warehouses yet
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Add a warehouse to enable self-pickup options for your shipping orders
+              Add a warehouse to enable self-pickup options for your shipping
+              orders
             </p>
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              className="mt-4 gap-2"
-            >
+            <Button onClick={() => setIsFormOpen(true)} className="mt-4 gap-2">
               <Plus className="w-4 h-4" />
               Add Your First Warehouse
             </Button>
@@ -489,7 +510,7 @@ export default function CompanyWarehousesPage() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
@@ -497,20 +518,24 @@ export default function CompanyWarehousesPage() {
                       <p>{warehouse.address}</p>
                       {(warehouse.city || warehouse.country) && (
                         <p className="text-muted-foreground">
-                          {[warehouse.city, warehouse.country].filter(Boolean).join(", ")}
+                          {[warehouse.city, warehouse.country]
+                            .filter(Boolean)
+                            .join(", ")}
                         </p>
                       )}
                     </div>
                   </div>
-                  
+
                   {warehouse.coordinates && (
                     <p className="text-xs text-muted-foreground">
-                      Coordinates: {warehouse.coordinates.latitude.toFixed(4)}, {warehouse.coordinates.longitude.toFixed(4)}
+                      Coordinates: {warehouse.coordinates.latitude.toFixed(4)},{" "}
+                      {warehouse.coordinates.longitude.toFixed(4)}
                     </p>
                   )}
-                  
+
                   <p className="text-xs text-muted-foreground">
-                    Created: {new Date(warehouse.createdAt).toLocaleDateString()}
+                    Created:{" "}
+                    {new Date(warehouse.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </Card>

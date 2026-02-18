@@ -122,10 +122,12 @@ export async function POST(request: NextRequest) {
         id: newUser._id,
         email: newUser.email,
         name: newUser.name,
+        fullName: newUser.fullName,
         username: newUser.username,
         mobile: newUser.mobile,
         birthDate: newUser.birthDate,
         profilePicture: newUser.profilePicture,
+        company: newUser.company || null,
         role: newUser.role,
         status: newUser.status,
       },
@@ -133,17 +135,19 @@ export async function POST(request: NextRequest) {
       { expiresIn: "7d" },
     );
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         user: {
           id: newUser._id,
           email: newUser.email,
           name: newUser.name,
+          fullName: newUser.fullName,
           username: newUser.username,
           mobile: newUser.mobile,
           birthDate: newUser.birthDate,
           profilePicture: newUser.profilePicture,
+          company: newUser.company || null,
           role: newUser.role,
           status: newUser.status,
         },
@@ -152,6 +156,19 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     );
+
+    // Set HTTP-only cookie with token
+    response.cookies.set({
+      name: "auth_token",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: "lax" as const,
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json({ error: "Signup failed" }, { status: 500 });
