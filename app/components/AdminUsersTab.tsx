@@ -325,9 +325,16 @@ export function AdminUsersTab() {
         <Card className="p-6 bg-muted/50">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Account Information Section */}
-            <div className="space-y-4">
+            <div
+              className={`space-y-4 ${editingId ? "opacity-60 pointer-events-none" : ""}`}
+            >
               <h3 className="text-lg font-semibold text-foreground">
                 Account Information
+                {editingId && (
+                  <span className="text-xs font-normal text-muted-foreground ml-2">
+                    (Read-only)
+                  </span>
+                )}
               </h3>
 
               {/* Row 1: Full Name & Username */}
@@ -348,6 +355,7 @@ export function AdminUsersTab() {
                       setFormData({ ...formData, fullName: e.target.value })
                     }
                     className="bg-background"
+                    disabled={!!editingId}
                     required
                   />
                 </div>
@@ -368,6 +376,7 @@ export function AdminUsersTab() {
                       setFormData({ ...formData, username: e.target.value })
                     }
                     className="bg-background"
+                    disabled={!!editingId}
                     required
                   />
                 </div>
@@ -391,6 +400,7 @@ export function AdminUsersTab() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     className="bg-background"
+                    disabled={!!editingId}
                     required
                   />
                 </div>
@@ -411,6 +421,7 @@ export function AdminUsersTab() {
                       setFormData({ ...formData, mobile: e.target.value })
                     }
                     className="bg-background"
+                    disabled={!!editingId}
                   />
                 </div>
               </div>
@@ -431,6 +442,7 @@ export function AdminUsersTab() {
                     setFormData({ ...formData, birthDate: e.target.value })
                   }
                   className="bg-background"
+                  disabled={!!editingId}
                 />
               </div>
 
@@ -441,8 +453,9 @@ export function AdminUsersTab() {
                 </label>
                 <ProfilePictureUpload
                   value={profilePicture}
-                  onChange={handleProfilePictureChange}
+                  onChange={editingId ? () => {} : handleProfilePictureChange}
                   preview={profilePicturePreview}
+                  disabled={!!editingId}
                 />
               </div>
             </div>

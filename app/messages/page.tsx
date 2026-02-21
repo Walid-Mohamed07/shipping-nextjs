@@ -7,8 +7,8 @@ import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/app/context/AuthContext";
+import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { Mail, Send, X, Plus, Upload, Link as LinkIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { User } from "@/types";
 
 interface Message {
@@ -31,8 +31,7 @@ interface Message {
 const ITEMS_PER_PAGE = 10;
 
 export default function MessagesPage() {
-  const { user } = useAuth();
-  const router = useRouter();
+  const { user, isLoading: authLoading } = useProtectedRoute();
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,8 +59,7 @@ export default function MessagesPage() {
   const [newAttachment, setNewAttachment] = useState("");
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login");
+    if (authLoading || !user) {
       return;
     }
 

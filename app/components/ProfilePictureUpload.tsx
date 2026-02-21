@@ -9,12 +9,14 @@ interface ProfilePictureUploadProps {
   value: File | null;
   onChange: (file: File | null) => void;
   preview: string | null;
+  disabled?: boolean;
 }
 
 export default function ProfilePictureUpload({
   value,
   onChange,
   preview,
+  disabled = false,
 }: ProfilePictureUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
@@ -48,7 +50,7 @@ export default function ProfilePictureUpload({
   };
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${disabled ? "opacity-60" : ""}`}>
       {/* <label className="block text-sm font-medium text-foreground">
         Profile Picture *
       </label> */}
@@ -61,18 +63,24 @@ export default function ProfilePictureUpload({
             fill
             className="object-cover"
           />
-          <button
-            type="button"
-            onClick={handleRemove}
-            className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 rounded-full p-1"
-          >
-            <X className="w-3 h-3 text-white" />
-          </button>
+          {!disabled && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 rounded-full p-1"
+            >
+              <X className="w-3 h-3 text-white" />
+            </button>
+          )}
         </div>
       ) : (
         <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => !disabled && fileInputRef.current?.click()}
+          className={`border-2 border-dashed border-border rounded-lg p-6 text-center ${
+            !disabled
+              ? "cursor-pointer hover:bg-muted/50"
+              : "cursor-not-allowed"
+          } transition-colors`}
         >
           <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
           <p className="text-sm font-medium text-foreground">
@@ -88,6 +96,7 @@ export default function ProfilePictureUpload({
         accept="image/*"
         onChange={handleFileSelect}
         className="hidden"
+        disabled={disabled}
       />
 
       {error && <p className="text-sm text-red-500">{error}</p>}

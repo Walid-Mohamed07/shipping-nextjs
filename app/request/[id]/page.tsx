@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Header } from "@/app/components/Header";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
+import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
 import {
@@ -101,8 +102,7 @@ export default function RequestDetailsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const { user } = useAuth();
-  const router = useRouter();
+  const { user, isLoading: authLoading } = useProtectedRoute();
   const params = useParams();
   const requestId = params.id as string;
 
@@ -241,8 +241,7 @@ export default function RequestDetailsPage() {
   };
 
   useEffect(() => {
-    if (!user || !user.id) {
-      router.push("/login");
+    if (authLoading || !user || !user.id) {
       return;
     }
 

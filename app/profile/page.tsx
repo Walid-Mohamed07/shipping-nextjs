@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
+import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { toast, Toaster } from "sonner";
 import {
   ArrowLeft,
@@ -17,6 +17,9 @@ import {
   DollarSign,
   Wrench,
   BoxSelect,
+  Edit2,
+  MapPin,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -32,20 +35,29 @@ interface UserStats {
   packagingRequests: number;
 }
 
+interface UserAddress {
+  _id: string;
+  fullName: string;
+  mobile: string;
+  street: string;
+  building?: string;
+  city: string;
+  district: string;
+  postalCode: string;
+  country: string;
+  addressType: string;
+  primary?: boolean;
+  deliveryInstructions?: string;
+}
+
 export default function ProfilePage() {
-  const { user } = useAuth();
-  const router = useRouter();
+  const { user, isLoading: authLoading } = useProtectedRoute();
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [error, setError] = useState("");
   const hasFetched = useRef(false);
-
-  // Handle redirect if not authenticated
-  useEffect(() => {
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user, router]);
 
   // Fetch stats only once when user.id is available
   useEffect(() => {
@@ -131,6 +143,27 @@ export default function ProfilePage() {
     fetchStats();
   }, [user?.id]);
 
+  // Fetch user addresses
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchAddresses = async () => {
+      setIsLoadingAddresses(true);
+      try {
+        const response = await fetch(`/api/user/addresses?userId=${user.id}`);
+        if (!response.ok) throw new Error("Failed to fetch addresses");
+        const data = await response.json();
+        setAddresses(data.addresses || []);
+      } catch (err) {
+        console.error("Error fetching addresses:", err);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    fetchAddresses();
+  }, [user?.id]);
+
   if (!user) {
     return null;
   }
@@ -173,20 +206,35 @@ export default function ProfilePage() {
               </div>
             )}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                {user.name || "User"}
-              </h1>
-              <p className="text-muted-foreground mb-2">{user.email}</p>
-              <div className="flex gap-4">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                  <span className="w-2 h-2 bg-primary rounded-full" />
-                  {user.role}
-                </span>
-                {user.mobile && (
-                  <span className="text-sm text-muted-foreground">
-                    {user.mobile}
-                  </span>
-                )}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-foreground mb-2">
+                    {user.name || "User"}
+                  </h1>
+                  <p className="text-muted-foreground mb-2">{user.email}</p>
+                  <div className="flex gap-4 flex-wrap">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                      <span className="w-2 h-2 bg-primary rounded-full" />
+                      {user.role}
+                    </span>
+                    {user.mobile && (
+                      <span className="text-sm text-muted-foreground">
+                        {user.mobile}
+                      </span>
+                    )}
+                    {user.birthDate && (
+                      <span className="text-sm text-muted-foreground">
+                        Born: {new Date(user.birthDate).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Link href="/profile/edit">
+                  <Button className="gap-2 cursor-pointer whitespace-nowrap">
+                    <Edit2 className="w-4 h-4" />
+                    Edit Profile
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -353,6 +401,96 @@ export default function ProfilePage() {
                   View All Requests
                 </Button>
               </Link>
+            </div>
+
+            {/* Addresses Section */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                  <MapPin className="w-6 h-6 text-primary" />
+                  Saved Addresses
+                </h2>
+                <Link href="/profile/addresses">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 bg-transparent cursor-pointer"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Manage Addresses
+                  </Button>
+                </Link>
+              </div>
+
+              {isLoadingAddresses ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-40 bg-muted rounded-lg animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : addresses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {addresses.map((address) => (
+                    <div
+                      key={address._id}
+                      className="bg-card rounded-lg border border-border p-6"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground mb-1">
+                            {address.fullName}
+                          </h3>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium">
+                            {address.addressType}
+                          </span>
+                          {address.primary && (
+                            <span className="ml-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>{address.street}</p>
+                        {address.building && (
+                          <p>Building: {address.building}</p>
+                        )}
+                        <p>
+                          {address.city}, {address.district}
+                        </p>
+                        <p>
+                          {address.postalCode}, {address.country}
+                        </p>
+                        <p className="flex items-center gap-2 text-foreground">
+                          <strong>Mobile:</strong> {address.mobile}
+                        </p>
+                        {address.deliveryInstructions && (
+                          <p className="text-xs italic">
+                            <strong>Instructions:</strong>{" "}
+                            {address.deliveryInstructions}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-card rounded-lg border border-border p-12 text-center">
+                  <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                  <p className="text-muted-foreground mb-4">
+                    No addresses saved yet
+                  </p>
+                  <Link href="/profile/addresses">
+                    <Button className="gap-2 cursor-pointer">
+                      <MapPin className="w-4 h-4" />
+                      Add Your First Address
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </>
         ) : null}
