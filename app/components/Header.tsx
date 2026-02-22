@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export function Header() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -50,7 +50,9 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-6">
-          {user ? (
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : user ? (
             <>
               {user.role === "client" && (
                 <Link

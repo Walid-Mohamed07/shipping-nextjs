@@ -74,6 +74,7 @@ interface AuthContextType {
     address: any,
   ) => Promise<void>;
   logout: () => void;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,14 +84,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Restore user from HTTP-only cookie by calling /api/auth/me
+    // Restore user from localStorage on app initialization
     const restoreUser = async () => {
       try {
-        console.log("AuthContext: Attempting to restore user from cookie...");
+        console.log("AuthContext: Attempting to restore user from localStorage...");
 
+        // First, try to get user from localStorage (faster)
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          console.log("AuthContext: User restored from localStorage:", parsedUser);
+          setUser(parsedUser);
+          setIsLoading(false);
+          return;
+        }
+
+        // If no user in localStorage, try to validate token with backend
         const response = await fetch("/api/auth/me", {
           method: "GET",
-          credentials: "include", // Important: include cookies in request
+          credentials: "include", // Include HTTP-only cookie
           headers: {
             "Content-Type": "application/json",
           },
@@ -103,21 +115,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (response.ok) {
           const data = await response.json();
-          console.log("AuthContext: User restored from cookie:", data.user);
+          console.log("AuthContext: User validated with backend:", data.user);
           setUser(data.user);
+          // Restore to localStorage
+          localStorage.setItem("user", JSON.stringify(data.user));
         } else {
           console.log(
             "AuthContext: Token is invalid or expired (status:",
             response.status,
             ")",
           );
-          const errorData = await response.json().catch(() => null);
-          console.log("AuthContext: Error data:", errorData);
           setUser(null);
+          localStorage.removeItem("user");
         }
       } catch (error) {
         console.error("AuthContext: Failed to restore user:", error);
         setUser(null);
+        localStorage.removeItem("user");
       } finally {
         setIsLoading(false);
       }
@@ -144,7 +158,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await response.json();
     console.log("AuthContext: Login successful for user:", email);
+    
+    // Store full user data in localStorage
+    localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
+    
     // Token is already set as HTTP-only cookie by the server
   };
 
@@ -184,7 +202,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await response.json();
     console.log("AuthContext: Signup successful for user:", email);
+    
+    // Store full user data in localStorage
+    localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
+    
     // Token is already set as HTTP-only cookie by the server
   };
 
@@ -203,7 +225,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, signup, logout, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

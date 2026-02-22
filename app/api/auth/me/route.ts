@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         user: {
+          _id: decoded.id,
           id: decoded.id,
           email: decoded.email,
           name: decoded.name,

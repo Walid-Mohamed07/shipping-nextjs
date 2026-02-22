@@ -99,6 +99,7 @@ export interface ActivityHistory {
   companyName?: string;
   companyRate?: string;
   cost?: number;
+  details?: Record<string, any>;
 }
 
 export interface Request {

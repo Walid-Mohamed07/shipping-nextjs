@@ -5,8 +5,8 @@ import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/app/context/AuthContext";
+import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { Mail, Reply, Archive } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface Message {
   id: string;
@@ -27,8 +27,7 @@ interface Message {
 const ITEMS_PER_PAGE = 10;
 
 export default function CompanyInboxPage() {
-  const { user } = useAuth();
-  const router = useRouter();
+  const { user, isLoading: authLoading } = useProtectedRoute();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -37,28 +36,6 @@ export default function CompanyInboxPage() {
     "all",
   );
   const [searchTerm, setSearchTerm] = useState("");
-
-  const markAsRead = async (messageId: string) => {
-    try {
-      await fetch("/api/messages", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messageId,
-          status: "read",
-          readAt: new Date().toISOString(),
-        }),
-      });
-
-      setMessages((prevMessages) =>
-        prevMessages.map((m) =>
-          m.id === messageId ? { ...m, status: "read" as const } : m,
-        ),
-      );
-    } catch (error) {
-      console.error("Failed to mark message as read:", error);
-    }
-  };
 
   const fetchMessages = useCallback(async () => {
     if (!user?.email) return;
@@ -72,11 +49,39 @@ export default function CompanyInboxPage() {
         const data = await response.json();
         setMessages(data);
 
-        data.forEach((msg: Message) => {
-          if (msg.status === "unread") {
-            markAsRead(msg.id);
+        // Mark unread messages as read (in batch, not in a loop)
+        const unreadMessageIds = data
+          .filter((msg: Message) => msg.status === "unread")
+          .map((msg: Message) => msg.id);
+
+        if (unreadMessageIds.length > 0) {
+          try {
+            await Promise.all(
+              unreadMessageIds.map((messageId: string) =>
+                fetch("/api/messages", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    messageId,
+                    status: "read",
+                    readAt: new Date().toISOString(),
+                  }),
+                }),
+              ),
+            );
+
+            // Update local state after all API calls complete
+            setMessages((prevMessages) =>
+              prevMessages.map((m) =>
+                unreadMessageIds.includes(m.id)
+                  ? { ...m, status: "read" as const }
+                  : m,
+              ),
+            );
+          } catch (error) {
+            console.error("Failed to mark messages as read:", error);
           }
-        });
+        }
       }
     } catch (error) {
       console.error("Failed to fetch messages:", error);
@@ -86,14 +91,13 @@ export default function CompanyInboxPage() {
   }, [user?.email]);
 
   useEffect(() => {
-    if (!user || user.role !== "company") {
-      router.push("/login");
+    if (authLoading || !user || user.role !== "company") {
       return;
     }
 
     fetchMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.email, user?.role]);
+  }, [user?.email, user?.role, authLoading]);
 
   const filteredMessages = messages.filter((msg) => {
     const matchesStatus = filterStatus === "all" || msg.status === filterStatus;

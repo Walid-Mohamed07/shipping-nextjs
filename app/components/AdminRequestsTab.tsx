@@ -61,7 +61,8 @@ export function AdminRequestsTab() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<RequestResponse | null>(null);
+  const [selectedRequest, setSelectedRequest] =
+    useState<RequestResponse | null>(null);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const itemsPerPage = 10;
@@ -458,7 +459,9 @@ export function AdminRequestsTab() {
             <div className="mb-6 pb-6 border-b border-border">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-2">Request Status</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Request Status
+                  </p>
                   <div
                     className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.requestStatus).bg} ${getStatusColors(selectedRequest.requestStatus).text} ${getStatusColors(selectedRequest.requestStatus).border}`}
                   >
@@ -466,8 +469,12 @@ export function AdminRequestsTab() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-2">Delivery Status</p>
-                  <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.deliveryStatus).bg} ${getStatusColors(selectedRequest.deliveryStatus).text} ${getStatusColors(selectedRequest.deliveryStatus).border}`}>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Delivery Status
+                  </p>
+                  <div
+                    className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.deliveryStatus).bg} ${getStatusColors(selectedRequest.deliveryStatus).text} ${getStatusColors(selectedRequest.deliveryStatus).border}`}
+                  >
                     {selectedRequest.deliveryStatus}
                   </div>
                 </div>
@@ -476,25 +483,41 @@ export function AdminRequestsTab() {
 
             {/* Delivery Details */}
             <div className="mb-6 pb-6 border-b border-border">
-              <h3 className="font-semibold text-foreground mb-4">Delivery Details</h3>
+              <h3 className="font-semibold text-foreground mb-4">
+                Delivery Details
+              </h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Type</p>
-                  <p className="text-foreground font-medium">{selectedRequest.deliveryType}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Start Time</p>
                   <p className="text-foreground font-medium">
-                    {selectedRequest.startTime ? new Date(selectedRequest.startTime).toLocaleString() : "N/A"}
+                    {selectedRequest.deliveryType}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Primary Cost</p>
-                  <p className="text-foreground font-medium">${selectedRequest.primaryCost || "N/A"}</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Start Time
+                  </p>
+                  <p className="text-foreground font-medium">
+                    {selectedRequest.startTime
+                      ? new Date(selectedRequest.startTime).toLocaleString()
+                      : "N/A"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Actual Cost</p>
-                  <p className="text-foreground font-medium">${selectedRequest.cost || "Pending"}</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Primary Cost
+                  </p>
+                  <p className="text-foreground font-medium">
+                    ${selectedRequest.primaryCost || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Actual Cost
+                  </p>
+                  <p className="text-foreground font-medium">
+                    ${selectedRequest.cost || "Pending"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -637,7 +660,8 @@ export function AdminRequestsTab() {
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          Status: <span className="font-medium">{offer.status}</span>
+                          Status:{" "}
+                          <span className="font-medium">{offer.status}</span>
                         </p>
                       </div>
                     ))}
@@ -650,31 +674,104 @@ export function AdminRequestsTab() {
             {selectedRequest.activityHistory &&
               selectedRequest.activityHistory.length > 0 && (
                 <div className="mb-6 pb-6 border-b border-border">
-                  <h3 className="font-semibold text-foreground mb-3">
-                    Activity History
+                  <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    📋 Activity History
                   </h3>
-                  <div className="space-y-2">
-                    {selectedRequest.activityHistory.map((activity, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 bg-muted/50 rounded-lg border border-border text-sm"
-                      >
-                        <p className="font-medium text-foreground">
-                          {activity.action}
-                        </p>
-                        <p className="text-muted-foreground text-xs mt-1">
-                          {activity.description}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          📅 {new Date(activity.timestamp).toLocaleString()}
-                        </p>
-                        {activity.companyName && (
-                          <p className="text-xs text-muted-foreground">
-                            Company: {activity.companyName}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    {selectedRequest.activityHistory
+                      .slice()
+                      .reverse()
+                      .map((activity, idx) => (
+                        <div
+                          key={idx}
+                          className="p-4 bg-muted/40 rounded-lg border border-border text-sm space-y-2"
+                        >
+                          {/* Action title with timestamp */}
+                          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                            <p className="font-semibold text-foreground">
+                              {activity.action
+                                .split("_")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() +
+                                    word.slice(1),
+                                )
+                                .join(" ")}
+                            </p>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              📅{" "}
+                              {new Date(activity.timestamp).toLocaleString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Description */}
+                          {activity.description && (
+                            <p className="text-muted-foreground">
+                              {activity.description}
+                            </p>
+                          )}
+
+                          {/* Company and cost details in grid */}
+                          {(activity.companyName ||
+                            activity.companyRate ||
+                            activity.cost !== undefined) && (
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {activity.companyName && (
+                                <div>
+                                  <span className="text-muted-foreground">
+                                    Company:{" "}
+                                  </span>
+                                  <span className="text-foreground font-medium">
+                                    {activity.companyName}
+                                  </span>
+                                </div>
+                              )}
+                              {activity.cost !== undefined &&
+                                activity.cost !== null && (
+                                  <div>
+                                    <span className="text-muted-foreground">
+                                      Cost:{" "}
+                                    </span>
+                                    <span className="text-primary font-semibold">
+                                      ${Number(activity.cost).toFixed(2)}
+                                    </span>
+                                  </div>
+                                )}
+                              {activity.companyRate && (
+                                <div>
+                                  <span className="text-muted-foreground">
+                                    Rate:{" "}
+                                  </span>
+                                  <span className="text-foreground">
+                                    {activity.companyRate} ⭐
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Expandable details */}
+                          {activity.details &&
+                            Object.keys(activity.details).length > 0 && (
+                              <details className="text-xs cursor-pointer mt-2 p-2 bg-background/50 rounded border border-border/50">
+                                <summary className="font-medium hover:text-primary transition-colors">
+                                  ⚙️ Additional Details
+                                </summary>
+                                <pre className="mt-2 text-xs overflow-auto whitespace-pre-wrap break-words bg-background p-2 rounded">
+                                  {JSON.stringify(activity.details, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
@@ -726,7 +823,7 @@ export function AdminRequestsTab() {
                         <p className="text-xs text-muted-foreground mt-1">
                           Assigned:{" "}
                           {new Date(
-                            selectedRequest.sourceWarehouse.assignedAt
+                            selectedRequest.sourceWarehouse.assignedAt,
                           ).toLocaleString()}
                         </p>
                       )}
@@ -751,7 +848,7 @@ export function AdminRequestsTab() {
                         <p className="text-xs text-muted-foreground mt-1">
                           Assigned:{" "}
                           {new Date(
-                            selectedRequest.destinationWarehouse.assignedAt
+                            selectedRequest.destinationWarehouse.assignedAt,
                           ).toLocaleString()}
                         </p>
                       )}
@@ -771,9 +868,7 @@ export function AdminRequestsTab() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {selectedRequest.sourcePickupMode && (
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        From
-                      </p>
+                      <p className="text-xs text-muted-foreground mb-1">From</p>
                       <p className="font-medium text-foreground">
                         {selectedRequest.sourcePickupMode}
                       </p>

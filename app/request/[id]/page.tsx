@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Header } from "@/app/components/Header";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
-import { toast, Toaster } from "sonner";
+import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   Package,
@@ -101,8 +102,7 @@ export default function RequestDetailsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const { user } = useAuth();
-  const router = useRouter();
+  const { user, isLoading: authLoading } = useProtectedRoute();
   const params = useParams();
   const requestId = params.id as string;
 
@@ -241,8 +241,7 @@ export default function RequestDetailsPage() {
   };
 
   useEffect(() => {
-    if (!user || !user.id) {
-      router.push("/login");
+    if (authLoading || !user || !user.id) {
       return;
     }
 
@@ -372,7 +371,6 @@ export default function RequestDetailsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -1099,18 +1097,29 @@ export default function RequestDetailsPage() {
 
               {/* Activity entries */}
               {request.activityHistory && request.activityHistory.length > 0 ? (
-                <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
                   {[...request.activityHistory]
                     .reverse()
                     .map((activity, index) => (
-                      <div key={index} className="flex gap-3 text-sm">
+                      <div
+                        key={index}
+                        className="flex gap-3 text-sm border-l-2 border-primary pl-3 py-2"
+                      >
                         <div className="flex-shrink-0 mt-0.5">
                           <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className="font-medium text-foreground truncate">
-                              {activity.action}
+                          {/* Action and timestamp */}
+                          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                            <p className="font-medium text-foreground">
+                              {activity.action
+                                .split("_")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() +
+                                    word.slice(1),
+                                )
+                                .join(" ")}
                             </p>
                             <time className="text-xs text-muted-foreground whitespace-nowrap">
                               {new Date(activity.timestamp).toLocaleDateString(
@@ -1118,20 +1127,69 @@ export default function RequestDetailsPage() {
                                 {
                                   month: "short",
                                   day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
                                 },
                               )}
                             </time>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {activity.description}
-                          </p>
-                          {activity.cost && (
-                            <div className="flex items-center gap-2 mt-1 text-xs">
-                              <span className="text-primary font-semibold">
-                                ${Number(activity.cost).toFixed(2)}
-                              </span>
-                            </div>
+
+                          {/* Description */}
+                          {activity.description && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {activity.description}
+                            </p>
                           )}
+
+                          {/* Company info and cost */}
+                          <div className="flex flex-wrap gap-3 mt-2">
+                            {activity.companyName && (
+                              <div className="text-xs">
+                                <span className="text-muted-foreground">
+                                  Company:{" "}
+                                </span>
+                                <span className="text-foreground font-medium">
+                                  {activity.companyName}
+                                </span>
+                              </div>
+                            )}
+                            {activity.cost !== undefined &&
+                              activity.cost !== null && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">
+                                    Cost:{" "}
+                                  </span>
+                                  <span className="text-primary font-semibold">
+                                    ${Number(activity.cost).toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+                            {activity.companyRate && (
+                              <div className="text-xs">
+                                <span className="text-muted-foreground">
+                                  Rate:{" "}
+                                </span>
+                                <span className="text-foreground">
+                                  {activity.companyRate} ⭐
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Additional details if present */}
+                          {/* {activity.details &&
+                            Object.keys(activity.details).length > 0 && (
+                              <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+                                <details className="cursor-pointer">
+                                  <summary className="font-medium text-foreground hover:text-primary transition-colors">
+                                    More details
+                                  </summary>
+                                  <pre className="mt-1 text-xs overflow-auto whitespace-pre-wrap break-words">
+                                    {JSON.stringify(activity.details, null, 2)}
+                                  </pre>
+                                </details>
+                              </div>
+                            )} */}
                         </div>
                       </div>
                     ))}

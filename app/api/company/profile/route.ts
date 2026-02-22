@@ -107,7 +107,7 @@ export async function PUT(request: NextRequest) {
         rate: rate || user.company.rate,
         updatedAt: new Date(),
       },
-      { new: true },
+      { returnDocument: "after" },
     ).populate("warehouses");
 
     return NextResponse.json(company, { status: 200 });
