@@ -1,43 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Request, User } from "@/lib/models";
+import { handleValidationError } from "@/lib/apiHelpers";
 
 type LegacyRequest = any;
 
 function normalizeItems(req: LegacyRequest) {
   if (Array.isArray(req.items) && req.items.length > 0) {
-    return req.items.map((it: any, idx: number) => ({
-      id: it.id || `ITEM-${req.id || Date.now()}-${idx + 1}`,
-      name: it.name ?? it.item ?? "-",
-      category: it.category ?? "",
-      dimensions: it.dimensions ?? "",
-      weight: it.weight ?? "",
-      quantity: Number(it.quantity ?? 1) || 1,
-      note: it.note || undefined,
-      media: Array.isArray(it.media) ? it.media.slice(0, 4) : [],
-      services: it.services || { assemblyDisassembly: false, packaging: false },
-    }));
-  }
-  if (
-    req.item ||
-    req.category ||
-    req.dimensions ||
-    req.weight ||
-    req.quantity
-  ) {
-    return [
-      {
-        id: `ITEM-${req.id || Date.now()}-1`,
-        name: req.item ?? "-",
-        category: req.category ?? "",
-        dimensions: req.dimensions ?? "",
-        weight: req.weight ?? "",
-        quantity: Number(req.quantity ?? 1) || 1,
-        note: req.note || undefined,
-        media: Array.isArray(req.media) ? req.media.slice(0, 4) : [],
-        services: { assemblyDisassembly: false, packaging: false },
-      },
-    ];
+    return req.items.map((it: any, idx: number) => {
+      let normalizedMedia = [];
+      if (Array.isArray(it.media)) {
+        normalizedMedia = it.media.map((m: any) => {
+          if (typeof m === "string") {
+            return { url: m, existing: true };
+          }
+          return m;
+        });
+      }
+
+      return {
+        id: it.id || `ITEM-${req.id || Date.now()}-${idx + 1}`,
+        item: it.item ?? it.name ?? "-",
+        name: it.name ?? it.item ?? "-",
+        category: it.category ?? "",
+        dimensions: it.dimensions ?? "",
+        weight: it.weight ?? "",
+        quantity: Number(it.quantity ?? 1) || 1,
+        note: it.note || undefined,
+        media: normalizedMedia.slice(0, 4),
+        services: it.services || {
+          canBeAssembledDisassembled: false,
+          packaging: false,
+        },
+      };
+    });
   }
   return [];
 }
@@ -46,47 +42,46 @@ function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
   const v = String(value || "")
     .toLowerCase()
     .trim();
-  if (v === "urgent") return "Urgent";
+  if (v === "urgent" || v === "fast") return "Urgent";
   if (v === "normal") return "Normal";
   return undefined;
 }
 
 function normalizeRequest(req: LegacyRequest) {
-  const from = req.from ?? req.source;
-  const to = req.to ?? req.destination;
-  const source = req.source ?? req.from;
-  const destination = req.destination ?? req.to;
+  const source = req.source;
+  const destination = req.destination;
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
-  const startTime = req.startTime || undefined;
-  const primaryCost = req.primaryCost ?? req.estimatedCost ?? undefined;
+  const startTime = req.startTime;
+  const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
+  const requestStatus = req.requestStatus ?? req.orderStatus;
+
   return {
-    id: req.id,
-    userId: req.userId,
-    from,
-    to,
+    id: req._id || req.id,
+    user: req.user,
     source,
     destination,
     deliveryType,
     startTime,
     primaryCost,
     cost,
-    requestStatus: req.requestStatus,
+    requestStatus,
+    orderStatus: requestStatus,
     deliveryStatus: req.deliveryStatus,
+    comment: req.comment,
     items,
-    costOffers: req.costOffers || undefined,
-    comment: req.comment || undefined,
     createdAt: req.createdAt,
     updatedAt: req.updatedAt,
-    selectedCompany: req.selectedCompany || undefined,
-    activityHistory: req.activityHistory || undefined,
-    sourceWarehouse: req.sourceWarehouse || undefined,
-    destinationWarehouse: req.destinationWarehouse || undefined,
-    assignedWarehouseId: req.assignedWarehouseId || undefined,
-    assignedWarehouse: req.assignedWarehouse || undefined,
-    sourcePickupMode: req.sourcePickupMode || undefined,
-    destinationPickupMode: req.destinationPickupMode || undefined,
+    costOffers: req.costOffers,
+    activityHistory: req.activityHistory,
+    selectedCompany: req.selectedCompany,
+    sourceWarehouse: req.sourceWarehouse,
+    destinationWarehouse: req.destinationWarehouse,
+    assignedWarehouseId: req.assignedWarehouseId,
+    assignedWarehouse: req.assignedWarehouse,
+    sourcePickupMode: req.sourcePickupMode,
+    destinationPickupMode: req.destinationPickupMode,
   };
 }
 
@@ -95,27 +90,26 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await connectDB();
     const { id } = await params;
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
 
-    const foundRequest = requestsData.requests.find(
-      (req: any) => req.id === id,
-    );
+    if (!id) {
+      return handleValidationError("Request ID is required");
+    }
+
+    const foundRequest = await Request.findById(id)
+      .populate("user", "fullName email mobile profilePicture role")
+      .lean()
+      .exec();
 
     if (!foundRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    // Always return the FINAL structure (normalized), even for legacy records.
-    return NextResponse.json(
-      { request: normalizeRequest(foundRequest) },
-      { status: 200 },
-    );
+    const normalized = normalizeRequest(foundRequest);
+
+    return NextResponse.json({ request: normalized }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch request" },
-      { status: 500 },
-    );
+    return handleError(error, "Failed to fetch request");
   }
 }

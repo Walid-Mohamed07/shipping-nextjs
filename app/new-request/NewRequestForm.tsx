@@ -7,7 +7,7 @@ import ReviewModal from "./ReviewModal";
 import type { ReviewData } from "./ReviewModal";
 import { useRouter } from "next/navigation";
 import type { Item, Address } from "@/types";
-import { toast, Toaster } from "sonner";
+import { useToast, getErrorMessage } from "@/lib/useToast";
 
 const LocationMapPicker = dynamic(
   () =>
@@ -67,6 +67,7 @@ const NEARBY_RADIUS_KM = 50;
 
 export default function NewRequestForm() {
   const { user } = useAuth();
+  const toast = useToast();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -93,24 +94,27 @@ export default function NewRequestForm() {
   const [addressLoading, setAddressLoading] = useState(false);
   const [sourceType, setSourceType] = useState("my");
   const [destType, setDestType] = useState("other");
-  // Get user's locations (addresses)
-  const [userLocations, setUserLocations] = useState(user?.locations || []);
+  // Get user's locations (addresses) - fetched from Address collection
+  const [userLocations, setUserLocations] = useState<any[]>([]);
   // Fetch latest locations from API
   useEffect(() => {
     if (user?.id) {
       fetch(`/api/user/addresses?userId=${user.id}`)
         .then((res) => res.json())
         .then((data) => {
-          if (Array.isArray(data.locations)) setUserLocations(data.locations);
-        });
+          if (Array.isArray(data.addresses)) {
+            setUserLocations(data.addresses);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch addresses:", err));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const primaryLocation =
-    userLocations.find((loc: { primary?: boolean }) => loc.primary) ||
-    userLocations[0] ||
-    {};
+    userLocations.length > 0
+      ? userLocations.find((loc: any) => loc.primary) || userLocations[0]
+      : {};
 
   // Source address state
   const [fromAddressIdx, setFromAddressIdx] = useState(0); // index in userLocations
@@ -134,17 +138,16 @@ export default function NewRequestForm() {
     setToPostalCode("");
   }, [fromAddressIdx]);
 
-  // Helper to get coords from address (supports Address with coordinates)
+  // Helper to get coords from address (supports Address with coordinates in { latitude, longitude } format)
   const getCoords = (
-    loc: { coordinates?: { latitude?: number; longitude?: number } } | null,
+    loc: {
+      coordinates?: { latitude?: number; longitude?: number } | null;
+    } | null,
   ) => {
-    if (
-      !loc?.coordinates ||
-      loc.coordinates.latitude == null ||
-      loc.coordinates.longitude == null
-    )
-      return null;
-    return { lat: loc.coordinates.latitude, lng: loc.coordinates.longitude };
+    if (!loc?.coordinates) return null;
+    const { latitude, longitude } = loc.coordinates;
+    if (latitude == null || longitude == null) return null;
+    return { lat: latitude, lng: longitude };
   };
 
   // Source address coords (from saved address with coordinates)
@@ -160,12 +163,8 @@ export default function NewRequestForm() {
 
   // Dest address coords: from selected saved address or from manual addressForm (when toAddressIdx === -1)
   const destCoords = useMemo(() => {
-    if (toAddressIdx >= 0) {
-      return getCoords(
-        userLocations[toAddressIdx] as {
-          coordinates?: { latitude?: number; longitude?: number };
-        },
-      );
+    if (toAddressIdx >= 0 && userLocations[toAddressIdx]) {
+      return getCoords(userLocations[toAddressIdx] as any);
     }
     const coords = addressForm.coordinates;
     if (coords?.latitude != null && coords?.longitude != null) {
@@ -211,8 +210,10 @@ export default function NewRequestForm() {
   );
   // When to start (ISO format)
   const [whenToStart, setWhenToStart] = useState<string>("");
-  // Mobile is now per address location, so default to primary location's mobile
-  const [mobile, setMobile] = useState(primaryLocation.mobile || "");
+  // Mobile is now per address location, so default to primary location's mobile or user's mobile
+  const [mobile, setMobile] = useState(
+    primaryLocation.mobile || user?.mobile || "",
+  );
   const [primaryCost, setPrimaryCost] = useState("");
   // Comments
   const [comments, setComments] = useState("");
@@ -358,40 +359,43 @@ export default function NewRequestForm() {
   );
 
   const handleDeleteAddress = async (
-    addr: { id?: string; street?: string; postalCode?: string },
+    addr: { _id?: string; id?: string; street?: string; postalCode?: string },
     context: "source" | "destination",
   ) => {
     if (!user?.id) return;
 
     // Find location by ID or fallback to street + postalCode lookup
-    let locationId = addr.id;
+    let addressId = addr._id || addr.id;
     let deletedIdx = -1;
 
-    if (locationId) {
-      deletedIdx = userLocations.findIndex((l: any) => l.id === locationId);
+    if (addressId) {
+      deletedIdx = userLocations.findIndex(
+        (l: any) => l._id === addressId || l.id === addressId,
+      );
     } else if (addr.street && addr.postalCode) {
       deletedIdx = userLocations.findIndex(
-        (l: { street?: string; postalCode?: string }) =>
+        (l: any) =>
           l.street === addr.street && l.postalCode === addr.postalCode,
       );
       if (deletedIdx !== -1) {
-        locationId = userLocations[deletedIdx]?.id;
+        addressId =
+          userLocations[deletedIdx]?._id || userLocations[deletedIdx]?.id;
       }
     }
 
-    if (!locationId) return;
+    if (!addressId) return;
     if (!confirm("Delete this address?")) return;
 
     try {
       const res = await fetch("/api/user/addresses", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, locationId }),
+        body: JSON.stringify({ userId: user.id, addressId }),
       });
       if (!res.ok) throw new Error("Failed to delete");
       const data = await res.json();
-      if (Array.isArray(data.locations)) {
-        const newLocs = data.locations;
+      if (Array.isArray(data.addresses)) {
+        const newLocs = data.addresses;
         setUserLocations(newLocs);
         if (context === "source") {
           let newFromIdx = fromAddressIdx;
@@ -543,7 +547,7 @@ export default function NewRequestForm() {
       }
 
       const requestBody = {
-        userId: user?.id,
+        user: user?.id,
         source,
         destination,
         items: formattedItems,
@@ -566,7 +570,7 @@ export default function NewRequestForm() {
       }
       setSuccess(true);
       setShowReview(false);
-      toast.success("Request created successfully!");
+      toast.create("Request created successfully!");
 
       // Reset form inputs
       setItems([]);
@@ -592,11 +596,15 @@ export default function NewRequestForm() {
       setMobile(primaryLocation.mobile || "");
 
       // Reset address selections to primary location
-      setFromAddressIdx(0);
+      if (userLocations.length > 0) {
+        setFromAddressIdx(0);
+        const primaryAddr = userLocations[0];
+        setFrom(primaryAddr.country || "");
+        setFromAddress(primaryAddr.street || "");
+        setFromPostalCode(primaryAddr.postalCode || "");
+        setMobile(primaryAddr.mobile || user?.mobile || "");
+      }
       setToAddressIdx(-1);
-      setFrom(primaryLocation.country || "");
-      setFromAddress(primaryLocation.street || "");
-      setFromPostalCode(primaryLocation.postalCode || "");
       setTo("");
       setToAddress("");
       setToPostalCode("");
@@ -612,7 +620,7 @@ export default function NewRequestForm() {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create request";
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -634,7 +642,6 @@ export default function NewRequestForm() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Toaster position="top-right" richColors />
       <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -1605,9 +1612,7 @@ export default function NewRequestForm() {
                           }
 
                           // Create new item with proper structure
-                          const itemId = `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                           const newItemObj: Item = {
-                            id: itemId,
                             name: newItem.name,
                             category: newItem.category,
                             dimensions: newItem.dimensions,
@@ -1627,7 +1632,7 @@ export default function NewRequestForm() {
                             },
                           };
                           setItems([...items, newItemObj]);
-                          toast.success("Item added successfully!");
+                          toast.create("Item added successfully!");
                           // Revoke object URLs before reset to avoid memory leaks
                           newItem.mediaPreviews.forEach((url) =>
                             URL.revokeObjectURL(url),
@@ -1816,11 +1821,11 @@ export default function NewRequestForm() {
                   );
                   const data = await res.json();
 
-                  if (Array.isArray(data.locations)) {
-                    setUserLocations(data.locations);
+                  if (Array.isArray(data.addresses)) {
+                    setUserLocations(data.addresses);
 
                     // Find the newly added address
-                    const newAddressIdx = data.locations.findIndex(
+                    const newAddressIdx = data.addresses.findIndex(
                       (loc: { street?: string; postalCode?: string }) =>
                         loc.street === address.street &&
                         loc.postalCode === address.postalCode,
@@ -1828,7 +1833,7 @@ export default function NewRequestForm() {
                     const finalNewIdx =
                       newAddressIdx !== -1
                         ? newAddressIdx
-                        : data.locations.length - 1;
+                        : data.addresses.length - 1;
 
                     if (addAddressType === "source") {
                       // Set the new source address
@@ -1840,7 +1845,7 @@ export default function NewRequestForm() {
 
                       // Preserve destination if it was already set and still exists
                       if (currentDestData && toAddressIdx >= 0) {
-                        const destStillExists = data.locations.findIndex(
+                        const destStillExists = data.addresses.findIndex(
                           (loc: { street?: string; postalCode?: string }) =>
                             loc.street === currentDestData.street &&
                             loc.postalCode === currentDestData.postalCode,
@@ -1859,7 +1864,7 @@ export default function NewRequestForm() {
 
                       // Preserve source if it was already set and still exists
                       if (currentSourceData) {
-                        const sourceStillExists = data.locations.findIndex(
+                        const sourceStillExists = data.addresses.findIndex(
                           (loc: { street?: string; postalCode?: string }) =>
                             loc.street === currentSourceData.street &&
                             loc.postalCode === currentSourceData.postalCode,
@@ -1876,7 +1881,7 @@ export default function NewRequestForm() {
                 }
               }}
               type={addAddressType}
-              userName={user?.name || ""}
+              userName={user?.fullName || ""}
               userId={user?.id || ""}
             />
 

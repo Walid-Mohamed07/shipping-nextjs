@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { MapPin, Package, User, Truck, Calendar } from "lucide-react";
+import { RequestCardSkeleton } from "@/app/components/loaders";
 
 // Helper function to format address objects
 const formatAddress = (address: any): string => {
@@ -81,11 +81,14 @@ export default function DriverOrders() {
 
   if (isLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your orders...</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8 space-y-2">
+            <div className="h-10 w-1/3 bg-skeleton rounded animate-pulse" />
+            <div className="h-6 w-1/2 bg-skeleton rounded animate-pulse" />
+          </div>
+          <RequestCardSkeleton count={3} />
+        </main>
       </div>
     );
   }
@@ -96,8 +99,6 @@ export default function DriverOrders() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">

@@ -1,0 +1,231 @@
+import mongoose from "mongoose";
+
+// Define ActivityHistory sub-schema
+const activityHistorySchema = new mongoose.Schema(
+  {
+    timestamp: { type: Date, default: Date.now },
+    action: { type: String, required: true },
+    description: String,
+    companyName: String,
+    companyRate: String,
+    cost: Number,
+    details: mongoose.Schema.Types.Mixed,
+  },
+  { _id: false },
+);
+
+const requestSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    // user: {
+    //   _id: mongoose.Schema.Types.ObjectId,
+    //   fullName: String,
+    //   username: String,
+    //   email: String,
+    //   mobile: String,
+    //   nationalOrPassportNumber: String,
+    //   birthDate: String,
+    //   idImage: String,
+    //   licenseImage: String,
+    //   criminalRecord: String,
+    //   status: String,
+    //   profilePicture: String,
+    // },
+    source: {
+      country: String,
+      countryCode: String,
+      fullName: String,
+      mobile: String,
+      street: String,
+      building: String,
+      city: String,
+      district: String,
+      governorate: String,
+      postalCode: String,
+      landmark: String,
+      addressType: String,
+      deliveryInstructions: String,
+      primary: Boolean,
+      warehouseId: String,
+      pickupMode: String,
+      coordinates: {
+        latitude: Number,
+        longitude: Number,
+      },
+    },
+    destination: {
+      country: String,
+      countryCode: String,
+      fullName: String,
+      mobile: String,
+      street: String,
+      building: String,
+      city: String,
+      district: String,
+      governorate: String,
+      postalCode: String,
+      landmark: String,
+      addressType: String,
+      deliveryInstructions: String,
+      primary: Boolean,
+      warehouseId: String,
+      pickupMode: String,
+      coordinates: {
+        latitude: Number,
+        longitude: Number,
+      },
+    },
+    items: [
+      {
+        item: String,
+        name: String,
+        category: String,
+        weight: String,
+        dimensions: String,
+        quantity: Number,
+        note: String,
+        media: [
+          {
+            url: String,
+            existing: Boolean,
+          },
+        ],
+        services: {
+          canBeAssembledDisassembled: Boolean,
+          assemblyDisassemblyHandler: String,
+          packaging: Boolean,
+          assemblyDisassembly: Boolean,
+        },
+      },
+    ],
+    primaryCost: String,
+    cost: String,
+    startTime: Date,
+    requestStatus: {
+      type: String,
+      enum: [
+        "Pending",
+        "Accepted",
+        "Rejected",
+        "Assigned to Company",
+        "In Progress",
+        "Completed",
+        "Cancelled",
+        "Action needed",
+      ],
+      default: "Pending",
+    },
+    deliveryStatus: {
+      type: String,
+      enum: [
+        "Pending",
+        "Picked Up Source",
+        "Warehouse Source Received",
+        "In Transit",
+        "Warehouse Destination Received",
+        "Shipment Deliver",
+        "Delivered",
+        "Failed",
+      ],
+      default: "Pending",
+    },
+    deliveryType: String,
+    comment: String,
+    sourceWarehouse: {
+      id: String,
+      name: String,
+      address: String,
+      city: String,
+      country: String,
+      coordinates: {
+        latitude: Number,
+        longitude: Number,
+      },
+      assignedAt: Date,
+    },
+    destinationWarehouse: {
+      id: String,
+      name: String,
+      address: String,
+      city: String,
+      country: String,
+      coordinates: {
+        latitude: Number,
+        longitude: Number,
+      },
+      assignedAt: Date,
+    },
+    sourcePickupMode: {
+      type: String,
+      enum: ["Delegate", "Self"],
+    },
+    destinationPickupMode: {
+      type: String,
+      enum: ["Delegate", "Self"],
+    },
+    requestStatusHistory: [
+      {
+        status: String,
+        timestamp: Date,
+        role: String,
+        reason: String,
+      },
+    ],
+    deliveryStatusHistory: [
+      {
+        status: String,
+        timestamp: Date,
+        role: String,
+        reason: String,
+      },
+    ],
+    costOffers: [
+      {
+        cost: Number,
+        company: {
+          id: String,
+          name: String,
+          phoneNumber: String,
+          email: String,
+          address: String,
+          rate: String,
+        },
+        comment: String,
+        selected: Boolean,
+        status: {
+          type: String,
+          enum: ["pending", "accepted", "rejected"],
+        },
+        createdAt: Date,
+        offeredAt: Date,
+      },
+    ],
+    activityHistory: [activityHistorySchema],
+    assignedCompanyId: String,
+    selectedCompany: {
+      id: String,
+      name: String,
+      rate: String,
+      cost: Number,
+    },
+    assignedWarehouseId: String,
+    assignedWarehouse: mongoose.Schema.Types.Mixed,
+    deliveryFlow: [String],
+    deliveryCompletedStatuses: [String],
+    orderFlow: [String],
+    orderCompletedStatuses: [String],
+    rejectedByCompanies: [String],
+  },
+  { timestamps: true },
+);
+
+// Clear cached model in development to pick up schema changes
+if (process.env.NODE_ENV === "development" && mongoose.models.Request) {
+  delete mongoose.models.Request;
+}
+
+export const Request = mongoose.model("Request", requestSchema);

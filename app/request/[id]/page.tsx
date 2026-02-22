@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { Header } from "@/app/components/Header";
+import { useParams } from "next/navigation";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
-import { toast, Toaster } from "sonner";
+import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   Package,
@@ -44,8 +44,11 @@ import dynamic from "next/dynamic";
 
 // Dynamically import map components to avoid SSR issues
 const LocationMapPicker = dynamic(
-  () => import("@/app/components/LocationMapPicker").then((mod) => ({ default: mod.LocationMapPicker })),
-  { ssr: false }
+  () =>
+    import("@/app/components/LocationMapPicker").then((mod) => ({
+      default: mod.LocationMapPicker,
+    })),
+  { ssr: false },
 );
 
 // Helper to format a location object for display
@@ -98,8 +101,7 @@ export default function RequestDetailsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const { user } = useAuth();
-  const router = useRouter();
+  const { user, isLoading: authLoading } = useProtectedRoute();
   const params = useParams();
   const requestId = params.id as string;
 
@@ -183,19 +185,19 @@ export default function RequestDetailsPage() {
   };
 
   const handleSubmitOffer = async () => {
-    const selectedOffer = request?.costOffers?.find(o => o.selected);
+    const selectedOffer = request?.costOffers?.find((o) => o.selected);
     if (!selectedOffer) {
       toast.error("Please select an offer first");
       return;
     }
-    
+
     setConfirmingOffer(selectedOffer);
     setShowConfirmDialog(true);
   };
 
   const handleConfirmSubmit = async () => {
     if (!confirmingOffer || !request) return;
-    
+
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/requests/${requestId}/submit-offer`, {
@@ -213,23 +215,24 @@ export default function RequestDetailsPage() {
       }
 
       const data = await response.json();
-      
+
       toast.success("Offer submitted successfully!");
       setShowConfirmDialog(false);
       setConfirmingOffer(null);
-      
+
       // Update the local request state with the response data
       if (data.request) {
         setRequest(data.request);
       }
-      
+
       // Optionally redirect after a short delay to show the updated state
       setTimeout(() => {
         // Refresh the page data or stay on page to show updates
         window.location.reload();
       }, 2000);
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to submit offer";
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to submit offer";
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -237,8 +240,7 @@ export default function RequestDetailsPage() {
   };
 
   useEffect(() => {
-    if (!user || !user.id) {
-      router.push("/login");
+    if (authLoading || !user || !user._id) {
       return;
     }
 
@@ -248,7 +250,7 @@ export default function RequestDetailsPage() {
         if (!response.ok) throw new Error("Request not found");
         const data = await response.json();
 
-        if (data.request.userId !== user.id) {
+        if (data.request.user._id !== user._id) {
           throw new Error("Unauthorized");
         }
 
@@ -264,7 +266,7 @@ export default function RequestDetailsPage() {
     };
 
     fetchRequest();
-  }, [user?.id, requestId]);
+  }, [user?._id, requestId]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -328,7 +330,6 @@ export default function RequestDetailsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="space-y-4">
             <div className="h-12 bg-muted rounded-lg animate-pulse" />
@@ -342,7 +343,6 @@ export default function RequestDetailsPage() {
   if (error || !request) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 flex gap-4">
             <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -368,9 +368,6 @@ export default function RequestDetailsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
-      <Header />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link href="/my-requests" className="inline-block mb-6">
           <Button
@@ -627,90 +624,94 @@ export default function RequestDetailsPage() {
           </div>
 
           {/* Cost Offers Section - Show when Action needed */}
-          {request.requestStatus === "Action needed" && request.costOffers && request.costOffers.length > 0 && (
-            <div className="bg-card rounded-lg border border-border p-6">
-              <div className="mb-4">
-                <h2 className="text-xl font-bold text-foreground mb-1">
-                  Shipping Offers
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Choose your preferred shipping company
-                </p>
-              </div>
+          {request.requestStatus === "Action needed" &&
+            request.costOffers &&
+            request.costOffers.length > 0 && (
+              <div className="bg-card rounded-lg border border-border p-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-foreground mb-1">
+                    Shipping Offers
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Choose your preferred shipping company
+                  </p>
+                </div>
 
-              <div className="max-h-[300px] overflow-y-auto pr-2 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {request.costOffers.map((offer, idx) => (
-                    <div
-                      key={offer.company.id}
-                      onClick={() => handleSelectOffer(offer.company.id)}
-                      className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                        offer.selected
-                          ? "border-primary bg-primary/5 shadow-md"
-                          : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
-                      }`}
-                    >
-                    {/* Selected Badge */}
-                    {offer.selected && (
-                      <div className="absolute -top-2 -right-2">
-                        <div className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-sm">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Selected
+                <div className="max-h-[300px] overflow-y-auto pr-2 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {request.costOffers.map((offer, idx) => (
+                      <div
+                        key={offer.company.id}
+                        onClick={() => handleSelectOffer(offer.company.id)}
+                        className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
+                          offer.selected
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
+                        }`}
+                      >
+                        {/* Selected Badge */}
+                        {offer.selected && (
+                          <div className="absolute -top-2 -right-2">
+                            <div className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-sm">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Selected
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Option Label */}
+                        <div className="mb-3">
+                          <h3 className="text-base font-bold text-foreground mb-1">
+                            Option {idx + 1}
+                          </h3>
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-500 text-sm">★</span>
+                            <span className="text-sm font-semibold text-foreground">
+                              {offer.company.rate}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Cost */}
+                        <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
+                          <p className="text-2xl font-bold text-foreground">
+                            ${offer.cost.toFixed(2)}
+                          </p>
+                        </div>
+
+                        {/* Delivery Reason */}
+                        {offer.comment && (
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {offer.comment}
+                          </p>
+                        )}
+
+                        {/* Select Indicator */}
+                        <div
+                          className={`text-center text-xs font-medium py-1 rounded ${
+                            offer.selected
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {offer.selected ? "✓ Your Choice" : "Click to select"}
                         </div>
                       </div>
-                    )}
+                    ))}
+                  </div>
+                </div>
 
-                    {/* Option Label */}
-                    <div className="mb-3">
-                      <h3 className="text-base font-bold text-foreground mb-1">
-                        Option {idx + 1}
-                      </h3>
-                      <div className="flex items-center gap-1">
-                        <span className="text-yellow-500 text-sm">★</span>
-                        <span className="text-sm font-semibold text-foreground">
-                          {offer.company.rate}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Cost */}
-                    <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
-                      <p className="text-2xl font-bold text-foreground">
-                        ${offer.cost.toFixed(2)}
-                      </p>
-                    </div>
-
-                    {/* Delivery Reason */}
-                    {offer.comment && (
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {offer.comment}
-                      </p>
-                    )}
-
-                    {/* Select Indicator */}
-                    <div className={`text-center text-xs font-medium py-1 rounded ${
-                      offer.selected 
-                        ? "text-primary" 
-                        : "text-muted-foreground"
-                    }`}>
-                      {offer.selected ? "✓ Your Choice" : "Click to select"}
-                    </div>
-                    </div>
-                  ))}
+                {/* Submit Button */}
+                <div className="mt-4">
+                  <Button
+                    onClick={handleSubmitOffer}
+                    className="w-full bg-primary text-primary-foreground cursor-pointer"
+                  >
+                    Submit Selected Offer
+                  </Button>
                 </div>
               </div>
-              
-              {/* Submit Button */}
-              <div className="mt-4">
-                <Button
-                  onClick={handleSubmitOffer}
-                  className="w-full bg-primary text-primary-foreground cursor-pointer"
-                >
-                  Submit Selected Offer
-                </Button>
-              </div>
-            </div>
-          )}
+            )}
 
           {/* Confirmation Dialog */}
           {showConfirmDialog && confirmingOffer && (
@@ -816,7 +817,7 @@ export default function RequestDetailsPage() {
                 {request.items && request.items.length > 0 ? (
                   request.items.map((item, idx) => (
                     <div
-                      key={item.id || `item-${idx}`}
+                      key={item._id || `item-${idx}`}
                       className="border border-border rounded-lg p-4 bg-white dark:bg-gray-900"
                     >
                       <div className="flex items-start justify-between mb-3">
@@ -878,7 +879,10 @@ export default function RequestDetailsPage() {
                           </p>
                           <div className="flex gap-2 flex-wrap">
                             {item.media.map((mediaItem, mIdx) => {
-                              const url = typeof mediaItem === 'string' ? mediaItem : mediaItem.url;
+                              const url =
+                                typeof mediaItem === "string"
+                                  ? mediaItem
+                                  : mediaItem.url;
                               return (
                                 <img
                                   key={mIdx}
@@ -895,32 +899,41 @@ export default function RequestDetailsPage() {
                           </div>
                         </div>
                       )}
-                      {item.services && (item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly || item.services.packaging) && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Services
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {(item.services.canBeAssembledDisassembled || item.services.assemblyDisassembly) && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                <Wrench className="w-3 h-3" />
-                                Assembly &amp; Disassembly
-                                {item.services.assemblyDisassemblyHandler && (
-                                  <span className="ml-1 text-[10px]">
-                                    ({item.services.assemblyDisassemblyHandler === "self" ? "Self" : "Company"})
-                                  </span>
-                                )}
-                              </span>
-                            )}
-                            {item.services.packaging && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                                <BoxSelect className="w-3 h-3" />
-                                Packaging
-                              </span>
-                            )}
+                      {item.services &&
+                        (item.services.canBeAssembledDisassembled ||
+                          item.services.assemblyDisassembly ||
+                          item.services.packaging) && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Services
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {(item.services.canBeAssembledDisassembled ||
+                                item.services.assemblyDisassembly) && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                  <Wrench className="w-3 h-3" />
+                                  Assembly &amp; Disassembly
+                                  {item.services.assemblyDisassemblyHandler && (
+                                    <span className="ml-1 text-[10px]">
+                                      (
+                                      {item.services
+                                        .assemblyDisassemblyHandler === "self"
+                                        ? "Self"
+                                        : "Company"}
+                                      )
+                                    </span>
+                                  )}
+                                </span>
+                              )}
+                              {item.services.packaging && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                  <BoxSelect className="w-3 h-3" />
+                                  Packaging
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   ))
                 ) : (
@@ -1019,8 +1032,8 @@ export default function RequestDetailsPage() {
                     {request.primaryCost
                       ? `$${Number(request.primaryCost).toFixed(2)}`
                       : request.cost
-                      ? `$${Number(request.cost).toFixed(2)}`
-                      : "-"}
+                        ? `$${Number(request.cost).toFixed(2)}`
+                        : "-"}
                   </p>
                 )}
               </div>
@@ -1037,14 +1050,20 @@ export default function RequestDetailsPage() {
                 <span>Updated:</span>
                 <span className="font-medium text-foreground">
                   {request.updatedAt
-                    ? `${new Date(request.updatedAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })} at ${new Date(request.updatedAt).toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}`
+                    ? `${new Date(request.updatedAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        },
+                      )} at ${new Date(request.updatedAt).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}`
                     : "-"}
                 </span>
               </div>
@@ -1054,7 +1073,9 @@ export default function RequestDetailsPage() {
                 <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground">Accepted Offer</p>
+                      <p className="text-xs text-muted-foreground">
+                        Accepted Offer
+                      </p>
                       <p className="text-sm font-semibold text-primary">
                         ${Number(request.selectedCompany.cost).toFixed(2)}
                       </p>
@@ -1071,41 +1092,107 @@ export default function RequestDetailsPage() {
 
               {/* Activity entries */}
               {request.activityHistory && request.activityHistory.length > 0 ? (
-                <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
-                  {[...request.activityHistory].reverse().map((activity, index) => (
-                    <div
-                      key={index}
-                      className="flex gap-3 text-sm"
-                    >
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className="font-medium text-foreground truncate">
-                            {activity.action}
-                          </p>
-                          <time className="text-xs text-muted-foreground whitespace-nowrap">
-                            {new Date(activity.timestamp).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </time>
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                  {[...request.activityHistory]
+                    .reverse()
+                    .map((activity, index) => (
+                      <div
+                        key={index}
+                        className="flex gap-3 text-sm border-l-2 border-primary pl-3 py-2"
+                      >
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {activity.description}
-                        </p>
-                        {activity.cost && (
-                          <div className="flex items-center gap-2 mt-1 text-xs">
-                            <span className="text-primary font-semibold">${Number(activity.cost).toFixed(2)}</span>
+                        <div className="flex-1 min-w-0">
+                          {/* Action and timestamp */}
+                          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                            <p className="font-medium text-foreground">
+                              {activity.action
+                                .split("_")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() +
+                                    word.slice(1),
+                                )
+                                .join(" ")}
+                            </p>
+                            <time className="text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(activity.timestamp).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </time>
                           </div>
-                        )}
+
+                          {/* Description */}
+                          {activity.description && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {activity.description}
+                            </p>
+                          )}
+
+                          {/* Company info and cost */}
+                          <div className="flex flex-wrap gap-3 mt-2">
+                            {activity.companyName && (
+                              <div className="text-xs">
+                                <span className="text-muted-foreground">
+                                  Company:{" "}
+                                </span>
+                                <span className="text-foreground font-medium">
+                                  {activity.companyName}
+                                </span>
+                              </div>
+                            )}
+                            {activity.cost !== undefined &&
+                              activity.cost !== null && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">
+                                    Cost:{" "}
+                                  </span>
+                                  <span className="text-primary font-semibold">
+                                    ${Number(activity.cost).toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+                            {activity.companyRate && (
+                              <div className="text-xs">
+                                <span className="text-muted-foreground">
+                                  Rate:{" "}
+                                </span>
+                                <span className="text-foreground">
+                                  {activity.companyRate} ⭐
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Additional details if present */}
+                          {/* {activity.details &&
+                            Object.keys(activity.details).length > 0 && (
+                              <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+                                <details className="cursor-pointer">
+                                  <summary className="font-medium text-foreground hover:text-primary transition-colors">
+                                    More details
+                                  </summary>
+                                  <pre className="mt-1 text-xs overflow-auto whitespace-pre-wrap break-words">
+                                    {JSON.stringify(activity.details, null, 2)}
+                                  </pre>
+                                </details>
+                              </div>
+                            )} */}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">No activity recorded yet.</p>
+                <p className="text-xs text-muted-foreground">
+                  No activity recorded yet.
+                </p>
               )}
             </div>
           </div>
@@ -1117,43 +1204,71 @@ export default function RequestDetailsPage() {
                 <Warehouse className="w-5 h-5 text-primary" />
                 Assigned Warehouse Locations
               </h3>
-              
+
               {/* Show accordion if both warehouses are assigned */}
               {request.sourceWarehouse && request.destinationWarehouse ? (
                 <Accordion type="single" className="space-y-3">
                   {/* Source Warehouse */}
-                  <AccordionItem value="source" className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+                  <AccordionItem
+                    value="source"
+                    className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
+                  >
                     <AccordionTrigger value="source" className="bg-transparent">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                           <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="text-left">
-                          <p className="font-semibold text-foreground">Source Warehouse (Pickup)</p>
-                          <p className="text-xs text-muted-foreground">{request.sourceWarehouse.name}</p>
+                          <p className="font-semibold text-foreground">
+                            Source Warehouse (Pickup)
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {request.sourceWarehouse.name}
+                          </p>
                         </div>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent value="source" className="bg-white/50 dark:bg-gray-900/50">
+                    <AccordionContent
+                      value="source"
+                      className="bg-white/50 dark:bg-gray-900/50"
+                    >
                       <div className="space-y-3">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">Warehouse Name</p>
-                          <p className="text-sm font-medium text-foreground">{request.sourceWarehouse.name}</p>
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Warehouse Name
+                          </p>
+                          <p className="text-sm font-medium text-foreground">
+                            {request.sourceWarehouse.name}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">Address</p>
-                          <p className="text-sm font-medium text-foreground">{request.sourceWarehouse.address}</p>
-                          {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Address
+                          </p>
+                          <p className="text-sm font-medium text-foreground">
+                            {request.sourceWarehouse.address}
+                          </p>
+                          {(request.sourceWarehouse.city ||
+                            request.sourceWarehouse.country) && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
+                              {[
+                                request.sourceWarehouse.city,
+                                request.sourceWarehouse.country,
+                              ]
+                                .filter(Boolean)
+                                .join(", ")}
                             </p>
                           )}
                         </div>
                         {request.sourceWarehouse.assignedAt && (
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              Assigned On
+                            </p>
                             <p className="text-sm text-foreground">
-                              {new Date(request.sourceWarehouse.assignedAt).toLocaleDateString("en-US", {
+                              {new Date(
+                                request.sourceWarehouse.assignedAt,
+                              ).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
@@ -1165,17 +1280,20 @@ export default function RequestDetailsPage() {
                         )}
                         {request.sourceWarehouse.coordinates && (
                           <div className="mt-3">
-                            <p className="text-xs text-muted-foreground mb-2">Location on Map</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Location on Map
+                            </p>
                             <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
                               <LocationMapPicker
                                 position={{
-                                  lat: request.sourceWarehouse.coordinates.latitude,
-                                  lng: request.sourceWarehouse.coordinates.longitude,
+                                  lat: request.sourceWarehouse.coordinates
+                                    .latitude,
+                                  lng: request.sourceWarehouse.coordinates
+                                    .longitude,
                                 }}
                                 onPositionChange={() => {}}
                                 editable={false}
                                 showUseMyLocation={false}
-                                zoom={15}
                               />
                             </div>
                           </div>
@@ -1185,38 +1303,69 @@ export default function RequestDetailsPage() {
                   </AccordionItem>
 
                   {/* Destination Warehouse */}
-                  <AccordionItem value="destination" className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
-                    <AccordionTrigger value="destination" className="bg-transparent">
+                  <AccordionItem
+                    value="destination"
+                    className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
+                  >
+                    <AccordionTrigger
+                      value="destination"
+                      className="bg-transparent"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                           <MapPinned className="w-5 h-5 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="text-left">
-                          <p className="font-semibold text-foreground">Destination Warehouse (Delivery)</p>
-                          <p className="text-xs text-muted-foreground">{request.destinationWarehouse.name}</p>
+                          <p className="font-semibold text-foreground">
+                            Destination Warehouse (Delivery)
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {request.destinationWarehouse.name}
+                          </p>
                         </div>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent value="destination" className="bg-white/50 dark:bg-gray-900/50">
+                    <AccordionContent
+                      value="destination"
+                      className="bg-white/50 dark:bg-gray-900/50"
+                    >
                       <div className="space-y-3">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">Warehouse Name</p>
-                          <p className="text-sm font-medium text-foreground">{request.destinationWarehouse.name}</p>
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Warehouse Name
+                          </p>
+                          <p className="text-sm font-medium text-foreground">
+                            {request.destinationWarehouse.name}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">Address</p>
-                          <p className="text-sm font-medium text-foreground">{request.destinationWarehouse.address}</p>
-                          {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Address
+                          </p>
+                          <p className="text-sm font-medium text-foreground">
+                            {request.destinationWarehouse.address}
+                          </p>
+                          {(request.destinationWarehouse.city ||
+                            request.destinationWarehouse.country) && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
+                              {[
+                                request.destinationWarehouse.city,
+                                request.destinationWarehouse.country,
+                              ]
+                                .filter(Boolean)
+                                .join(", ")}
                             </p>
                           )}
                         </div>
                         {request.destinationWarehouse.assignedAt && (
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">Assigned On</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              Assigned On
+                            </p>
                             <p className="text-sm text-foreground">
-                              {new Date(request.destinationWarehouse.assignedAt).toLocaleDateString("en-US", {
+                              {new Date(
+                                request.destinationWarehouse.assignedAt,
+                              ).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
@@ -1228,17 +1377,20 @@ export default function RequestDetailsPage() {
                         )}
                         {request.destinationWarehouse.coordinates && (
                           <div className="mt-3">
-                            <p className="text-xs text-muted-foreground mb-2">Location on Map</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Location on Map
+                            </p>
                             <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
                               <LocationMapPicker
                                 position={{
-                                  lat: request.destinationWarehouse.coordinates.latitude,
-                                  lng: request.destinationWarehouse.coordinates.longitude,
+                                  lat: request.destinationWarehouse.coordinates
+                                    .latitude,
+                                  lng: request.destinationWarehouse.coordinates
+                                    .longitude,
                                 }}
                                 onPositionChange={() => {}}
                                 editable={false}
                                 showUseMyLocation={false}
-                                zoom={15}
                               />
                             </div>
                           </div>
@@ -1257,18 +1409,34 @@ export default function RequestDetailsPage() {
                           <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-foreground mb-2">Source Warehouse (Pickup)</h4>
+                          <h4 className="font-semibold text-foreground mb-2">
+                            Source Warehouse (Pickup)
+                          </h4>
                           <div className="space-y-2 text-sm">
                             <div>
-                              <p className="text-xs text-muted-foreground">Warehouse Name</p>
-                              <p className="font-medium text-foreground">{request.sourceWarehouse.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Warehouse Name
+                              </p>
+                              <p className="font-medium text-foreground">
+                                {request.sourceWarehouse.name}
+                              </p>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">Address</p>
-                              <p className="font-medium text-foreground">{request.sourceWarehouse.address}</p>
-                              {(request.sourceWarehouse.city || request.sourceWarehouse.country) && (
+                              <p className="text-xs text-muted-foreground">
+                                Address
+                              </p>
+                              <p className="font-medium text-foreground">
+                                {request.sourceWarehouse.address}
+                              </p>
+                              {(request.sourceWarehouse.city ||
+                                request.sourceWarehouse.country) && (
                                 <p className="text-sm text-muted-foreground mt-1">
-                                  {[request.sourceWarehouse.city, request.sourceWarehouse.country].filter(Boolean).join(", ")}
+                                  {[
+                                    request.sourceWarehouse.city,
+                                    request.sourceWarehouse.country,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(", ")}
                                 </p>
                               )}
                             </div>
@@ -1280,12 +1448,12 @@ export default function RequestDetailsPage() {
                           <LocationMapPicker
                             position={{
                               lat: request.sourceWarehouse.coordinates.latitude,
-                              lng: request.sourceWarehouse.coordinates.longitude,
+                              lng: request.sourceWarehouse.coordinates
+                                .longitude,
                             }}
                             onPositionChange={() => {}}
                             editable={false}
                             showUseMyLocation={false}
-                            zoom={15}
                           />
                         </div>
                       )}
@@ -1299,18 +1467,34 @@ export default function RequestDetailsPage() {
                           <MapPinned className="w-6 h-6 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-foreground mb-2">Destination Warehouse (Delivery)</h4>
+                          <h4 className="font-semibold text-foreground mb-2">
+                            Destination Warehouse (Delivery)
+                          </h4>
                           <div className="space-y-2 text-sm">
                             <div>
-                              <p className="text-xs text-muted-foreground">Warehouse Name</p>
-                              <p className="font-medium text-foreground">{request.destinationWarehouse.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Warehouse Name
+                              </p>
+                              <p className="font-medium text-foreground">
+                                {request.destinationWarehouse.name}
+                              </p>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">Address</p>
-                              <p className="font-medium text-foreground">{request.destinationWarehouse.address}</p>
-                              {(request.destinationWarehouse.city || request.destinationWarehouse.country) && (
+                              <p className="text-xs text-muted-foreground">
+                                Address
+                              </p>
+                              <p className="font-medium text-foreground">
+                                {request.destinationWarehouse.address}
+                              </p>
+                              {(request.destinationWarehouse.city ||
+                                request.destinationWarehouse.country) && (
                                 <p className="text-sm text-muted-foreground mt-1">
-                                  {[request.destinationWarehouse.city, request.destinationWarehouse.country].filter(Boolean).join(", ")}
+                                  {[
+                                    request.destinationWarehouse.city,
+                                    request.destinationWarehouse.country,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(", ")}
                                 </p>
                               )}
                             </div>
@@ -1321,13 +1505,14 @@ export default function RequestDetailsPage() {
                         <div className="h-64 w-full rounded-lg overflow-hidden border border-green-200 dark:border-green-700">
                           <LocationMapPicker
                             position={{
-                              lat: request.destinationWarehouse.coordinates.latitude,
-                              lng: request.destinationWarehouse.coordinates.longitude,
+                              lat: request.destinationWarehouse.coordinates
+                                .latitude,
+                              lng: request.destinationWarehouse.coordinates
+                                .longitude,
                             }}
                             onPositionChange={() => {}}
                             editable={false}
                             showUseMyLocation={false}
-                            zoom={15}
                           />
                         </div>
                       )}
@@ -1364,7 +1549,10 @@ export default function RequestDetailsPage() {
                 setSelectedImageUrl(null);
               }}
             >
-              <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <img
                   src={selectedImageUrl}
                   alt="Zoomed image"
