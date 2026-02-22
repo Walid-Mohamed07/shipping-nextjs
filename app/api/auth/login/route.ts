@@ -61,11 +61,7 @@ export async function POST(request: NextRequest) {
         id: user._id,
         email: user.email,
         username: user.username,
-        mobile: user.mobile,
-        name: user.name,
         fullName: user.fullName,
-        birthDate: user.birthDate,
-        profilePicture: user.profilePicture,
         company: user.company || null,
         role: user.role,
       },
@@ -79,7 +75,8 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         user: {
-          id: user._id,
+          _id: user._id,
+          id: user._id.toString(),
           email: user.email,
           name: user.name,
           fullName: user.fullName,

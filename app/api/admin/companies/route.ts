@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest) {
     const updatedCompany = await Company.findByIdAndUpdate(
       id,
       updateData,
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!updatedCompany) {

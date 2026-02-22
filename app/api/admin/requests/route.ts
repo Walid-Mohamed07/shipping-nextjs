@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request } from "@/lib/models";
+import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
 
 /**
  * @swagger
@@ -67,6 +68,12 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { requestId, requestStatus, deliveryStatus } = body;
 
+    // Get current request to track status changes
+    const currentRequest = await Request.findById(requestId);
+    if (!currentRequest) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
     const updateData: any = {};
     if (requestStatus) updateData.requestStatus = requestStatus;
     if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
@@ -75,11 +82,32 @@ export async function PUT(request: NextRequest) {
     const updatedRequest = await Request.findByIdAndUpdate(
       requestId,
       updateData,
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!updatedRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    // Add activity logs for status changes
+    if (requestStatus && requestStatus !== currentRequest.requestStatus) {
+      await addActivityLog(
+        requestId,
+        ActivityActions.STATUS_CHANGED(
+          currentRequest.requestStatus,
+          requestStatus,
+        ),
+      );
+    }
+
+    if (deliveryStatus && deliveryStatus !== currentRequest.deliveryStatus) {
+      await addActivityLog(
+        requestId,
+        ActivityActions.DELIVERY_STATUS_CHANGED(
+          currentRequest.deliveryStatus,
+          deliveryStatus,
+        ),
+      );
     }
 
     return NextResponse.json(

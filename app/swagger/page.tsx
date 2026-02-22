@@ -1,12 +1,8 @@
-"use client";
+import { ApiDocsContent } from "./ApiDocsContent";
 
-import SwaggerUI from "swagger-ui-react";
-import "swagger-ui-react/swagger-ui.css";
+// ISR - Revalidate API docs hourly (mostly static content)
+export const revalidate = 3600;
 
 export default function SwaggerPage() {
-  return (
-    <div style={{ padding: "20px" }}>
-      <SwaggerUI url="/api/api-docs" />
-    </div>
-  );
+  return <ApiDocsContent />;
 }

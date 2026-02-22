@@ -20,6 +20,7 @@ import {
   Navigation,
 } from "lucide-react";
 import type { AddressData } from "@/app/components/LocationMapPicker";
+import { CardSkeleton, MapSkeleton } from "@/app/components/loaders";
 
 const LocationMapPicker = dynamic(
   () =>
@@ -28,9 +29,7 @@ const LocationMapPicker = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[280px] rounded-lg border border-gray-300 bg-gray-100 animate-pulse" />
-    ),
+    loading: () => <MapSkeleton height="h-[280px]" />,
   },
 );
 
@@ -233,9 +232,16 @@ export default function CompanyWarehousesPage() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex-1">
+              <div className="h-10 w-1/2 bg-skeleton rounded animate-pulse mb-2" />
+              <div className="h-6 w-3/4 bg-skeleton rounded animate-pulse" />
+            </div>
+            <div className="w-40 h-10 bg-skeleton rounded animate-pulse" />
+          </div>
+          <CardSkeleton count={3} variant="detailed" />
+        </main>
       </div>
     );
   }

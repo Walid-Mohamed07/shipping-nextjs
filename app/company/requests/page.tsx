@@ -22,44 +22,8 @@ import {
 } from "lucide-react";
 import { Request } from "@/types";
 import { useToast } from "@/lib/useToast";
-
+import { RequestCardSkeleton } from "@/app/components/loaders";
 import { AuthGuard } from "@/app/components/AuthGuard";
-
-interface Item {
-  item: string;
-  name?: string;
-  category: string;
-  dimensions: string;
-  weight: string;
-  quantity: number;
-  note: string | null;
-}
-
-interface Location {
-  country: string;
-  city: string;
-  street: string;
-  district?: string;
-  governorate?: string;
-  pickupMode?: string;
-  coordinates?: { latitude: number; longitude: number };
-}
-
-interface CostOffer {
-  cost: number;
-  comment?: string;
-  company: {
-    id: string;
-    name: string;
-    phoneNumber?: string;
-    email?: string;
-    address?: string;
-    rate?: string;
-  };
-  selected: boolean;
-  status: "pending" | "accepted" | "rejected";
-  createdAt?: string;
-}
 
 interface CompanyInfo {
   id: string;
@@ -72,6 +36,12 @@ interface CompanyInfo {
 
 export default function CompanyRequestsPage() {
   const { user, isLoading } = useAuth();
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
   const router = useRouter();
   const { create, error: showError } = useToast();
   const [requests, setRequests] = useState<Request[]>([]);
@@ -450,7 +420,9 @@ export default function CompanyRequestsPage() {
             </div>
           </Card>
 
-          {requests.length === 0 ? (
+          {loading ? (
+            <RequestCardSkeleton count={6} />
+          ) : requests.length === 0 ? (
             <Card className="p-12 text-center">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
@@ -780,7 +752,7 @@ export default function CompanyRequestsPage() {
                           {hasExistingOffer(request) && (
                             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-2">
                               <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 uppercase tracking-wide mb-2">
-                                Your Offers ({getMyOffers(request).length}/3)
+                                Your Offer
                               </p>
                               <div className="space-y-2">
                                 {getMyOffers(request).map((offer, idx) => (
@@ -829,8 +801,7 @@ export default function CompanyRequestsPage() {
                                   className="w-full mt-2 gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400"
                                 >
                                   <DollarSign className="w-3 h-3" />
-                                  Add Another Offer (
-                                  {getMyOffers(request).length}/3)
+                                  Update the Offer
                                 </Button>
                               )}
                             </div>

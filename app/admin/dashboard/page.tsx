@@ -5,6 +5,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { Header } from "@/app/components/Header";
 import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
 import { useRouter } from "next/navigation";
+import { Skeleton } from "@/app/components/loaders";
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
@@ -21,8 +22,24 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex">
+          <div className="w-64 border-r border-border p-4 space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="w-full h-10" />
+            ))}
+          </div>
+          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+            <Skeleton className="w-1/2 h-10 mb-2" />
+            <Skeleton className="w-3/4 h-6 mb-8" />
+            <div className="grid gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="w-full h-40" />
+              ))}
+            </div>
+          </main>
+        </div>
       </div>
     );
   }

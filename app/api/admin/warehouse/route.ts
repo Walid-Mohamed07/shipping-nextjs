@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest) {
     const updatedWarehouse = await Warehouse.findByIdAndUpdate(
       warehouseId,
       { ...updateData, updatedAt: new Date() },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!updatedWarehouse) {

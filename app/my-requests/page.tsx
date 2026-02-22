@@ -18,6 +18,7 @@ import {
   BoxSelect,
 } from "lucide-react";
 import { Request, Address } from "@/types";
+import { RequestCardSkeleton } from "@/app/components/loaders";
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -122,11 +123,7 @@ export default function MyRequestsPage() {
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 bg-muted rounded-lg animate-pulse" />
-            ))}
-          </div>
+          <RequestCardSkeleton count={3} />
         ) : requests.length === 0 ? (
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />

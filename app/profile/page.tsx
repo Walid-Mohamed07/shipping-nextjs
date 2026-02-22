@@ -57,18 +57,15 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [error, setError] = useState("");
-  const hasFetched = useRef(false);
 
-  // Fetch stats only once when user.id is available
+  // Fetch stats when user._id is available
   useEffect(() => {
-    if (!user?.id || hasFetched.current) return;
-
-    hasFetched.current = true;
+    if (!user?._id) return;
 
     const fetchStats = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/requests?userId=${user.id}`);
+        const response = await fetch(`/api/requests?userId=${user._id}`);
         if (!response.ok) throw new Error("Failed to fetch requests");
         const data = await response.json();
         const requests = data.requests || [];
@@ -141,16 +138,16 @@ export default function ProfilePage() {
     };
 
     fetchStats();
-  }, [user?.id]);
+  }, [user?._id]);
 
   // Fetch user addresses
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?._id) return;
 
     const fetchAddresses = async () => {
       setIsLoadingAddresses(true);
       try {
-        const response = await fetch(`/api/user/addresses?userId=${user.id}`);
+        const response = await fetch(`/api/user/addresses?userId=${user._id}`);
         if (!response.ok) throw new Error("Failed to fetch addresses");
         const data = await response.json();
         setAddresses(data.addresses || []);
@@ -162,7 +159,7 @@ export default function ProfilePage() {
     };
 
     fetchAddresses();
-  }, [user?.id]);
+  }, [user?._id]);
 
   if (!user) {
     return null;
@@ -197,7 +194,7 @@ export default function ProfilePage() {
             {user.profilePicture ? (
               <img
                 src={user.profilePicture}
-                alt={user.name || "Profile"}
+                alt={user.fullName || "Profile"}
                 className="w-24 h-24 rounded-full object-cover border-2 border-primary"
               />
             ) : (
@@ -209,7 +206,7 @@ export default function ProfilePage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {user.name || "User"}
+                    {user.fullName || "User"}
                   </h1>
                   <p className="text-muted-foreground mb-2">{user.email}</p>
                   <div className="flex gap-4 flex-wrap">
@@ -241,7 +238,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Statistics Grid */}
-        {isLoading ? (
+        {authLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />

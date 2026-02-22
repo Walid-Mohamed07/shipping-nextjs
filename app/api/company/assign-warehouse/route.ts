@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request, Warehouse } from "@/lib/models";
+import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,12 +46,22 @@ export async function POST(request: NextRequest) {
         [updateField]: warehouseId,
         updatedAt: new Date(),
       },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!updatedRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
+
+    // Add activity log for warehouse assignment
+    await addActivityLog(
+      requestId,
+      ActivityActions.WAREHOUSE_ASSIGNED(
+        warehouseId,
+        warehouse.name,
+        warehouseType as "source" | "destination",
+      ),
+    );
 
     return NextResponse.json(
       {
