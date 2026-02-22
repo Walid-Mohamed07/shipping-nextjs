@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { Header } from "@/app/components/Header";
 import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/app/components/loaders";
@@ -23,7 +22,6 @@ export default function AdminDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex">
           <div className="w-64 border-r border-border p-4 space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -50,8 +48,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <div className="flex">
         {/* Sidebar */}
         <AdminDashboardNav userRole={user.role} isSticky={true} />

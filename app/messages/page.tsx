@@ -3,7 +3,6 @@
 import React from "react";
 
 import { useState, useEffect } from "react";
-import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/app/context/AuthContext";
@@ -205,7 +204,6 @@ export default function MessagesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <span className="text-muted-foreground">Loading messages...</span>
@@ -217,8 +215,6 @@ export default function MessagesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>

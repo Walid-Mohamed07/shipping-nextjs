@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/app/context/AuthContext";
@@ -117,7 +116,6 @@ export default function CompanyInboxPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <span className="text-muted-foreground">Loading inbox...</span>
@@ -130,8 +128,6 @@ export default function CompanyInboxPage() {
   if (selectedMessage) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
-
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Button
             onClick={() => setSelectedMessage(null)}
@@ -240,8 +236,6 @@ export default function CompanyInboxPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
@@ -19,6 +18,7 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { Request } from "@/types";
 import { useToast } from "@/lib/useToast";
@@ -64,6 +64,7 @@ export default function CompanyRequestsPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const fetchCompanyInfo = useCallback(async () => {
     if (!user?.id) return;
@@ -289,8 +290,6 @@ export default function CompanyRequestsPage() {
   return (
     <AuthGuard requiredRole="company">
       <div className="min-h-screen bg-background">
-        <Header />
-
         <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">

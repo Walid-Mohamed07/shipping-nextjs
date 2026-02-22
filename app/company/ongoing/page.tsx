@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
@@ -62,23 +61,31 @@ export default function CompanyOngoingRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [warehouses, setWarehouses] = useState<CompanyWarehouse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [assigningWarehouse, setAssigningWarehouse] = useState<string | null>(null);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<{ [key: string]: string }>({});
+  const [assigningWarehouse, setAssigningWarehouse] = useState<string | null>(
+    null,
+  );
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<{
+    [key: string]: string;
+  }>({});
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
     try {
       setLoading(true);
-      
+
       // Fetch ongoing requests
-      const requestsRes = await fetch(`/api/company/ongoing?companyId=${user.id}`);
-      const warehousesRes = await fetch(`/api/company/warehouses?companyId=${user.id}`);
-      
+      const requestsRes = await fetch(
+        `/api/company/ongoing?companyId=${user.id}`,
+      );
+      const warehousesRes = await fetch(
+        `/api/company/warehouses?companyId=${user.id}`,
+      );
+
       if (requestsRes.ok) {
         const data = await requestsRes.json();
         setRequests(data.requests || []);
       }
-      
+
       if (warehousesRes.ok) {
         const data = await warehousesRes.json();
         setWarehouses(data.warehouses || []);
@@ -120,7 +127,9 @@ export default function CompanyOngoingRequestsPage() {
       });
 
       if (response.ok) {
-        alert("Warehouse assigned successfully! The client has been notified of the pickup location.");
+        alert(
+          "Warehouse assigned successfully! The client has been notified of the pickup location.",
+        );
         await fetchData();
       } else {
         const errorData = await response.json();
@@ -135,23 +144,23 @@ export default function CompanyOngoingRequestsPage() {
   };
 
   const needsWarehouseAssignment = (request: Request) => {
-    const sourceIsSelfPickup = 
-      request.sourcePickupMode === "Self" || 
+    const sourceIsSelfPickup =
+      request.sourcePickupMode === "Self" ||
       request.source?.pickupMode === "Self";
-    const destinationIsSelfDelivery = 
-      request.destinationPickupMode === "Self" || 
+    const destinationIsSelfDelivery =
+      request.destinationPickupMode === "Self" ||
       request.destination?.pickupMode === "Self";
-    
+
     const needsSourceWarehouse = sourceIsSelfPickup && !request.sourceWarehouse;
-    const needsDestWarehouse = destinationIsSelfDelivery && !request.destinationWarehouse;
-    
+    const needsDestWarehouse =
+      destinationIsSelfDelivery && !request.destinationWarehouse;
+
     return needsSourceWarehouse || needsDestWarehouse;
   };
 
   if (!user || user.role !== "company") {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <p className="text-muted-foreground">
             Access denied. This page is for companies only.
@@ -164,7 +173,6 @@ export default function CompanyOngoingRequestsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -174,8 +182,6 @@ export default function CompanyOngoingRequestsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">
@@ -206,16 +212,16 @@ export default function CompanyOngoingRequestsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {requests.map((request) => {
               const needsWarehouse = needsWarehouseAssignment(request);
-              const sourceIsSelfPickup = 
-                request.sourcePickupMode === "Self" || 
+              const sourceIsSelfPickup =
+                request.sourcePickupMode === "Self" ||
                 request.source?.pickupMode === "Self";
-              const destinationIsSelfDelivery = 
-                request.destinationPickupMode === "Self" || 
+              const destinationIsSelfDelivery =
+                request.destinationPickupMode === "Self" ||
                 request.destination?.pickupMode === "Self";
 
               return (
-                <Card 
-                  key={request.id} 
+                <Card
+                  key={request.id}
                   className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
                   onClick={() => router.push(`/company/ongoing/${request.id}`)}
                 >
@@ -249,7 +255,7 @@ export default function CompanyOngoingRequestsPage() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-start gap-2">
                         <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                         <div className="text-sm">
@@ -272,11 +278,16 @@ export default function CompanyOngoingRequestsPage() {
                         </span>
                         {(sourceIsSelfPickup || destinationIsSelfDelivery) && (
                           <span className="text-xs text-orange-600 dark:text-orange-400">
-                            <Truck className="w-3 h-3 inline" /> Self {sourceIsSelfPickup && "Pickup"}{sourceIsSelfPickup && destinationIsSelfDelivery && "/"}{destinationIsSelfDelivery && "Delivery"}
+                            <Truck className="w-3 h-3 inline" /> Self{" "}
+                            {sourceIsSelfPickup && "Pickup"}
+                            {sourceIsSelfPickup &&
+                              destinationIsSelfDelivery &&
+                              "/"}
+                            {destinationIsSelfDelivery && "Delivery"}
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground flex items-center gap-1">
                           <UserIcon className="w-3 h-3" />
@@ -291,32 +302,34 @@ export default function CompanyOngoingRequestsPage() {
                     {/* Warehouse Status */}
                     {(sourceIsSelfPickup || destinationIsSelfDelivery) && (
                       <div className="pt-2 border-t border-border space-y-1">
-                        {sourceIsSelfPickup && (
-                          request.sourceWarehouse ? (
+                        {sourceIsSelfPickup &&
+                          (request.sourceWarehouse ? (
                             <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                               <Warehouse className="w-3 h-3" />
-                              <span className="truncate">Source: {request.sourceWarehouse.name}</span>
+                              <span className="truncate">
+                                Source: {request.sourceWarehouse.name}
+                              </span>
                             </div>
                           ) : (
                             <div className="text-xs text-orange-600 dark:text-orange-400">
                               <Warehouse className="w-3 h-3 inline mr-1" />
                               No source warehouse
                             </div>
-                          )
-                        )}
-                        {destinationIsSelfDelivery && (
-                          request.destinationWarehouse ? (
+                          ))}
+                        {destinationIsSelfDelivery &&
+                          (request.destinationWarehouse ? (
                             <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                               <Warehouse className="w-3 h-3" />
-                              <span className="truncate">Dest: {request.destinationWarehouse.name}</span>
+                              <span className="truncate">
+                                Dest: {request.destinationWarehouse.name}
+                              </span>
                             </div>
                           ) : (
                             <div className="text-xs text-purple-600 dark:text-purple-400">
                               <Warehouse className="w-3 h-3 inline mr-1" />
                               No destination warehouse
                             </div>
-                          )
-                        )}
+                          ))}
                       </div>
                     )}
                   </div>

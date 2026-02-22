@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Header } from "@/app/components/Header";
 import { ArrowLeft } from "lucide-react";
 
 interface CostOffer {
@@ -169,7 +168,6 @@ export default function RequestDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-screen">
           Loading...
         </div>
@@ -180,7 +178,6 @@ export default function RequestDetailPage() {
   if (!request) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-screen">
           Request not found
         </div>
@@ -192,8 +189,6 @@ export default function RequestDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-6">
           <Button

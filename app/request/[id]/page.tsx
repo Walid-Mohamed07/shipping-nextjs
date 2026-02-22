@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Header } from "@/app/components/Header";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
@@ -241,7 +240,7 @@ export default function RequestDetailsPage() {
   };
 
   useEffect(() => {
-    if (authLoading || !user || !user.id) {
+    if (authLoading || !user || !user._id) {
       return;
     }
 
@@ -251,7 +250,7 @@ export default function RequestDetailsPage() {
         if (!response.ok) throw new Error("Request not found");
         const data = await response.json();
 
-        if (data.request.user._id !== user.id) {
+        if (data.request.user._id !== user._id) {
           throw new Error("Unauthorized");
         }
 
@@ -267,7 +266,7 @@ export default function RequestDetailsPage() {
     };
 
     fetchRequest();
-  }, [user?.id, requestId]);
+  }, [user?._id, requestId]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -331,7 +330,6 @@ export default function RequestDetailsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="space-y-4">
             <div className="h-12 bg-muted rounded-lg animate-pulse" />
@@ -345,7 +343,6 @@ export default function RequestDetailsPage() {
   if (error || !request) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 flex gap-4">
             <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -371,8 +368,6 @@ export default function RequestDetailsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link href="/my-requests" className="inline-block mb-6">
           <Button

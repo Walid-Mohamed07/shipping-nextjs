@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { Header } from "@/app/components/Header";
 import { AdminRequestsTab } from "@/app/components/AdminRequestsTab";
 import { AdminAssignmentTab } from "@/app/components/AdminAssignmentTab";
 import { AdminVehicleRulesTab } from "@/app/components/AdminVehicleRulesTab";
@@ -93,8 +92,6 @@ export default function DashboardSection({
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <div className="flex">
         {/* Sidebar */}
         <AdminDashboardNav

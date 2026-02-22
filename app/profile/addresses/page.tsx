@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
@@ -42,7 +41,7 @@ export default function AddressesPage() {
   const fetchAddresses = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/user/addresses?userId=${user?.id}`);
+      const response = await fetch(`/api/user/addresses?userId=${user?._id}`);
       if (!response.ok) throw new Error("Failed to fetch addresses");
       const data = await response.json();
       setAddresses(data.addresses || []);
@@ -56,7 +55,7 @@ export default function AddressesPage() {
   };
 
   const handleDeleteAddress = async (addressId: string) => {
-    if (!user?.id) return;
+    if (!user?._id) return;
 
     try {
       setIsDeletingId(addressId);
@@ -66,7 +65,7 @@ export default function AddressesPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: user.id,
+          userId: user._id,
           addressId,
         }),
       });
@@ -85,14 +84,9 @@ export default function AddressesPage() {
     }
   };
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-right" richColors />
-      <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between gap-4 mb-8">
@@ -119,7 +113,7 @@ export default function AddressesPage() {
           </Link> */}
         </div>
 
-        {isLoading ? (
+        {authLoading || isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-64 bg-muted rounded-lg animate-pulse" />

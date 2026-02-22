@@ -5,3 +5,4 @@ export { FormSkeleton } from "./FormSkeleton";
 export { RequestCardSkeleton } from "./RequestCardSkeleton";
 export { MapSkeleton } from "./MapSkeleton";
 export { ListSkeleton } from "./ListSkeleton";
+export { HomePageSkeleton } from "./HomePageSkeleton";
