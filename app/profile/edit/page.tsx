@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
@@ -117,7 +116,7 @@ export default function EditProfilePage() {
     setIsLoading(true);
 
     try {
-      if (!user?.id) {
+      if (!user?._id) {
         throw new Error("User ID not found");
       }
 
@@ -127,7 +126,7 @@ export default function EditProfilePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: user.id,
+          userId: user._id,
           ...formData,
         }),
       });
@@ -156,15 +155,9 @@ export default function EditProfilePage() {
     }
   };
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-right" richColors />
-      <Header />
-
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link href="/profile">
           <Button
@@ -177,10 +170,30 @@ export default function EditProfilePage() {
           </Button>
         </Link>
 
-        <div className="bg-card rounded-lg border border-border p-8">
-          <h1 className="text-3xl font-bold text-foreground mb-8">
-            Edit Profile
-          </h1>
+        {authLoading ? (
+          <div className="bg-card rounded-lg border border-border p-8 space-y-6">
+            <div className="h-10 bg-muted rounded w-1/3 animate-pulse" />
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-32 h-32 rounded-full bg-muted animate-pulse" />
+              <div className="w-full space-y-3">
+                <div className="h-10 bg-muted rounded animate-pulse" />
+                <div className="h-10 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-5 bg-muted rounded w-1/4 animate-pulse" />
+                  <div className="h-10 bg-muted rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg border border-border p-8">
+            <h1 className="text-3xl font-bold text-foreground mb-8">
+              Edit Profile
+            </h1>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Profile Picture Section */}
@@ -311,7 +324,8 @@ export default function EditProfilePage() {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
