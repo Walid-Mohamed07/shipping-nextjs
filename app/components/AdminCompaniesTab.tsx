@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Edit2, Plus, Search } from "lucide-react";
 import { Company } from "@/types";
+import { useToast, getErrorMessage } from "@/lib/useToast";
 
 export function AdminCompaniesTab() {
+  const toast = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,7 @@ export function AdminCompaniesTab() {
       setCompanies(data);
     } catch (error) {
       console.error("Failed to fetch companies:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -82,11 +85,13 @@ export function AdminCompaniesTab() {
       if (res.ok) {
         fetchCompanies();
         resetForm();
-        alert(editingId ? "Company updated" : "Company created");
+        toast.create(editingId ? "Company updated successfully" : "Company created successfully");
+      } else {
+        toast.error("Failed to save company");
       }
     } catch (error) {
       console.error("Failed to save company:", error);
-      alert("Failed to save company");
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -100,11 +105,13 @@ export function AdminCompaniesTab() {
 
       if (res.ok) {
         fetchCompanies();
-        alert("Company deleted");
+        toast.delete("Company deleted successfully");
+      } else {
+        toast.error("Failed to delete company");
       }
     } catch (error) {
       console.error("Failed to delete company:", error);
-      alert("Failed to delete company");
+      toast.error(getErrorMessage(error));
     }
   };
 
