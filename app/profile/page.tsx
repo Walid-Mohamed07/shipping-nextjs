@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Header } from "@/app/components/Header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
@@ -161,14 +160,9 @@ export default function ProfilePage() {
     fetchAddresses();
   }, [user?._id]);
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-right" richColors />
-      <Header />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link href="/my-requests">
@@ -189,53 +183,70 @@ export default function ProfilePage() {
         )}
 
         {/* Profile Header */}
-        <div className="bg-card rounded-lg border border-border p-8 mb-6">
-          <div className="flex items-start gap-6">
-            {user.profilePicture ? (
-              <img
-                src={user.profilePicture}
-                alt={user.fullName || "Profile"}
-                className="w-24 h-24 rounded-full object-cover border-2 border-primary"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary">
-                <Package className="w-12 h-12 text-primary" />
-              </div>
-            )}
-            <div className="flex-1">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {user.fullName || "User"}
-                  </h1>
-                  <p className="text-muted-foreground mb-2">{user.email}</p>
-                  <div className="flex gap-4 flex-wrap">
-                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                      <span className="w-2 h-2 bg-primary rounded-full" />
-                      {user.role}
-                    </span>
-                    {user.mobile && (
-                      <span className="text-sm text-muted-foreground">
-                        {user.mobile}
-                      </span>
-                    )}
-                    {user.birthDate && (
-                      <span className="text-sm text-muted-foreground">
-                        Born: {new Date(user.birthDate).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
+        {authLoading ? (
+          <div className="bg-card rounded-lg border border-border p-8 mb-6 animate-pulse">
+            <div className="flex items-start gap-6">
+              <div className="w-24 h-24 rounded-full bg-muted" />
+              <div className="flex-1">
+                <div className="h-8 bg-muted rounded w-1/3 mb-4" />
+                <div className="h-4 bg-muted rounded w-1/2 mb-4" />
+                <div className="flex gap-2">
+                  <div className="h-6 bg-muted rounded w-20" />
+                  <div className="h-6 bg-muted rounded w-24" />
                 </div>
-                <Link href="/profile/edit">
-                  <Button className="gap-2 cursor-pointer whitespace-nowrap">
-                    <Edit2 className="w-4 h-4" />
-                    Edit Profile
-                  </Button>
-                </Link>
+              </div>
+              <div className="h-10 bg-muted rounded w-32" />
+            </div>
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg border border-border p-8 mb-6">
+            <div className="flex items-start gap-6">
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt={user?.fullName || "Profile"}
+                  className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary">
+                  <Package className="w-12 h-12 text-primary" />
+                </div>
+              )}
+              <div className="flex-1">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h1 className="text-3xl font-bold text-foreground mb-2">
+                      {user?.fullName || "User"}
+                    </h1>
+                    <p className="text-muted-foreground mb-2">{user?.email}</p>
+                    <div className="flex gap-4 flex-wrap">
+                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                        <span className="w-2 h-2 bg-primary rounded-full" />
+                        {user?.role}
+                      </span>
+                      {user?.mobile && (
+                        <span className="text-sm text-muted-foreground">
+                          {user.mobile}
+                        </span>
+                      )}
+                      {user?.birthDate && (
+                        <span className="text-sm text-muted-foreground">
+                          Born: {new Date(user.birthDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Link href="/profile/edit">
+                    <Button className="gap-2 cursor-pointer whitespace-nowrap">
+                      <Edit2 className="w-4 h-4" />
+                      Edit Profile
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Statistics Grid */}
         {authLoading ? (

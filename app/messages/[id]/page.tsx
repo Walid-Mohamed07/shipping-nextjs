@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,7 +116,6 @@ export default function MessageDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <p className="text-muted-foreground">Loading message...</p>
         </div>
@@ -128,7 +126,6 @@ export default function MessageDetailPage() {
   if (!message) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Button
             variant="outline"
@@ -154,8 +151,6 @@ export default function MessageDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-4xl mx-auto px-4 py-8">
         <Button
           variant="outline"

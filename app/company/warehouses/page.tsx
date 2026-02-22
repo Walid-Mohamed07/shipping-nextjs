@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
@@ -218,7 +217,6 @@ export default function CompanyWarehousesPage() {
   if (!user || user.role !== "company") {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <p className="text-muted-foreground">
             Access denied. This page is for companies only.
@@ -231,7 +229,6 @@ export default function CompanyWarehousesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-8">
             <div className="flex-1">
@@ -248,8 +245,6 @@ export default function CompanyWarehousesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>

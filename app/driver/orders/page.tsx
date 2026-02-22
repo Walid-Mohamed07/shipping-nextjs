@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
@@ -83,7 +82,6 @@ export default function DriverOrders() {
   if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 space-y-2">
             <div className="h-10 w-1/3 bg-skeleton rounded animate-pulse" />
@@ -101,8 +99,6 @@ export default function DriverOrders() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">
