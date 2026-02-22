@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/app/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
@@ -68,10 +67,14 @@ export default function OngoingRequestDetailPage() {
   const [request, setRequest] = useState<Request | null>(null);
   const [warehouses, setWarehouses] = useState<CompanyWarehouse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [assigningSourceWarehouse, setAssigningSourceWarehouse] = useState(false);
-  const [assigningDestinationWarehouse, setAssigningDestinationWarehouse] = useState(false);
-  const [selectedSourceWarehouseId, setSelectedSourceWarehouseId] = useState("");
-  const [selectedDestinationWarehouseId, setSelectedDestinationWarehouseId] = useState("");
+  const [assigningSourceWarehouse, setAssigningSourceWarehouse] =
+    useState(false);
+  const [assigningDestinationWarehouse, setAssigningDestinationWarehouse] =
+    useState(false);
+  const [selectedSourceWarehouseId, setSelectedSourceWarehouseId] =
+    useState("");
+  const [selectedDestinationWarehouseId, setSelectedDestinationWarehouseId] =
+    useState("");
 
   useEffect(() => {
     if (!user || user.role !== "company") {
@@ -89,12 +92,18 @@ export default function OngoingRequestDetailPage() {
       setLoading(true);
 
       // Fetch all ongoing requests and filter for this one
-      const requestsRes = await fetch(`/api/company/ongoing?companyId=${user.id}`);
-      const warehousesRes = await fetch(`/api/company/warehouses?companyId=${user.id}`);
+      const requestsRes = await fetch(
+        `/api/company/ongoing?companyId=${user.id}`,
+      );
+      const warehousesRes = await fetch(
+        `/api/company/warehouses?companyId=${user.id}`,
+      );
 
       if (requestsRes.ok) {
         const data = await requestsRes.json();
-        const foundRequest = data.requests?.find((r: Request) => r.id === requestId);
+        const foundRequest = data.requests?.find(
+          (r: Request) => r.id === requestId,
+        );
         if (foundRequest) {
           setRequest(foundRequest);
         } else {
@@ -113,10 +122,18 @@ export default function OngoingRequestDetailPage() {
     }
   };
 
-  const handleAssignWarehouse = async (warehouseType: "source" | "destination") => {
-    const warehouseId = warehouseType === "source" ? selectedSourceWarehouseId : selectedDestinationWarehouseId;
-    const setAssigning = warehouseType === "source" ? setAssigningSourceWarehouse : setAssigningDestinationWarehouse;
-    
+  const handleAssignWarehouse = async (
+    warehouseType: "source" | "destination",
+  ) => {
+    const warehouseId =
+      warehouseType === "source"
+        ? selectedSourceWarehouseId
+        : selectedDestinationWarehouseId;
+    const setAssigning =
+      warehouseType === "source"
+        ? setAssigningSourceWarehouse
+        : setAssigningDestinationWarehouse;
+
     if (!warehouseId) {
       alert("Please select a warehouse");
       return;
@@ -136,8 +153,11 @@ export default function OngoingRequestDetailPage() {
       });
 
       if (response.ok) {
-        const locationLabel = warehouseType === "source" ? "pickup" : "delivery";
-        alert(`Warehouse assigned successfully! The client has been notified of the ${locationLabel} location.`);
+        const locationLabel =
+          warehouseType === "source" ? "pickup" : "delivery";
+        alert(
+          `Warehouse assigned successfully! The client has been notified of the ${locationLabel} location.`,
+        );
         await fetchData();
       } else {
         const errorData = await response.json();
@@ -154,8 +174,7 @@ export default function OngoingRequestDetailPage() {
   const needsSourceWarehouseAssignment = (req: Request | null) => {
     if (!req) return false;
     const sourceIsSelfPickup =
-      req.sourcePickupMode === "Self" ||
-      req.source?.pickupMode === "Self";
+      req.sourcePickupMode === "Self" || req.source?.pickupMode === "Self";
     return sourceIsSelfPickup && !req.sourceWarehouse;
   };
 
@@ -168,13 +187,15 @@ export default function OngoingRequestDetailPage() {
   };
 
   const needsWarehouseAssignment = (req: Request | null) => {
-    return needsSourceWarehouseAssignment(req) || needsDestinationWarehouseAssignment(req);
+    return (
+      needsSourceWarehouseAssignment(req) ||
+      needsDestinationWarehouseAssignment(req)
+    );
   };
 
   if (!user || user.role !== "company") {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <p className="text-muted-foreground">
             Access denied. This page is for companies only.
@@ -187,7 +208,6 @@ export default function OngoingRequestDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -198,7 +218,6 @@ export default function OngoingRequestDetailPage() {
   if (!request) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <p className="text-muted-foreground">Request not found</p>
         </div>
@@ -218,8 +237,6 @@ export default function OngoingRequestDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Back Button */}
         <Button
@@ -328,7 +345,9 @@ export default function OngoingRequestDetailPage() {
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Package className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold">Items ({request.items.length})</h2>
+                <h2 className="text-xl font-bold">
+                  Items ({request.items.length})
+                </h2>
               </div>
               <div className="space-y-3">
                 {request.items.map((item, index) => (
@@ -337,7 +356,9 @@ export default function OngoingRequestDetailPage() {
                     className="flex items-start justify-between bg-muted/50 rounded-lg p-4"
                   >
                     <div className="flex-1">
-                      <p className="font-medium">{item.description || `Item ${index + 1}`}</p>
+                      <p className="font-medium">
+                        {item.description || `Item ${index + 1}`}
+                      </p>
                       {item.category && (
                         <p className="text-sm text-muted-foreground">
                           Category: {item.category}
@@ -348,7 +369,9 @@ export default function OngoingRequestDetailPage() {
                         {item.quantity && <span>Qty: {item.quantity}</span>}
                         {item.dimensions && (
                           <span>
-                            Dimensions: {item.dimensions.length} × {item.dimensions.width} × {item.dimensions.height} cm
+                            Dimensions: {item.dimensions.length} ×{" "}
+                            {item.dimensions.width} × {item.dimensions.height}{" "}
+                            cm
                           </span>
                         )}
                       </div>
@@ -363,7 +386,9 @@ export default function OngoingRequestDetailPage() {
               <Card className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Warehouse className="w-5 h-5 text-blue-500" />
-                  <h2 className="text-xl font-bold">Source Warehouse (Pickup)</h2>
+                  <h2 className="text-xl font-bold">
+                    Source Warehouse (Pickup)
+                  </h2>
                 </div>
 
                 {request.sourceWarehouse ? (
@@ -371,19 +396,25 @@ export default function OngoingRequestDetailPage() {
                     <p className="text-sm text-green-800 dark:text-green-200 font-medium mb-3">
                       ✓ Warehouse Assigned
                     </p>
-                    <p className="font-semibold text-lg">{request.sourceWarehouse.name}</p>
+                    <p className="font-semibold text-lg">
+                      {request.sourceWarehouse.name}
+                    </p>
                     <p className="text-muted-foreground mt-1">
                       {request.sourceWarehouse.address}
                     </p>
                     {request.sourceWarehouse.city && (
                       <p className="text-muted-foreground">
                         {request.sourceWarehouse.city}
-                        {request.sourceWarehouse.country && `, ${request.sourceWarehouse.country}`}
+                        {request.sourceWarehouse.country &&
+                          `, ${request.sourceWarehouse.country}`}
                       </p>
                     )}
                     {request.sourceWarehouse.assignedAt && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        Assigned: {new Date(request.sourceWarehouse.assignedAt).toLocaleDateString()}
+                        Assigned:{" "}
+                        {new Date(
+                          request.sourceWarehouse.assignedAt,
+                        ).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -391,14 +422,17 @@ export default function OngoingRequestDetailPage() {
                   <div className="space-y-4">
                     <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
                       <p className="text-sm text-orange-800 dark:text-orange-200">
-                        ⚠️ This is a self-pickup request. Please assign one of your warehouses as the pickup location so the client knows where to collect their shipment.
+                        ⚠️ This is a self-pickup request. Please assign one of
+                        your warehouses as the pickup location so the client
+                        knows where to collect their shipment.
                       </p>
                     </div>
 
                     {warehouses.length === 0 ? (
                       <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                         <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
-                          You don't have any warehouses registered. Please add a warehouse first.
+                          You don't have any warehouses registered. Please add a
+                          warehouse first.
                         </p>
                         <Button
                           onClick={() => router.push("/company/warehouses")}
@@ -416,7 +450,9 @@ export default function OngoingRequestDetailPage() {
                         </label>
                         <select
                           value={selectedSourceWarehouseId}
-                          onChange={(e) => setSelectedSourceWarehouseId(e.target.value)}
+                          onChange={(e) =>
+                            setSelectedSourceWarehouseId(e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-border rounded-md bg-background"
                         >
                           <option value="">Select a warehouse...</option>
@@ -429,7 +465,10 @@ export default function OngoingRequestDetailPage() {
                         </select>
                         <Button
                           onClick={() => handleAssignWarehouse("source")}
-                          disabled={assigningSourceWarehouse || !selectedSourceWarehouseId}
+                          disabled={
+                            assigningSourceWarehouse ||
+                            !selectedSourceWarehouseId
+                          }
                           className="w-full"
                         >
                           {assigningSourceWarehouse ? (
@@ -456,7 +495,9 @@ export default function OngoingRequestDetailPage() {
               <Card className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Warehouse className="w-5 h-5 text-purple-500" />
-                  <h2 className="text-xl font-bold">Destination Warehouse (Delivery)</h2>
+                  <h2 className="text-xl font-bold">
+                    Destination Warehouse (Delivery)
+                  </h2>
                 </div>
 
                 {request.destinationWarehouse ? (
@@ -464,19 +505,25 @@ export default function OngoingRequestDetailPage() {
                     <p className="text-sm text-green-800 dark:text-green-200 font-medium mb-3">
                       ✓ Warehouse Assigned
                     </p>
-                    <p className="font-semibold text-lg">{request.destinationWarehouse.name}</p>
+                    <p className="font-semibold text-lg">
+                      {request.destinationWarehouse.name}
+                    </p>
                     <p className="text-muted-foreground mt-1">
                       {request.destinationWarehouse.address}
                     </p>
                     {request.destinationWarehouse.city && (
                       <p className="text-muted-foreground">
                         {request.destinationWarehouse.city}
-                        {request.destinationWarehouse.country && `, ${request.destinationWarehouse.country}`}
+                        {request.destinationWarehouse.country &&
+                          `, ${request.destinationWarehouse.country}`}
                       </p>
                     )}
                     {request.destinationWarehouse.assignedAt && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        Assigned: {new Date(request.destinationWarehouse.assignedAt).toLocaleDateString()}
+                        Assigned:{" "}
+                        {new Date(
+                          request.destinationWarehouse.assignedAt,
+                        ).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -484,14 +531,17 @@ export default function OngoingRequestDetailPage() {
                   <div className="space-y-4">
                     <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                       <p className="text-sm text-purple-800 dark:text-purple-200">
-                        ⚠️ This is a self-delivery request. Please assign one of your warehouses as the delivery location so the client knows where to receive their shipment.
+                        ⚠️ This is a self-delivery request. Please assign one of
+                        your warehouses as the delivery location so the client
+                        knows where to receive their shipment.
                       </p>
                     </div>
 
                     {warehouses.length === 0 ? (
                       <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                         <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
-                          You don't have any warehouses registered. Please add a warehouse first.
+                          You don't have any warehouses registered. Please add a
+                          warehouse first.
                         </p>
                         <Button
                           onClick={() => router.push("/company/warehouses")}
@@ -509,7 +559,9 @@ export default function OngoingRequestDetailPage() {
                         </label>
                         <select
                           value={selectedDestinationWarehouseId}
-                          onChange={(e) => setSelectedDestinationWarehouseId(e.target.value)}
+                          onChange={(e) =>
+                            setSelectedDestinationWarehouseId(e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-border rounded-md bg-background"
                         >
                           <option value="">Select a warehouse...</option>
@@ -522,7 +574,10 @@ export default function OngoingRequestDetailPage() {
                         </select>
                         <Button
                           onClick={() => handleAssignWarehouse("destination")}
-                          disabled={assigningDestinationWarehouse || !selectedDestinationWarehouseId}
+                          disabled={
+                            assigningDestinationWarehouse ||
+                            !selectedDestinationWarehouseId
+                          }
                           className="w-full"
                         >
                           {assigningDestinationWarehouse ? (
@@ -556,7 +611,9 @@ export default function OngoingRequestDetailPage() {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="font-medium">{request.user?.fullName || "N/A"}</p>
+                  <p className="font-medium">
+                    {request.user?.fullName || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -602,12 +659,20 @@ export default function OngoingRequestDetailPage() {
               <h2 className="text-xl font-bold mb-4">Status</h2>
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Request Status</p>
-                  <p className="font-medium capitalize">{request.requestStatus}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Request Status
+                  </p>
+                  <p className="font-medium capitalize">
+                    {request.requestStatus}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Delivery Status</p>
-                  <p className="font-medium capitalize">{request.deliveryStatus}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Delivery Status
+                  </p>
+                  <p className="font-medium capitalize">
+                    {request.deliveryStatus}
+                  </p>
                 </div>
               </div>
             </Card>

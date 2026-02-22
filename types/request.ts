@@ -1,4 +1,5 @@
 import { Address } from "./address";
+import { User } from "./user";
 
 export type RequestStatus =
   | "Accepted"
@@ -25,13 +26,25 @@ export type DeliveryStatus = RequestDeliveryStatus;
 export type PickupMode = "Delegate" | "Self";
 export type DeliveryType = "Normal" | "Urgent";
 
+// User info returned in populated responses
+export interface UserDetails {
+  _id?: string;
+  id?: string;
+  fullName: string;
+  email: string;
+  mobile?: string;
+  profilePicture?: string;
+  role?: string;
+  username?: string;
+}
+
 export interface MediaItem {
   url: string;
   existing: boolean;
 }
 
 export interface Item {
-  id?: string;
+  _id?: string;
   item?: string;
   name?: string;
   category: string;
@@ -86,25 +99,13 @@ export interface ActivityHistory {
   companyName?: string;
   companyRate?: string;
   cost?: number;
+  details?: Record<string, any>;
 }
 
 export interface Request {
-  id: string;
-  userId: string;
-  user?: {
-    id: string;
-    fullName: string;
-    username: string;
-    email: string;
-    mobile: string | null;
-    nationalOrPassportNumber: string | null;
-    birthDate: string;
-    idImage: string | null;
-    licenseImage: string | null;
-    criminalRecord: string | null;
-    status: string;
-    profilePicture: string | null;
-  };
+  id?: string;
+  _id: string;
+  user: string | UserDetails | User; // Can be string ID, populated UserDetails, or full User
   source: Address;
   destination: Address;
   from?: Address;
@@ -159,4 +160,25 @@ export interface Request {
   destinationPickupMode?: "Delegate" | "Self";
   // Company rejection tracking
   rejectedByCompanies?: string[];
+}
+
+// Request payload for POST/PUT operations
+export interface RequestPayload {
+  user: string; // User ID
+  source: Address;
+  destination: Address;
+  items: Item[];
+  deliveryType: DeliveryType;
+  startTime?: string;
+  primaryCost?: string;
+  requestStatus?: RequestStatus;
+  deliveryStatus?: DeliveryStatus;
+  comment?: string;
+  sourceWarehouse?: any;
+  destinationWarehouse?: any;
+}
+
+// Request response with fully populated user data (from GET endpoints)
+export interface RequestResponse extends Request {
+  user: UserDetails; // Always populated with user details in responses
 }

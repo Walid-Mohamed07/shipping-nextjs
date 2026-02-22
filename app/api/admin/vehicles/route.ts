@@ -1,43 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Vehicle } from "@/lib/models";
+
+/**
+ * @swagger
+ * /api/admin/vehicles:
+ *   get:
+ *     summary: Get all vehicles
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: List of all vehicles
+ *       500:
+ *         description: Failed to fetch vehicles
+ *   post:
+ *     summary: Create a new vehicle
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [type, plateNumber, capacity]
+ *             properties:
+ *               type:
+ *                 type: string
+ *               plateNumber:
+ *                 type: string
+ *               capacity:
+ *                 type: number
+ *               status:
+ *                 type: string
+ *                 enum: [available, in-use, maintenance]
+ *     responses:
+ *       201:
+ *         description: Vehicle created successfully
+ *       500:
+ *         description: Failed to create vehicle
+ */
 
 export async function GET(request: NextRequest) {
   try {
-    const vehiclesPath = path.join(process.cwd(), "data", "vehicles.json");
-    const vehiclesData = JSON.parse(fs.readFileSync(vehiclesPath, "utf-8"));
-
-    return NextResponse.json(
-      { vehicles: vehiclesData.vehicles },
-      { status: 200 },
-    );
+    await connectDB();
+    const vehicles = await Vehicle.find({}).lean();
+    return NextResponse.json({ vehicles }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch vehicles" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
-    const { name, type, capacity, licensePlate, location } = body;
+    const { type, plateNumber, capacity, status, country } = body;
 
-    const vehiclesPath = path.join(process.cwd(), "data", "vehicles.json");
-    const vehiclesData = JSON.parse(fs.readFileSync(vehiclesPath, "utf-8"));
-
-    const newVehicle = {
-      id: `VEH-${Date.now()}`,
-      name,
+    const newVehicle = await Vehicle.create({
       type,
+      plateNumber,
       capacity,
-      licensePlate,
-      location,
-      status: "Available",
-      createdAt: new Date().toISOString(),
-    };
-
+      status: status || "available",
+      country: country || "Egypt",
+    });
     vehiclesData.vehicles.push(newVehicle);
     fs.writeFileSync(vehiclesPath, JSON.stringify(vehiclesData, null, 2));
 

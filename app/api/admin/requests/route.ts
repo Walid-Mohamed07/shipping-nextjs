@@ -1,101 +1,120 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Request } from "@/lib/models";
+import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+
+/**
+ * @swagger
+ * /api/admin/requests:
+ *   get:
+ *     summary: Get all shipping requests with detailed information
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: List of all requests
+ *       500:
+ *         description: Failed to fetch requests
+ *   put:
+ *     summary: Update request or delivery status
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               requestId:
+ *                 type: string
+ *               requestStatus:
+ *                 type: string
+ *               deliveryStatus:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Request updated successfully
+ *       404:
+ *         description: Request not found
+ *       500:
+ *         description: Failed to update request
+ */
 
 export async function GET(request: NextRequest) {
   try {
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
+    await connectDB();
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get("status");
 
-    // Return requests with user objects already populated
-    return NextResponse.json(
-      { requests: requestsData.requests },
-      { status: 200 },
-    );
+    const filter: any = {};
+    if (status) {
+      filter.$or = [{ requestStatus: status }, { deliveryStatus: status }];
+    }
+
+    // Return all requests with populated user data
+    const requests = await Request.find(filter)
+      .populate("userId", "fullName email mobile profilePicture role")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json({ requests }, { status: 200 });
   } catch (error) {
-    console.error("Error fetching orders:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch orders" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
     const { requestId, requestStatus, deliveryStatus } = body;
 
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
-
-    const requestIndex = requestsData.requests.findIndex(
-      (r: any) => r.id === requestId,
-    );
-    if (requestIndex === -1) {
+    // Get current request to track status changes
+    const currentRequest = await Request.findById(requestId);
+    if (!currentRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    const currentRequest = requestsData.requests[requestIndex];
-    const now = new Date().toISOString();
-    const adminId = "admin-001"; // In real app, get from auth context
+    const updateData: any = {};
+    if (requestStatus) updateData.requestStatus = requestStatus;
+    if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
+    updateData.updatedAt = new Date();
 
-    if (requestStatus) {
-      currentRequest.requestStatus = requestStatus;
-      currentRequest.requestStatusHistory =
-        currentRequest.requestStatusHistory || [];
-      currentRequest.requestStatusHistory.push({
-        status: requestStatus,
-        changedAt: now,
-        changedBy: adminId,
-        role: "admin",
-        note: null,
-      });
-      currentRequest.orderFlow = currentRequest.orderFlow || [];
-      currentRequest.orderFlow.push(requestStatus);
-      currentRequest.orderCompletedStatuses =
-        currentRequest.orderCompletedStatuses || [];
-      currentRequest.orderCompletedStatuses.push(requestStatus);
+    const updatedRequest = await Request.findByIdAndUpdate(
+      requestId,
+      updateData,
+      { returnDocument: "after" },
+    );
+
+    if (!updatedRequest) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    if (deliveryStatus) {
-      currentRequest.deliveryStatus = deliveryStatus;
-      currentRequest.deliveryStatusHistory =
-        currentRequest.deliveryStatusHistory || [];
-      currentRequest.deliveryStatusHistory.push({
-        status: deliveryStatus,
-        changedAt: now,
-        changedBy: adminId,
-        role: "operator",
-        note: null,
-      });
-      currentRequest.deliveryFlow = currentRequest.deliveryFlow || [];
-      currentRequest.deliveryFlow.push(deliveryStatus);
-      currentRequest.deliveryCompletedStatuses =
-        currentRequest.deliveryCompletedStatuses || [];
-      currentRequest.deliveryCompletedStatuses.push(deliveryStatus);
+    // Add activity logs for status changes
+    if (requestStatus && requestStatus !== currentRequest.requestStatus) {
+      await addActivityLog(
+        requestId,
+        ActivityActions.STATUS_CHANGED(
+          currentRequest.requestStatus,
+          requestStatus,
+        ),
+      );
     }
 
-    currentRequest.updatedAt = now;
-
-    if (requestStatus === "Rejected") {
-      currentRequest.deliveryStatus = "Cancelled";
+    if (deliveryStatus && deliveryStatus !== currentRequest.deliveryStatus) {
+      await addActivityLog(
+        requestId,
+        ActivityActions.DELIVERY_STATUS_CHANGED(
+          currentRequest.deliveryStatus,
+          deliveryStatus,
+        ),
+      );
     }
-
-    fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
 
     return NextResponse.json(
-      {
-        success: true,
-        request: currentRequest,
-      },
+      { success: true, request: updatedRequest },
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error updating order:", error);
-    return NextResponse.json(
-      { error: "Failed to update order" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }
