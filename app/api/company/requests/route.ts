@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request } from "@/lib/models";
+import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
 
 /**
  * @swagger
@@ -126,11 +127,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if company already has an offer on this request
-      const existingOfferIndex = currentRequest.costOffers?.findIndex(
-        (o: any) => o.company?.id === companyId,
-      );
-
       const newOffer = {
         cost: offer.cost,
         comment: offer.comment || "",
@@ -147,9 +143,17 @@ export async function POST(request: NextRequest) {
         currentRequest.costOffers = [];
       }
 
-      if (existingOfferIndex !== undefined && existingOfferIndex >= 0) {
+      // Check if company already has an offer on this request
+      const existingOfferIndex = currentRequest.costOffers.findIndex(
+        (o: any) => o.company?.id === companyId,
+      );
+
+      const isUpdatingExistingOffer = existingOfferIndex >= 0;
+      if (isUpdatingExistingOffer) {
+        // Update existing offer from this company
         currentRequest.costOffers[existingOfferIndex] = newOffer;
       } else {
+        // Push new offer while keeping previous records
         currentRequest.costOffers.push(newOffer);
       }
 
@@ -160,8 +164,29 @@ export async function POST(request: NextRequest) {
       currentRequest.updatedAt = new Date();
       await currentRequest.save();
 
+      // Add activity log for offer submission/update
+      const activity = isUpdatingExistingOffer
+        ? ActivityActions.OFFER_UPDATED(
+            companyId,
+            offer.companyName || "Company",
+            offer.cost,
+            offer.comment,
+          )
+        : ActivityActions.OFFER_SUBMITTED(
+            companyId,
+            offer.companyName || "Company",
+            offer.cost,
+            offer.comment,
+          );
+      await addActivityLog(requestId, activity);
+
       return NextResponse.json(
-        { success: true, message: "Offer submitted successfully" },
+        {
+          success: true,
+          message: isUpdatingExistingOffer
+            ? "Offer updated successfully"
+            : "Offer submitted successfully",
+        },
         { status: 200 },
       );
     }
@@ -177,6 +202,13 @@ export async function POST(request: NextRequest) {
 
       currentRequest.updatedAt = new Date();
       await currentRequest.save();
+
+      // Add activity log for rejection
+      const companyName = body.companyName || "Company";
+      await addActivityLog(
+        requestId,
+        ActivityActions.REQUEST_REJECTED_BY_COMPANY(companyId, companyName),
+      );
 
       return NextResponse.json(
         { success: true, message: "Request rejected" },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Request, User } from "@/lib/models";
 import { handleError, handleValidationError } from "@/lib/apiHelpers";
+import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
 
 type LegacyRequest = any;
 
@@ -265,6 +266,9 @@ export async function POST(request: NextRequest) {
       sourcePickupMode,
       destinationPickupMode,
     });
+
+    // Add activity log for request creation
+    await addActivityLog(newRequest._id, ActivityActions.REQUEST_CREATED(user));
 
     return NextResponse.json(
       { success: true, request: normalizeRequest(newRequest) },

@@ -52,7 +52,7 @@ const allNavItems: NavItem[] = [
     label: "Cost Offers",
     href: "/admin/dashboard/cost-offers",
     icon: BarChart3,
-    roles: ["operator"],
+    roles: ["company"],
   },
   // Admin-only items
   {

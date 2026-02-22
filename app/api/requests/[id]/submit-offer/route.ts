@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request } from "@/lib/models";
+import { ActivityActions } from "@/lib/activityLogger";
 
 /**
  * @swagger
@@ -48,6 +49,20 @@ export async function POST(
       );
     }
 
+    // Get the request first to find the offer details
+    const currentRequest = await Request.findById(id);
+    if (!currentRequest) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    // Find the selected offer to get company name and cost
+    const selectedOffer = currentRequest.costOffers?.find(
+      (offer: any) => offer._id?.toString() === offerId,
+    );
+    const companyName = selectedOffer?.company?.name || "Unknown Company";
+    const cost = selectedOffer?.cost;
+
+    // Mark the accepted offer and update request status
     const updatedRequest = await Request.findByIdAndUpdate(
       id,
       {
@@ -56,11 +71,14 @@ export async function POST(
           activityHistory: {
             action: "offer_accepted",
             timestamp: new Date(),
+            description: `Client accepted offer from ${companyName} for $${cost}`,
+            companyName,
+            cost,
             details: { offerId },
           },
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!updatedRequest) {

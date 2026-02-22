@@ -1,5 +1,19 @@
 import mongoose from "mongoose";
 
+// Define ActivityHistory sub-schema
+const activityHistorySchema = new mongoose.Schema(
+  {
+    timestamp: { type: Date, default: Date.now },
+    action: { type: String, required: true },
+    description: String,
+    companyName: String,
+    companyRate: String,
+    cost: Number,
+    details: mongoose.Schema.Types.Mixed,
+  },
+  { _id: false },
+);
+
 const requestSchema = new mongoose.Schema(
   {
     user: {
@@ -190,17 +204,7 @@ const requestSchema = new mongoose.Schema(
         offeredAt: Date,
       },
     ],
-    activityHistory: [
-      {
-        timestamp: Date,
-        action: String,
-        description: String,
-        companyName: String,
-        companyRate: String,
-        cost: Number,
-        details: String,
-      },
-    ],
+    activityHistory: [activityHistorySchema],
     assignedCompanyId: String,
     selectedCompany: {
       id: String,
@@ -219,5 +223,9 @@ const requestSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-export const Request =
-  mongoose.models.Request || mongoose.model("Request", requestSchema);
+// Clear cached model in development to pick up schema changes
+if (process.env.NODE_ENV === "development" && mongoose.models.Request) {
+  delete mongoose.models.Request;
+}
+
+export const Request = mongoose.model("Request", requestSchema);
