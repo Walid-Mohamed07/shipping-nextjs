@@ -765,7 +765,7 @@ export function AdminRequestsTab() {
                                 <summary className="font-medium hover:text-primary transition-colors">
                                   ⚙️ Additional Details
                                 </summary>
-                                <pre className="mt-2 text-xs overflow-auto whitespace-pre-wrap break-words bg-background p-2 rounded">
+                                <pre className="mt-2 text-xs overflow-auto whitespace-pre-wrap wrap-break-word bg-background p-2 rounded">
                                   {JSON.stringify(activity.details, null, 2)}
                                 </pre>
                               </details>
