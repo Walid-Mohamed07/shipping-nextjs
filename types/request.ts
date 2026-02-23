@@ -77,6 +77,8 @@ export interface RequestServices {
 }
 
 export interface CostOffer {
+  _id?: string;
+  id?: string;
   cost: number;
   company: {
     id: string;

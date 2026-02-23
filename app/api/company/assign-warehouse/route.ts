@@ -37,13 +37,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Build the warehouse object with all data including coordinates
+    const warehouseData = {
+      id: warehouse._id.toString(),
+      name: warehouse.name,
+      address: warehouse.address || warehouse.location || "",
+      city: warehouse.city || "",
+      country: warehouse.country || "",
+      coordinates: warehouse.coordinates
+        ? {
+            latitude: warehouse.coordinates.latitude,
+            longitude: warehouse.coordinates.longitude,
+          }
+        : null,
+      assignedAt: new Date(),
+    };
+
     // Update request with warehouse assignment
     const updateField =
       warehouseType === "source" ? "sourceWarehouse" : "destinationWarehouse";
     const updatedRequest = await Request.findByIdAndUpdate(
       requestId,
       {
-        [updateField]: warehouseId,
+        [updateField]: warehouseData,
         updatedAt: new Date(),
       },
       { returnDocument: "after" },

@@ -32,7 +32,8 @@ interface CompanyWarehouse {
 }
 
 interface Request {
-  id: string;
+  id?: string;
+  _id?: string;
   userId: string;
   user: { id: string; fullName: string; email: string };
   source: Location;
@@ -73,7 +74,8 @@ export default function CompanyOngoingRequestsPage() {
     try {
       setLoading(true);
 
-      // Fetch ongoing requests
+      // For ongoing requests, pass user.id (API will resolve to company)
+      // For warehouses, same pattern
       const requestsRes = await fetch(
         `/api/company/ongoing?companyId=${user.id}`,
       );
@@ -84,11 +86,15 @@ export default function CompanyOngoingRequestsPage() {
       if (requestsRes.ok) {
         const data = await requestsRes.json();
         setRequests(data.requests || []);
+      } else {
+        console.error("Failed to fetch ongoing requests:", await requestsRes.json());
       }
 
       if (warehousesRes.ok) {
         const data = await warehousesRes.json();
         setWarehouses(data.warehouses || []);
+      } else {
+        console.error("Failed to fetch warehouses:", await warehousesRes.json());
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -219,17 +225,18 @@ export default function CompanyOngoingRequestsPage() {
                 request.destinationPickupMode === "Self" ||
                 request.destination?.pickupMode === "Self";
 
+              const requestId = request._id || request.id || '';
               return (
                 <Card
-                  key={request.id}
+                  key={requestId}
                   className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => router.push(`/company/ongoing/${request.id}`)}
+                  onClick={() => router.push(`/company/ongoing/${requestId}`)}
                 >
                   <div className="space-y-3">
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-lg">
-                        #{request.id.slice(0, 8)}
+                        #{requestId.slice(0, 8)}
                       </h3>
                       <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
                         Ongoing

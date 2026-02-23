@@ -17,17 +17,8 @@ const companySchema = new mongoose.Schema(
     rate: String,
     warehouses: [
       {
-        id: String,
-        name: String,
-        address: String,
-        city: String,
-        country: String,
-        coordinates: {
-          latitude: Number,
-          longitude: Number,
-        },
-        createdAt: Date,
-        updatedAt: Date,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Warehouse',
       },
     ],
   },

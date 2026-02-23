@@ -105,6 +105,10 @@ function normalizeRequest(req: any) {
     costOffers: req.costOffers,
     activityHistory: req.activityHistory,
     selectedCompany: req.selectedCompany,
+    sourceWarehouse: req.sourceWarehouse,
+    destinationWarehouse: req.destinationWarehouse,
+    sourcePickupMode: req.sourcePickupMode,
+    destinationPickupMode: req.destinationPickupMode,
   };
 }
 

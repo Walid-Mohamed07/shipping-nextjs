@@ -59,14 +59,32 @@ export async function POST(
     const selectedOffer = currentRequest.costOffers?.find(
       (offer: any) => offer._id?.toString() === offerId,
     );
+    
+    if (!selectedOffer) {
+      return NextResponse.json(
+        { error: "Offer not found" },
+        { status: 404 },
+      );
+    }
+    
     const companyName = selectedOffer?.company?.name || "Unknown Company";
+    const companyId = selectedOffer?.company?.id;
     const cost = selectedOffer?.cost;
 
     // Mark the accepted offer and update request status
     const updatedRequest = await Request.findByIdAndUpdate(
       id,
       {
-        $set: { requestStatus: "Assigned to Company" },
+        $set: { 
+          requestStatus: "Assigned to Company",
+          assignedCompanyId: companyId,  // Store the company ID
+          selectedCompany: {
+            id: companyId,
+            name: companyName,
+            rate: selectedOffer?.company?.rate,
+            cost: cost,
+          },
+        },
         $push: {
           activityHistory: {
             action: "offer_accepted",

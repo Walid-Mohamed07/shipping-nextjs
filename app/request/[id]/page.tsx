@@ -206,7 +206,7 @@ export default function RequestDetailsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          offerId: confirmingOffer.company.id,
+          offerId: confirmingOffer._id || confirmingOffer.id,  // Use the offer's _id, not company.id
         }),
       });
 
@@ -240,7 +240,18 @@ export default function RequestDetailsPage() {
   };
 
   useEffect(() => {
-    if (authLoading || !user || !user._id) {
+    // If auth is still loading, wait
+    if (authLoading) return;
+
+    // If auth finished but no user, stop the loading spinner (redirect handled by useProtectedRoute)
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    const userId = user._id || user.id;
+    if (!userId) {
+      setIsLoading(false);
       return;
     }
 
@@ -250,7 +261,12 @@ export default function RequestDetailsPage() {
         if (!response.ok) throw new Error("Request not found");
         const data = await response.json();
 
-        if (data.request.user._id !== user._id) {
+        // Allow admin/operator roles to view any request, otherwise check ownership
+        const isAdminRole = ["admin", "operator", "driver"].includes(user.role);
+        const requestUserId = String(
+          data.request.user?._id || data.request.user?.id || "",
+        );
+        if (!isAdminRole && requestUserId !== String(userId)) {
           throw new Error("Unauthorized");
         }
 
@@ -266,7 +282,7 @@ export default function RequestDetailsPage() {
     };
 
     fetchRequest();
-  }, [user?._id, requestId]);
+  }, [authLoading, user?._id, user?.id, requestId]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -715,7 +731,7 @@ export default function RequestDetailsPage() {
 
           {/* Confirmation Dialog */}
           {showConfirmDialog && confirmingOffer && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 h-full">
               <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6">
                 <div className="flex gap-3 mb-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -1014,32 +1030,34 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-primary" />
-                  {request.selectedCompany ? "Cost" : "Primary Cost"}
+                  Cost
                 </h3>
-                {request.selectedCompany ? (
-                  <>
-                    <p className="text-xl font-bold text-primary">
-                      ${Number(request.selectedCompany.cost).toFixed(2)}
+                {/* Always show primary/estimated cost */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p className={`text-base font-medium ${request.selectedCompany ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                      {request.primaryCost && Number(request.primaryCost) > 0
+                        ? `$${Number(request.primaryCost).toFixed(2)}`
+                        : request.cost && Number(request.cost) > 0
+                          ? `$${Number(request.cost).toFixed(2)}`
+                          : "Not calculated"}
                     </p>
-                    {request.primaryCost && (
-                      <p className="text-xs text-muted-foreground mt-2 line-through">
-                        Primary: ${Number(request.primaryCost).toFixed(2)}
+                    <span className="text-xs text-muted-foreground">(estimated)</span>
+                  </div>
+                  {/* Show accepted offer price when available */}
+                  {request.selectedCompany && (
+                    <div className="flex items-center gap-2">
+                      <p className="text-xl font-bold text-primary">
+                        ${Number(request.selectedCompany.cost).toFixed(2)}
                       </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-base font-medium text-foreground">
-                    {request.primaryCost
-                      ? `$${Number(request.primaryCost).toFixed(2)}`
-                      : request.cost
-                        ? `$${Number(request.cost).toFixed(2)}`
-                        : "-"}
-                  </p>
-                )}
+                      <span className="text-xs text-green-600 dark:text-green-400">(accepted offer)</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-6">
+            <div className="bg-card rounded-lg border border-border p-6 h-fit">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-primary" />
                 Activity Log
@@ -1092,7 +1110,7 @@ export default function RequestDetailsPage() {
 
               {/* Activity entries */}
               {request.activityHistory && request.activityHistory.length > 0 ? (
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                <div className="space-y-3 h-48 max-h-48 overflow-y-auto pr-1">
                   {[...request.activityHistory]
                     .reverse()
                     .map((activity, index) => (
@@ -1205,10 +1223,10 @@ export default function RequestDetailsPage() {
                 Assigned Warehouse Locations
               </h3>
 
-              {/* Show accordion if both warehouses are assigned */}
-              {request.sourceWarehouse && request.destinationWarehouse ? (
-                <Accordion type="single" className="space-y-3">
-                  {/* Source Warehouse */}
+              {/* Show accordion for warehouses - always use accordion structure */}
+              <Accordion type="single" className="space-y-3">
+                {/* Source Warehouse */}
+                {request.sourceWarehouse && (
                   <AccordionItem
                     value="source"
                     className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
@@ -1301,8 +1319,10 @@ export default function RequestDetailsPage() {
                       </div>
                     </AccordionContent>
                   </AccordionItem>
+                )}
 
-                  {/* Destination Warehouse */}
+                {/* Destination Warehouse */}
+                {request.destinationWarehouse && (
                   <AccordionItem
                     value="destination"
                     className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
@@ -1398,128 +1418,8 @@ export default function RequestDetailsPage() {
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-                </Accordion>
-              ) : (
-                /* Show single warehouse card if only one is assigned */
-                <div className="space-y-4">
-                  {request.sourceWarehouse && (
-                    <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <div className="flex items-start gap-4 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                          <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Source Warehouse (Pickup)
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Warehouse Name
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.sourceWarehouse.name}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Address
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.sourceWarehouse.address}
-                              </p>
-                              {(request.sourceWarehouse.city ||
-                                request.sourceWarehouse.country) && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {[
-                                    request.sourceWarehouse.city,
-                                    request.sourceWarehouse.country,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {request.sourceWarehouse.coordinates && (
-                        <div className="h-64 w-full rounded-lg overflow-hidden border border-blue-200 dark:border-blue-700">
-                          <LocationMapPicker
-                            position={{
-                              lat: request.sourceWarehouse.coordinates.latitude,
-                              lng: request.sourceWarehouse.coordinates
-                                .longitude,
-                            }}
-                            onPositionChange={() => {}}
-                            editable={false}
-                            showUseMyLocation={false}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {request.destinationWarehouse && (
-                    <div className="bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <div className="flex items-start gap-4 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                          <MapPinned className="w-6 h-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Destination Warehouse (Delivery)
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Warehouse Name
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.destinationWarehouse.name}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Address
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.destinationWarehouse.address}
-                              </p>
-                              {(request.destinationWarehouse.city ||
-                                request.destinationWarehouse.country) && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {[
-                                    request.destinationWarehouse.city,
-                                    request.destinationWarehouse.country,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {request.destinationWarehouse.coordinates && (
-                        <div className="h-64 w-full rounded-lg overflow-hidden border border-green-200 dark:border-green-700">
-                          <LocationMapPicker
-                            position={{
-                              lat: request.destinationWarehouse.coordinates
-                                .latitude,
-                              lng: request.destinationWarehouse.coordinates
-                                .longitude,
-                            }}
-                            onPositionChange={() => {}}
-                            editable={false}
-                            showUseMyLocation={false}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </Accordion>
             </div>
           )}
 

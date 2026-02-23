@@ -35,18 +35,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find ongoing requests assigned to this company
+    // Find ongoing requests assigned to this company user
+    // Note: assignedCompanyId is stored as the company user's ID (string)
     const ongoingRequests = await Request.find({
       assignedCompanyId: companyId,
       requestStatus: {
-        $in: ["Assigned to Company", "In Transit", "Delivered"],
+        $in: ["Assigned to Company", "In Transit", "Delivered", "In Progress"],
       },
     })
-      .populate("userId", "email fullName")
+      .populate("user", "email fullName mobile")
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ requests: ongoingRequests }, { status: 200 });
+    // Convert _id to id for consistency with frontend expectations
+    const normalizedRequests = ongoingRequests.map((req: any) => ({
+      ...req,
+      id: req._id.toString(),
+    }));
+
+    return NextResponse.json({ requests: normalizedRequests }, { status: 200 });
   } catch (error) {
     return handleError(error);
   }

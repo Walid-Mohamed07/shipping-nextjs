@@ -118,17 +118,29 @@ export default function NewRequestForm() {
 
   // Source address state
   const [fromAddressIdx, setFromAddressIdx] = useState(0); // index in userLocations
-  const [from, setFrom] = useState(primaryLocation.country || "");
-  const [fromAddress, setFromAddress] = useState(primaryLocation.street || "");
-  const [fromPostalCode, setFromPostalCode] = useState(
-    primaryLocation.postalCode || "",
-  );
+  const [from, setFrom] = useState("");
+  const [fromAddress, setFromAddress] = useState("");
+  const [fromPostalCode, setFromPostalCode] = useState("");
 
   // Destination address state
   const [toAddressIdx, setToAddressIdx] = useState(-1); // -1 means not using saved address
   const [to, setTo] = useState("");
   const [toAddress, setToAddress] = useState("");
   const [toPostalCode, setToPostalCode] = useState("");
+
+  // Initialize source address from primary location when userLocations loads
+  useEffect(() => {
+    if (userLocations.length > 0 && !from && !fromAddress) {
+      const primary = userLocations.find((loc: any) => loc.primary) || userLocations[0];
+      if (primary) {
+        setFrom(primary.country || "");
+        setFromAddress(primary.street || "");
+        setFromPostalCode(primary.postalCode || "");
+        setFromAddressIdx(userLocations.indexOf(primary));
+        setMobile(primary.mobile || user?.mobile || "");
+      }
+    }
+  }, [userLocations, from, fromAddress, user?.mobile]);
 
   // Clear destination when source address changes
   useEffect(() => {
@@ -211,9 +223,7 @@ export default function NewRequestForm() {
   // When to start (ISO format)
   const [whenToStart, setWhenToStart] = useState<string>("");
   // Mobile is now per address location, so default to primary location's mobile or user's mobile
-  const [mobile, setMobile] = useState(
-    primaryLocation.mobile || user?.mobile || "",
-  );
+  const [mobile, setMobile] = useState("");
   const [primaryCost, setPrimaryCost] = useState("");
   // Comments
   const [comments, setComments] = useState("");

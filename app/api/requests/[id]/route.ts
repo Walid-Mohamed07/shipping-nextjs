@@ -98,7 +98,7 @@ export async function GET(
     }
 
     const foundRequest = await Request.findById(id)
-      .populate("user", "fullName email mobile profilePicture role")
+      .populate("user", "fullName email mobile profilePicture role _id")
       .lean()
       .exec();
 
@@ -110,6 +110,6 @@ export async function GET(
 
     return NextResponse.json({ request: normalized }, { status: 200 });
   } catch (error) {
-    return handleError(error, "Failed to fetch request");
+    return handleError(error);
   }
 }

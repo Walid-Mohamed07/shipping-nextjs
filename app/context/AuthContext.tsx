@@ -196,8 +196,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error("AuthContext: Signup failed:", error);
-      throw new Error(error.error || "Signup failed");
+      const errorMessage = error.error || error.message || "Signup failed";
+      console.error("AuthContext: Signup failed:", { 
+        status: response.status, 
+        error: error,
+        errorMessage 
+      });
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

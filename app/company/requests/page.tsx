@@ -36,12 +36,6 @@ interface CompanyInfo {
 
 export default function CompanyRequestsPage() {
   const { user, isLoading } = useAuth();
-  if (isLoading)
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
   const router = useRouter();
   const { create, error: showError } = useToast();
   const [requests, setRequests] = useState<Request[]>([]);
@@ -286,6 +280,15 @@ export default function CompanyRequestsPage() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredRequests.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredRequests, currentPage, itemsPerPage]);
+
+  // Early return for loading state (after all hooks)
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AuthGuard requiredRole="company">

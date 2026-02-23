@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { ArrowLeft, Upload, Loader } from "lucide-react";
 import Link from "next/link";
 
@@ -157,7 +157,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link href="/profile">
           <Button

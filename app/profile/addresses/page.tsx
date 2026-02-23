@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { ArrowLeft, MapPin, Trash2, Plus, Edit2 } from "lucide-react";
 import Link from "next/link";
 
@@ -86,8 +86,6 @@ export default function AddressesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">

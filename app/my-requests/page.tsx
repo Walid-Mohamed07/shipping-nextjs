@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   Package,
@@ -15,9 +15,27 @@ import {
   Banknote,
   Wrench,
   BoxSelect,
+  Warehouse,
+  MapPinned,
 } from "lucide-react";
 import { Request, Address } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+import dynamic from "next/dynamic";
+
+// Dynamically import map components to avoid SSR issues
+const LocationMapPicker = dynamic(
+  () =>
+    import("@/app/components/LocationMapPicker").then((mod) => ({
+      default: mod.LocationMapPicker,
+    })),
+  { ssr: false },
+);
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -94,8 +112,6 @@ export default function MyRequestsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 flex justify-between items-center">
           <div>
@@ -229,21 +245,29 @@ export default function MyRequestsPage() {
                           Delivery
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Banknote className="w-4 h-4 flex-shrink-0" />
-                        <span className="font-medium text-foreground">
-                          {request.selectedCompany
-                            ? `$${Number(request.selectedCompany.cost).toFixed(2)}`
-                            : request.cost
-                              ? `$${Number(request.cost).toFixed(2)}`
-                              : request.primaryCost
-                                ? `$${Number(request.primaryCost).toFixed(2)}`
-                                : "-"}
-                        </span>
-                        {!request.selectedCompany &&
-                          (request.primaryCost || request.cost) && (
-                            <span className="text-xs ml-1">(estimated)</span>
-                          )}
+                      <div className="flex flex-col gap-1">
+                        {/* Always show primary/estimated cost */}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Banknote className="w-4 h-4 flex-shrink-0" />
+                          <span className={`font-medium ${request.selectedCompany ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                            {request.primaryCost && Number(request.primaryCost) > 0
+                              ? `$${Number(request.primaryCost).toFixed(2)}`
+                              : request.cost && Number(request.cost) > 0
+                                ? `$${Number(request.cost).toFixed(2)}`
+                                : "Not calculated"}
+                          </span>
+                          <span className="text-xs">(estimated)</span>
+                        </div>
+                        {/* Show accepted offer price when available */}
+                        {request.selectedCompany && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-semibold text-primary">
+                              ${Number(request.selectedCompany.cost).toFixed(2)}
+                            </span>
+                            <span className="text-xs text-green-600 dark:text-green-400">(accepted offer)</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -255,6 +279,111 @@ export default function MyRequestsPage() {
                       </span>
                       <ArrowRight className="w-4 h-4" />
                     </div>
+
+                    {/* Warehouse Locations */}
+                    {(request.sourceWarehouse || request.destinationWarehouse) && (
+                      <div
+                        className="mt-4 pt-4 border-t border-border"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <Accordion type="single" className="space-y-2">
+                          {request.sourceWarehouse && (
+                            <AccordionItem
+                              value="source"
+                              className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
+                            >
+                              <AccordionTrigger
+                                value="source"
+                                className="bg-transparent px-3 py-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Warehouse className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                  <span className="text-xs font-medium text-foreground">
+                                    Source: {request.sourceWarehouse.name}
+                                  </span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent
+                                value="source"
+                                className="bg-white/50 dark:bg-gray-900/50 px-3 pb-3"
+                              >
+                                <div className="space-y-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    {request.sourceWarehouse.address}
+                                    {request.sourceWarehouse.city &&
+                                      `, ${request.sourceWarehouse.city}`}
+                                    {request.sourceWarehouse.country &&
+                                      `, ${request.sourceWarehouse.country}`}
+                                  </p>
+                                  {request.sourceWarehouse.coordinates && (
+                                    <div className="h-48 w-full rounded-lg overflow-hidden border border-border">
+                                      <LocationMapPicker
+                                        position={{
+                                          lat: request.sourceWarehouse
+                                            .coordinates.latitude,
+                                          lng: request.sourceWarehouse
+                                            .coordinates.longitude,
+                                        }}
+                                        onPositionChange={() => {}}
+                                        editable={false}
+                                        showUseMyLocation={false}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          )}
+                          {request.destinationWarehouse && (
+                            <AccordionItem
+                              value="destination"
+                              className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
+                            >
+                              <AccordionTrigger
+                                value="destination"
+                                className="bg-transparent px-3 py-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <MapPinned className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                  <span className="text-xs font-medium text-foreground">
+                                    Destination: {request.destinationWarehouse.name}
+                                  </span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent
+                                value="destination"
+                                className="bg-white/50 dark:bg-gray-900/50 px-3 pb-3"
+                              >
+                                <div className="space-y-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    {request.destinationWarehouse.address}
+                                    {request.destinationWarehouse.city &&
+                                      `, ${request.destinationWarehouse.city}`}
+                                    {request.destinationWarehouse.country &&
+                                      `, ${request.destinationWarehouse.country}`}
+                                  </p>
+                                  {request.destinationWarehouse.coordinates && (
+                                    <div className="h-48 w-full rounded-lg overflow-hidden border border-border">
+                                      <LocationMapPicker
+                                        position={{
+                                          lat: request.destinationWarehouse
+                                            .coordinates.latitude,
+                                          lng: request.destinationWarehouse
+                                            .coordinates.longitude,
+                                        }}
+                                        onPositionChange={() => {}}
+                                        editable={false}
+                                        showUseMyLocation={false}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          )}
+                        </Accordion>
+                      </div>
+                    )}
                   </div>
                 </Link>
               );

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Package,
@@ -162,8 +162,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link href="/my-requests">
           <Button

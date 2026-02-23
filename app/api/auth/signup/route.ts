@@ -171,6 +171,35 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Signup error:", error);
-    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
+    
+    // Handle specific error types
+    if (error instanceof Error) {
+      // Handle MongoDB duplicate key error
+      if (error.message.includes("duplicate") || error.message.includes("E11000")) {
+        return NextResponse.json(
+          { error: "Email or username already exists" },
+          { status: 400 },
+        );
+      }
+      
+      // Handle validation errors
+      if (error.message.includes("validation")) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 400 },
+        );
+      }
+      
+      // Return specific error message if available
+      return NextResponse.json(
+        { error: error.message || "Signup failed" },
+        { status: 500 },
+      );
+    }
+    
+    return NextResponse.json(
+      { error: "An unexpected error occurred during signup" },
+      { status: 500 },
+    );
   }
 }
