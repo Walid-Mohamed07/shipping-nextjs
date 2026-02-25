@@ -25,6 +25,7 @@ export enum RequestDeliveryStatus {
 export type DeliveryStatus = RequestDeliveryStatus;
 export type PickupMode = "Delegate" | "Self";
 export type DeliveryType = "Normal" | "Urgent";
+export type DayOfWeek = "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
 
 // User info returned in populated responses
 export interface UserDetails {
@@ -115,6 +116,7 @@ export interface Request {
   items: Item[];
   deliveryType: DeliveryType;
   startTime?: string;
+  availableDays?: DayOfWeek[];
   cost?: string;
   primaryCost?: string;
   requestStatus: RequestStatus;
@@ -172,6 +174,7 @@ export interface RequestPayload {
   items: Item[];
   deliveryType: DeliveryType;
   startTime?: string;
+  availableDays?: DayOfWeek[];
   primaryCost?: string;
   requestStatus?: RequestStatus;
   deliveryStatus?: DeliveryStatus;

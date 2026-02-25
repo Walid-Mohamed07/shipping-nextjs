@@ -82,6 +82,7 @@ function normalizeRequest(req: any) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime;
+  const availableDays = req.availableDays || [];
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
@@ -93,6 +94,7 @@ function normalizeRequest(req: any) {
     destination,
     deliveryType,
     startTime,
+    availableDays,
     primaryCost,
     cost,
     requestStatus,
@@ -203,6 +205,7 @@ export async function POST(request: NextRequest) {
       items,
       deliveryType,
       startTime,
+      availableDays,
       cost,
       primaryCost,
       estimatedCost,
@@ -215,6 +218,7 @@ export async function POST(request: NextRequest) {
     const sourceAddr = source;
     const destAddr = destination;
     const finalStartTime = startTime;
+    const finalAvailableDays = availableDays || [];
     const finalPrimaryCost = primaryCost ?? estimatedCost;
     const finalCost = cost ?? finalPrimaryCost;
     const finalStatus = requestStatus ?? orderStatus;
@@ -223,8 +227,9 @@ export async function POST(request: NextRequest) {
     if (!normalizedDeliveryType) {
       return handleValidationError("deliveryType is required (normal | fast)");
     }
-    if (!finalStartTime) {
-      return handleValidationError("startTime is required");
+    // Validate availableDays (minimum 2 days required)
+    if (!Array.isArray(finalAvailableDays) || finalAvailableDays.length < 2) {
+      return handleValidationError("At least 2 available days are required");
     }
     if (!Array.isArray(items) || items.length === 0) {
       return handleValidationError("At least one item is required");
@@ -262,6 +267,7 @@ export async function POST(request: NextRequest) {
       })),
       deliveryType: normalizedDeliveryType,
       startTime: finalStartTime,
+      availableDays: finalAvailableDays,
       primaryCost: finalPrimaryCost,
       cost: finalCost,
       requestStatus: finalStatus || "Pending",

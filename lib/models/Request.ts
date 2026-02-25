@@ -105,6 +105,11 @@ const requestSchema = new mongoose.Schema(
     primaryCost: String,
     cost: String,
     startTime: Date,
+    availableDays: {
+      type: [String],
+      enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      default: [],
+    },
     requestStatus: {
       type: String,
       enum: [

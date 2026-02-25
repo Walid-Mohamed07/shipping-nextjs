@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   ArrowLeft,
 } from "lucide-react";
-import type { Item, Address } from "@/types";
+import type { Item, Address, DayOfWeek } from "@/types";
 
 export interface ReviewData {
   items: Item[];
@@ -26,7 +26,7 @@ export interface ReviewData {
   sourcePickupMode: string;
   destPickupMode: string;
   deliveryType: "Normal" | "Urgent";
-  whenToStart: string;
+  availableDays: DayOfWeek[];
   mobile: string;
   primaryCost: string;
   comments: string;
@@ -237,18 +237,22 @@ export default function ReviewModal({
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Start Date
+                  Available Days
                 </p>
-                <p className="text-sm font-medium text-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {data.whenToStart
-                    ? new Date(data.whenToStart).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </p>
+                <div className="flex flex-wrap gap-1">
+                  {data.availableDays && data.availableDays.length > 0 ? (
+                    data.availableDays.map((day) => (
+                      <span
+                        key={day}
+                        className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      >
+                        {day.slice(0, 3)}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </div>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">

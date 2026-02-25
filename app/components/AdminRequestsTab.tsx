@@ -495,13 +495,22 @@ export function AdminRequestsTab() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Start Time
+                    Available Days
                   </p>
-                  <p className="text-foreground font-medium">
-                    {selectedRequest.startTime
-                      ? new Date(selectedRequest.startTime).toLocaleString()
-                      : "N/A"}
-                  </p>
+                  {selectedRequest.availableDays && selectedRequest.availableDays.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {selectedRequest.availableDays.map((day: string) => (
+                        <span
+                          key={day}
+                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                        >
+                          {day.slice(0, 3)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-foreground font-medium">N/A</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">

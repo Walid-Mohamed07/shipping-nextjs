@@ -38,16 +38,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Build the warehouse object with all data including coordinates
+    // Note: Warehouse model has latitude/longitude at root level, not nested in coordinates
     const warehouseData = {
       id: warehouse._id.toString(),
       name: warehouse.name,
       address: warehouse.address || warehouse.location || "",
       city: warehouse.city || "",
       country: warehouse.country || "",
-      coordinates: warehouse.coordinates
+      coordinates: (warehouse.latitude && warehouse.longitude)
         ? {
-            latitude: warehouse.coordinates.latitude,
-            longitude: warehouse.coordinates.longitude,
+            latitude: warehouse.latitude,
+            longitude: warehouse.longitude,
           }
         : null,
       assignedAt: new Date(),

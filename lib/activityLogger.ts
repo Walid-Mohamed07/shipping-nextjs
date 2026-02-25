@@ -132,9 +132,11 @@ export const ActivityActions = {
     details: { oldStatus, newStatus },
   }),
 
-  DELIVERY_STATUS_CHANGED: (oldStatus: string, newStatus: string) => ({
+  DELIVERY_STATUS_CHANGED: (oldStatus: string, newStatus: string, note?: string) => ({
     action: "delivery_status_changed",
-    description: `Delivery status changed from "${oldStatus}" to "${newStatus}"`,
-    details: { oldStatus, newStatus },
+    description: note
+      ? `Delivery status changed from "${oldStatus}" to "${newStatus}". Note: ${note}`
+      : `Delivery status changed from "${oldStatus}" to "${newStatus}"`,
+    details: { oldStatus, newStatus, note },
   }),
 };

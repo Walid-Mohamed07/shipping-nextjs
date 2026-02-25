@@ -53,6 +53,7 @@ function normalizeRequest(req: LegacyRequest) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime;
+  const availableDays = req.availableDays || [];
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
@@ -64,6 +65,7 @@ function normalizeRequest(req: LegacyRequest) {
     destination,
     deliveryType,
     startTime,
+    availableDays,
     primaryCost,
     cost,
     requestStatus,

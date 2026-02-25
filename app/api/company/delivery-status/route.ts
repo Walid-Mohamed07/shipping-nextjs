@@ -140,10 +140,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Add activity log
+    // Add activity log (include note if provided)
     await addActivityLog(
       requestId,
-      ActivityActions.DELIVERY_STATUS_CHANGED(currentStatus, newStatus),
+      ActivityActions.DELIVERY_STATUS_CHANGED(currentStatus, newStatus, note),
     );
 
     // Normalize response

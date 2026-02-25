@@ -987,27 +987,31 @@ export default function RequestDetailsPage() {
               </div>
 
               <div className="bg-card rounded-lg border border-border p-6">
-                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-primary" />
-                  When to Start (ETA)
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Available Days
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  {request.startTime
-                    ? new Date(request.startTime).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "-"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {request.startTime
-                    ? new Date(request.startTime).toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "-"}
-                </p>
+                {request.availableDays && request.availableDays.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {request.availableDays.map((day) => (
+                      <span
+                        key={day}
+                        className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      >
+                        {day}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No specific days set
+                  </p>
+                )}
+                {request.availableDays && request.availableDays.length === 7 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Available all week
+                  </p>
+                )}
               </div>
 
               <div className="bg-card rounded-lg border border-border p-6">
@@ -1152,6 +1156,19 @@ export default function RequestDetailsPage() {
                             <p className="text-sm text-muted-foreground mt-1">
                               {activity.description}
                             </p>
+                          )}
+
+                          {/* Note display - show if present in details */}
+                          {activity.details?.note && (
+                            <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1">
+                                <span>📝</span>
+                                <span>Note:</span>
+                              </p>
+                              <p className="text-sm text-amber-900 dark:text-amber-200 mt-0.5">
+                                {activity.details.note}
+                              </p>
+                            </div>
                           )}
 
                           {/* Company info and cost */}
