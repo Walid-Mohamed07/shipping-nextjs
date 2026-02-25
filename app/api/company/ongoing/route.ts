@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         $in: ["Assigned to Company", "In Transit", "Delivered"],
       },
     })
-      .populate("userId", "email fullName")
+      .populate("user", "email fullName profilePicture")
       .sort({ createdAt: -1 })
       .lean();
 

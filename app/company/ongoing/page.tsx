@@ -14,14 +14,7 @@ import {
   Truck,
   User as UserIcon,
 } from "lucide-react";
-
-interface Location {
-  country: string;
-  city: string;
-  street: string;
-  district?: string;
-  pickupMode?: string;
-}
+import { Request } from "@/types";
 
 interface CompanyWarehouse {
   id: string;
@@ -29,30 +22,6 @@ interface CompanyWarehouse {
   address: string;
   city?: string;
   country?: string;
-}
-
-interface Request {
-  id: string;
-  userId: string;
-  user: { id: string; fullName: string; email: string };
-  source: Location;
-  destination: Location;
-  items: any[];
-  requestStatus: string;
-  deliveryStatus: string;
-  createdAt: string;
-  sourcePickupMode?: string;
-  destinationPickupMode?: string;
-  assignedCompanyId?: string;
-  assignedWarehouseId?: string;
-  assignedWarehouse?: CompanyWarehouse;
-  sourceWarehouse?: CompanyWarehouse & { assignedAt?: string };
-  destinationWarehouse?: CompanyWarehouse & { assignedAt?: string };
-  selectedCompany?: {
-    name: string;
-    rate: string;
-    cost: number;
-  };
 }
 
 export default function CompanyOngoingRequestsPage() {
@@ -75,10 +44,10 @@ export default function CompanyOngoingRequestsPage() {
 
       // Fetch ongoing requests
       const requestsRes = await fetch(
-        `/api/company/ongoing?companyId=${user.id}`,
+        `/api/company/ongoing?companyId=${user.company}`,
       );
       const warehousesRes = await fetch(
-        `/api/company/warehouses?companyId=${user.id}`,
+        `/api/company/warehouses?companyId=${user.company}`,
       );
 
       if (requestsRes.ok) {
@@ -229,7 +198,7 @@ export default function CompanyOngoingRequestsPage() {
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-lg">
-                        #{request.id.slice(0, 8)}
+                        #{request._id.slice(0, 8)}
                       </h3>
                       <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
                         Ongoing
@@ -291,7 +260,10 @@ export default function CompanyOngoingRequestsPage() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground flex items-center gap-1">
                           <UserIcon className="w-3 h-3" />
-                          {request.user?.fullName || "User"}
+                          {typeof request.user === "object" &&
+                          request.user?.fullName
+                            ? request.user.fullName
+                            : "User"}
                         </span>
                         <span className="font-semibold text-primary">
                           ${request.selectedCompany?.cost.toFixed(2)}

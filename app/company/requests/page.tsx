@@ -732,7 +732,7 @@ export default function CompanyRequestsPage() {
                                 className="flex-1 gap-1"
                               >
                                 <DollarSign className="w-3 h-3" />
-                                Offer (0/3)
+                                Offer
                               </Button>
                               <Button
                                 onClick={() =>

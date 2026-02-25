@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import bcryptjs from "bcryptjs";
 import { connectDB, handleError } from "@/lib/db";
 import { User } from "@/lib/models";
 
@@ -7,10 +8,16 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { userId, name, email, mobile, birthDate, profilePicture } = body;
+    const { userId, name, email, mobile, birthDate, profilePicture, currentPassword, newPassword } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    // Get user for password verification
+    const user = await User.findById(userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Build update object with only provided fields
@@ -21,6 +28,22 @@ export async function PUT(req: NextRequest) {
     if (birthDate !== undefined) updateData.birthDate = birthDate;
     if (profilePicture !== undefined)
       updateData.profilePicture = profilePicture;
+
+    // Handle password change if provided
+    if (currentPassword && newPassword) {
+      // Verify current password
+      const isPasswordValid = await bcryptjs.compare(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          { error: "Current password is incorrect" },
+          { status: 401 },
+        );
+      }
+
+      // Hash new password
+      const hashedPassword = await bcryptjs.hash(newPassword, 10);
+      updateData.password = hashedPassword;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
