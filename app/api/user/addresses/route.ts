@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Address } from "@/lib/models";
 
+// Helper function to transform MongoDB _id to id
+function transformAddress(address: any) {
+  if (!address) return null;
+  const { _id, ...rest } = address;
+  return { id: _id.toString(), ...rest };
+}
+
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -11,7 +18,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
 
     const addresses = await Address.find({ userId }).lean();
-    return NextResponse.json({ addresses });
+    const transformedAddresses = addresses.map(transformAddress);
+    return NextResponse.json({ addresses: transformedAddresses });
   } catch (error) {
     return handleError(error);
   }
@@ -43,7 +51,9 @@ export async function POST(req: NextRequest) {
     
     // Return the full updated addresses list
     const addresses = await Address.find({ userId }).lean();
-    return NextResponse.json({ addresses, address: newAddress }, { status: 201 });
+    const transformedAddresses = addresses.map(transformAddress);
+    const transformedNewAddress = transformAddress(newAddress.toObject());
+    return NextResponse.json({ addresses: transformedAddresses, address: transformedNewAddress }, { status: 201 });
   } catch (error) {
     return handleError(error);
   }
@@ -87,7 +97,9 @@ export async function PUT(req: NextRequest) {
 
     // Return the updated addresses list
     const addresses = await Address.find({ userId }).lean();
-    return NextResponse.json({ addresses, address: updatedAddress });
+    const transformedAddresses = addresses.map(transformAddress);
+    const transformedUpdatedAddress = transformAddress(updatedAddress.toObject());
+    return NextResponse.json({ addresses: transformedAddresses, address: transformedUpdatedAddress });
   } catch (error) {
     return handleError(error);
   }
@@ -111,7 +123,8 @@ export async function DELETE(req: NextRequest) {
 
     // Return updated addresses list
     const addresses = await Address.find({ userId }).lean();
-    return NextResponse.json({ addresses });
+    const transformedAddresses = addresses.map(transformAddress);
+    return NextResponse.json({ addresses: transformedAddresses });
   } catch (error) {
     return handleError(error);
   }

@@ -304,6 +304,20 @@ export default function AddAddressDialog({
     setValidationErrors({});
     const errors: { [key: string]: boolean } = {};
 
+    // Validate userId is available
+    if (!userId) {
+      setError("User ID is not available. Please refresh the page and try again.");
+      toast.error("User ID is not available. Please refresh the page.");
+      return;
+    }
+
+    // For edit mode, validate that addressId is available
+    if (isEditMode && !editAddress?.id) {
+      setError("Address ID is not available. Please refresh the page and try again.");
+      toast.error("Address ID is not available. Please refresh the page.");
+      return;
+    }
+
     // Validate required fields
     if (!form.country) {
       errors.country = true;
@@ -388,10 +402,12 @@ export default function AddAddressDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEditMode ? "update" : "save"} address`);
-      }
       const resData = await response.json();
+      
+      if (!response.ok) {
+        const errorMsg = resData.error || `Failed to ${isEditMode ? "update" : "save"} address`;
+        throw new Error(errorMsg);
+      }
       const savedAddress = isEditMode 
         ? resData.address 
         : (resData.addresses?.[resData.addresses.length - 1] ?? addressToSave);
