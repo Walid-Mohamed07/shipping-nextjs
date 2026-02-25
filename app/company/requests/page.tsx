@@ -3,50 +3,42 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useLiveCompanyRequests, useLiveEvent } from "@/app/hooks/useLiveData";
+import { toast } from "sonner";
+import Link from "next/link";
 import {
   MapPin,
   Package,
   DollarSign,
   Loader2,
-  X,
-  Truck,
-  User as UserIcon,
   Scale,
-  Box,
   Filter,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
+  Eye,
+  Calendar,
+  ArrowRight,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { Request } from "@/types";
-import { useToast } from "@/lib/useToast";
 import { RequestCardSkeleton } from "@/app/components/loaders";
 import { AuthGuard } from "@/app/components/AuthGuard";
-
-interface CompanyInfo {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber?: string;
-  address?: string;
-  rate?: string;
-}
 
 export default function CompanyRequestsPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const { create, error: showError } = useToast();
-  const [requests, setRequests] = useState<Request[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [offerModal, setOfferModal] = useState<{
-    isOpen: boolean;
-    requestId: string | null;
-  }>({ isOpen: false, requestId: null });
-  const [offerData, setOfferData] = useState({ cost: "", comment: "" });
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  // Use live data hook for real-time updates
+  const { 
+    data: requests, 
+    isLoading: requestsLoading, 
+    refresh,
+    isConnected 
+  } = useLiveCompanyRequests(user?.id);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,41 +49,29 @@ export default function CompanyRequestsPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [itemsPerPage, setItemsPerPage] = useState(9);
+  
+  const loading = isLoading || requestsLoading;
 
-  const fetchCompanyInfo = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      // Fetch company info associated with the user
-      const response = await fetch(`/api/company/profile?userId=${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCompanyInfo(data);
+  // Show toast notifications for real-time events
+  useLiveEvent(
+    ["REQUEST_CREATED", "OFFER_ACCEPTED", "OFFER_REJECTED", "STATUS_CHANGED"],
+    (event) => {
+      if (event.type === "REQUEST_CREATED") {
+        toast.info("New request available!", {
+          description: "A new shipping request has been posted",
+          action: {
+            label: "View",
+            onClick: () => window.location.href = `/company/requests/${event.payload.id || event.requestId}`,
+          },
+        });
+      } else if (event.type === "OFFER_ACCEPTED" && event.payload.companyId === user?.id) {
+        toast.success("Your offer was accepted!", {
+          description: event.payload.message || "Check your ongoing requests",
+        });
       }
-    } catch (error) {
-      console.error("Failed to fetch company info:", error);
     }
-  }, [user?.id]);
-
-  const fetchRequests = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      setLoading(true);
-      // Fetch only requests that are visible to this company
-      const response = await fetch(
-        `/api/company/requests?companyId=${user.id}`,
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setRequests(data.requests || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch requests:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
+  );
 
   useEffect(() => {
     if (isLoading) {
@@ -101,133 +81,7 @@ export default function CompanyRequestsPage() {
       router.push("/");
       return;
     }
-
-    fetchCompanyInfo();
-    fetchRequests();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, user?.role, isLoading]);
-
-  const handleAddOffer = async () => {
-    console.log("OfferModal:", offerModal);
-    console.log("Attempting to add offer:", offerData);
-    if (!offerModal.requestId || !offerData.cost) {
-      showError("Please enter a cost amount");
-      return;
-    }
-
-    const cost = parseFloat(offerData.cost);
-    if (isNaN(cost) || cost <= 0) {
-      showError("Please enter a valid cost amount");
-      return;
-    }
-
-    try {
-      setProcessingId(offerModal.requestId);
-      const response = await fetch("/api/company/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "add-offer",
-          requestId: offerModal.requestId,
-          companyId: user?.id,
-          company: companyInfo || {
-            id: user?.id,
-            name: user?.fullName || user?.name,
-            email: user?.email,
-          },
-          offer: {
-            cost,
-            comment: offerData.comment || "",
-          },
-        }),
-      });
-
-      if (response.ok) {
-        create(
-          "Offer submitted successfully! The client will review your offer.",
-        );
-        setOfferModal({ isOpen: false, requestId: null });
-        setOfferData({ cost: "", comment: "" });
-        await fetchRequests();
-      } else {
-        const errorData = await response.json();
-        showError(errorData.error || "Failed to submit offer");
-      }
-    } catch (error) {
-      console.error("Failed to submit offer:", error);
-      showError("Failed to submit offer");
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleRejectRequest = async (requestId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to reject this request? You won't be able to see it again.",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setProcessingId(requestId);
-      const response = await fetch("/api/company/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "reject-request",
-          requestId,
-          companyId: user?.id,
-        }),
-      });
-
-      if (response.ok) {
-        create("Request rejected successfully");
-        await fetchRequests();
-      } else {
-        const errorData = await response.json();
-        showError(errorData.error || "Failed to reject request");
-      }
-    } catch (error) {
-      console.error("Failed to reject request:", error);
-      showError("Failed to reject request");
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const getPickupModeLabel = (mode?: string) => {
-    if (mode === "Delegate") return "Pickup by Company";
-    if (mode === "Self") return "Self Pickup";
-    return mode || "Not specified";
-  };
-
-  const getPickupModeBadgeColor = (mode?: string) => {
-    if (mode === "Delegate")
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
-    if (mode === "Self")
-      return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200";
-    return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200";
-  };
-
-  const hasExistingOffer = (request: Request) => {
-    const myOffers =
-      request.costOffers?.filter((offer) => offer.company.id === user?.id) ||
-      [];
-    return myOffers.length > 0;
-  };
-
-  const getMyOffers = (request: Request) => {
-    return (
-      request.costOffers?.filter((offer) => offer.company.id === user?.id) || []
-    );
-  };
-
-  const canAddMoreOffers = (request: Request) => {
-    const myOffers = getMyOffers(request);
-    return myOffers.length < 3;
-  };
+  }, [user?.id, user?.role, isLoading, router]);
 
   const getMyOffer = (request: Request) => {
     return request.costOffers?.find((offer) => offer.company.id === user?.id);
@@ -235,7 +89,8 @@ export default function CompanyRequestsPage() {
 
   // Filter and paginate requests
   const filteredRequests = useMemo(() => {
-    return requests.filter((request) => {
+    if (!requests) return [];
+    return requests.filter((request: Request) => {
       const matchesSearch =
         searchTerm === "" ||
         (request.id || request._id)
@@ -416,15 +271,15 @@ export default function CompanyRequestsPage() {
               <div className="text-xs text-muted-foreground">
                 Showing{" "}
                 <span className="font-medium">{filteredRequests.length}</span>{" "}
-                of <span className="font-medium">{requests.length}</span>{" "}
+                of <span className="font-medium">{requests?.length ?? 0}</span>{" "}
                 requests
               </div>
             </div>
           </Card>
 
           {loading ? (
-            <RequestCardSkeleton count={6} />
-          ) : requests.length === 0 ? (
+            <RequestCardSkeleton count={9} />
+          ) : !requests || requests.length === 0 ? (
             <Card className="p-12 text-center">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
@@ -446,369 +301,123 @@ export default function CompanyRequestsPage() {
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                {paginatedRequests.map((request) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {paginatedRequests.map((request: Request) => {
+                  const myOffer = getMyOffer(request);
+                  const totalItems = request.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+                  const totalWeight = request.items.reduce((sum: number, item: any) => sum + parseFloat(item.weight || "0") * item.quantity, 0);
+                  
                   return (
                     <Card
                       key={request.id || request._id}
-                      className="p-0 flex flex-col overflow-hidden hover:shadow-lg transition-shadow h-full"
+                      className="group relative overflow-hidden hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/50 hover:border-l-primary"
                     >
-                      {/* Header */}
-                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 px-4 py-2 flex items-center justify-between border-b border-border">
-                        <div className="flex flex-col items-start gap-2">
-                          <h3 className="text-sm font-bold text-foreground">
-                            #{request.id || request._id}
+                      {/* Compact Header */}
+                      <div className="px-4 py-3 border-b border-border bg-linear-to-r from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-900/20">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-foreground text-sm">
+                            #{(request.id || request._id).toString().slice(-8)}
                           </h3>
-                          <div className="flex items-center gap-1">
-                            Request Status:{" "}
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <Badge className={`text-xs px-2 py-0.5 ${
+                              request.requestStatus === "Pending" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40" :
+                              request.requestStatus === "Action needed" ? "bg-orange-100 text-orange-800 dark:bg-orange-900/40" :
+                              "bg-green-100 text-green-800 dark:bg-green-900/40"
+                            }`}>
                               {request.requestStatus}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            Delivery Status:{" "}
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 font-medium">
-                              {request.deliveryStatus}
-                            </span>
+                            </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">
-                            Created:{" "}
-                            {new Date(request.createdAt!).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-muted-foreground text-opacity-75">
-                            Updated:{" "}
-                            {new Date(request.updatedAt!).toLocaleDateString()}
-                          </div>
-                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(request.createdAt!).toLocaleDateString()}
+                        </p>
                       </div>
 
-                      <div className="p-3 flex flex-col flex-1 space-y-3">
-                        {/* Locations Section - Full Details */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 space-y-1">
-                            <div className="flex items-center gap-2 pb-1 mb-1 border-b border-border/30">
-                              <div className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30">
-                                <MapPin className="w-2 h-2 text-green-600 dark:text-green-400" />
-                              </div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase">
-                                From
-                              </p>
+                      <div className="p-4 space-y-3">
+                        {/* Route Summary */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                              <span className="truncate font-medium">{request.source.city}</span>
                             </div>
-                            <p className="text-xs font-medium text-foreground">
-                              {request.source.street &&
-                                `${request.source.street}, `}
-                              {request.source.city}
-                            </p>
-                            {request.source.governorate && (
-                              <p className="text-xs text-muted-foreground">
-                                {request.source.governorate}
-                              </p>
-                            )}
-                            {request.source.district && (
-                              <p className="text-xs text-muted-foreground">
-                                District: {request.source.district}
-                              </p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              {request.source.country}
-                            </p>
-                            <span className="inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 mt-1">
-                              {request.sourcePickupMode === "Self"
-                                ? "Self Pickup"
-                                : "Company Pickup"}
-                            </span>
-                          </div>
-
-                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 space-y-1">
-                            <div className="flex items-center gap-2 pb-1 mb-1 border-b border-border/30">
-                              <div className="flex items-center justify-center w-4 h-4 rounded-full bg-red-100 dark:bg-red-900/30">
-                                <MapPin className="w-2 h-2 text-red-600 dark:text-red-400" />
-                              </div>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase">
-                                To
-                              </p>
+                            <div className="flex items-center gap-2 text-sm mt-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                              <span className="truncate font-medium">{request.destination.city}</span>
                             </div>
-                            <p className="text-xs font-medium text-foreground">
-                              {request.destination.street &&
-                                `${request.destination.street}, `}
-                              {request.destination.city}
-                            </p>
-                            {request.destination.governorate && (
-                              <p className="text-xs text-muted-foreground">
-                                {request.destination.governorate}
-                              </p>
-                            )}
-                            {request.destination.district && (
-                              <p className="text-xs text-muted-foreground">
-                                District: {request.destination.district}
-                              </p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              {request.destination.country}
-                            </p>
-                            <span className="inline-block text-xs px-1.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 mt-1">
-                              {request.destinationPickupMode === "Self"
-                                ? "Self Pickup"
-                                : "Company Pickup"}
-                            </span>
                           </div>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
                         </div>
 
-                        {/* Client & Items Summary Row */}
-                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 space-y-1 border border-border/30">
-                          <div className="flex items-center gap-2 mb-3">
-                            <UserIcon className="w-3 h-3 text-muted-foreground" />
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                              Client
-                            </p>
-                          </div>
-                          <div className="flex flex-row items-center gap-3 space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <img
-                                src={
-                                  typeof request.user === "object" &&
-                                  request.user?.profilePicture
-                                    ? request.user.profilePicture
-                                    : "/default-avatar.png"
-                                }
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                              <p className="text-xs font-medium text-foreground">
-                                {typeof request.user === "object" &&
-                                request.user?.fullName
-                                  ? request.user.fullName
-                                  : "Unknown"}
-                              </p>
-                              {typeof request.user === "object" &&
-                                request.user?.email && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {request.user.email}
-                                  </p>
-                                )}
-                            </div>
-                          </div>
+                        {/* Quick Stats */}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Package className="w-3.5 h-3.5" />
+                            {totalItems} items
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Scale className="w-3.5 h-3.5" />
+                            {totalWeight.toFixed(1)} kg
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {request.deliveryType}
+                          </Badge>
                         </div>
 
-                        {/* Items Details - Full List */}
-                        {request.items.length > 0 && (
-                          <div className="bg-slate-50/50 dark:bg-slate-900/20 rounded p-2 border border-border/30">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                Items ({request.items.length})
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {request.items.reduce(
-                                  (sum, item) => sum + item.quantity,
-                                  0,
-                                )}{" "}
-                                units total
-                              </p>
-                            </div>
-                            <div className="space-y-1 max-h-40 overflow-y-auto">
-                              {request.items.map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex justify-between gap-2 text-xs bg-white dark:bg-slate-900/40 p-1.5 rounded border border-border/20"
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">
-                                      {item.quantity}x {item.item || item.name}
-                                    </p>
-                                    {item.category && (
-                                      <p className="text-xs text-muted-foreground">
-                                        Category: {item.category}
-                                      </p>
-                                    )}
-                                    {item.note && (
-                                      <p className="text-xs text-amber-600 dark:text-amber-400">
-                                        Note: {item.note}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <p className="font-medium whitespace-nowrap">
-                                      {item.weight}kg
-                                    </p>
-                                    {item.dimensions && (
-                                      <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                        {item.dimensions}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                        {/* Client Preview */}
+                        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                          <img
+                            src={typeof request.user === "object" && request.user?.profilePicture
+                              ? request.user.profilePicture
+                              : "/default-avatar.png"}
+                            alt="Client"
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                          <span className="text-xs text-muted-foreground truncate flex-1">
+                            {typeof request.user === "object" ? request.user?.fullName : "Unknown"}
+                          </span>
+                          {request.primaryCost && (
+                            <span className="text-xs font-semibold text-primary">
+                              ${request.primaryCost}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Offer Status Indicator */}
+                        {myOffer && (
+                          <div className={`text-xs px-2 py-1.5 rounded-md flex items-center justify-between ${
+                            myOffer.status === "accepted" 
+                              ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                              : myOffer.status === "rejected"
+                              ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+                              : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                          }`}>
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              Your offer: ${myOffer.cost.toFixed(2)}
+                            </span>
+                            <Badge className={`text-xs ${
+                              myOffer.status === "accepted" ? "bg-green-100 text-green-800" :
+                              myOffer.status === "rejected" ? "bg-red-100 text-red-800" :
+                              "bg-blue-100 text-blue-800"
+                            }`}>
+                              {myOffer.status}
+                            </Badge>
                           </div>
                         )}
 
-                        {/* Cost Info & Offers */}
-                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded p-2 border border-border/30">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                            Pricing
-                          </p>
-                          {request.primaryCost ? (
-                            <div className="bg-white dark:bg-slate-900/40 p-2 rounded mb-2">
-                              <p className="text-xs text-muted-foreground">
-                                Primary Cost
-                              </p>
-                              <p className="text-lg font-bold text-primary">
-                                ${request.primaryCost}
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="bg-amber-50 dark:bg-amber-900/20 p-2 rounded mb-2 border border-amber-200 dark:border-amber-800">
-                              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                                No primary cost set - awaiting company offers
-                              </p>
-                            </div>
-                          )}
-
-                          {request.costOffers &&
-                            request.costOffers.length > 0 && (
-                              <div className="space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Company Offers ({request.costOffers.length}):
-                                </p>
-                                {request.costOffers.map((offer, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="bg-white dark:bg-slate-900/40 p-1.5 rounded border border-border/20 text-xs"
-                                  >
-                                    <div className="flex justify-between items-start mb-0.5">
-                                      <span className="font-medium text-foreground">
-                                        {offer.company.name}
-                                      </span>
-                                      <span
-                                        className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                          offer.status === "accepted"
-                                            ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200"
-                                            : offer.status === "rejected"
-                                              ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
-                                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
-                                        }`}
-                                      >
-                                        {offer.status}
-                                      </span>
-                                    </div>
-                                    <p className="text-sm font-bold text-primary">
-                                      ${offer.cost.toFixed(2)}
-                                    </p>
-                                    {offer.comment && (
-                                      <p className="text-xs text-muted-foreground mt-0.5 italic">
-                                        "{offer.comment}"
-                                      </p>
-                                    )}
-                                    {offer.createdAt && (
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        {new Date(
-                                          offer.createdAt,
-                                        ).toLocaleDateString()}
-                                      </p>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-                          {!hasExistingOffer(request) ? (
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() =>
-                                  setOfferModal({
-                                    isOpen: true,
-                                    requestId: request.id || request._id,
-                                  })
-                                }
-                                disabled={
-                                  processingId === request.id ||
-                                  processingId === request._id
-                                }
-                                size="sm"
-                                className="flex-1 gap-1"
-                              >
-                                <DollarSign className="w-3 h-3" />
-                                Offer
-                              </Button>
-                              <Button
-                                onClick={() =>
-                                  handleRejectRequest(request.id || request._id)
-                                }
-                                disabled={processingId === request.id}
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 text-destructive hover:text-destructive"
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ) : null}
-
-                          {hasExistingOffer(request) && (
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-2">
-                              <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 uppercase tracking-wide mb-2">
-                                Your Offer
-                              </p>
-                              <div className="space-y-2">
-                                {getMyOffers(request).map((offer, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="bg-white dark:bg-slate-900/40 rounded p-1.5 border border-blue-200 dark:border-blue-800"
-                                  >
-                                    <div className="flex justify-between items-start">
-                                      <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                                        ${offer.cost.toFixed(2)}
-                                      </p>
-                                      <span
-                                        className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                          offer.status === "accepted"
-                                            ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200"
-                                            : offer.status === "rejected"
-                                              ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
-                                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
-                                        }`}
-                                      >
-                                        {offer.status}
-                                      </span>
-                                    </div>
-                                    {offer.comment && (
-                                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 italic">
-                                        "{offer.comment}"
-                                      </p>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                              {canAddMoreOffers(request) && (
-                                <Button
-                                  onClick={() =>
-                                    setOfferModal({
-                                      isOpen: true,
-                                      requestId: request.id || request._id,
-                                    })
-                                  }
-                                  disabled={
-                                    processingId === request.id ||
-                                    processingId === request._id
-                                  }
-                                  size="sm"
-                                  variant="outline"
-                                  className="w-full mt-2 gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                                >
-                                  <DollarSign className="w-3 h-3" />
-                                  Update the Offer
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        {/* Action Button */}
+                        <Link href={`/company/requests/${request.id || request._id}`} className="block">
+                          <Button 
+                            variant={myOffer ? "outline" : "default"} 
+                            size="sm" 
+                            className="w-full gap-2 mt-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            {myOffer ? "View Details" : "View & Make Offer"}
+                          </Button>
+                        </Link>
                       </div>
                     </Card>
                   );
@@ -830,10 +439,10 @@ export default function CompanyRequestsPage() {
                       }}
                       className="px-2 py-1 text-xs border border-border rounded bg-background"
                     >
-                      <option value={3}>3</option>
                       <option value={6}>6</option>
-                      <option value={12}>12</option>
-                      <option value={24}>24</option>
+                      <option value={9}>9</option>
+                      <option value={18}>18</option>
+                      <option value={36}>36</option>
                     </select>
                   </div>
 
@@ -877,77 +486,6 @@ export default function CompanyRequestsPage() {
             </>
           )}
         </main>
-
-        {/* Offer Modal */}
-        {offerModal.isOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-background rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Submit Cost Offer
-              </h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Cost Amount ($) *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Enter your offer amount"
-                    value={offerData.cost}
-                    onChange={(e) =>
-                      setOfferData({ ...offerData, cost: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                    min="0"
-                    step="0.01"
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Comments (Optional)
-                  </label>
-                  <textarea
-                    placeholder="Add any additional details about your offer..."
-                    value={offerData.comment}
-                    onChange={(e) =>
-                      setOfferData({ ...offerData, comment: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background resize-none"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-6">
-                <Button
-                  onClick={() => {
-                    setOfferModal({ isOpen: false, requestId: null });
-                    setOfferData({ cost: "", comment: "" });
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddOffer}
-                  disabled={
-                    processingId === offerModal.requestId || !offerData.cost
-                  }
-                  className="flex-1"
-                >
-                  {processingId === offerModal.requestId
-                    ? "Submitting..."
-                    : "Submit Offer"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </AuthGuard>
   );

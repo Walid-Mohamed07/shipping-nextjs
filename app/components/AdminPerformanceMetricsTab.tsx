@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { AlertCircle, TrendingUp, Package, Truck, Clock } from "lucide-react";
+import { AlertCircle, TrendingUp, Package, Truck, Clock, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Metrics {
   totalShipments: number;
   deliveredShipments: number;
   inTransitShipments: number;
+  pendingShipments: number;
+  acceptedShipments: number;
+  rejectedShipments: number;
   averageDeliveryTime: string;
   onTimeDeliveryRate: number;
   vehicleUtilization: number;
@@ -17,6 +21,13 @@ interface Metrics {
     completedDeliveries: number;
     onTimeRate: number;
   }>;
+  requestsByStatus: {
+    pending: number;
+    accepted: number;
+    rejected: number;
+    delivered: number;
+    inTransit: number;
+  };
 }
 
 export function AdminPerformanceMetricsTab() {
@@ -31,39 +42,18 @@ export function AdminPerformanceMetricsTab() {
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      // Simulate metric calculation
-      const metricsData: Metrics = {
-        totalShipments: 15,
-        deliveredShipments: 9,
-        inTransitShipments: 4,
-        averageDeliveryTime: "6.2 days",
-        onTimeDeliveryRate: 87,
-        vehicleUtilization: 72,
-        driverPerformance: [
-          {
-            driverId: "driver-001",
-            name: "Mike Johnson",
-            completedDeliveries: 8,
-            onTimeRate: 92,
-          },
-          {
-            driverId: "driver-002",
-            name: "Sarah Williams",
-            completedDeliveries: 6,
-            onTimeRate: 85,
-          },
-          {
-            driverId: "driver-003",
-            name: "Marcus Schmidt",
-            completedDeliveries: 5,
-            onTimeRate: 80,
-          },
-        ],
-      };
-      setMetrics(metricsData);
       setError("");
+      
+      const response = await fetch("/api/admin/metrics");
+      if (!response.ok) {
+        throw new Error("Failed to fetch metrics");
+      }
+      
+      const metricsData: Metrics = await response.json();
+      setMetrics(metricsData);
     } catch (err) {
-      setError("Failed to load metrics");
+      console.error("Failed to load metrics:", err);
+      setError("Failed to load metrics. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -88,13 +78,25 @@ export function AdminPerformanceMetricsTab() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">
-          Delivery Performance Metrics
-        </h2>
-        <p className="text-muted-foreground mt-1">
-          Track key performance indicators and delivery efficiency
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">
+            Delivery Performance Metrics
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Track key performance indicators and delivery efficiency
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchMetrics}
+          disabled={loading}
+          className="gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Key Metrics Grid */}
@@ -123,9 +125,11 @@ export function AdminPerformanceMetricsTab() {
                 {metrics.deliveredShipments}
               </p>
               <p className="text-xs text-green-600 dark:text-green-500 mt-1">
-                {Math.round(
-                  (metrics.deliveredShipments / metrics.totalShipments) * 100,
-                )}
+                {metrics.totalShipments > 0
+                  ? Math.round(
+                      (metrics.deliveredShipments / metrics.totalShipments) * 100
+                    )
+                  : 0}
                 % complete
               </p>
             </div>

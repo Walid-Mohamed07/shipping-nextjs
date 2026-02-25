@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request } from "@/lib/models";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import { broadcastEvent, broadcastToUserAndAdmins } from "@/lib/eventBroadcaster";
 
 /**
  * @swagger
@@ -67,9 +68,9 @@ export async function GET(request: NextRequest) {
         },
         {
           $or: [
-            { assignedCompanyId: { $exists: false } },
-            { assignedCompanyId: null },
-            { assignedCompanyId: companyId },
+            { assignedCompany: { $exists: false } },
+            { assignedCompany: null },
+            { assignedCompany: companyId },
           ],
         },
         {
@@ -109,8 +110,8 @@ export async function POST(request: NextRequest) {
 
     // Verify request is still available for this company
     if (
-      currentRequest.assignedCompanyId &&
-      currentRequest.assignedCompanyId.toString() !== companyId
+      currentRequest.assignedCompany &&
+      currentRequest.assignedCompany.toString() !== companyId
     ) {
       return NextResponse.json(
         { error: "This request has already been assigned to another company" },
@@ -179,6 +180,32 @@ export async function POST(request: NextRequest) {
             offer.comment,
           );
       await addActivityLog(requestId, activity);
+
+      // Broadcast real-time event for offer
+      const eventType = isUpdatingExistingOffer ? "OFFER_UPDATED" : "OFFER_SUBMITTED";
+      const requestOwnerId = currentRequest.user?.toString() || currentRequest.user;
+      broadcastEvent(eventType, {
+        requestId,
+        companyId,
+        companyName: offer.companyName || "Company",
+        cost: offer.cost,
+        comment: offer.comment,
+      }, {
+        requestId,
+        userId: companyId,
+        targetUsers: requestOwnerId ? [requestOwnerId] : undefined,
+        targetRoles: ["admin", "operator"],
+      });
+      
+      // Also notify the client who owns the request
+      if (requestOwnerId) {
+        broadcastToUserAndAdmins(requestOwnerId, eventType, {
+          requestId,
+          companyId,
+          companyName: offer.companyName || "Company",
+          cost: offer.cost,
+        }, requestId);
+      }
 
       return NextResponse.json(
         {

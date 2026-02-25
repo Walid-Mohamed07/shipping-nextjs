@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
+import { useLiveRequests, useLiveEvent } from "@/app/hooks/useLiveData";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -17,6 +18,8 @@ import {
   BoxSelect,
   Warehouse,
   MapPinned,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { Request, Address } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
@@ -47,34 +50,40 @@ const formatLocation = (loc: Address) => {
 };
 
 export default function MyRequestsPage() {
-  const [requests, setRequests] = useState<Request[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
   const { user, isLoading: authLoading } = useProtectedRoute();
+  
+  // Use live data hook for real-time updates
+  const { 
+    data: requests, 
+    isLoading, 
+    error, 
+    refresh,
+    isConnected 
+  } = useLiveRequests(user?.id);
 
-  useEffect(() => {
-    if (authLoading || !user || !user.id) {
-      return;
-    }
-
-    const fetchRequests = async () => {
-      try {
-        const response = await fetch(`/api/requests?userId=${user.id}`);
-        if (!response.ok) throw new Error("Failed to fetch requests");
-        const data = await response.json();
-        setRequests(data.requests);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch requests";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
+  // Show toast notifications for real-time events
+  useLiveEvent(
+    ["OFFER_SUBMITTED", "OFFER_UPDATED", "STATUS_CHANGED", "DELIVERY_STATUS_CHANGED"],
+    (event) => {
+      if (event.type === "OFFER_SUBMITTED") {
+        toast.info("New offer received!", {
+          description: `${event.payload.companyName} submitted an offer`,
+          action: {
+            label: "View",
+            onClick: () => window.location.href = `/request/${event.payload.requestId}`,
+          },
+        });
+      } else if (event.type === "STATUS_CHANGED") {
+        toast.info("Request status updated", {
+          description: `Status changed to: ${event.payload.newStatus}`,
+        });
+      } else if (event.type === "DELIVERY_STATUS_CHANGED") {
+        toast.success("Delivery update!", {
+          description: event.payload.message || `Status: ${event.payload.newStatus}`,
+        });
       }
-    };
-
-    fetchRequests();
-  }, [user?.id]);
+    }
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -115,19 +124,38 @@ export default function MyRequestsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">
-              My Shipping Requests
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-4xl font-bold text-foreground">
+                My Shipping Requests
+              </h1>
+              {/* Real-time connection indicator */}
+              <div 
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  isConnected 
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" 
+                    : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                }`}
+                title={isConnected ? "Live updates active" : "Connecting..."}
+              >
+                {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                {isConnected ? "Live" : "..."}
+              </div>
+            </div>
             <p className="text-muted-foreground">
               Track all your shipments in one place
             </p>
           </div>
-          <Link href="/new-request">
-            <Button className="gap-2 cursor-pointer">
-              <Package className="w-4 h-4" />
-              New Request
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => refresh()} className="gap-2 cursor-pointer">
+              Refresh
             </Button>
-          </Link>
+            <Link href="/new-request">
+              <Button className="gap-2 cursor-pointer">
+                <Package className="w-4 h-4" />
+                New Request
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -136,9 +164,9 @@ export default function MyRequestsPage() {
           </div>
         )}
 
-        {isLoading ? (
+        {isLoading || authLoading ? (
           <RequestCardSkeleton count={3} />
-        ) : requests.length === 0 ? (
+        ) : !requests || requests.length === 0 ? (
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h2 className="text-xl font-semibold text-foreground mb-2">

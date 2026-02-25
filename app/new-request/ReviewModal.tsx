@@ -241,14 +241,20 @@ export default function ReviewModal({
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {data.availableDays && data.availableDays.length > 0 ? (
-                    data.availableDays.map((day) => (
-                      <span
-                        key={day}
-                        className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                      >
-                        {day.slice(0, 3)}
+                    data.availableDays.includes("All Week") || data.availableDays.length === 7 ? (
+                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        All Week
                       </span>
-                    ))
+                    ) : (
+                      data.availableDays.map((day) => (
+                        <span
+                          key={day}
+                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                        >
+                          {day.slice(0, 3)}
+                        </span>
+                      ))
+                    )
                   ) : (
                     <span className="text-sm text-muted-foreground">—</span>
                   )}

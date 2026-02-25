@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request } from "@/lib/models";
 import { ActivityActions } from "@/lib/activityLogger";
+import { broadcastEvent, broadcastToCompanies, broadcastToAdmins } from "@/lib/eventBroadcaster";
 
 /**
  * @swagger
@@ -71,6 +72,8 @@ export async function POST(
     const companyId = selectedOffer?.company?.id; // Use the offerId directly as it's the company ID
     const cost = selectedOffer?.cost;
 
+    console.log("[Submit-offer] Setting assignedCompany to:", companyId, "from offer company.id");
+
     if (!selectedOffer) {
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
@@ -111,6 +114,31 @@ export async function POST(
     if (!updatedRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
+
+    // Broadcast real-time event for offer accepted
+    broadcastEvent("OFFER_ACCEPTED", {
+      requestId: id,
+      offerId,
+      companyId,
+      companyName,
+      cost,
+    }, {
+      requestId: id,
+      targetRoles: ["admin", "operator", "company"],
+    });
+    
+    // Notify the company whose offer was accepted
+    broadcastEvent("OFFER_ACCEPTED", {
+      requestId: id,
+      offerId,
+      companyId,
+      companyName,
+      cost,
+      message: "Your offer has been accepted!",
+    }, {
+      requestId: id,
+      targetUsers: [companyId],
+    });
 
     return NextResponse.json(
       {

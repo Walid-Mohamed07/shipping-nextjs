@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
+import { RealTimeProvider } from "./context/RealTimeContext";
 import { Footer } from "./components/Footer";
 import "./globals.css";
 import { Header } from "./components/Header";
@@ -56,9 +57,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased flex flex-col min-h-screen`}>
         <AuthProvider>
-          <Header />
-          {children}
-          <Footer />
+          <RealTimeProvider>
+            <Header />
+            {children}
+            <Footer />
+          </RealTimeProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
         <Analytics />

@@ -57,6 +57,7 @@ interface Request {
   requestStatus: string;
   deliveryStatus: string;
   createdAt: string;
+  availableDays?: string[];
   sourcePickupMode?: string;
   destinationPickupMode?: string;
   assignedCompanyId?: string;
@@ -619,6 +620,32 @@ export default function OngoingRequestDetailPage() {
                 </div>
               </div>
             </Card>
+
+            {/* Available Days */}
+            {request.availableDays && request.availableDays.length > 0 && (
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-bold">Available Days</h2>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {request.availableDays.includes("All Week") ? (
+                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      All Week
+                    </span>
+                  ) : (
+                    request.availableDays.map((day) => (
+                      <span
+                        key={day}
+                        className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      >
+                        {day}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </Card>
+            )}
           </div>
         </div>
 

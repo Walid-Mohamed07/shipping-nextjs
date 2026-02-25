@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { AlertCircle, Check, X, Eye } from "lucide-react";
+import { AlertCircle, Check, X, Eye, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { Request, User } from "@/types";
+import { useLiveData, useLiveEvent } from "@/app/hooks/useLiveData";
+import { toast } from "sonner";
 import Link from "next/link";
 
 interface Order extends Request {
@@ -18,24 +20,44 @@ interface AdminOrdersTabProps {
 }
 
 export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
+  // Use live data hook for real-time updates
+  const { 
+    data: liveOrders, 
+    isLoading: loading, 
+    refresh,
+    isConnected 
+  } = useLiveData<Order[]>({
+    endpoint: "/api/admin/requests",
+    eventTypes: [
+      "REQUEST_CREATED",
+      "REQUEST_UPDATED",
+      "OFFER_SUBMITTED",
+      "OFFER_ACCEPTED",
+      "STATUS_CHANGED",
+    ],
+    transform: (data) => data.requests || [],
+  });
+  
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  // Update local state when live data changes
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch("/api/admin/requests");
-        const data = await response.json();
-        setOrders(data.requests || []);
-      } catch (error) {
-        console.error("Failed to fetch orders:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (liveOrders) {
+      setOrders(liveOrders);
+    }
+  }, [liveOrders]);
 
-    fetchOrders();
-  }, []);
+  // Show toast notifications for real-time events
+  useLiveEvent(
+    ["REQUEST_CREATED", "STATUS_CHANGED"],
+    (event) => {
+      if (event.type === "REQUEST_CREATED") {
+        toast.info("New order received", {
+          description: "A new order has been submitted",
+        });
+      }
+    }
+  );
 
   const handleAccept = async (orderId: string) => {
     try {
@@ -52,6 +74,8 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
           ),
         );
         onOrderAccepted?.(orderId);
+        // Real-time will handle refresh automatically
+        await refresh();
       }
     } catch (error) {
       console.error("Failed to accept order:", error);
@@ -72,6 +96,8 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
             o.id === orderId ? { ...o, requestStatus: "Rejected" } : o,
           ),
         );
+        // Real-time will handle refresh automatically
+        await refresh();
       }
     } catch (error) {
       console.error("Failed to reject order:", error);
@@ -207,6 +233,27 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                             Quantity:
                           </span>{" "}
                           <span className="font-medium">{quantity}</span>
+                        </div>
+                      )}
+                      {order.availableDays && order.availableDays.length > 0 && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Available Days:</span>{" "}
+                          {order.availableDays.includes("All Week") ? (
+                            <span className="inline-flex items-center text-xs font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              All Week
+                            </span>
+                          ) : (
+                            <span className="inline-flex flex-wrap gap-1">
+                              {order.availableDays.map((day: string) => (
+                                <span
+                                  key={day}
+                                  className="inline-flex items-center text-xs font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                >
+                                  {day.slice(0, 3)}
+                                </span>
+                              ))}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>

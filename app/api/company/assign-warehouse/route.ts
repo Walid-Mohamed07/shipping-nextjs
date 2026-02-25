@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request, Warehouse } from "@/lib/models";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import { broadcastEvent, broadcastToUserAndAdmins } from "@/lib/eventBroadcaster";
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,6 +80,18 @@ export async function POST(request: NextRequest) {
         warehouseType as "source" | "destination",
       ),
     );
+
+    // Broadcast real-time event for warehouse assignment
+    broadcastEvent("WAREHOUSE_ASSIGNED", {
+      requestId,
+      warehouseId,
+      warehouseName: warehouse.name,
+      warehouseType,
+      warehouseData,
+    }, {
+      requestId,
+      targetRoles: ["admin", "operator", "company", "client"],
+    });
 
     return NextResponse.json(
       {

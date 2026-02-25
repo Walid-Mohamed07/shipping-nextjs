@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import { Message } from "@/lib/models";
 import { handleError, handleValidationError } from "@/lib/apiHelpers";
 import { randomUUID } from "crypto";
+import { broadcastEvent } from "@/lib/eventBroadcaster";
 
 /**
  * @swagger
@@ -118,6 +119,28 @@ export async function POST(request: NextRequest) {
       priority,
       attachments,
       links,
+    });
+
+    // Broadcast real-time event for new message
+    broadcastEvent("MESSAGE_SENT", {
+      messageId: newMessage._id.toString(),
+      senderEmail,
+      recipientEmail,
+      subject,
+    }, {
+      targetUsers: [senderId],
+    });
+    
+    // Notify the recipient
+    broadcastEvent("MESSAGE_RECEIVED", {
+      messageId: newMessage._id.toString(),
+      senderName: senderName || "Unknown",
+      senderEmail,
+      subject,
+      preview: message.substring(0, 100),
+    }, {
+      // Target by email - but we need user ID. For now broadcast to admins too
+      targetRoles: ["admin", "operator"],
     });
 
     return NextResponse.json(newMessage, { status: 201 });
