@@ -160,12 +160,12 @@ export default function MyRequestsPage() {
               const previewItems = (request.items || []).slice(0, 3);
               const remaining = Math.max(0, (request.items || []).length - 3);
               return (
-                <Link key={request.id} href={`/request/${request.id}`}>
+                <Link key={request.id} href={`/request/${request.publicId}`}>
                   <div className="h-full bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-semibold text-foreground truncate">
-                          {request.id}
+                          {request.publicId}
                         </h3>
                       </div>
                       <div className="ml-2">

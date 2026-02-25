@@ -89,6 +89,7 @@ function normalizeRequest(req: any) {
 
   return {
     id: req._id || req.id,
+    publicId: req.publicId,
     user: req.user,
     source,
     destination,
@@ -278,7 +279,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Add activity log for request creation
-    await addActivityLog(newRequest._id, ActivityActions.REQUEST_CREATED(user));
+    await addActivityLog(newRequest._id.toString(), ActivityActions.REQUEST_CREATED(user));
 
     return NextResponse.json(
       { success: true, request: normalizeRequest(newRequest) },

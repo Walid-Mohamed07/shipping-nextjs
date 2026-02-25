@@ -108,6 +108,7 @@ export interface ActivityHistory {
 export interface Request {
   id?: string;
   _id: string;
+  publicId?: string; // Public ID in format REQ-XXXXX for external use
   user: string | UserDetails | User; // Can be string ID, populated UserDetails, or full User
   source: Address;
   destination: Address;

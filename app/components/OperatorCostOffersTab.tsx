@@ -158,7 +158,7 @@ export function OperatorCostOffersTab() {
       {selectedRequest ? (
         <Card className="p-6 border-primary/50 bg-primary/5">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">{selectedRequest.id}</h3>
+            <h3 className="text-lg font-semibold mb-2">{selectedRequest.publicId || selectedRequest.id}</h3>
             <p className="text-sm text-muted-foreground">
               {selectedRequest.user!.fullName} -{" "}
               {selectedRequest.source.country} →{" "}

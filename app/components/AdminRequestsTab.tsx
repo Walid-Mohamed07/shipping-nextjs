@@ -275,7 +275,7 @@ export function AdminRequestsTab() {
                     {request.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Request ID: {request._id}
+                    Request ID: {request.publicId || request._id}
                   </p>
                 </div>
               </div>

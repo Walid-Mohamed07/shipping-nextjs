@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request, User } from "@/lib/models";
 import { handleValidationError } from "@/lib/apiHelpers";
+import { getCurrentUser, isUserAuthorizedForRequest } from "@/lib/auth-helpers";
 
 type LegacyRequest = any;
 
@@ -60,6 +61,7 @@ function normalizeRequest(req: LegacyRequest) {
 
   return {
     id: req._id || req.id,
+    publicId: req.publicId,
     user: req.user,
     source,
     destination,
@@ -99,13 +101,52 @@ export async function GET(
       return handleValidationError("Request ID is required");
     }
 
-    const foundRequest = await Request.findById(id)
+    // Get current user for authorization check
+    const currentUser = await getCurrentUser(request);
+
+    // Try to find by publicId first (new format: REQ-XXXXX)
+    // If not found and id looks like MongoDB ID, try that for backward compatibility
+    let foundRequest = await Request.findOne({ publicId: id })
       .populate("user", "fullName email mobile profilePicture role _id")
       .lean()
       .exec();
 
+    // Backward compatibility: try to find by _id if publicId not found
+    if (!foundRequest && id.match(/^[0-9a-fA-F]{24}$/)) {
+      foundRequest = await Request.findById(id)
+        .populate("user", "fullName email mobile profilePicture role _id")
+        .lean()
+        .exec();
+    }
+
     if (!foundRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    // Check authorization: user must be the owner or an admin
+    const requestOwnerId = foundRequest.user?._id || foundRequest.user?.id || foundRequest.user;
+    const requestOwnerIdString = requestOwnerId?.toString?.() || String(requestOwnerId);
+
+    if (!currentUser) {
+      // If no auth token, return 401 Unauthorized
+      // (but still allow public access if needed - for now requiring auth)
+      return NextResponse.json(
+        { error: "Unauthorized - authentication required" },
+        { status: 401 },
+      );
+    }
+
+    const isAuthorized = isUserAuthorizedForRequest(
+      currentUser.id,
+      currentUser.role,
+      requestOwnerIdString,
+    );
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: "Forbidden - you do not have access to this request" },
+        { status: 403 },
+      );
     }
 
     const normalized = normalizeRequest(foundRequest);

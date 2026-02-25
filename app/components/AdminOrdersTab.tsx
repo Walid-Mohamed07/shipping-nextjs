@@ -231,7 +231,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                       <X className="w-4 h-4" />
                       Reject
                     </Button>
-                    <Link href={`/admin/request/${order.id}`}>
+                    <Link href={`/admin/request/${order.publicId}`}>
                       <Button
                         size="sm"
                         variant="outline"
