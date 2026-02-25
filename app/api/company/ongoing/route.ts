@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         $in: ["Assigned to Company", "In Transit", "Delivered", "In Progress"],
       },
     })
-      .populate("user", "email fullName mobile")
+      .populate("userId", "email fullName profilePicture mobile")
       .sort({ createdAt: -1 })
       .lean();
 

@@ -210,7 +210,7 @@ const requestSchema = new mongoose.Schema(
       },
     ],
     activityHistory: [activityHistorySchema],
-    assignedCompanyId: String,
+    assignedCompany: String,
     selectedCompany: {
       id: String,
       name: String,

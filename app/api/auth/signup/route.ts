@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import bcryptjs from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import { User, Address } from "@/lib/models";
 
@@ -78,10 +79,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hash the password
+    const hashedPassword = await bcryptjs.hash(password, 10);
+
     // Create user
     const newUser = await User.create({
       email,
-      password,
+      password: hashedPassword,
       fullName,
       name: fullName,
       username: username || email.split("@")[0] + Date.now(),

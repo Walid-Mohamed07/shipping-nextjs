@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { User } from "@/lib/models";
+import bcryptjs from "bcryptjs";
 
 /**
  * @swagger
@@ -98,6 +99,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!password) {
+      return NextResponse.json(
+        {
+          error: "Password is required",
+        },
+        { status: 400 },
+      );
+    }
+
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -116,12 +126,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hash the password
+    const hashedPassword = await bcryptjs.hash(password, 10);
+
     const newUser = await User.create({
       fullName,
       name: fullName,
       email,
       username,
-      password: password || "temp_password_123",
+      password: hashedPassword,
       profilePicture: profilePicture || "",
       birthDate: birthDate || null,
       mobile: mobile || "",
@@ -165,7 +178,7 @@ export async function PUT(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const { id, fullName, email, username, mobile, birthDate, profilePicture, status, role, company } = body;
+    const { id, fullName, email, username, mobile, birthDate, profilePicture, status, role, company, newPassword } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -212,20 +225,29 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Prepare update object
+    const updateData: any = {
+      fullName,
+      name: fullName,
+      email,
+      username,
+      mobile: mobile || "",
+      birthDate: birthDate || null,
+      profilePicture: profilePicture || "",
+      status: status || "active",
+      role: role || "client",
+      company: company || undefined,
+    };
+
+    // If new password is provided, hash it
+    if (newPassword) {
+      const hashedPassword = await bcryptjs.hash(newPassword, 10);
+      updateData.password = hashedPassword;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      {
-        fullName,
-        name: fullName,
-        email,
-        username,
-        mobile: mobile || "",
-        birthDate: birthDate || null,
-        profilePicture: profilePicture || "",
-        status: status || "active",
-        role: role || "client",
-        company: company || undefined,
-      },
+      updateData,
       { returnDocument: "after" },
     ).populate("company", "name email phoneNumber address rate");
 

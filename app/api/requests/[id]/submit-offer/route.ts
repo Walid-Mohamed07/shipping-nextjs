@@ -55,9 +55,9 @@ export async function POST(
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    // Find the selected offer to get company name and cost
+    // Find the selected offer to get company name, id, and cost
     const selectedOffer = currentRequest.costOffers?.find(
-      (offer: any) => offer._id?.toString() === offerId,
+      (offer: any) => offer.company?.id === offerId,
     );
     
     if (!selectedOffer) {
@@ -68,22 +68,28 @@ export async function POST(
     }
     
     const companyName = selectedOffer?.company?.name || "Unknown Company";
-    const companyId = selectedOffer?.company?.id;
+    const companyId = selectedOffer?.company?.id; // Use the offerId directly as it's the company ID
     const cost = selectedOffer?.cost;
+
+    if (!selectedOffer) {
+      return NextResponse.json({ error: "Offer not found" }, { status: 404 });
+    }
+
+    if (!companyId) {
+      return NextResponse.json(
+        { error: "Company ID not found in offer" },
+        { status: 400 },
+      );
+    }
 
     // Mark the accepted offer and update request status
     const updatedRequest = await Request.findByIdAndUpdate(
       id,
       {
-        $set: { 
+        $set: {
           requestStatus: "Assigned to Company",
-          assignedCompanyId: companyId,  // Store the company ID
-          selectedCompany: {
-            id: companyId,
-            name: companyName,
-            rate: selectedOffer?.company?.rate,
-            cost: cost,
-          },
+          assignedCompany: companyId,
+          "costOffers.$[elem].selected": true,
         },
         $push: {
           activityHistory: {
@@ -92,11 +98,14 @@ export async function POST(
             description: `Client accepted offer from ${companyName} for $${cost}`,
             companyName,
             cost,
-            details: { offerId },
+            details: { offerId, companyId },
           },
         },
       },
-      { returnDocument: "after" },
+      {
+        returnDocument: "after",
+        arrayFilters: [{ "elem.company.id": offerId }],
+      },
     );
 
     if (!updatedRequest) {
