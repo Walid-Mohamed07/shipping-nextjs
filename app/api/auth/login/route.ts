@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import bcryptjs from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models";
 
@@ -41,8 +42,19 @@ export async function POST(request: NextRequest) {
 
     const user = await User.findOne({ email });
 
-    if (!user || user.password !== password) {
-      console.log("Login: Invalid credentials for email:", email);
+    if (!user) {
+      console.log("Login: User not found for email:", email);
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 },
+      );
+    }
+
+    // Compare hashed password
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      console.log("Login: Invalid password for email:", email);
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 },

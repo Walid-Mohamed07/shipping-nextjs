@@ -14,6 +14,8 @@ import {
   Search,
   Filter,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { type User } from "@/types";
 import ProfilePictureUpload from "@/app/components/ProfilePictureUpload";
@@ -42,6 +44,8 @@ export function AdminUsersTab() {
     status: "active" as "active" | "inactive" | "suspended",
     role: "client" as "client" | "admin" | "operator" | "company" | "driver",
     assignedCompanyId: "" as string,
+    password: "",
+    confirmPassword: "",
   });
   const [companies, setCompanies] = useState<any[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
@@ -50,6 +54,13 @@ export function AdminUsersTab() {
     string | null
   >(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changePasswordMode, setChangePasswordMode] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -138,11 +149,65 @@ export function AdminUsersTab() {
     }
   };
 
+  // Password validation function
+  const validatePassword = (password: string): { valid: boolean; message: string } => {
+    if (password.length < 8) {
+      return { valid: false, message: "Password must be at least 8 characters long" };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one uppercase letter" };
+    }
+    if (!/[a-z]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one lowercase letter" };
+    }
+    if (!/[0-9]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one number" };
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one special character (!@#$%^&*)" };
+    }
+    return { valid: true, message: "" };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email || !formData.username) {
       toast.error("Please fill in all required fields");
       return;
+    }
+
+    // For create mode, validate password
+    if (!editingId) {
+      if (!formData.password) {
+        toast.error("Password is required");
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.valid) {
+        toast.error(passwordValidation.message);
+        return;
+      }
+    }
+
+    // For update mode with change password
+    if (editingId && changePasswordMode) {
+      if (!newPassword) {
+        toast.error("Please enter a new password");
+        return;
+      }
+      if (newPassword !== confirmNewPassword) {
+        toast.error("New passwords do not match");
+        return;
+      }
+      const passwordValidation = validatePassword(newPassword);
+      if (!passwordValidation.valid) {
+        toast.error(passwordValidation.message);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -158,15 +223,24 @@ export function AdminUsersTab() {
 
       if (editingId) {
         // Update existing user via API
+        const updatePayload: any = {
+          id: editingId,
+          ...formData,
+          company: formData.assignedCompanyId || undefined,
+          profilePicture: profilePictureUrl,
+        };
+
+        // Remove password fields from base formData for update (unless changing password)
+        if (changePasswordMode) {
+          updatePayload.newPassword = newPassword;
+        }
+        delete updatePayload.password;
+        delete updatePayload.confirmPassword;
+
         const response = await fetch("/api/admin/users", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: editingId,
-            ...formData,
-            company: formData.assignedCompanyId || undefined,
-            profilePicture: profilePictureUrl,
-          }),
+          body: JSON.stringify(updatePayload),
         });
 
         if (!response.ok) {
@@ -191,14 +265,17 @@ export function AdminUsersTab() {
         toast.update("User updated successfully");
       } else {
         // Create new user via API
+        const createPayload: any = {
+          ...formData,
+          company: formData.assignedCompanyId || undefined,
+          profilePicture: profilePictureUrl,
+        };
+        delete createPayload.confirmPassword; // Don't send confirm password to API
+
         const response = await fetch("/api/admin/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...formData,
-            company: formData.assignedCompanyId || undefined,
-            profilePicture: profilePictureUrl,
-          }),
+          body: JSON.stringify(createPayload),
         });
 
         if (!response.ok) {
@@ -276,11 +353,20 @@ export function AdminUsersTab() {
       status: user.status,
       role: typeof user.role === "string" ? user.role : (user.role as any).name,
       assignedCompanyId: companyId,
+      password: "",
+      confirmPassword: "",
     });
     setProfilePicturePreview(user.profilePicture || null);
     setProfilePicture(null);
     setEditingId((user._id as string) || user.id!);
     setShowForm(true);
+    setChangePasswordMode(false);
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmNewPassword(false);
   };
 
   const resetForm = () => {
@@ -293,11 +379,20 @@ export function AdminUsersTab() {
       status: "active",
       role: "client",
       assignedCompanyId: "",
+      password: "",
+      confirmPassword: "",
     });
     setProfilePicture(null);
     setProfilePicturePreview(null);
     setEditingId(null);
     setShowForm(false);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setChangePasswordMode(false);
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setShowNewPassword(false);
+    setShowConfirmNewPassword(false);
   };
 
   if (loading) return <div className="text-center py-8">Loading...</div>;
@@ -460,6 +555,95 @@ export function AdminUsersTab() {
               </div>
             </div>
 
+            {/* Password Section */}
+            {!editingId && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Password
+                </h3>
+
+                {/* Password & Confirm Password */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
+                      Password *
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password"
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            password: e.target.value,
+                          })
+                        }
+                        className="bg-background pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char (!@#$%^&*)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
+                      Confirm Password *
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm password"
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="bg-background pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Role and Status Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">
@@ -574,6 +758,119 @@ export function AdminUsersTab() {
                 ) : (
                   <div className="flex items-center justify-center h-20 border border-border rounded-md bg-muted text-muted-foreground text-sm">
                     No companies available
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Change Password Section - Only show when editing */}
+            {editingId && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Password Management
+                  </h3>
+                  {!changePasswordMode && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setChangePasswordMode(true)}
+                      className="cursor-pointer"
+                    >
+                      Change Password
+                    </Button>
+                  )}
+                </div>
+
+                {changePasswordMode && (
+                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Enter the new password for this user.
+                    </p>
+
+                    {/* New Password & Confirm New Password */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          htmlFor="newPassword"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
+                          New Password *
+                        </label>
+                        <div className="relative">
+                          <Input
+                            id="newPassword"
+                            type={showNewPassword ? "text" : "password"}
+                            placeholder="Enter new password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="bg-background pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char (!@#$%^&*)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="confirmNewPassword"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
+                          Confirm New Password *
+                        </label>
+                        <div className="relative">
+                          <Input
+                            id="confirmNewPassword"
+                            type={showConfirmNewPassword ? "text" : "password"}
+                            placeholder="Confirm new password"
+                            value={confirmNewPassword}
+                            onChange={(e) =>
+                              setConfirmNewPassword(e.target.value)
+                            }
+                            className="bg-background pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmNewPassword(!showConfirmNewPassword)
+                            }
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showConfirmNewPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChangePasswordMode(false);
+                        setNewPassword("");
+                        setConfirmNewPassword("");
+                        setShowNewPassword(false);
+                        setShowConfirmNewPassword(false);
+                      }}
+                      className="text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      Cancel Password Change
+                    </button>
                   </div>
                 )}
               </div>
