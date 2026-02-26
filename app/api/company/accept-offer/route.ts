@@ -27,12 +27,21 @@ export async function POST(request: NextRequest) {
       (offer: any) => offer.company?.id === companyId,
     );
     const cost = selectedOffer?.cost;
+    const companyRateFromOffer = selectedOffer?.company?.rate || companyRate || "";
+    const companyNameFromOffer = selectedOffer?.company?.name || companyName || "Company";
 
+    // Update request with assignedCompany and selectedCompany (with full details including cost)
     const updatedRequest = await Request.findByIdAndUpdate(
       requestId,
       {
         assignedCompany: companyId,
         requestStatus: "Assigned to Company",
+        selectedCompany: {
+          id: companyId,
+          name: companyNameFromOffer,
+          rate: companyRateFromOffer,
+          cost: cost,
+        },
         updatedAt: new Date(),
       },
       { returnDocument: "after" },

@@ -70,13 +70,10 @@ export async function POST(
     
     const companyName = selectedOffer?.company?.name || "Unknown Company";
     const companyId = selectedOffer?.company?.id; // Use the offerId directly as it's the company ID
+    const companyRate = selectedOffer?.company?.rate || "";
     const cost = selectedOffer?.cost;
 
     console.log("[Submit-offer] Setting assignedCompany to:", companyId, "from offer company.id");
-
-    if (!selectedOffer) {
-      return NextResponse.json({ error: "Offer not found" }, { status: 404 });
-    }
 
     if (!companyId) {
       return NextResponse.json(
@@ -86,12 +83,19 @@ export async function POST(
     }
 
     // Mark the accepted offer and update request status
+    // Also set selectedCompany with full details including cost for UI display
     const updatedRequest = await Request.findByIdAndUpdate(
       id,
       {
         $set: {
           requestStatus: "Assigned to Company",
           assignedCompany: companyId,
+          selectedCompany: {
+            id: companyId,
+            name: companyName,
+            rate: companyRate,
+            cost: cost,
+          },
           "costOffers.$[elem].selected": true,
         },
         $push: {
