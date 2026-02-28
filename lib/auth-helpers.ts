@@ -71,7 +71,11 @@ export function isUserAuthorizedForRequest(
   requestUserId: string,
 ): boolean {
   // Allow if user is admin
-  if (currentUserRole === "admin") {
+  if (
+    currentUserRole === "admin" ||
+    currentUserRole === "operator" ||
+    currentUserRole === "company"
+  ) {
     return true;
   }
 

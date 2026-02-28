@@ -124,8 +124,10 @@ export async function GET(
     }
 
     // Check authorization: user must be the owner or an admin
-    const requestOwnerId = foundRequest.user?._id || foundRequest.user?.id || foundRequest.user;
-    const requestOwnerIdString = requestOwnerId?.toString?.() || String(requestOwnerId);
+    const requestOwnerId =
+      foundRequest.user?._id || foundRequest.user?.id || foundRequest.user;
+    const requestOwnerIdString =
+      requestOwnerId?.toString?.() || String(requestOwnerId);
 
     if (!currentUser) {
       // If no auth token, return 401 Unauthorized
