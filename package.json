@@ -65,7 +65,7 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
     "sonner": "^1.7.4",
-    "swagger-jsdoc": "^1.2.1",
+    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "swagger-ui-react": "^5.31.0",
     "tailwind-merge": "^3.3.1",
