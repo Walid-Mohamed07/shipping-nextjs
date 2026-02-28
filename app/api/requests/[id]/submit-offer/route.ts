@@ -123,7 +123,7 @@ export async function POST(
     // Mark the accepted offer and update request status
     // Also set selectedCompany with full details including cost for UI display
     const updatedRequest = await Request.findByIdAndUpdate(
-      currentRequest._id,
+      currentRequest.publicId,
       {
         $set: {
           requestStatus: "Assigned to Company",
