@@ -59,7 +59,7 @@ export async function GET(
     // Find the request and verify it's assigned to this company
     const ongoingRequest = await Request.findOne({
       _id: id,
-      assignedCompanyId: companyId,
+      assignedCompany: companyId,
       requestStatus: {
         $in: ["Assigned to Company", "In Transit", "Delivered", "In Progress"],
       },

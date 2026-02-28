@@ -116,7 +116,7 @@ const requestSchema = new mongoose.Schema(
     startTime: Date,
     availableDays: {
       type: [String],
-      enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "All Week"],
       default: [],
     },
     requestStatus: {

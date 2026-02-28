@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request } from "@/lib/models";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import { broadcastEvent, broadcastToUserAndAdmins } from "@/lib/eventBroadcaster";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,12 +27,21 @@ export async function POST(request: NextRequest) {
       (offer: any) => offer.company?.id === companyId,
     );
     const cost = selectedOffer?.cost;
+    const companyRateFromOffer = selectedOffer?.company?.rate || companyRate || "";
+    const companyNameFromOffer = selectedOffer?.company?.name || companyName || "Company";
 
+    // Update request with assignedCompany and selectedCompany (with full details including cost)
     const updatedRequest = await Request.findByIdAndUpdate(
       requestId,
       {
-        assignedCompanyId: companyId,
+        assignedCompany: companyId,
         requestStatus: "Assigned to Company",
+        selectedCompany: {
+          id: companyId,
+          name: companyNameFromOffer,
+          rate: companyRateFromOffer,
+          cost: cost,
+        },
         updatedAt: new Date(),
       },
       { returnDocument: "after" },
@@ -51,6 +61,29 @@ export async function POST(request: NextRequest) {
         companyRate,
       ),
     );
+
+    // Broadcast real-time event for assignment
+    const requestOwnerId = currentRequest.user?.toString() || currentRequest.user;
+    broadcastEvent("ASSIGNMENT_UPDATED", {
+      requestId,
+      companyId,
+      companyName: companyName || "Company",
+      status: "Assigned to Company",
+    }, {
+      requestId,
+      targetRoles: ["admin", "operator"],
+    });
+    
+    // Notify the client who owns the request
+    if (requestOwnerId) {
+      broadcastToUserAndAdmins(requestOwnerId, "ASSIGNMENT_UPDATED", {
+        requestId,
+        companyId,
+        companyName: companyName || "Company",
+        status: "Assigned to Company",
+        message: "Your request has been assigned to a company!",
+      }, requestId);
+    }
 
     return NextResponse.json(
       {

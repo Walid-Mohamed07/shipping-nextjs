@@ -350,6 +350,28 @@ export function OperatorCostOffersTab() {
                           </div>
                         </div>
                         {/* </p> */}
+                        {/* Available Days */}
+                        {req.availableDays && req.availableDays.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Available Days:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {req.availableDays.includes("All Week") ? (
+                                <span className="inline-flex items-center text-xs font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                  All Week
+                                </span>
+                              ) : (
+                                req.availableDays.map((day) => (
+                                  <span
+                                    key={day}
+                                    className="inline-flex items-center text-xs font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                  >
+                                    {day.slice(0, 3)}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {req.costOffers && req.costOffers.length > 0 && (
                         <div className="ml-4 text-right">

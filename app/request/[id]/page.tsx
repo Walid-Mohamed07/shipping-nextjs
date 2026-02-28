@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
+import { useLiveRequest, useLiveEvent } from "@/app/hooks/useLiveData";
+import { useRealTime } from "@/app/context/RealTimeContext";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -26,6 +28,8 @@ import {
   BoxSelect,
   ChevronDown,
   X,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import {
   Accordion,
@@ -81,8 +85,20 @@ const statusSteps = [
 const NEARBY_RADIUS_KM = 50;
 
 export default function RequestDetailsPage() {
+  const { user, isLoading: authLoading } = useProtectedRoute();
+  const params = useParams();
+  const requestId = params.id as string;
+  const { isConnected, subscribeToRequest } = useRealTime();
+  
+  // Use live data hook for real-time request updates
+  const { 
+    data: liveRequest, 
+    isLoading: requestLoading, 
+    error: fetchError,
+    refresh: refreshRequest 
+  } = useLiveRequest(requestId);
+  
   const [request, setRequest] = useState<Request | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -101,9 +117,49 @@ export default function RequestDetailsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const { user, isLoading: authLoading } = useProtectedRoute();
-  const params = useParams();
-  const requestId = params.id as string;
+  
+  const isLoading = authLoading || requestLoading;
+
+  // Update local request state when live data changes
+  useEffect(() => {
+    if (liveRequest) {
+      setRequest(liveRequest);
+    }
+    if (fetchError) {
+      setError(fetchError);
+    }
+  }, [liveRequest, fetchError]);
+
+  // Show toast notifications for real-time events on this request
+  useLiveEvent(
+    ["OFFER_SUBMITTED", "OFFER_UPDATED", "OFFER_ACCEPTED", "STATUS_CHANGED", "DELIVERY_STATUS_CHANGED", "WAREHOUSE_ASSIGNED"],
+    (event) => {
+      if (event.requestId !== requestId) return;
+      
+      if (event.type === "OFFER_SUBMITTED") {
+        toast.info("New offer received!", {
+          description: `${event.payload.companyName} submitted an offer of $${event.payload.cost}`,
+        });
+      } else if (event.type === "OFFER_ACCEPTED") {
+        toast.success("Offer accepted!", {
+          description: `Offer from ${event.payload.companyName} has been accepted`,
+        });
+      } else if (event.type === "STATUS_CHANGED") {
+        toast.info("Request status updated", {
+          description: `Status changed to: ${event.payload.newStatus}`,
+        });
+      } else if (event.type === "DELIVERY_STATUS_CHANGED") {
+        toast.success("Delivery update!", {
+          description: event.payload.message || `Status: ${event.payload.newStatus}`,
+        });
+      } else if (event.type === "WAREHOUSE_ASSIGNED") {
+        toast.info("Warehouse assigned", {
+          description: `${event.payload.warehouseType} warehouse: ${event.payload.warehouseName}`,
+        });
+      }
+    },
+    requestId
+  );
 
   const findNearbyWarehouses = () => {
     setShowLocationPrompt(true);
@@ -206,7 +262,7 @@ export default function RequestDetailsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          offerId: confirmingOffer._id || confirmingOffer.id,  // Use the offer's _id, not company.id
+          offerId: confirmingOffer.company.id,  // Use the company ID from the offer
         }),
       });
 
@@ -225,11 +281,8 @@ export default function RequestDetailsPage() {
         setRequest(data.request);
       }
 
-      // Optionally redirect after a short delay to show the updated state
-      setTimeout(() => {
-        // Refresh the page data or stay on page to show updates
-        window.location.reload();
-      }, 2000);
+      // Refresh will happen automatically via real-time updates
+      // No need to reload the page
     } catch (err) {
       const errorMsg =
         err instanceof Error ? err.message : "Failed to submit offer";
@@ -239,50 +292,22 @@ export default function RequestDetailsPage() {
     }
   };
 
+  // Data fetching is now handled by useLiveRequest hook above
+  // Authorization check for non-owners viewing the request
   useEffect(() => {
-    // If auth is still loading, wait
-    if (authLoading) return;
-
-    // If auth finished but no user, stop the loading spinner (redirect handled by useProtectedRoute)
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
+    if (authLoading || !user || !liveRequest) return;
+    
     const userId = user._id || user.id;
-    if (!userId) {
-      setIsLoading(false);
-      return;
+    const isAdminRole = ["admin", "operator", "driver"].includes(user.role);
+    const requestUserId = String(
+      liveRequest.user?._id || liveRequest.user?.id || "",
+    );
+    
+    if (!isAdminRole && requestUserId !== String(userId)) {
+      setError("Unauthorized");
+      toast.error("Unauthorized");
     }
-
-    const fetchRequest = async () => {
-      try {
-        const response = await fetch(`/api/requests/${requestId}`);
-        if (!response.ok) throw new Error("Request not found");
-        const data = await response.json();
-
-        // Allow admin/operator roles to view any request, otherwise check ownership
-        const isAdminRole = ["admin", "operator", "driver"].includes(user.role);
-        const requestUserId = String(
-          data.request.user?._id || data.request.user?.id || "",
-        );
-        if (!isAdminRole && requestUserId !== String(userId)) {
-          throw new Error("Unauthorized");
-        }
-
-        setRequest(data.request);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch request";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRequest();
-  }, [authLoading, user?._id, user?.id, requestId]);
+  }, [authLoading, user, liveRequest]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -992,24 +1017,25 @@ export default function RequestDetailsPage() {
                   Available Days
                 </h3>
                 {request.availableDays && request.availableDays.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {request.availableDays.map((day) => (
-                      <span
-                        key={day}
-                        className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                      >
-                        {day}
-                      </span>
-                    ))}
-                  </div>
+                  request.availableDays.includes("All Week") ? (
+                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      All Week
+                    </span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {request.availableDays.map((day) => (
+                        <span
+                          key={day}
+                          className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                        >
+                          {day}
+                        </span>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     No specific days set
-                  </p>
-                )}
-                {request.availableDays && request.availableDays.length === 7 && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Available all week
                   </p>
                 )}
               </div>

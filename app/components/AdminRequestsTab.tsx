@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -11,9 +11,14 @@ import {
   ChevronLeft,
   ChevronRight,
   X as XIcon,
+  Wifi,
+  WifiOff,
+  RefreshCw,
 } from "lucide-react";
 import { RequestResponse } from "@/types/request";
 import { useAuth } from "../context/AuthContext";
+import { useLiveData, useLiveEvent } from "../hooks/useLiveData";
+import { toast } from "sonner";
 import Image from "next/image";
 import { useToast, getErrorMessage } from "@/lib/useToast";
 
@@ -55,9 +60,28 @@ const STATUS_COLORS: Record<
 
 export function AdminRequestsTab() {
   const { user } = useAuth();
-  const toast = useToast();
+  const toastUtils = useToast();
+  
+  // Use live data hook for real-time updates
+  const { 
+    data: liveRequests, 
+    isLoading: loading, 
+    refresh,
+    isConnected 
+  } = useLiveData<RequestResponse[]>({
+    endpoint: "/api/requests/manage",
+    eventTypes: [
+      "REQUEST_CREATED",
+      "REQUEST_UPDATED",
+      "OFFER_SUBMITTED",
+      "OFFER_ACCEPTED",
+      "STATUS_CHANGED",
+      "DELIVERY_STATUS_CHANGED",
+    ],
+    transform: (data) => Array.isArray(data) ? data : data.requests || [],
+  });
+  
   const [requests, setRequests] = useState<RequestResponse[]>([]);
-  const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -67,27 +91,29 @@ export function AdminRequestsTab() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const itemsPerPage = 10;
 
+  // Update local state when live data changes
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const response = await fetch("/api/requests/manage");
-        if (response.ok) {
-          const data = await response.json();
-          // API returns array directly, not wrapped in object
-          setRequests(Array.isArray(data) ? data : data.requests || []);
-          setCurrentPage(1);
-        }
-      } catch (error) {
-        console.error("Failed to fetch requests:", error);
-        toast.error(getErrorMessage(error));
-        setRequests([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (liveRequests) {
+      setRequests(liveRequests);
+      setCurrentPage(1);
+    }
+  }, [liveRequests]);
 
-    fetchRequests();
-  }, []);
+  // Show toast notifications for real-time events
+  useLiveEvent(
+    ["REQUEST_CREATED", "OFFER_SUBMITTED", "STATUS_CHANGED"],
+    (event) => {
+      if (event.type === "REQUEST_CREATED") {
+        toast.info("New request created", {
+          description: "A new shipping request has been submitted",
+        });
+      } else if (event.type === "OFFER_SUBMITTED") {
+        toast.info("New offer submitted", {
+          description: `${event.payload.companyName} submitted an offer of $${event.payload.cost}`,
+        });
+      }
+    }
+  );
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -142,14 +168,17 @@ export function AdminRequestsTab() {
       });
 
       if (response.ok) {
-        setRequests(requests.filter((r) => r._id !== requestId));
-        toast.update("Request accepted successfully");
+        // Real-time updates will handle refresh automatically
+        // But trigger manual refresh for immediate feedback
+        await refresh();
+        setSelectedRequest(null);
+        toastUtils.update("Request accepted successfully");
       } else {
-        toast.error("Failed to accept request");
+        toastUtils.error("Failed to accept request");
       }
     } catch (error) {
       console.error("Failed to accept request:", error);
-      toast.error(getErrorMessage(error));
+      toastUtils.error(getErrorMessage(error));
     } finally {
       setProcessingId(null);
     }
@@ -171,14 +200,16 @@ export function AdminRequestsTab() {
       });
 
       if (response.ok) {
-        setRequests(requests.filter((r) => r._id !== requestId));
-        toast.delete("Request rejected successfully");
+        // Real-time updates will handle refresh automatically
+        await refresh();
+        setSelectedRequest(null);
+        toastUtils.delete("Request rejected successfully");
       } else {
-        toast.error("Failed to reject request");
+        toastUtils.error("Failed to reject request");
       }
     } catch (error) {
       console.error("Failed to reject request:", error);
-      toast.error(getErrorMessage(error));
+      toastUtils.error(getErrorMessage(error));
     } finally {
       setProcessingId(null);
     }
@@ -207,7 +238,27 @@ export function AdminRequestsTab() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-foreground mb-6">All Requests</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-foreground">All Requests</h2>
+          {/* Real-time connection indicator */}
+          <div 
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+              isConnected 
+                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" 
+                : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+            }`}
+            title={isConnected ? "Live updates active" : "Connecting..."}
+          >
+            {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            {isConnected ? "Live" : "..."}
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refresh()} className="gap-2">
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </Button>
+      </div>
 
       {/* Filtering */}
       <div className="mb-6 flex gap-2 flex-wrap">
@@ -449,7 +500,7 @@ export function AdminRequestsTab() {
                     {selectedRequest.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Phone: {selectedRequest.user?.mobile || "N/A"}
+                    Phone: {selectedRequest.source?.mobile || selectedRequest.user?.mobile || "N/A"}
                   </p>
                 </div>
               </div>
@@ -498,16 +549,22 @@ export function AdminRequestsTab() {
                     Available Days
                   </p>
                   {selectedRequest.availableDays && selectedRequest.availableDays.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedRequest.availableDays.map((day: string) => (
-                        <span
-                          key={day}
-                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                        >
-                          {day.slice(0, 3)}
-                        </span>
-                      ))}
-                    </div>
+                    selectedRequest.availableDays.includes("All Week") ? (
+                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        All Week
+                      </span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedRequest.availableDays.map((day: string) => (
+                          <span
+                            key={day}
+                            className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                          >
+                            {day.slice(0, 3)}
+                          </span>
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <p className="text-foreground font-medium">N/A</p>
                   )}
@@ -679,62 +736,76 @@ export function AdminRequestsTab() {
               ) : null
             ) : null}
 
-            {/* Activity History */}
+            {/* Activity Log */}
             {selectedRequest.activityHistory &&
               selectedRequest.activityHistory.length > 0 && (
                 <div className="mb-6 pb-6 border-b border-border">
-                  <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                    📋 Activity History
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <span className="text-primary">📋</span>
+                    Activity Log
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                     {selectedRequest.activityHistory
                       .slice()
                       .reverse()
                       .map((activity, idx) => (
                         <div
                           key={idx}
-                          className="p-4 bg-muted/40 rounded-lg border border-border text-sm space-y-2"
+                          className="flex gap-3 text-sm border-l-2 border-primary pl-3 py-2"
                         >
-                          {/* Action title with timestamp */}
-                          <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                            <p className="font-semibold text-foreground">
-                              {activity.action
-                                .split("_")
-                                .map(
-                                  (word) =>
-                                    word.charAt(0).toUpperCase() +
-                                    word.slice(1),
-                                )
-                                .join(" ")}
-                            </p>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              📅{" "}
-                              {new Date(activity.timestamp).toLocaleString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </span>
+                          <div className="flex-shrink-0 mt-0.5">
+                            <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
                           </div>
+                          <div className="flex-1 min-w-0">
+                            {/* Action and timestamp */}
+                            <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                              <p className="font-medium text-foreground">
+                                {activity.action
+                                  .split("_")
+                                  .map(
+                                    (word) =>
+                                      word.charAt(0).toUpperCase() +
+                                      word.slice(1),
+                                  )
+                                  .join(" ")}
+                              </p>
+                              <time className="text-xs text-muted-foreground whitespace-nowrap">
+                                {new Date(activity.timestamp).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
+                              </time>
+                            </div>
 
-                          {/* Description */}
-                          {activity.description && (
-                            <p className="text-muted-foreground">
-                              {activity.description}
-                            </p>
-                          )}
+                            {/* Description */}
+                            {activity.description && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {activity.description}
+                              </p>
+                            )}
 
-                          {/* Company and cost details in grid */}
-                          {(activity.companyName ||
-                            activity.companyRate ||
-                            activity.cost !== undefined) && (
-                            <div className="grid grid-cols-2 gap-2 text-xs">
+                            {/* Note display - show if present in details */}
+                            {activity.details?.note && (
+                              <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1">
+                                  <span>📝</span>
+                                  <span>Note:</span>
+                                </p>
+                                <p className="text-sm text-amber-900 dark:text-amber-200 mt-0.5">
+                                  {activity.details.note}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Company info and cost */}
+                            <div className="flex flex-wrap gap-3 mt-2">
                               {activity.companyName && (
-                                <div>
+                                <div className="text-xs">
                                   <span className="text-muted-foreground">
                                     Company:{" "}
                                   </span>
@@ -745,7 +816,7 @@ export function AdminRequestsTab() {
                               )}
                               {activity.cost !== undefined &&
                                 activity.cost !== null && (
-                                  <div>
+                                  <div className="text-xs">
                                     <span className="text-muted-foreground">
                                       Cost:{" "}
                                     </span>
@@ -755,7 +826,7 @@ export function AdminRequestsTab() {
                                   </div>
                                 )}
                               {activity.companyRate && (
-                                <div>
+                                <div className="text-xs">
                                   <span className="text-muted-foreground">
                                     Rate:{" "}
                                   </span>
@@ -765,20 +836,7 @@ export function AdminRequestsTab() {
                                 </div>
                               )}
                             </div>
-                          )}
-
-                          {/* Expandable details */}
-                          {activity.details &&
-                            Object.keys(activity.details).length > 0 && (
-                              <details className="text-xs cursor-pointer mt-2 p-2 bg-background/50 rounded border border-border/50">
-                                <summary className="font-medium hover:text-primary transition-colors">
-                                  ⚙️ Additional Details
-                                </summary>
-                                <pre className="mt-2 text-xs overflow-auto whitespace-pre-wrap wrap-break-word bg-background p-2 rounded">
-                                  {JSON.stringify(activity.details, null, 2)}
-                                </pre>
-                              </details>
-                            )}
+                          </div>
                         </div>
                       ))}
                   </div>

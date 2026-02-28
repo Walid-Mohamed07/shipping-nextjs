@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request } from "@/lib/models";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import { broadcastEvent, broadcastToUserAndAdmins } from "@/lib/eventBroadcaster";
 
 /**
  * Delivery Status Flow:
@@ -78,7 +79,7 @@ export async function PUT(request: NextRequest) {
     // Find the request and verify it's assigned to this company
     const existingRequest = await Request.findOne({
       _id: requestId,
-      assignedCompanyId: companyId,
+      assignedCompany: companyId,
     });
 
     if (!existingRequest) {
@@ -146,6 +147,29 @@ export async function PUT(request: NextRequest) {
       ActivityActions.DELIVERY_STATUS_CHANGED(currentStatus, newStatus, note),
     );
 
+    // Broadcast real-time event for delivery status change
+    const requestOwnerId = existingRequest.user?.toString();
+    broadcastEvent("DELIVERY_STATUS_CHANGED", {
+      requestId,
+      previousStatus: currentStatus,
+      newStatus,
+      note,
+    }, {
+      requestId,
+      targetRoles: ["admin", "operator", "company"],
+    });
+    
+    // Notify the client who owns the request
+    if (requestOwnerId && typeof requestOwnerId === 'string') {
+      broadcastToUserAndAdmins(requestOwnerId, "DELIVERY_STATUS_CHANGED", {
+        requestId,
+        previousStatus: currentStatus,
+        newStatus,
+        note,
+        message: `Your shipment status changed to: ${newStatus}`,
+      }, requestId);
+    }
+
     // Normalize response
     const normalizedRequest = {
       ...updatedRequest,
@@ -205,7 +229,7 @@ export async function GET(request: NextRequest) {
 
     const existingRequest = await Request.findOne({
       _id: requestId,
-      assignedCompanyId: companyId,
+      assignedCompany: companyId,
     }).lean();
 
     if (!existingRequest) {

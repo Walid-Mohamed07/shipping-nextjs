@@ -42,20 +42,23 @@ export default function CompanyOngoingRequestsPage() {
     try {
       setLoading(true);
 
-      // For ongoing requests, pass user.id (API will resolve to company)
+      // For ongoing requests, pass user.id (for company role, user.id is the company ID)
       // For warehouses, same pattern
+      const companyId = user.id || user._id;
       const requestsRes = await fetch(
-        `/api/company/ongoing?companyId=${user.company}`,
+        `/api/company/ongoing?companyId=${companyId}`,
       );
       const warehousesRes = await fetch(
-        `/api/company/warehouses?companyId=${user.company}`,
+        `/api/company/warehouses?companyId=${companyId}`,
       );
 
       if (requestsRes.ok) {
         const data = await requestsRes.json();
+        console.log("[Ongoing] Fetched requests:", data.requests?.length || 0, "companyId used:", companyId);
         setRequests(data.requests || []);
       } else {
-        console.error("Failed to fetch ongoing requests:", await requestsRes.json());
+        const errorData = await requestsRes.json();
+        console.error("[Ongoing] Failed to fetch ongoing requests:", errorData);
       }
 
       if (warehousesRes.ok) {

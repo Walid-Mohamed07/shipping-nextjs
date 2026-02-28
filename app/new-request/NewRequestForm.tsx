@@ -559,7 +559,7 @@ export default function NewRequestForm() {
         destination,
         items: formattedItems,
         deliveryType,
-        availableDays: availableDays,
+        availableDays: availableDays.length === 7 ? ["All Week"] : availableDays,
         primaryCost: primaryCost,
         cost: primaryCost,
         requestStatus: "Pending",

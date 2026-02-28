@@ -5,6 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter, useParams } from "next/navigation";
+import { useLiveRequest, useLiveEvent } from "@/app/hooks/useLiveData";
+import { useRealTime } from "@/app/context/RealTimeContext";
+import { toast } from "sonner";
 import {
   MapPin,
   Package,
@@ -23,6 +26,8 @@ import {
   PackageCheck,
   Navigation,
   Building2,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import {
   Accordion,
@@ -57,6 +62,7 @@ interface Request {
   requestStatus: string;
   deliveryStatus: string;
   createdAt: string;
+  availableDays?: string[];
   sourcePickupMode?: string;
   destinationPickupMode?: string;
   assignedCompanyId?: string;
@@ -76,6 +82,14 @@ export default function OngoingRequestDetailPage() {
   const router = useRouter();
   const params = useParams();
   const requestId = params?.id as string;
+  const { isConnected } = useRealTime();
+
+  // Use live data hook for real-time request updates
+  const { 
+    data: liveRequest, 
+    isLoading: requestLoading, 
+    refresh: refreshRequest 
+  } = useLiveRequest(requestId);
 
   const [request, setRequest] = useState<Request | null>(null);
   const [warehouses, setWarehouses] = useState<CompanyWarehouse[]>([]);
@@ -91,47 +105,58 @@ export default function OngoingRequestDetailPage() {
   const [updatingDeliveryStatus, setUpdatingDeliveryStatus] = useState(false);
   const [deliveryNote, setDeliveryNote] = useState("");
 
+  // Update local request state when live data changes
+  useEffect(() => {
+    if (liveRequest) {
+      setRequest(liveRequest as Request);
+      setLoading(false);
+    }
+  }, [liveRequest]);
+
+  // Show toast notifications for real-time events on this request
+  useLiveEvent(
+    ["DELIVERY_STATUS_CHANGED", "WAREHOUSE_ASSIGNED", "STATUS_CHANGED"],
+    (event) => {
+      if (event.requestId !== requestId) return;
+      
+      if (event.type === "DELIVERY_STATUS_CHANGED") {
+        toast.success("Delivery status updated!", {
+          description: `Status: ${event.payload.newStatus}`,
+        });
+      } else if (event.type === "WAREHOUSE_ASSIGNED") {
+        toast.info("Warehouse assigned", {
+          description: `${event.payload.warehouseType} warehouse: ${event.payload.warehouseName}`,
+        });
+      } else if (event.type === "STATUS_CHANGED") {
+        toast.info("Request status updated", {
+          description: `Status: ${event.payload.newStatus}`,
+        });
+      }
+    },
+    requestId
+  );
+
   useEffect(() => {
     if (!user || user.role !== "company") {
       router.push("/");
       return;
     }
 
-    fetchData();
+    fetchWarehouses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.role, requestId]);
 
-  const fetchData = async () => {
-    if (!user?.id || !requestId) return;
+  // Fetch warehouses separately (request is fetched via useLiveRequest)
+  const fetchWarehouses = async () => {
+    if (!user?.id) return;
     try {
-      setLoading(true);
-
-      // Fetch the specific request
-      const [requestsRes, warehousesRes] = await Promise.all([
-        fetch(`/api/company/ongoing/${requestId}?companyId=${user.id}`),
-        fetch(`/api/company/warehouses?companyId=${user.id}`),
-      ]);
-
-      if (requestsRes.ok) {
-        const data = await requestsRes.json();
-        if (data.request) {
-          setRequest(data.request);
-        } else {
-          router.push("/company/ongoing");
-        }
-      } else if (requestsRes.status === 404) {
-        router.push("/company/ongoing");
-      }
-
+      const warehousesRes = await fetch(`/api/company/warehouses?companyId=${user.id}`);
       if (warehousesRes.ok) {
         const data = await warehousesRes.json();
         setWarehouses(data.warehouses || []);
       }
     } catch (error) {
-      console.error("Failed to fetch data:", error);
-      router.push("/company/ongoing");
-    } finally {
-      setLoading(false);
+      console.error("Failed to fetch warehouses:", error);
     }
   };
 
@@ -168,10 +193,10 @@ export default function OngoingRequestDetailPage() {
       if (response.ok) {
         const locationLabel =
           warehouseType === "source" ? "pickup" : "delivery";
-        alert(
-          `Warehouse assigned successfully! The client has been notified of the ${locationLabel} location.`,
-        );
-        await fetchData();
+        toast.success("Warehouse assigned!", {
+          description: `The client has been notified of the ${locationLabel} location.`,
+        });
+        // Real-time update will refresh the request automatically
       } else {
         const errorData = await response.json();
         alert(errorData.error || "Failed to assign warehouse");
@@ -343,9 +368,9 @@ export default function OngoingRequestDetailPage() {
       
       if (response.ok) {
         const data = await response.json();
-        alert(`✓ ${data.message}`);
+        toast.success(data.message || "Delivery status updated!");
         setDeliveryNote("");
-        await fetchData();
+        // Real-time update will refresh the request automatically
       } else {
         const errorData = await response.json();
         alert(errorData.error || "Failed to update delivery status");
@@ -370,7 +395,7 @@ export default function OngoingRequestDetailPage() {
     );
   }
 
-  if (loading) {
+  if (loading || requestLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
@@ -432,6 +457,15 @@ export default function OngoingRequestDetailPage() {
                 ⚠️ Destination Warehouse Required
               </span>
             )}
+            {/* Real-time connection indicator */}
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+              isConnected 
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+            }`}>
+              {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              {isConnected ? "Live" : "..."}
+            </div>
           </div>
           <p className="text-muted-foreground flex items-center gap-2">
             <Calendar className="w-4 h-4" />
@@ -619,6 +653,32 @@ export default function OngoingRequestDetailPage() {
                 </div>
               </div>
             </Card>
+
+            {/* Available Days */}
+            {request.availableDays && request.availableDays.length > 0 && (
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-bold">Available Days</h2>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {request.availableDays.includes("All Week") ? (
+                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      All Week
+                    </span>
+                  ) : (
+                    request.availableDays.map((day) => (
+                      <span
+                        key={day}
+                        className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      >
+                        {day}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </Card>
+            )}
           </div>
         </div>
 

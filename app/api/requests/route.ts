@@ -3,6 +3,11 @@ import { connectDB } from "@/lib/db";
 import { Request, User } from "@/lib/models";
 import { handleError, handleValidationError } from "@/lib/apiHelpers";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import {
+  broadcastEvent,
+  broadcastToCompanies,
+  broadcastToAdmins,
+} from "@/lib/eventBroadcaster";
 
 type LegacyRequest = any;
 
@@ -228,8 +233,12 @@ export async function POST(request: NextRequest) {
     if (!normalizedDeliveryType) {
       return handleValidationError("deliveryType is required (normal | fast)");
     }
-    // Validate availableDays (minimum 2 days required)
-    if (!Array.isArray(finalAvailableDays) || finalAvailableDays.length < 2) {
+    // Validate availableDays (minimum 2 days required, or "All Week")
+    if (
+      !Array.isArray(finalAvailableDays) ||
+      (finalAvailableDays.length < 2 &&
+        !finalAvailableDays.includes("All Week"))
+    ) {
       return handleValidationError("At least 2 available days are required");
     }
     if (!Array.isArray(items) || items.length === 0) {
@@ -279,10 +288,26 @@ export async function POST(request: NextRequest) {
     });
 
     // Add activity log for request creation
-    await addActivityLog(newRequest._id.toString(), ActivityActions.REQUEST_CREATED(user));
+    await addActivityLog(
+      newRequest._id.toString(),
+      ActivityActions.REQUEST_CREATED(user),
+    );
+
+    // Broadcast real-time event for new request
+    const normalizedRequest = normalizeRequest(newRequest);
+    broadcastEvent("REQUEST_CREATED", normalizedRequest, {
+      requestId: newRequest._id.toString(),
+      userId: user,
+      targetRoles: ["admin", "operator", "company"],
+    });
+    broadcastToAdmins(
+      "REQUEST_CREATED",
+      normalizedRequest,
+      newRequest._id.toString(),
+    );
 
     return NextResponse.json(
-      { success: true, request: normalizeRequest(newRequest) },
+      { success: true, request: normalizedRequest },
       { status: 201 },
     );
   } catch (error) {
