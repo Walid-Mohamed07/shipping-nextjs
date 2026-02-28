@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Address } from "@/lib/models";
 
+// Helper function to transform MongoDB _id to id
+function transformAddress(address: any) {
+  if (!address) return null;
+  const { _id, ...rest } = address;
+  return { id: _id.toString(), ...rest };
+}
+
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -11,7 +18,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
 
     const addresses = await Address.find({ userId }).lean();
-    return NextResponse.json({ addresses });
+    const transformedAddresses = addresses.map(transformAddress);
+    return NextResponse.json({ addresses: transformedAddresses });
   } catch (error) {
     return handleError(error);
   }
@@ -21,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { userId } = body;
+    const { userId, primary } = body;
     console.log("New address data received:", body);
 
     if (!userId) {
@@ -31,8 +39,67 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // If this address is being set as primary, unset all other primary addresses for this user
+    if (primary) {
+      await Address.updateMany(
+        { userId, primary: true },
+        { $set: { primary: false } }
+      );
+    }
+
     const newAddress = await Address.create(body);
-    return NextResponse.json({ address: newAddress }, { status: 201 });
+    
+    // Return the full updated addresses list
+    const addresses = await Address.find({ userId }).lean();
+    const transformedAddresses = addresses.map(transformAddress);
+    const transformedNewAddress = transformAddress(newAddress.toObject());
+    return NextResponse.json({ addresses: transformedAddresses, address: transformedNewAddress }, { status: 201 });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+// PUT route for updating an address
+export async function PUT(req: NextRequest) {
+  try {
+    await connectDB();
+    const body = await req.json();
+    const { userId, addressId, ...updateData } = body;
+
+    if (!userId || !addressId) {
+      return NextResponse.json(
+        { error: "Missing required fields: userId or addressId" },
+        { status: 400 },
+      );
+    }
+
+    // If this address is being set as primary, unset all other primary addresses for this user
+    if (updateData.primary) {
+      await Address.updateMany(
+        { userId, primary: true, _id: { $ne: addressId } },
+        { $set: { primary: false } }
+      );
+    }
+
+    // Update the address
+    const updatedAddress = await Address.findByIdAndUpdate(
+      addressId,
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedAddress) {
+      return NextResponse.json(
+        { error: "Address not found" },
+        { status: 404 }
+      );
+    }
+
+    // Return the updated addresses list
+    const addresses = await Address.find({ userId }).lean();
+    const transformedAddresses = addresses.map(transformAddress);
+    const transformedUpdatedAddress = transformAddress(updatedAddress.toObject());
+    return NextResponse.json({ addresses: transformedAddresses, address: transformedUpdatedAddress });
   } catch (error) {
     return handleError(error);
   }
@@ -56,7 +123,8 @@ export async function DELETE(req: NextRequest) {
 
     // Return updated addresses list
     const addresses = await Address.find({ userId }).lean();
-    return NextResponse.json({ addresses });
+    const transformedAddresses = addresses.map(transformAddress);
+    return NextResponse.json({ addresses: transformedAddresses });
   } catch (error) {
     return handleError(error);
   }

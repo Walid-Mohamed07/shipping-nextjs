@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request, Warehouse } from "@/lib/models";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import { broadcastEvent, broadcastToUserAndAdmins } from "@/lib/eventBroadcaster";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,13 +38,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Build the warehouse object with all data including coordinates
+    // Note: Warehouse model has latitude/longitude at root level, not nested in coordinates
+    const warehouseData = {
+      id: warehouse._id.toString(),
+      name: warehouse.name,
+      address: warehouse.address || warehouse.location || "",
+      city: warehouse.city || "",
+      country: warehouse.country || "",
+      coordinates: (warehouse.latitude && warehouse.longitude)
+        ? {
+            latitude: warehouse.latitude,
+            longitude: warehouse.longitude,
+          }
+        : null,
+      assignedAt: new Date(),
+    };
+
     // Update request with warehouse assignment
     const updateField =
       warehouseType === "source" ? "sourceWarehouse" : "destinationWarehouse";
     const updatedRequest = await Request.findByIdAndUpdate(
       requestId,
       {
-        [updateField]: warehouseId,
+        [updateField]: warehouseData,
         updatedAt: new Date(),
       },
       { returnDocument: "after" },
@@ -62,6 +80,18 @@ export async function POST(request: NextRequest) {
         warehouseType as "source" | "destination",
       ),
     );
+
+    // Broadcast real-time event for warehouse assignment
+    broadcastEvent("WAREHOUSE_ASSIGNED", {
+      requestId,
+      warehouseId,
+      warehouseName: warehouse.name,
+      warehouseType,
+      warehouseData,
+    }, {
+      requestId,
+      targetRoles: ["admin", "operator", "company", "client"],
+    });
 
     return NextResponse.json(
       {

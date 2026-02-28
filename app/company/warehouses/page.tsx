@@ -76,7 +76,23 @@ export default function CompanyWarehousesPage() {
       );
       if (response.ok) {
         const data = await response.json();
-        setWarehouses(data.warehouses || []);
+        // Map MongoDB fields (_id, location, state, latitude, longitude) to interface fields
+        const mapped = (data.warehouses || []).map((w: any) => ({
+          id: w._id || w.id,
+          name: w.name,
+          address: w.location || "",
+          city: w.state || "",
+          country: w.country || "",
+          coordinates:
+            w.latitude != null && w.longitude != null
+              ? { latitude: w.latitude, longitude: w.longitude }
+              : undefined,
+          createdAt: w.createdAt,
+          updatedAt: w.updatedAt,
+        }));
+        setWarehouses(mapped);
+      } else {
+        console.error("Failed to fetch warehouses:", await response.json());
       }
     } catch (error) {
       console.error("Failed to fetch warehouses:", error);
@@ -131,8 +147,8 @@ export default function CompanyWarehousesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.address) {
-      alert("Name and address are required");
+    if (!formData.name || !formData.address || !formData.country) {
+      alert("Name, address, and country are required");
       return;
     }
 
@@ -148,12 +164,13 @@ export default function CompanyWarehousesPage() {
           : null;
 
       const payload = {
-        companyId: user?.company,
+        companyId: user?.id,
         name: formData.name,
-        address: formData.address,
-        city: formData.city,
+        location: formData.address,   // maps to schema field: location
+        state: formData.city,          // maps to schema field: state
         country: formData.country,
-        coordinates,
+        latitude: coordinates?.latitude ?? null,
+        longitude: coordinates?.longitude ?? null,
         ...(editingWarehouse && { warehouseId: editingWarehouse.id }),
       };
 
@@ -322,7 +339,7 @@ export default function CompanyWarehousesPage() {
 
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Country
+                    Country *
                   </label>
                   <input
                     type="text"
@@ -332,6 +349,7 @@ export default function CompanyWarehousesPage() {
                     }
                     placeholder="e.g., Egypt"
                     className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                    required
                   />
                 </div>
               </div>

@@ -221,7 +221,7 @@ export default function RequestDetailPage() {
                   {request.user?.email}
                 </p>
                 <p>
-                  <span className="font-medium">Request ID:</span> {request.id}
+                  <span className="font-medium">Request ID:</span> {request.publicId || request.id}
                 </p>
               </div>
             </Card>

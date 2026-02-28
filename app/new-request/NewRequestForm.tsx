@@ -6,7 +6,7 @@ import AddAddressDialog from "./AddAddressDialog";
 import ReviewModal from "./ReviewModal";
 import type { ReviewData } from "./ReviewModal";
 import { useRouter } from "next/navigation";
-import type { Item, Address } from "@/types";
+import type { Item, Address, DayOfWeek } from "@/types";
 import { useToast, getErrorMessage } from "@/lib/useToast";
 
 const LocationMapPicker = dynamic(
@@ -54,6 +54,7 @@ import {
   Wrench,
   BoxSelect,
   X,
+  Pencil,
 } from "lucide-react";
 import { countries } from "@/constants/countries";
 import { categories } from "@/constants/categories";
@@ -118,17 +119,29 @@ export default function NewRequestForm() {
 
   // Source address state
   const [fromAddressIdx, setFromAddressIdx] = useState(0); // index in userLocations
-  const [from, setFrom] = useState(primaryLocation.country || "");
-  const [fromAddress, setFromAddress] = useState(primaryLocation.street || "");
-  const [fromPostalCode, setFromPostalCode] = useState(
-    primaryLocation.postalCode || "",
-  );
+  const [from, setFrom] = useState("");
+  const [fromAddress, setFromAddress] = useState("");
+  const [fromPostalCode, setFromPostalCode] = useState("");
 
   // Destination address state
   const [toAddressIdx, setToAddressIdx] = useState(-1); // -1 means not using saved address
   const [to, setTo] = useState("");
   const [toAddress, setToAddress] = useState("");
   const [toPostalCode, setToPostalCode] = useState("");
+
+  // Initialize source address from primary location when userLocations loads
+  useEffect(() => {
+    if (userLocations.length > 0 && !from && !fromAddress) {
+      const primary = userLocations.find((loc: any) => loc.primary) || userLocations[0];
+      if (primary) {
+        setFrom(primary.country || "");
+        setFromAddress(primary.street || "");
+        setFromPostalCode(primary.postalCode || "");
+        setFromAddressIdx(userLocations.indexOf(primary));
+        setMobile(primary.mobile || user?.mobile || "");
+      }
+    }
+  }, [userLocations, from, fromAddress, user?.mobile]);
 
   // Clear destination when source address changes
   useEffect(() => {
@@ -182,6 +195,7 @@ export default function NewRequestForm() {
   const [addAddressType, setAddAddressType] = useState<
     "source" | "destination"
   >("source");
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
   // Image zoom modal state
   const [showImageZoom, setShowImageZoom] = useState(false);
@@ -208,12 +222,11 @@ export default function NewRequestForm() {
   const [deliveryType, setDeliveryType] = useState<"Normal" | "Urgent">(
     "Normal",
   );
-  // When to start (ISO format)
-  const [whenToStart, setWhenToStart] = useState<string>("");
+  // Available days of the week
+  const DAYS_OF_WEEK: DayOfWeek[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const [availableDays, setAvailableDays] = useState<DayOfWeek[]>([]);
   // Mobile is now per address location, so default to primary location's mobile or user's mobile
-  const [mobile, setMobile] = useState(
-    primaryLocation.mobile || user?.mobile || "",
-  );
+  const [mobile, setMobile] = useState("");
   const [primaryCost, setPrimaryCost] = useState("");
   // Comments
   const [comments, setComments] = useState("");
@@ -455,10 +468,10 @@ export default function NewRequestForm() {
       toast.error("Please add at least one item");
     }
 
-    // Validate when to start
-    if (!whenToStart) {
-      errors.whenToStart = true;
-      toast.error("Please set when to start");
+    // Validate available days (minimum 2 days required)
+    if (availableDays.length < 2) {
+      errors.availableDays = true;
+      toast.error("Please select at least 2 available days");
     }
 
     // Validate mobile
@@ -486,12 +499,6 @@ export default function NewRequestForm() {
     // Build source and destination objects with pickup modes
     const source: any = { ...selectedSourceLoc, pickupMode: sourcePickupMode };
     const destination: any = { ...selectedDestLoc, pickupMode: destPickupMode };
-
-    // Convert whenToStart to ISO format
-    let whenToStartISO = "";
-    if (whenToStart) {
-      whenToStartISO = new Date(whenToStart).toISOString();
-    }
 
     setIsLoading(true);
     try {
@@ -552,7 +559,7 @@ export default function NewRequestForm() {
         destination,
         items: formattedItems,
         deliveryType,
-        startTime: whenToStartISO,
+        availableDays: availableDays.length === 7 ? ["All Week"] : availableDays,
         primaryCost: primaryCost,
         cost: primaryCost,
         requestStatus: "Pending",
@@ -590,7 +597,7 @@ export default function NewRequestForm() {
         },
       });
       setDeliveryType("Normal");
-      setWhenToStart("");
+      setAvailableDays([]);
       setComments("");
       setPrimaryCost("");
       setMobile(primaryLocation.mobile || "");
@@ -808,17 +815,34 @@ export default function NewRequestForm() {
                           </div>
                         </label>
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteAddress(loc, "source")}
-                          disabled={isLoading}
-                          className="h-8 w-8 shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer rounded-lg"
-                          aria-label="Delete address"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditingAddress(loc);
+                              setAddAddressType("source");
+                              setShowAddAddress(true);
+                            }}
+                            disabled={isLoading}
+                            className="h-8 w-8 shrink-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer rounded-lg"
+                            aria-label="Edit address"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteAddress(loc, "source")}
+                            disabled={isLoading}
+                            className="h-8 w-8 shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer rounded-lg"
+                            aria-label="Delete address"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                     <div className="mt-3">
@@ -994,19 +1018,36 @@ export default function NewRequestForm() {
                               </div>
                             </label>
 
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                handleDeleteAddress(loc, "destination")
-                              }
-                              disabled={isLoading}
-                              className="h-9 w-9 shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer rounded-xl transition-colors"
-                              aria-label="Delete address"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingAddress(loc);
+                                  setAddAddressType("destination");
+                                  setShowAddAddress(true);
+                                }}
+                                disabled={isLoading}
+                                className="h-9 w-9 shrink-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer rounded-xl transition-colors"
+                                aria-label="Edit address"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleDeleteAddress(loc, "destination")
+                                }
+                                disabled={isLoading}
+                                className="h-9 w-9 shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer rounded-xl transition-colors"
+                                aria-label="Delete address"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       <div className="mt-3">
@@ -1663,9 +1704,9 @@ export default function NewRequestForm() {
                   </Card>
                 </section>
 
-                {/* ——— Section 7: Delivery & Cost ——— */}
+                {/* ——— Section 4: Delivery & Cost ——— */}
                 <section className="rounded-lg border border-gray-200 bg-white p-6">
-                  <div className="flex items-center gap-3 mb-5">
+                  <div className="flex items-center gap-3 mb-6">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold">
                       4
                     </div>
@@ -1673,62 +1714,111 @@ export default function NewRequestForm() {
                       Delivery &amp; Cost
                     </h2>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Delivery Type at the top */}
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
-                        Delivery Type
+                  
+                  <div className="space-y-6">
+                    {/* Delivery Type Card */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <label className="block text-sm font-semibold text-gray-900 mb-3">
+                        Delivery Type <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         value={deliveryType}
                         onChange={(e) =>
                           setDeliveryType(e.target.value as "Normal" | "Urgent")
                         }
                         disabled={isLoading}
                       >
-                        <option value="Normal">Normal</option>
-                        <option value="Urgent">Urgent (+25%)</option>
+                        <option value="Normal">🚚 Normal Delivery</option>
+                        <option value="Urgent">⚡ Urgent Delivery (+25% surcharge)</option>
                       </select>
-                      <p className="text-xs text-gray-600 mt-1.5">
+                      <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
                         Urgent delivery adds a 25% surcharge to the base cost.
                       </p>
                     </div>
 
-                    {/* Primary Cost - Read-only auto-calculated */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
-                        Primary Cost
+                    {/* Primary Cost Display */}
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <label className="block text-sm font-semibold text-gray-900 mb-3">
+                        Estimated Primary Cost
                       </label>
-                      <Input
-                        type="text"
-                        value={
-                          primaryCost
-                            ? `$${primaryCost}`
-                            : "Auto-calculating..."
-                        }
-                        disabled
-                        className="w-full h-10 rounded-lg bg-gray-50 text-gray-700 border-gray-300 font-semibold"
-                      />
-                      {deliveryType === "Urgent" && primaryCost && (
-                        <p className="text-xs text-amber-600 mt-1.5 font-medium">
-                          Includes Urgent delivery surcharge (+25%)
-                        </p>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="text-3xl font-bold text-blue-600">
+                            {primaryCost ? `$${primaryCost}` : "Calculating..."}
+                          </div>
+                          {deliveryType === "Urgent" && primaryCost && (
+                            <p className="text-xs text-amber-700 mt-1.5 font-medium flex items-center gap-1">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                              Includes Urgent delivery surcharge (+25%)
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* When to Start */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
-                        When to Start
-                      </label>
-                      <Input
-                        type="datetime-local"
-                        value={whenToStart}
-                        onChange={(e) => setWhenToStart(e.target.value)}
-                        disabled={isLoading}
-                        className={`w-full h-10 rounded-lg ${validationErrors.whenToStart ? "border-red-500 bg-red-50" : ""}`}
-                      />
+                    {/* Available Days */}
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block text-sm font-medium text-gray-900">
+                          Available Days <span className="text-red-500">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (availableDays.length === 7) {
+                              setAvailableDays([]);
+                            } else {
+                              setAvailableDays([...DAYS_OF_WEEK]);
+                            }
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                        >
+                          {availableDays.length === 7 ? "Clear All" : "Select All Days"}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-3">
+                        Select the days you are available for pickup (minimum 2 days required)
+                      </p>
+                      <div className={`grid grid-cols-7 gap-2 ${validationErrors.availableDays ? "p-2 border-2 border-red-300 rounded-lg bg-red-50" : ""}`}>
+                        {DAYS_OF_WEEK.map((day) => {
+                          const isSelected = availableDays.includes(day);
+                          const shortDay = day.slice(0, 3);
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setAvailableDays(availableDays.filter(d => d !== day));
+                                } else {
+                                  setAvailableDays([...availableDays, day]);
+                                }
+                              }}
+                              disabled={isLoading}
+                              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                                isSelected
+                                  ? "border-blue-600 bg-blue-50 text-blue-700"
+                                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <span className="text-xs font-bold uppercase">{shortDay}</span>
+                              <span className="text-[10px] mt-0.5 opacity-70">{day}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className={`text-xs font-medium ${availableDays.length >= 2 ? "text-green-600" : "text-amber-600"}`}>
+                          {availableDays.length} day{availableDays.length !== 1 ? "s" : ""} selected
+                        </span>
+                        {availableDays.length < 2 && (
+                          <span className="text-xs text-red-500">
+                            (Need at least 2)
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </section>
@@ -1793,7 +1883,7 @@ export default function NewRequestForm() {
                 sourcePickupMode,
                 destPickupMode,
                 deliveryType,
-                whenToStart,
+                availableDays,
                 mobile,
                 primaryCost,
                 comments,
@@ -1801,9 +1891,13 @@ export default function NewRequestForm() {
             />
 
             <AddAddressDialog
-              key={`address-dialog-${addAddressType}`}
+              key={`address-dialog-${addAddressType}-${editingAddress?.id || 'new'}`}
               open={showAddAddress}
-              onOpenChange={(open) => setShowAddAddress(open)}
+              onOpenChange={(open) => {
+                setShowAddAddress(open);
+                if (!open) setEditingAddress(null);
+              }}
+              editAddress={editingAddress}
               onSave={async (address) => {
                 if (!user?.id) return;
 
@@ -1875,6 +1969,8 @@ export default function NewRequestForm() {
                       }
                     }
                   }
+                  // Clear editing state after successful save
+                  setEditingAddress(null);
                 } catch (error) {
                   console.error("Error updating addresses:", error);
                   toast.error("Failed to update address list");

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Request, User } from "@/lib/models";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import { broadcastEvent, broadcastToUserAndAdmins } from "@/lib/eventBroadcaster";
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,6 +63,26 @@ export async function PUT(request: NextRequest) {
           requestStatus,
         ),
       );
+      
+      // Broadcast real-time event for status change
+      const requestOwnerId = currentRequest.user?.toString() || currentRequest.user;
+      broadcastEvent("STATUS_CHANGED", {
+        requestId,
+        previousStatus: currentRequest.requestStatus,
+        newStatus: requestStatus,
+      }, {
+        requestId,
+        targetRoles: ["admin", "operator", "company"],
+      });
+      
+      // Notify the client who owns the request
+      if (requestOwnerId) {
+        broadcastToUserAndAdmins(requestOwnerId, "STATUS_CHANGED", {
+          requestId,
+          previousStatus: currentRequest.requestStatus,
+          newStatus: requestStatus,
+        }, requestId);
+      }
     }
 
     if (deliveryStatus && deliveryStatus !== currentRequest.deliveryStatus) {
@@ -72,6 +93,26 @@ export async function PUT(request: NextRequest) {
           deliveryStatus,
         ),
       );
+      
+      // Broadcast real-time event for delivery status change
+      const requestOwnerId = currentRequest.user?.toString() || currentRequest.user;
+      broadcastEvent("DELIVERY_STATUS_CHANGED", {
+        requestId,
+        previousStatus: currentRequest.deliveryStatus,
+        newStatus: deliveryStatus,
+      }, {
+        requestId,
+        targetRoles: ["admin", "operator", "company"],
+      });
+      
+      // Notify the client who owns the request
+      if (requestOwnerId) {
+        broadcastToUserAndAdmins(requestOwnerId, "DELIVERY_STATUS_CHANGED", {
+          requestId,
+          previousStatus: currentRequest.deliveryStatus,
+          newStatus: deliveryStatus,
+        }, requestId);
+      }
     }
 
     return NextResponse.json(

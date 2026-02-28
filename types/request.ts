@@ -25,6 +25,7 @@ export enum RequestDeliveryStatus {
 export type DeliveryStatus = RequestDeliveryStatus;
 export type PickupMode = "Delegate" | "Self";
 export type DeliveryType = "Normal" | "Urgent";
+export type DayOfWeek = "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "All Week";
 
 // User info returned in populated responses
 export interface UserDetails {
@@ -77,6 +78,8 @@ export interface RequestServices {
 }
 
 export interface CostOffer {
+  _id?: string;
+  id?: string;
   cost: number;
   company: {
     id: string;
@@ -105,6 +108,7 @@ export interface ActivityHistory {
 export interface Request {
   id?: string;
   _id: string;
+  publicId?: string; // Public ID in format REQ-XXXXX for external use
   user: string | UserDetails | User; // Can be string ID, populated UserDetails, or full User
   source: Address;
   destination: Address;
@@ -113,6 +117,7 @@ export interface Request {
   items: Item[];
   deliveryType: DeliveryType;
   startTime?: string;
+  availableDays?: DayOfWeek[];
   cost?: string;
   primaryCost?: string;
   requestStatus: RequestStatus;
@@ -170,6 +175,7 @@ export interface RequestPayload {
   items: Item[];
   deliveryType: DeliveryType;
   startTime?: string;
+  availableDays?: DayOfWeek[];
   primaryCost?: string;
   requestStatus?: RequestStatus;
   deliveryStatus?: DeliveryStatus;

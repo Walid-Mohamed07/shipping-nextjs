@@ -42,22 +42,30 @@ export default function CompanyOngoingRequestsPage() {
     try {
       setLoading(true);
 
-      // Fetch ongoing requests
+      // For ongoing requests, pass user.id (for company role, user.id is the company ID)
+      // For warehouses, same pattern
+      const companyId = user.id || user._id;
       const requestsRes = await fetch(
-        `/api/company/ongoing?companyId=${user.company}`,
+        `/api/company/ongoing?companyId=${companyId}`,
       );
       const warehousesRes = await fetch(
-        `/api/company/warehouses?companyId=${user.company}`,
+        `/api/company/warehouses?companyId=${companyId}`,
       );
 
       if (requestsRes.ok) {
         const data = await requestsRes.json();
+        console.log("[Ongoing] Fetched requests:", data.requests?.length || 0, "companyId used:", companyId);
         setRequests(data.requests || []);
+      } else {
+        const errorData = await requestsRes.json();
+        console.error("[Ongoing] Failed to fetch ongoing requests:", errorData);
       }
 
       if (warehousesRes.ok) {
         const data = await warehousesRes.json();
         setWarehouses(data.warehouses || []);
+      } else {
+        console.error("Failed to fetch warehouses:", await warehousesRes.json());
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -188,11 +196,12 @@ export default function CompanyOngoingRequestsPage() {
                 request.destinationPickupMode === "Self" ||
                 request.destination?.pickupMode === "Self";
 
+              const requestId = request._id || request.id || '';
               return (
                 <Card
-                  key={request.id}
+                  key={requestId}
                   className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => router.push(`/company/ongoing/${request.id}`)}
+                  onClick={() => router.push(`/company/ongoing/${requestId}`)}
                 >
                   <div className="space-y-3">
                     {/* Header */}

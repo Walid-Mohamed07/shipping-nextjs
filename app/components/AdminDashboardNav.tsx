@@ -125,7 +125,7 @@ export function AdminDashboardNav({
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
                   ? "bg-primary text-primary-foreground"
-                  : "hover:bg-accent text-foreground hover:text-foreground"
+                  : "text-foreground hover:bg-primary/10 hover:text-primary"
               }`}
             >
               <Icon className="w-5 h-5" />

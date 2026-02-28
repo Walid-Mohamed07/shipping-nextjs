@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generatePublicId } from "../publicIdGenerator";
 
 // Define ActivityHistory sub-schema
 const activityHistorySchema = new mongoose.Schema(
@@ -16,6 +17,14 @@ const activityHistorySchema = new mongoose.Schema(
 
 const requestSchema = new mongoose.Schema(
   {
+    publicId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: generatePublicId,
+      trim: true,
+      uppercase: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -105,6 +114,11 @@ const requestSchema = new mongoose.Schema(
     primaryCost: String,
     cost: String,
     startTime: Date,
+    availableDays: {
+      type: [String],
+      enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "All Week"],
+      default: [],
+    },
     requestStatus: {
       type: String,
       enum: [

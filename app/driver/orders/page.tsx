@@ -136,7 +136,7 @@ export default function DriverOrders() {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-xl font-bold text-foreground mb-1">
-                          {order.request.id}
+                          {order.request.publicId || order.request.id}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           Assignment ID: {order.id}

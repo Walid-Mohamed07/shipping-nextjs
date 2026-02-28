@@ -3,6 +3,11 @@ import { connectDB } from "@/lib/db";
 import { Request, User } from "@/lib/models";
 import { handleError, handleValidationError } from "@/lib/apiHelpers";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import {
+  broadcastEvent,
+  broadcastToCompanies,
+  broadcastToAdmins,
+} from "@/lib/eventBroadcaster";
 
 type LegacyRequest = any;
 
@@ -82,17 +87,20 @@ function normalizeRequest(req: any) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime;
+  const availableDays = req.availableDays || [];
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
 
   return {
     id: req._id || req.id,
+    publicId: req.publicId,
     user: req.user,
     source,
     destination,
     deliveryType,
     startTime,
+    availableDays,
     primaryCost,
     cost,
     requestStatus,
@@ -105,6 +113,10 @@ function normalizeRequest(req: any) {
     costOffers: req.costOffers,
     activityHistory: req.activityHistory,
     selectedCompany: req.selectedCompany,
+    sourceWarehouse: req.sourceWarehouse,
+    destinationWarehouse: req.destinationWarehouse,
+    sourcePickupMode: req.sourcePickupMode,
+    destinationPickupMode: req.destinationPickupMode,
   };
 }
 
@@ -199,6 +211,7 @@ export async function POST(request: NextRequest) {
       items,
       deliveryType,
       startTime,
+      availableDays,
       cost,
       primaryCost,
       estimatedCost,
@@ -211,6 +224,7 @@ export async function POST(request: NextRequest) {
     const sourceAddr = source;
     const destAddr = destination;
     const finalStartTime = startTime;
+    const finalAvailableDays = availableDays || [];
     const finalPrimaryCost = primaryCost ?? estimatedCost;
     const finalCost = cost ?? finalPrimaryCost;
     const finalStatus = requestStatus ?? orderStatus;
@@ -219,8 +233,13 @@ export async function POST(request: NextRequest) {
     if (!normalizedDeliveryType) {
       return handleValidationError("deliveryType is required (normal | fast)");
     }
-    if (!finalStartTime) {
-      return handleValidationError("startTime is required");
+    // Validate availableDays (minimum 2 days required, or "All Week")
+    if (
+      !Array.isArray(finalAvailableDays) ||
+      (finalAvailableDays.length < 2 &&
+        !finalAvailableDays.includes("All Week"))
+    ) {
+      return handleValidationError("At least 2 available days are required");
     }
     if (!Array.isArray(items) || items.length === 0) {
       return handleValidationError("At least one item is required");
@@ -258,6 +277,7 @@ export async function POST(request: NextRequest) {
       })),
       deliveryType: normalizedDeliveryType,
       startTime: finalStartTime,
+      availableDays: finalAvailableDays,
       primaryCost: finalPrimaryCost,
       cost: finalCost,
       requestStatus: finalStatus || "Pending",
@@ -268,10 +288,26 @@ export async function POST(request: NextRequest) {
     });
 
     // Add activity log for request creation
-    await addActivityLog(newRequest._id, ActivityActions.REQUEST_CREATED(user));
+    await addActivityLog(
+      newRequest._id.toString(),
+      ActivityActions.REQUEST_CREATED(user),
+    );
+
+    // Broadcast real-time event for new request
+    const normalizedRequest = normalizeRequest(newRequest);
+    broadcastEvent("REQUEST_CREATED", normalizedRequest, {
+      requestId: newRequest._id.toString(),
+      userId: user,
+      targetRoles: ["admin", "operator", "company"],
+    });
+    broadcastToAdmins(
+      "REQUEST_CREATED",
+      normalizedRequest,
+      newRequest._id.toString(),
+    );
 
     return NextResponse.json(
-      { success: true, request: normalizeRequest(newRequest) },
+      { success: true, request: normalizedRequest },
       { status: 201 },
     );
   } catch (error) {
