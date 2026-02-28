@@ -7,6 +7,7 @@ import {
   broadcastToCompanies,
   broadcastToAdmins,
 } from "@/lib/eventBroadcaster";
+import { getCurrentUser, isUserAuthorizedForRequest } from "@/lib/auth-helpers";
 
 /**
  * @swagger
