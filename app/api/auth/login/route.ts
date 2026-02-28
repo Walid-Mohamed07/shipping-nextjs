@@ -38,12 +38,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    console.log("Login: User attempting to login with email:", email);
-
     const user = await User.findOne({ email });
 
     if (!user) {
-      console.log("Login: User not found for email:", email);
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 },
@@ -54,14 +51,11 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await bcryptjs.compare(password, user.password);
 
     if (!isPasswordValid) {
-      console.log("Login: Invalid password for email:", email);
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 },
       );
     }
-
-    console.log("Login: User authenticated:", email);
 
     const primaryLocation = Array.isArray(user.locations)
       ? user.locations.find((loc: any) => loc.primary) || user.locations[0]
@@ -80,8 +74,6 @@ export async function POST(request: NextRequest) {
       JWT_SECRET,
       { expiresIn: "7d" },
     );
-
-    console.log("Login: Token generated for user:", email);
 
     const response = NextResponse.json(
       {
@@ -115,8 +107,6 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
       path: "/",
     });
-
-    console.log("Login: HTTP-only cookie set for user:", email);
 
     return response;
   } catch (error) {
