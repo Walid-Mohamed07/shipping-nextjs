@@ -55,6 +55,8 @@ export async function POST(
       );
     }
 
+    console.log("[Submit-offer] Received offerId:", offerId);
+
     // Get current user for authorization check
     const currentUser = await getCurrentUser(request);
     if (!currentUser) {
@@ -91,14 +93,23 @@ export async function POST(
     }
 
     // Find the selected offer to get company name, id, and cost
-    // The offerId matches the offer's _id in the costOffers array
+    // The offerId is the company.id from the frontend
+    console.log("[Submit-offer] Looking for offer with company.id:", offerId);
+    console.log("[Submit-offer] Available offers:", currentRequest.costOffers?.map((o: any) => ({
+      offerId: o._id?.toString(),
+      companyId: o.company?.id,
+      companyName: o.company?.name
+    })));
+
     const selectedOffer = currentRequest.costOffers?.find((offer: any) => {
-      // Compare both as strings to handle ObjectId comparison
-      const offerIdStr = offer._id?.toString?.() || String(offer._id);
-      return offerIdStr === offerId;
+      // Match against company.id since that's what the frontend sends
+      const companyIdMatch = offer.company?.id === offerId;
+      console.log(`[Submit-offer] Comparing ${offer.company?.id} === ${offerId}: ${companyIdMatch}`);
+      return companyIdMatch;
     });
 
     if (!selectedOffer) {
+      console.error("[Submit-offer] Offer not found for offerId:", offerId);
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
 
@@ -123,7 +134,7 @@ export async function POST(
     // Mark the accepted offer and update request status
     // Also set selectedCompany with full details including cost for UI display
     const updatedRequest = await Request.findByIdAndUpdate(
-      currentRequest.publicId,
+      currentRequest._id,
       {
         $set: {
           requestStatus: "Assigned to Company",
@@ -149,7 +160,7 @@ export async function POST(
       },
       {
         returnDocument: "after",
-        arrayFilters: [{ "elem._id": offerObjectId }],
+        arrayFilters: [{ "elem.company.id": companyId }],
       },
     );
 
