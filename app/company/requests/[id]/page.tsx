@@ -46,8 +46,14 @@ import dynamic from "next/dynamic";
 
 // Dynamically import map component
 const SimpleLocationMap = dynamic(
-  () => import("@/app/components/SimpleLocationMap").then((mod) => mod.SimpleLocationMap),
-  { ssr: false, loading: () => <div className="h-75 bg-muted animate-pulse rounded-lg" /> }
+  () =>
+    import("@/app/components/SimpleLocationMap").then(
+      (mod) => mod.SimpleLocationMap,
+    ),
+  {
+    ssr: false,
+    loading: () => <div className="h-75 bg-muted animate-pulse rounded-lg" />,
+  },
 );
 
 interface CompanyInfo {
@@ -64,32 +70,32 @@ export default function CompanyRequestDetailPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { create, error: showError } = useToast();
-  
+
   const requestId = params.id as string;
-  
+
   // Use live data hook for real-time request updates
-  const { 
-    data: liveRequest, 
+  const {
+    data: liveRequest,
     isLoading: requestLoading,
     refresh: refreshRequest,
-    isConnected 
+    isConnected,
   } = useLiveRequest(requestId);
-  
+
   const [request, setRequest] = useState<Request | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Offer form state
   const [offerCost, setOfferCost] = useState("");
   const [offerComment, setOfferComment] = useState("");
   const [showOfferForm, setShowOfferForm] = useState(false);
-  
+
   // UI state
   const [expandedItems, setExpandedItems] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [mapView, setMapView] = useState<"source" | "destination">("source");
-  
+
   const loading = authLoading || requestLoading;
 
   // Update local request state when live data changes
@@ -101,11 +107,19 @@ export default function CompanyRequestDetailPage() {
 
   // Show toast notifications for real-time events on this request
   useLiveEvent(
-    ["OFFER_SUBMITTED", "OFFER_ACCEPTED", "STATUS_CHANGED", "DELIVERY_STATUS_CHANGED"],
+    [
+      "OFFER_SUBMITTED",
+      "OFFER_ACCEPTED",
+      "STATUS_CHANGED",
+      "DELIVERY_STATUS_CHANGED",
+    ],
     (event) => {
       if (event.requestId !== requestId) return;
-      
-      if (event.type === "OFFER_SUBMITTED" && event.payload.companyId !== user?.id) {
+
+      if (
+        event.type === "OFFER_SUBMITTED" &&
+        event.payload.companyId !== user?.id
+      ) {
         toast.info("Another company submitted an offer", {
           description: "The competition is on!",
         });
@@ -125,7 +139,7 @@ export default function CompanyRequestDetailPage() {
         });
       }
     },
-    requestId
+    requestId,
   );
 
   const fetchCompanyInfo = useCallback(async () => {
@@ -155,7 +169,9 @@ export default function CompanyRequestDetailPage() {
 
   const getMyOffers = (request: Request | null): CostOffer[] => {
     if (!request) return [];
-    return request.costOffers?.filter((offer) => offer.company.id === user?.id) || [];
+    return (
+      request.costOffers?.filter((offer) => offer.company.id === user?.id) || []
+    );
   };
 
   const handleSubmitOffer = async () => {
@@ -193,10 +209,12 @@ export default function CompanyRequestDetailPage() {
       });
 
       if (response.ok) {
-        const hasExisting = request?.costOffers?.some(o => o.company.id === user?.id) ?? false;
-        create(hasExisting 
-          ? "Offer updated successfully!" 
-          : "Offer submitted successfully! The client will review your offer."
+        const hasExisting =
+          request?.costOffers?.some((o) => o.company.id === user?.id) ?? false;
+        create(
+          hasExisting
+            ? "Offer updated successfully!"
+            : "Offer submitted successfully! The client will review your offer.",
         );
         setOfferCost("");
         setOfferComment("");
@@ -217,7 +235,11 @@ export default function CompanyRequestDetailPage() {
   };
 
   const handleRejectRequest = async () => {
-    if (!confirm("Are you sure you want to reject this request? You won't see it again.")) {
+    if (
+      !confirm(
+        "Are you sure you want to reject this request? You won't see it again.",
+      )
+    ) {
       return;
     }
 
@@ -251,20 +273,30 @@ export default function CompanyRequestDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200";
-      case "Accepted": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200";
-      case "Action needed": return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200";
-      case "Assigned to Company": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
-      case "Completed": return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200";
-      case "Cancelled": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200";
+      case "Accepted":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200";
+      case "Action needed":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200";
+      case "Assigned to Company":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
+      case "Completed":
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200";
+      case "Cancelled":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200";
     }
   };
 
   const getDeliveryStatusColor = (status: string) => {
-    if (status === "Delivered") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200";
-    if (status === "In Transit") return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
-    if (status === "Failed") return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200";
+    if (status === "Delivered")
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200";
+    if (status === "In Transit")
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
+    if (status === "Failed")
+      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200";
     return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200";
   };
 
@@ -292,8 +324,14 @@ export default function CompanyRequestDetailPage() {
   }
 
   const myOffers = getMyOffers(request);
-  const totalWeight = request.items.reduce((sum, item) => sum + parseFloat(item.weight || "0") * item.quantity, 0);
-  const totalQuantity = request.items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalWeight = request.items.reduce(
+    (sum, item) => sum + parseFloat(item.weight || "0") * item.quantity,
+    0,
+  );
+  const totalQuantity = request.items.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
 
   return (
     <AuthGuard requiredRole="company">
@@ -310,21 +348,27 @@ export default function CompanyRequestDetailPage() {
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">
-                  Request #{request.id || request._id}
+                  {request.publicId}
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={getStatusColor(request.requestStatus)}>
                     {request.requestStatus}
                   </Badge>
-                  <Badge className={getDeliveryStatusColor(request.deliveryStatus)}>
+                  <Badge
+                    className={getDeliveryStatusColor(request.deliveryStatus)}
+                  >
                     {request.deliveryStatus}
                   </Badge>
                 </div>
               </div>
             </div>
             <div className="text-right text-sm text-muted-foreground">
-              <div>Created: {new Date(request.createdAt!).toLocaleDateString()}</div>
-              <div>Updated: {new Date(request.updatedAt!).toLocaleDateString()}</div>
+              <div>
+                Created: {new Date(request.createdAt!).toLocaleDateString()}
+              </div>
+              <div>
+                Updated: {new Date(request.updatedAt!).toLocaleDateString()}
+              </div>
             </div>
           </div>
 
@@ -332,76 +376,89 @@ export default function CompanyRequestDetailPage() {
             {/* Left Column - Main Info */}
             <div className="lg:col-span-2 space-y-6">
               {/* Location Map with Toggle */}
-              {request.source.coordinates && request.destination.coordinates && (
-                <Card className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      Location Map
-                    </h3>
-                    <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
-                      <Button
-                        variant={mapView === "source" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setMapView("source")}
-                        className="h-8 px-3 text-xs"
-                      >
-                        <MapPin className="w-3 h-3 mr-1" />
-                        Pickup
-                      </Button>
-                      <Button
-                        variant={mapView === "destination" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setMapView("destination")}
-                        className="h-8 px-3 text-xs"
-                      >
-                        <MapPin className="w-3 h-3 mr-1" />
-                        Delivery
-                      </Button>
+              {request.source.coordinates &&
+                request.destination.coordinates && (
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        Location Map
+                      </h3>
+                      <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+                        <Button
+                          variant={mapView === "source" ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setMapView("source")}
+                          className="h-8 px-3 text-xs"
+                        >
+                          <MapPin className="w-3 h-3 mr-1" />
+                          Pickup
+                        </Button>
+                        <Button
+                          variant={
+                            mapView === "destination" ? "default" : "ghost"
+                          }
+                          size="sm"
+                          onClick={() => setMapView("destination")}
+                          className="h-8 px-3 text-xs"
+                        >
+                          <MapPin className="w-3 h-3 mr-1" />
+                          Delivery
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="h-75 rounded-lg overflow-hidden border border-border">
-                    {mapView === "source" ? (
-                      <SimpleLocationMap
-                        key="source-map"
-                        position={[
-                          request.source.coordinates.latitude,
-                          request.source.coordinates.longitude,
-                        ]}
-                        label={`Pickup: ${request.source.city}, ${request.source.country}`}
-                      />
-                    ) : (
-                      <SimpleLocationMap
-                        key="destination-map"
-                        position={[
-                          request.destination.coordinates.latitude,
-                          request.destination.coordinates.longitude,
-                        ]}
-                        label={`Delivery: ${request.destination.city}, ${request.destination.country}`}
-                      />
-                    )}
-                  </div>
-                  <div className="mt-3 p-2 bg-muted/50 rounded-md">
-                    <p className="text-xs text-muted-foreground">
+                    <div className="h-75 rounded-lg overflow-hidden border border-border">
                       {mapView === "source" ? (
-                        <>
-                          <span className="font-semibold text-foreground">Pickup Location: </span>
-                          {request.source.street && `${request.source.street}, `}
-                          {request.source.city}, {request.source.governorate && `${request.source.governorate}, `}
-                          {request.source.country}
-                        </>
+                        <SimpleLocationMap
+                          key="source-map"
+                          position={[
+                            request.source.coordinates.latitude,
+                            request.source.coordinates.longitude,
+                          ]}
+                          label={`Pickup: ${request.source.city}, ${request.source.country}`}
+                        />
                       ) : (
-                        <>
-                          <span className="font-semibold text-foreground">Delivery Location: </span>
-                          {request.destination.street && `${request.destination.street}, `}
-                          {request.destination.city}, {request.destination.governorate && `${request.destination.governorate}, `}
-                          {request.destination.country}
-                        </>
+                        <SimpleLocationMap
+                          key="destination-map"
+                          position={[
+                            request.destination.coordinates.latitude,
+                            request.destination.coordinates.longitude,
+                          ]}
+                          label={`Delivery: ${request.destination.city}, ${request.destination.country}`}
+                        />
                       )}
-                    </p>
-                  </div>
-                </Card>
-              )}
+                    </div>
+                    <div className="mt-3 p-2 bg-muted/50 rounded-md">
+                      <p className="text-xs text-muted-foreground">
+                        {mapView === "source" ? (
+                          <>
+                            <span className="font-semibold text-foreground">
+                              Pickup Location:{" "}
+                            </span>
+                            {request.source.street &&
+                              `${request.source.street}, `}
+                            {request.source.city},{" "}
+                            {request.source.governorate &&
+                              `${request.source.governorate}, `}
+                            {request.source.country}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-semibold text-foreground">
+                              Delivery Location:{" "}
+                            </span>
+                            {request.destination.street &&
+                              `${request.destination.street}, `}
+                            {request.destination.city},{" "}
+                            {request.destination.governorate &&
+                              `${request.destination.governorate}, `}
+                            {request.destination.country}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </Card>
+                )}
 
               {/* Locations */}
               <Card className="p-4">
@@ -416,20 +473,32 @@ export default function CompanyRequestDetailPage() {
                       <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
                         <MapPin className="w-4 h-4 text-white" />
                       </div>
-                      <span className="font-semibold text-green-800 dark:text-green-200">Pickup Location</span>
+                      <span className="font-semibold text-green-800 dark:text-green-200">
+                        Pickup Location
+                      </span>
                     </div>
                     <div className="space-y-1 text-sm">
-                      <p className="font-medium text-foreground">{request.source.fullName}</p>
-                      <p className="text-muted-foreground">{request.source.street}, {request.source.building}</p>
-                      <p className="text-muted-foreground">{request.source.city}, {request.source.governorate}</p>
-                      <p className="text-muted-foreground">{request.source.country}</p>
+                      <p className="font-medium text-foreground">
+                        {request.source.fullName}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {request.source.street}, {request.source.building}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {request.source.city}, {request.source.governorate}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {request.source.country}
+                      </p>
                       {request.source.mobile && (
                         <p className="text-muted-foreground flex items-center gap-1">
                           <Phone className="w-3 h-3" /> {request.source.mobile}
                         </p>
                       )}
                       <Badge className="mt-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
-                        {request.sourcePickupMode === "Self" ? "Self Pickup" : "Company Pickup"}
+                        {request.sourcePickupMode === "Self"
+                          ? "Self Pickup"
+                          : "Company Pickup"}
                       </Badge>
                     </div>
                   </div>
@@ -440,20 +509,35 @@ export default function CompanyRequestDetailPage() {
                       <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
                         <MapPin className="w-4 h-4 text-white" />
                       </div>
-                      <span className="font-semibold text-red-800 dark:text-red-200">Delivery Location</span>
+                      <span className="font-semibold text-red-800 dark:text-red-200">
+                        Delivery Location
+                      </span>
                     </div>
                     <div className="space-y-1 text-sm">
-                      <p className="font-medium text-foreground">{request.destination.fullName}</p>
-                      <p className="text-muted-foreground">{request.destination.street}, {request.destination.building}</p>
-                      <p className="text-muted-foreground">{request.destination.city}, {request.destination.governorate}</p>
-                      <p className="text-muted-foreground">{request.destination.country}</p>
+                      <p className="font-medium text-foreground">
+                        {request.destination.fullName}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {request.destination.street},{" "}
+                        {request.destination.building}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {request.destination.city},{" "}
+                        {request.destination.governorate}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {request.destination.country}
+                      </p>
                       {request.destination.mobile && (
                         <p className="text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> {request.destination.mobile}
+                          <Phone className="w-3 h-3" />{" "}
+                          {request.destination.mobile}
                         </p>
                       )}
                       <Badge className="mt-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
-                        {request.destinationPickupMode === "Self" ? "Self Delivery" : "Company Delivery"}
+                        {request.destinationPickupMode === "Self"
+                          ? "Self Delivery"
+                          : "Company Delivery"}
                       </Badge>
                     </div>
                   </div>
@@ -478,86 +562,95 @@ export default function CompanyRequestDetailPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {request.items.slice(0, expandedItems ? undefined : 3).map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 border border-border"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-foreground">
-                              {item.quantity}x {item.item || item.name}
-                            </span>
-                            {item.category && (
-                              <Badge variant="outline" className="text-xs">
-                                <Tag className="w-3 h-3 mr-1" />
-                                {item.category}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Scale className="w-3 h-3" /> {item.weight} kg
-                            </span>
-                            {item.dimensions && (
-                              <span className="flex items-center gap-1">
-                                <Ruler className="w-3 h-3" /> {item.dimensions}
+                  {request.items
+                    .slice(0, expandedItems ? undefined : 3)
+                    .map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 border border-border"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground">
+                                {item.quantity}x {item.item || item.name}
                               </span>
-                            )}
-                          </div>
-                          {item.note && (
-                            <p className="text-sm text-amber-600 dark:text-amber-400 mt-2 flex items-start gap-1">
-                              <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
-                              {item.note}
-                            </p>
-                          )}
-                          {/* Services */}
-                          {item.services && (
-                            <div className="flex gap-2 mt-2">
-                              {item.services.canBeAssembledDisassembled && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Assembly/Disassembly
+                              {item.category && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Tag className="w-3 h-3 mr-1" />
+                                  {item.category}
                                 </Badge>
                               )}
-                              {item.services.packaging && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Packaging
-                                </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Scale className="w-3 h-3" /> {item.weight} kg
+                              </span>
+                              {item.dimensions && (
+                                <span className="flex items-center gap-1">
+                                  <Ruler className="w-3 h-3" />{" "}
+                                  {item.dimensions}
+                                </span>
+                              )}
+                            </div>
+                            {item.note && (
+                              <p className="text-sm text-amber-600 dark:text-amber-400 mt-2 flex items-start gap-1">
+                                <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+                                {item.note}
+                              </p>
+                            )}
+                            {/* Services */}
+                            {item.services && (
+                              <div className="flex gap-2 mt-2">
+                                {item.services.canBeAssembledDisassembled && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    Assembly/Disassembly
+                                  </Badge>
+                                )}
+                                {item.services.packaging && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    Packaging
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Item Media */}
+                          {item.media && item.media.length > 0 && (
+                            <div className="flex gap-2">
+                              {item.media.slice(0, 2).map((media, mediaIdx) => (
+                                <button
+                                  key={mediaIdx}
+                                  onClick={() => {
+                                    setSelectedImage(media.url);
+                                    setShowImageModal(true);
+                                  }}
+                                  className="relative w-16 h-16 rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
+                                >
+                                  <img
+                                    src={media.url}
+                                    alt={`Item ${idx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </button>
+                              ))}
+                              {item.media.length > 2 && (
+                                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-sm font-medium">
+                                  +{item.media.length - 2}
+                                </div>
                               )}
                             </div>
                           )}
                         </div>
-
-                        {/* Item Media */}
-                        {item.media && item.media.length > 0 && (
-                          <div className="flex gap-2">
-                            {item.media.slice(0, 2).map((media, mediaIdx) => (
-                              <button
-                                key={mediaIdx}
-                                onClick={() => {
-                                  setSelectedImage(media.url);
-                                  setShowImageModal(true);
-                                }}
-                                className="relative w-16 h-16 rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
-                              >
-                                <img
-                                  src={media.url}
-                                  alt={`Item ${idx + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </button>
-                            ))}
-                            {item.media.length > 2 && (
-                              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-sm font-medium">
-                                +{item.media.length - 2}
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
 
                 {request.items.length > 3 && (
@@ -590,42 +683,57 @@ export default function CompanyRequestDetailPage() {
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Delivery Type</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Delivery Type
+                    </p>
                     <p className="font-medium">{request.deliveryType}</p>
                   </div>
                   {request.startTime && (
                     <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">Preferred Time</p>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Preferred Time
+                      </p>
                       <p className="font-medium">{request.startTime}</p>
                     </div>
                   )}
                   {request.primaryCost && (
                     <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">Primary Cost</p>
-                      <p className="font-medium text-primary">${request.primaryCost}</p>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Primary Cost
+                      </p>
+                      <p className="font-medium text-primary">
+                        ${request.primaryCost}
+                      </p>
                     </div>
                   )}
-                  {request.availableDays && request.availableDays.length > 0 && (
-                    <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg md:col-span-2">
-                      <p className="text-xs text-muted-foreground mb-1">Available Days</p>
-                      <div className="flex flex-wrap gap-1">
-                        {request.availableDays.includes("All Week") ? (
-                          <Badge variant="secondary">All Week</Badge>
-                        ) : (
-                          request.availableDays.map((day) => (
-                            <Badge key={day} variant="secondary">{day.slice(0, 3)}</Badge>
-                          ))
-                        )}
+                  {request.availableDays &&
+                    request.availableDays.length > 0 && (
+                      <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg md:col-span-2">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Available Days
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {request.availableDays.includes("All Week") ? (
+                            <Badge variant="secondary">All Week</Badge>
+                          ) : (
+                            request.availableDays.map((day) => (
+                              <Badge key={day} variant="secondary">
+                                {day.slice(0, 3)}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
                 {request.comment && (
                   <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                     <p className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1 flex items-center gap-1">
                       <FileText className="w-3 h-3" /> Additional Notes
                     </p>
-                    <p className="text-sm text-amber-700 dark:text-amber-300">{request.comment}</p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      {request.comment}
+                    </p>
                   </div>
                 )}
               </Card>
@@ -641,26 +749,33 @@ export default function CompanyRequestDetailPage() {
                 </h3>
                 <div className="flex items-center gap-3 mb-4">
                   <img
-                    src={typeof request.user === "object" && request.user?.profilePicture
-                      ? request.user.profilePicture
-                      : "/default-avatar.png"}
+                    src={
+                      typeof request.user === "object" &&
+                      request.user?.profilePicture
+                        ? request.user.profilePicture
+                        : "/default-avatar.png"
+                    }
                     alt="Client"
-                    className="w-14 h-14 rounded-full object-cover border-2 border-border"
+                    className="w-14 h-14 rounded-full object-cover border border-border"
                   />
                   <div>
                     <p className="font-semibold text-foreground">
-                      {typeof request.user === "object" ? request.user?.fullName : "Unknown"}
+                      {typeof request.user === "object"
+                        ? request.user?.fullName
+                        : "Unknown"}
                     </p>
-                    {typeof request.user === "object" && request.user?.email && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Mail className="w-3 h-3" /> {request.user.email}
-                      </p>
-                    )}
-                    {typeof request.user === "object" && request.user?.mobile && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Phone className="w-3 h-3" /> {request.user.mobile}
-                      </p>
-                    )}
+                    {typeof request.user === "object" &&
+                      request.user?.email && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Mail className="w-3 h-3" /> {request.user.email}
+                        </p>
+                      )}
+                    {typeof request.user === "object" &&
+                      request.user?.mobile && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> {request.user.mobile}
+                        </p>
+                      )}
                   </div>
                 </div>
               </Card>
@@ -687,12 +802,16 @@ export default function CompanyRequestDetailPage() {
                               offer.status === "accepted"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200"
                                 : offer.status === "rejected"
-                                ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                                  ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
+                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
                             }
                           >
-                            {offer.status === "accepted" && <CheckCircle2 className="w-3 h-3 mr-1" />}
-                            {offer.status === "rejected" && <XCircle className="w-3 h-3 mr-1" />}
+                            {offer.status === "accepted" && (
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                            )}
+                            {offer.status === "rejected" && (
+                              <XCircle className="w-3 h-3 mr-1" />
+                            )}
                             {offer.status}
                           </Badge>
                         </div>
@@ -703,7 +822,8 @@ export default function CompanyRequestDetailPage() {
                         )}
                         {offer.createdAt && (
                           <p className="text-xs text-muted-foreground mt-2">
-                            Submitted: {new Date(offer.createdAt).toLocaleString()}
+                            Submitted:{" "}
+                            {new Date(offer.createdAt).toLocaleString()}
                           </p>
                         )}
                       </div>
@@ -713,46 +833,62 @@ export default function CompanyRequestDetailPage() {
               )}
 
               {/* Other Offers */}
-              {request.costOffers && request.costOffers.filter(o => o.company.id !== user?.id).length > 0 && (
-                <Card className="p-4">
-                  <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-primary" />
-                    Other Company Offers ({request.costOffers.filter(o => o.company.id !== user?.id).length})
-                  </h3>
-                  <div className="space-y-2">
-                    {request.costOffers.filter(o => o.company.id !== user?.id).map((offer, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-3 border border-border"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-foreground">{offer.company.name}</p>
-                            <p className="text-lg font-bold text-primary">${offer.cost.toFixed(2)}</p>
-                          </div>
-                          <Badge
-                            className={
-                              offer.status === "accepted"
-                                ? "bg-green-100 text-green-800"
-                                : offer.status === "rejected"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-800"
-                            }
+              {request.costOffers &&
+                request.costOffers.filter((o) => o.company.id !== user?.id)
+                  .length > 0 && (
+                  <Card className="p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-primary" />
+                      Other Company Offers (
+                      {
+                        request.costOffers.filter(
+                          (o) => o.company.id !== user?.id,
+                        ).length
+                      }
+                      )
+                    </h3>
+                    <div className="space-y-2">
+                      {request.costOffers
+                        .filter((o) => o.company.id !== user?.id)
+                        .map((offer, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-3 border border-border"
                           >
-                            {offer.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {offer.company.name}
+                                </p>
+                                <p className="text-lg font-bold text-primary">
+                                  ${offer.cost.toFixed(2)}
+                                </p>
+                              </div>
+                              <Badge
+                                className={
+                                  offer.status === "accepted"
+                                    ? "bg-green-100 text-green-800"
+                                    : offer.status === "rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-800"
+                                }
+                              >
+                                {offer.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </Card>
+                )}
 
               {/* Offer Form */}
               <Card className="p-4">
                 <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-primary" />
-                  {myOffers.length > 0 ? "Update Your Offer" : "Submit an Offer"}
+                  {myOffers.length > 0
+                    ? "Update Your Offer"
+                    : "Submit an Offer"}
                 </h3>
 
                 {!showOfferForm ? (
@@ -780,7 +916,8 @@ export default function CompanyRequestDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Your Price ($) <span className="text-destructive">*</span>
+                        Your Price ($){" "}
+                        <span className="text-destructive">*</span>
                       </label>
                       <div className="relative">
                         <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
