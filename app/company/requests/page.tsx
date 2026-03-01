@@ -31,13 +31,13 @@ import { AuthGuard } from "@/app/components/AuthGuard";
 export default function CompanyRequestsPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  
+
   // Use live data hook for real-time updates
-  const { 
-    data: requests, 
-    isLoading: requestsLoading, 
+  const {
+    data: requests,
+    isLoading: requestsLoading,
     refresh,
-    isConnected 
+    isConnected,
   } = useLiveCompanyRequests(user?.id);
 
   // Filters
@@ -50,7 +50,7 @@ export default function CompanyRequestsPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(9);
-  
+
   const loading = isLoading || requestsLoading;
 
   // Show toast notifications for real-time events
@@ -62,15 +62,19 @@ export default function CompanyRequestsPage() {
           description: "A new shipping request has been posted",
           action: {
             label: "View",
-            onClick: () => window.location.href = `/company/requests/${event.payload.id || event.requestId}`,
+            onClick: () =>
+              (window.location.href = `/company/requests/${event.payload.id || event.requestId}`),
           },
         });
-      } else if (event.type === "OFFER_ACCEPTED" && event.payload.companyId === user?.id) {
+      } else if (
+        event.type === "OFFER_ACCEPTED" &&
+        event.payload.companyId === user?.id
+      ) {
         toast.success("Your offer was accepted!", {
           description: event.payload.message || "Check your ongoing requests",
         });
       }
-    }
+    },
   );
 
   useEffect(() => {
@@ -304,9 +308,16 @@ export default function CompanyRequestsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {paginatedRequests.map((request: Request) => {
                   const myOffer = getMyOffer(request);
-                  const totalItems = request.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
-                  const totalWeight = request.items.reduce((sum: number, item: any) => sum + parseFloat(item.weight || "0") * item.quantity, 0);
-                  
+                  const totalItems = request.items.reduce(
+                    (sum: number, item: any) => sum + item.quantity,
+                    0,
+                  );
+                  const totalWeight = request.items.reduce(
+                    (sum: number, item: any) =>
+                      sum + parseFloat(item.weight || "0") * item.quantity,
+                    0,
+                  );
+
                   return (
                     <Card
                       key={request.id || request._id}
@@ -316,14 +327,18 @@ export default function CompanyRequestsPage() {
                       <div className="px-4 py-3 border-b border-border bg-linear-to-r from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-900/20">
                         <div className="flex items-center justify-between">
                           <h3 className="font-bold text-foreground text-sm">
-                            #{(request.id || request._id).toString().slice(-8)}
+                            {request.publicId}
                           </h3>
                           <div className="flex items-center gap-1.5">
-                            <Badge className={`text-xs px-2 py-0.5 ${
-                              request.requestStatus === "Pending" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40" :
-                              request.requestStatus === "Action needed" ? "bg-orange-100 text-orange-800 dark:bg-orange-900/40" :
-                              "bg-green-100 text-green-800 dark:bg-green-900/40"
-                            }`}>
+                            <Badge
+                              className={`text-xs px-2 py-0.5 ${
+                                request.requestStatus === "Pending"
+                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40"
+                                  : request.requestStatus === "Action needed"
+                                    ? "bg-orange-100 text-orange-800 dark:bg-orange-900/40"
+                                    : "bg-green-100 text-green-800 dark:bg-green-900/40"
+                              }`}
+                            >
                               {request.requestStatus}
                             </Badge>
                           </div>
@@ -340,18 +355,22 @@ export default function CompanyRequestsPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                              <span className="truncate font-medium">{request.source.city}</span>
+                              <span className="truncate font-medium">
+                                {request.source.city}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                              <span className="truncate font-medium">{request.destination.city}</span>
+                              <span className="truncate font-medium">
+                                {request.destination.city}
+                              </span>
                             </div>
                           </div>
                           <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
                         </div>
 
                         {/* Quick Stats */}
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
                           <span className="flex items-center gap-1">
                             <Package className="w-3.5 h-3.5" />
                             {totalItems} items
@@ -365,53 +384,55 @@ export default function CompanyRequestsPage() {
                           </Badge>
                         </div>
 
-                        {/* Client Preview */}
-                        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                          <img
-                            src={typeof request.user === "object" && request.user?.profilePicture
-                              ? request.user.profilePicture
-                              : "/default-avatar.png"}
-                            alt="Client"
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                          <span className="text-xs text-muted-foreground truncate flex-1">
-                            {typeof request.user === "object" ? request.user?.fullName : "Unknown"}
-                          </span>
-                          {request.primaryCost && (
-                            <span className="text-xs font-semibold text-primary">
-                              ${request.primaryCost}
-                            </span>
-                          )}
-                        </div>
+                        {/* Estimated Cost */}
+                        {request.primaryCost && (
+                          <div className="pt-2 border-t border-border/50">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">Estimated Cost</span>
+                              <span className="text-sm font-bold text-primary">
+                                ${parseFloat(request.primaryCost).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Offer Status Indicator */}
                         {myOffer && (
-                          <div className={`text-xs px-2 py-1.5 rounded-md flex items-center justify-between ${
-                            myOffer.status === "accepted" 
-                              ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                              : myOffer.status === "rejected"
-                              ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
-                              : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                          }`}>
+                          <div
+                            className={`text-xs px-2 py-1.5 rounded-md flex items-center justify-between ${
+                              myOffer.status === "accepted"
+                                ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                                : myOffer.status === "rejected"
+                                  ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+                                  : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                            }`}
+                          >
                             <span className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
                               Your offer: ${myOffer.cost.toFixed(2)}
                             </span>
-                            <Badge className={`text-xs ${
-                              myOffer.status === "accepted" ? "bg-green-100 text-green-800" :
-                              myOffer.status === "rejected" ? "bg-red-100 text-red-800" :
-                              "bg-blue-100 text-blue-800"
-                            }`}>
+                            <Badge
+                              className={`text-xs ${
+                                myOffer.status === "accepted"
+                                  ? "bg-green-100 text-green-800"
+                                  : myOffer.status === "rejected"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-blue-100 text-blue-800"
+                              }`}
+                            >
                               {myOffer.status}
                             </Badge>
                           </div>
                         )}
 
                         {/* Action Button */}
-                        <Link href={`/company/requests/${request.id || request._id}`} className="block">
-                          <Button 
-                            variant={myOffer ? "outline" : "default"} 
-                            size="sm" 
+                        <Link
+                          href={`/company/requests/${request.id || request._id}`}
+                          className="block"
+                        >
+                          <Button
+                            variant={myOffer ? "outline" : "default"}
+                            size="sm"
                             className="w-full gap-2 mt-2"
                           >
                             <Eye className="w-4 h-4" />

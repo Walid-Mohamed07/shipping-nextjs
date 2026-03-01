@@ -54,7 +54,12 @@ export default function CompanyOngoingRequestsPage() {
 
       if (requestsRes.ok) {
         const data = await requestsRes.json();
-        console.log("[Ongoing] Fetched requests:", data.requests?.length || 0, "companyId used:", companyId);
+        console.log(
+          "[Ongoing] Fetched requests:",
+          data.requests?.length || 0,
+          "companyId used:",
+          companyId,
+        );
         setRequests(data.requests || []);
       } else {
         const errorData = await requestsRes.json();
@@ -65,7 +70,10 @@ export default function CompanyOngoingRequestsPage() {
         const data = await warehousesRes.json();
         setWarehouses(data.warehouses || []);
       } else {
-        console.error("Failed to fetch warehouses:", await warehousesRes.json());
+        console.error(
+          "Failed to fetch warehouses:",
+          await warehousesRes.json(),
+        );
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -196,7 +204,7 @@ export default function CompanyOngoingRequestsPage() {
                 request.destinationPickupMode === "Self" ||
                 request.destination?.pickupMode === "Self";
 
-              const requestId = request._id || request.id || '';
+              const requestId = request._id || request.id || "";
               return (
                 <Card
                   key={requestId}
@@ -206,9 +214,7 @@ export default function CompanyOngoingRequestsPage() {
                   <div className="space-y-3">
                     {/* Header */}
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-lg">
-                        #{request._id.slice(0, 8)}
-                      </h3>
+                      <h3 className="font-bold text-lg">{request.publicId}</h3>
                       <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
                         Ongoing
                       </span>
