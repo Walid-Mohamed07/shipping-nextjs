@@ -89,15 +89,15 @@ export default function RequestDetailsPage() {
   const params = useParams();
   const requestId = params.id as string;
   const { isConnected, subscribeToRequest } = useRealTime();
-  
+
   // Use live data hook for real-time request updates
-  const { 
-    data: liveRequest, 
-    isLoading: requestLoading, 
+  const {
+    data: liveRequest,
+    isLoading: requestLoading,
     error: fetchError,
-    refresh: refreshRequest 
+    refresh: refreshRequest,
   } = useLiveRequest(requestId);
-  
+
   const [request, setRequest] = useState<Request | null>(null);
   const [error, setError] = useState("");
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
@@ -117,7 +117,7 @@ export default function RequestDetailsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  
+
   const isLoading = authLoading || requestLoading;
 
   // Update local request state when live data changes
@@ -132,10 +132,17 @@ export default function RequestDetailsPage() {
 
   // Show toast notifications for real-time events on this request
   useLiveEvent(
-    ["OFFER_SUBMITTED", "OFFER_UPDATED", "OFFER_ACCEPTED", "STATUS_CHANGED", "DELIVERY_STATUS_CHANGED", "WAREHOUSE_ASSIGNED"],
+    [
+      "OFFER_SUBMITTED",
+      "OFFER_UPDATED",
+      "OFFER_ACCEPTED",
+      "STATUS_CHANGED",
+      "DELIVERY_STATUS_CHANGED",
+      "WAREHOUSE_ASSIGNED",
+    ],
     (event) => {
       if (event.requestId !== requestId) return;
-      
+
       if (event.type === "OFFER_SUBMITTED") {
         toast.info("New offer received!", {
           description: `${event.payload.companyName} submitted an offer of $${event.payload.cost}`,
@@ -150,7 +157,8 @@ export default function RequestDetailsPage() {
         });
       } else if (event.type === "DELIVERY_STATUS_CHANGED") {
         toast.success("Delivery update!", {
-          description: event.payload.message || `Status: ${event.payload.newStatus}`,
+          description:
+            event.payload.message || `Status: ${event.payload.newStatus}`,
         });
       } else if (event.type === "WAREHOUSE_ASSIGNED") {
         toast.info("Warehouse assigned", {
@@ -158,7 +166,7 @@ export default function RequestDetailsPage() {
         });
       }
     },
-    requestId
+    requestId,
   );
 
   const findNearbyWarehouses = () => {
@@ -262,7 +270,7 @@ export default function RequestDetailsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          offerId: confirmingOffer.company.id,  // Use the company ID from the offer
+          offerId: confirmingOffer.company.id, // Use the company ID from the offer
         }),
       });
 
@@ -296,13 +304,13 @@ export default function RequestDetailsPage() {
   // Authorization check for non-owners viewing the request
   useEffect(() => {
     if (authLoading || !user || !liveRequest) return;
-    
+
     const userId = user._id || user.id;
     const isAdminRole = ["admin", "operator", "driver"].includes(user.role);
     const requestUserId = String(
       liveRequest.user?._id || liveRequest.user?.id || "",
     );
-    
+
     if (!isAdminRole && requestUserId !== String(userId)) {
       setError("Unauthorized");
       toast.error("Unauthorized");
@@ -441,7 +449,7 @@ export default function RequestDetailsPage() {
           </div>
 
           {/* Live Tracking Map - Only show when In Transit or later */}
-          {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT ||
+          {/* {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT ||
             request.deliveryStatus ===
               RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
             request.deliveryStatus ===
@@ -453,7 +461,7 @@ export default function RequestDetailsPage() {
                 to={request.destination.country}
                 isInTransit={true}
               />
-            )}
+            )} */}
 
           {/* Location permission dialog - ask before sharing */}
           {showLocationPrompt && (
@@ -1065,14 +1073,18 @@ export default function RequestDetailsPage() {
                 {/* Always show primary/estimated cost */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <p className={`text-base font-medium ${request.selectedCompany ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                    <p
+                      className={`text-base font-medium ${request.selectedCompany ? "line-through text-muted-foreground" : "text-foreground"}`}
+                    >
                       {request.primaryCost && Number(request.primaryCost) > 0
                         ? `$${Number(request.primaryCost).toFixed(2)}`
                         : request.cost && Number(request.cost) > 0
                           ? `$${Number(request.cost).toFixed(2)}`
                           : "Not calculated"}
                     </p>
-                    <span className="text-xs text-muted-foreground">(estimated)</span>
+                    <span className="text-xs text-muted-foreground">
+                      (estimated)
+                    </span>
                   </div>
                   {/* Show accepted offer price when available */}
                   {request.selectedCompany && (
@@ -1080,7 +1092,9 @@ export default function RequestDetailsPage() {
                       <p className="text-xl font-bold text-primary">
                         ${Number(request.selectedCompany.cost).toFixed(2)}
                       </p>
-                      <span className="text-xs text-green-600 dark:text-green-400">(accepted offer)</span>
+                      <span className="text-xs text-green-600 dark:text-green-400">
+                        (accepted offer)
+                      </span>
                     </div>
                   )}
                 </div>
