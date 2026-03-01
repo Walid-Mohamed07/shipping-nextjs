@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
-import { useLiveRequests, useLiveEvent } from "@/app/hooks/useLiveData";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -12,33 +10,12 @@ import {
   ArrowRight,
   Calendar,
   MapPin,
-  Tag,
   Banknote,
   Wrench,
   BoxSelect,
-  Warehouse,
-  MapPinned,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
-import { Request, Address } from "@/types";
+import { Request, Address, Item } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
-import dynamic from "next/dynamic";
-
-// Dynamically import map components to avoid SSR issues
-const LocationMapPicker = dynamic(
-  () =>
-    import("@/app/components/LocationMapPicker").then((mod) => ({
-      default: mod.LocationMapPicker,
-    })),
-  { ssr: false },
-);
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -52,38 +29,46 @@ const formatLocation = (loc: Address) => {
 export default function MyRequestsPage() {
   const { user, isLoading: authLoading } = useProtectedRoute();
   
-  // Use live data hook for real-time updates
-  const { 
-    data: requests, 
-    isLoading, 
-    error, 
-    refresh,
-    isConnected 
-  } = useLiveRequests(user?.id);
+  // Regular data fetching (not live)
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Show toast notifications for real-time events
-  useLiveEvent(
-    ["OFFER_SUBMITTED", "OFFER_UPDATED", "STATUS_CHANGED", "DELIVERY_STATUS_CHANGED"],
-    (event) => {
-      if (event.type === "OFFER_SUBMITTED") {
-        toast.info("New offer received!", {
-          description: `${event.payload.companyName} submitted an offer`,
-          action: {
-            label: "View",
-            onClick: () => window.location.href = `/request/${event.payload.requestId}`,
-          },
-        });
-      } else if (event.type === "STATUS_CHANGED") {
-        toast.info("Request status updated", {
-          description: `Status changed to: ${event.payload.newStatus}`,
-        });
-      } else if (event.type === "DELIVERY_STATUS_CHANGED") {
-        toast.success("Delivery update!", {
-          description: event.payload.message || `Status: ${event.payload.newStatus}`,
-        });
-      }
+  // Fetch requests data
+  const fetchRequests = useCallback(async () => {
+    if (!user?.id) {
+      setRequests([]);
+      setIsLoading(false);
+      return;
     }
-  );
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/requests?userId=${user.id}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch requests");
+      }
+      const data = await response.json();
+      setRequests(data.requests || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load requests");
+      toast.error("Failed to load requests");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
+  // Fetch on mount and when user changes
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  // Manual refresh function
+  const refresh = useCallback(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -124,23 +109,9 @@ export default function MyRequestsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-bold text-foreground">
-                My Shipping Requests
-              </h1>
-              {/* Real-time connection indicator */}
-              <div 
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  isConnected 
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" 
-                    : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-                }`}
-                title={isConnected ? "Live updates active" : "Connecting..."}
-              >
-                {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                {isConnected ? "Live" : "..."}
-              </div>
-            </div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              My Shipping Requests
+            </h1>
             <p className="text-muted-foreground">
               Track all your shipments in one place
             </p>
@@ -183,20 +154,21 @@ export default function MyRequestsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {requests.map((request) => {
-              // Get preview items (first 3)
-              const previewItems = (request.items || []).slice(0, 3);
-              const remaining = Math.max(0, (request.items || []).length - 3);
+            {requests.map((request: Request) => {
+              // Get preview items (first 2 for consistent card height)
+              const previewItems = (request.items || []).slice(0, 2);
+              const remaining = Math.max(0, (request.items || []).length - 2);
               return (
                 <Link key={request.id} href={`/request/${request.publicId}`}>
-                  <div className="h-full bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
-                    <div className="flex items-start justify-between mb-4">
+                  <div className="h-96 flex flex-col bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
+                    {/* Header - fixed height */}
+                    <div className="flex items-start justify-between mb-4 h-8">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-semibold text-foreground truncate">
                           {request.publicId}
                         </h3>
                       </div>
-                      <div className="ml-2">
+                      <div className="ml-2 shrink-0">
                         {request.requestStatus && (
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getRequestStatusColor(request.requestStatus)}`}
@@ -207,12 +179,12 @@ export default function MyRequestsPage() {
                       </div>
                     </div>
 
-                    {/* Items preview */}
-                    <div className="space-y-2 mb-4 bg-muted/50 rounded-lg p-3">
-                      {previewItems.map((item, idx) => (
+                    {/* Items preview - fixed height */}
+                    <div className="h-18 mb-4 bg-muted/50 rounded-lg p-3 overflow-hidden">
+                      {previewItems.map((item: Item, idx: number) => (
                         <div
                           key={item._id || `item-${idx}`}
-                          className="text-sm text-foreground"
+                          className="text-sm text-foreground truncate"
                         >
                           • {item.name || item.item}{" "}
                           {item.quantity > 1 ? `(×${item.quantity})` : ""}
@@ -225,47 +197,39 @@ export default function MyRequestsPage() {
                       )}
                     </div>
 
-                    {/* Services badges */}
-                    {request.items &&
-                      request.items.some(
-                        (item) =>
-                          item.services &&
-                          (item.services.canBeAssembledDisassembled ||
-                            item.services.assemblyDisassembly ||
-                            item.services.packaging),
+                    {/* Services badges - fixed height */}
+                    <div className="h-6 flex flex-wrap gap-1.5 mb-4 overflow-hidden">
+                      {request.items?.some(
+                        (item: Item) =>
+                          item.services?.canBeAssembledDisassembled ||
+                          item.services?.assemblyDisassembly,
                       ) && (
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {request.items.some(
-                            (item) =>
-                              item.services?.canBeAssembledDisassembled ||
-                              item.services?.assemblyDisassembly,
-                          ) && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              <Wrench className="w-3 h-3" />
-                              Assembly
-                            </span>
-                          )}
-                          {request.items.some(
-                            (item) => item.services?.packaging,
-                          ) && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                              <BoxSelect className="w-3 h-3" />
-                              Packaging
-                            </span>
-                          )}
-                        </div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                          <Wrench className="w-3 h-3" />
+                          Assembly
+                        </span>
                       )}
+                      {request.items?.some(
+                        (item: Item) => item.services?.packaging,
+                      ) && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                          <BoxSelect className="w-3 h-3" />
+                          Packaging
+                        </span>
+                      )}
+                    </div>
 
-                    <div className="space-y-3 mb-4">
+                    {/* Main info - flex grow to fill space */}
+                    <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="w-4 h-4 flex-shrink-0" />
-                        <span>
+                        <MapPin className="w-4 h-4 shrink-0" />
+                        <span className="truncate">
                           {formatLocation(request.from ?? request.source)} →{" "}
                           {formatLocation(request.to ?? request.destination)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <Calendar className="w-4 h-4 shrink-0" />
                         <span>
                           {request.deliveryType === "Urgent"
                             ? "Urgent"
@@ -273,33 +237,32 @@ export default function MyRequestsPage() {
                           Delivery
                         </span>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        {/* Always show primary/estimated cost */}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Banknote className="w-4 h-4 flex-shrink-0" />
-                          <span className={`font-medium ${request.selectedCompany ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                            {request.primaryCost && Number(request.primaryCost) > 0
-                              ? `$${Number(request.primaryCost).toFixed(2)}`
-                              : request.cost && Number(request.cost) > 0
-                                ? `$${Number(request.cost).toFixed(2)}`
-                                : "Not calculated"}
-                          </span>
-                          <span className="text-xs">(estimated)</span>
-                        </div>
-                        {/* Show accepted offer price when available */}
-                        {request.selectedCompany && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="w-4 h-4 flex-shrink-0" />
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Banknote className="w-4 h-4 shrink-0" />
+                        {request.selectedCompany ? (
+                          <>
                             <span className="font-semibold text-primary">
                               ${Number(request.selectedCompany.cost).toFixed(2)}
                             </span>
-                            <span className="text-xs text-green-600 dark:text-green-400">(accepted offer)</span>
-                          </div>
+                            <span className="text-xs text-green-600 dark:text-green-400">(accepted)</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium text-foreground">
+                              {request.primaryCost && Number(request.primaryCost) > 0
+                                ? `$${Number(request.primaryCost).toFixed(2)}`
+                                : request.cost && Number(request.cost) > 0
+                                  ? `$${Number(request.cost).toFixed(2)}`
+                                  : "N/A"}
+                            </span>
+                            <span className="text-xs">(estimated)</span>
+                          </>
                         )}
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
+                    {/* Footer with date - fixed height */}
+                    <div className="h-10 pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
                       <span>
                         {request.createdAt
                           ? new Date(request.createdAt).toLocaleDateString()
@@ -307,111 +270,6 @@ export default function MyRequestsPage() {
                       </span>
                       <ArrowRight className="w-4 h-4" />
                     </div>
-
-                    {/* Warehouse Locations */}
-                    {(request.sourceWarehouse || request.destinationWarehouse) && (
-                      <div
-                        className="mt-4 pt-4 border-t border-border"
-                        onClick={(e) => e.preventDefault()}
-                      >
-                        <Accordion type="single" className="space-y-2">
-                          {request.sourceWarehouse && (
-                            <AccordionItem
-                              value="source"
-                              className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
-                            >
-                              <AccordionTrigger
-                                value="source"
-                                className="bg-transparent px-3 py-2"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Warehouse className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                  <span className="text-xs font-medium text-foreground">
-                                    Source: {request.sourceWarehouse.name}
-                                  </span>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent
-                                value="source"
-                                className="bg-white/50 dark:bg-gray-900/50 px-3 pb-3"
-                              >
-                                <div className="space-y-2">
-                                  <p className="text-xs text-muted-foreground">
-                                    {request.sourceWarehouse.address}
-                                    {request.sourceWarehouse.city &&
-                                      `, ${request.sourceWarehouse.city}`}
-                                    {request.sourceWarehouse.country &&
-                                      `, ${request.sourceWarehouse.country}`}
-                                  </p>
-                                  {request.sourceWarehouse.coordinates && (
-                                    <div className="h-48 w-full rounded-lg overflow-hidden border border-border">
-                                      <LocationMapPicker
-                                        position={{
-                                          lat: request.sourceWarehouse
-                                            .coordinates.latitude,
-                                          lng: request.sourceWarehouse
-                                            .coordinates.longitude,
-                                        }}
-                                        onPositionChange={() => {}}
-                                        editable={false}
-                                        showUseMyLocation={false}
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          )}
-                          {request.destinationWarehouse && (
-                            <AccordionItem
-                              value="destination"
-                              className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
-                            >
-                              <AccordionTrigger
-                                value="destination"
-                                className="bg-transparent px-3 py-2"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <MapPinned className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                  <span className="text-xs font-medium text-foreground">
-                                    Destination: {request.destinationWarehouse.name}
-                                  </span>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent
-                                value="destination"
-                                className="bg-white/50 dark:bg-gray-900/50 px-3 pb-3"
-                              >
-                                <div className="space-y-2">
-                                  <p className="text-xs text-muted-foreground">
-                                    {request.destinationWarehouse.address}
-                                    {request.destinationWarehouse.city &&
-                                      `, ${request.destinationWarehouse.city}`}
-                                    {request.destinationWarehouse.country &&
-                                      `, ${request.destinationWarehouse.country}`}
-                                  </p>
-                                  {request.destinationWarehouse.coordinates && (
-                                    <div className="h-48 w-full rounded-lg overflow-hidden border border-border">
-                                      <LocationMapPicker
-                                        position={{
-                                          lat: request.destinationWarehouse
-                                            .coordinates.latitude,
-                                          lng: request.destinationWarehouse
-                                            .coordinates.longitude,
-                                        }}
-                                        onPositionChange={() => {}}
-                                        editable={false}
-                                        showUseMyLocation={false}
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          )}
-                        </Accordion>
-                      </div>
-                    )}
                   </div>
                 </Link>
               );

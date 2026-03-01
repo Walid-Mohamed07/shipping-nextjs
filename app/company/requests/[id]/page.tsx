@@ -16,13 +16,11 @@ import {
   DollarSign,
   Loader2,
   ArrowLeft,
-  User as UserIcon,
   Calendar,
   Clock,
   Truck,
   Box,
   Phone,
-  Mail,
   Building2,
   CheckCircle2,
   XCircle,
@@ -35,7 +33,6 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Image as ImageIcon,
   X,
   Wifi,
   WifiOff,
@@ -52,7 +49,7 @@ const SimpleLocationMap = dynamic(
     ),
   {
     ssr: false,
-    loading: () => <div className="h-75 bg-muted animate-pulse rounded-lg" />,
+    loading: () => <div className="h-64 bg-muted animate-pulse rounded-lg" />,
   },
 );
 
@@ -77,6 +74,7 @@ export default function CompanyRequestDetailPage() {
   const {
     data: liveRequest,
     isLoading: requestLoading,
+    error: requestError,
     refresh: refreshRequest,
     isConnected,
   } = useLiveRequest(requestId);
@@ -94,7 +92,7 @@ export default function CompanyRequestDetailPage() {
   const [expandedItems, setExpandedItems] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [mapView, setMapView] = useState<"source" | "destination">("source");
+  const [mapView, setMapView] = useState<"pickup" | "delivery">("pickup");
 
   const loading = authLoading || requestLoading;
 
@@ -149,13 +147,13 @@ export default function CompanyRequestDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setCompanyInfo(data);
+      } else {
+        console.error("Failed to fetch company profile");
       }
     } catch (error) {
       console.error("Failed to fetch company info:", error);
     }
   }, [user?.id]);
-
-  // Data fetching for request is now handled by useLiveRequest hook
 
   useEffect(() => {
     if (authLoading) return;
@@ -308,6 +306,27 @@ export default function CompanyRequestDetailPage() {
     );
   }
 
+  if (requestError) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen gap-4">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <p className="text-muted-foreground">Failed to load request</p>
+        <p className="text-sm text-destructive">{requestError}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refreshRequest()}>
+            Try Again
+          </Button>
+          <Link href="/company/requests">
+            <Button variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Requests
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!request) {
     return (
       <div className="flex flex-col justify-center items-center h-screen gap-4">
@@ -336,7 +355,7 @@ export default function CompanyRequestDetailPage() {
   return (
     <AuthGuard requiredRole="company">
       <div className="min-h-screen bg-background">
-        <main className="max-w-6xl mx-auto px-4 py-6">
+        <main className="max-w-5xl mx-auto px-4 py-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -347,9 +366,26 @@ export default function CompanyRequestDetailPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  {request.publicId}
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {request.publicId}
+                  </h1>
+                  {/* Real-time connection indicator */}
+                  <div
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                      isConnected
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                    }`}
+                  >
+                    {isConnected ? (
+                      <Wifi className="w-3 h-3" />
+                    ) : (
+                      <WifiOff className="w-3 h-3" />
+                    )}
+                    {isConnected ? "Live" : "..."}
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={getStatusColor(request.requestStatus)}>
                     {request.requestStatus}
@@ -363,11 +399,9 @@ export default function CompanyRequestDetailPage() {
               </div>
             </div>
             <div className="text-right text-sm text-muted-foreground">
-              <div>
-                Created: {new Date(request.createdAt!).toLocaleDateString()}
-              </div>
-              <div>
-                Updated: {new Date(request.updatedAt!).toLocaleDateString()}
+              <div className="flex items-center gap-1 justify-end">
+                <Calendar className="w-3 h-3" />
+                {new Date(request.createdAt!).toLocaleDateString()}
               </div>
             </div>
           </div>
@@ -375,189 +409,183 @@ export default function CompanyRequestDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Main Info */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Location Map with Toggle */}
-              {request.source.coordinates &&
-                request.destination.coordinates && (
-                  <Card className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        Location Map
-                      </h3>
-                      <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
-                        <Button
-                          variant={mapView === "source" ? "default" : "ghost"}
-                          size="sm"
-                          onClick={() => setMapView("source")}
-                          className="h-8 px-3 text-xs"
-                        >
-                          <MapPin className="w-3 h-3 mr-1" />
-                          Pickup
-                        </Button>
-                        <Button
-                          variant={
-                            mapView === "destination" ? "default" : "ghost"
-                          }
-                          size="sm"
-                          onClick={() => setMapView("destination")}
-                          className="h-8 px-3 text-xs"
-                        >
-                          <MapPin className="w-3 h-3 mr-1" />
-                          Delivery
-                        </Button>
+              {/* Shipping Route */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    Shipping Route
+                  </h3>
+                  
+                  {/* Map Toggle */}
+                  {(request.source.coordinates || request.destination.coordinates) && (
+                    <div className="flex items-center gap-1 p-1 bg-muted rounded-lg border border-border">
+                      <button
+                        onClick={() => setMapView("pickup")}
+                        className={`px-3 py-1.5 text-sm font-medium rounded transition-all ${
+                          mapView === "pickup"
+                            ? "bg-green-500 text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Pickup
+                      </button>
+                      <button
+                        onClick={() => setMapView("delivery")}
+                        className={`px-3 py-1.5 text-sm font-medium rounded transition-all ${
+                          mapView === "delivery"
+                            ? "bg-blue-500 text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Delivery
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-6">
+                  {/* Pickup Location */}
+                  {mapView === "pickup" && (
+                    <div className="relative">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1">
+                          <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
+                            <MapPin className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="text-base font-semibold text-green-700 dark:text-green-300">
+                              Pickup Location
+                            </h4>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300">
+                              {request.sourcePickupMode === "Self" ? "Self Pickup" : "Company Pickup"}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1.5 text-sm">
+                            <p className="font-medium text-foreground">
+                              {request.source.city}, {request.source.country}
+                            </p>
+                            {request.source.street && (
+                              <p className="text-muted-foreground flex items-start gap-2">
+                                <Building2 className="w-4 h-4 mt-0.5 shrink-0" />
+                                <span>
+                                  {request.source.street}
+                                  {request.source.building && `, ${request.source.building}`}
+                                  {request.source.governorate && `, ${request.source.governorate}`}
+                                </span>
+                              </p>
+                            )}
+                            {request.source.mobile && (
+                              <p className="text-muted-foreground flex items-center gap-2">
+                                <Phone className="w-4 h-4" />
+                                <span>{request.source.mobile}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="h-75 rounded-lg overflow-hidden border border-border">
-                      {mapView === "source" ? (
-                        <SimpleLocationMap
-                          key="source-map"
-                          position={[
-                            request.source.coordinates.latitude,
-                            request.source.coordinates.longitude,
-                          ]}
-                          label={`Pickup: ${request.source.city}, ${request.source.country}`}
-                        />
+                  )}
+
+                  {/* Delivery Location */}
+                  {mapView === "delivery" && (
+                    <div className="relative">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1">
+                          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shadow-sm">
+                            <MapPin className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="text-base font-semibold text-blue-700 dark:text-blue-300">
+                              Delivery Destination
+                            </h4>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300">
+                              {request.destinationPickupMode === "Self" ? "Self Delivery" : "Company Delivery"}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1.5 text-sm">
+                            <p className="font-medium text-foreground">
+                              {request.destination.city}, {request.destination.country}
+                            </p>
+                            {request.destination.street && (
+                              <p className="text-muted-foreground flex items-start gap-2">
+                                <Building2 className="w-4 h-4 mt-0.5 shrink-0" />
+                                <span>
+                                  {request.destination.street}
+                                  {request.destination.building && `, ${request.destination.building}`}
+                                  {request.destination.governorate && `, ${request.destination.governorate}`}
+                                </span>
+                              </p>
+                            )}
+                            {request.destination.mobile && (
+                              <p className="text-muted-foreground flex items-center gap-2">
+                                <Phone className="w-4 h-4" />
+                                <span>{request.destination.mobile}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Map Display */}
+                  {(request.source.coordinates || request.destination.coordinates) && (
+                    <div className={`rounded-lg overflow-hidden border-2 transition-colors ${
+                      mapView === "pickup" 
+                        ? "border-green-400 dark:border-green-600" 
+                        : "border-blue-400 dark:border-blue-600"
+                    }`}>
+                      {((mapView === "pickup" && request.source.coordinates) ||
+                        (mapView === "delivery" && request.destination.coordinates)) ? (
+                        <div className="h-64">
+                          <SimpleLocationMap
+                            key={mapView}
+                            position={
+                              mapView === "pickup"
+                                ? [request.source.coordinates!.latitude, request.source.coordinates!.longitude]
+                                : [request.destination.coordinates!.latitude, request.destination.coordinates!.longitude]
+                            }
+                            label={
+                              mapView === "pickup"
+                                ? `Pickup: ${request.source.city}`
+                                : `Delivery: ${request.destination.city}`
+                            }
+                          />
+                        </div>
                       ) : (
-                        <SimpleLocationMap
-                          key="destination-map"
-                          position={[
-                            request.destination.coordinates.latitude,
-                            request.destination.coordinates.longitude,
-                          ]}
-                          label={`Delivery: ${request.destination.city}, ${request.destination.country}`}
-                        />
+                        <div className="h-48 bg-muted flex items-center justify-center text-muted-foreground">
+                          <div className="text-center">
+                            <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Map coordinates not available for this location</p>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    <div className="mt-3 p-2 bg-muted/50 rounded-md">
-                      <p className="text-xs text-muted-foreground">
-                        {mapView === "source" ? (
-                          <>
-                            <span className="font-semibold text-foreground">
-                              Pickup Location:{" "}
-                            </span>
-                            {request.source.street &&
-                              `${request.source.street}, `}
-                            {request.source.city},{" "}
-                            {request.source.governorate &&
-                              `${request.source.governorate}, `}
-                            {request.source.country}
-                          </>
-                        ) : (
-                          <>
-                            <span className="font-semibold text-foreground">
-                              Delivery Location:{" "}
-                            </span>
-                            {request.destination.street &&
-                              `${request.destination.street}, `}
-                            {request.destination.city},{" "}
-                            {request.destination.governorate &&
-                              `${request.destination.governorate}, `}
-                            {request.destination.country}
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  </Card>
-                )}
-
-              {/* Locations */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  Shipping Route
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Source */}
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                        <MapPin className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="font-semibold text-green-800 dark:text-green-200">
-                        Pickup Location
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium text-foreground">
-                        {request.source.fullName}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {request.source.street}, {request.source.building}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {request.source.city}, {request.source.governorate}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {request.source.country}
-                      </p>
-                      {request.source.mobile && (
-                        <p className="text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> {request.source.mobile}
-                        </p>
-                      )}
-                      <Badge className="mt-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
-                        {request.sourcePickupMode === "Self"
-                          ? "Self Pickup"
-                          : "Company Pickup"}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Destination */}
-                  <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
-                        <MapPin className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="font-semibold text-red-800 dark:text-red-200">
-                        Delivery Location
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium text-foreground">
-                        {request.destination.fullName}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {request.destination.street},{" "}
-                        {request.destination.building}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {request.destination.city},{" "}
-                        {request.destination.governorate}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {request.destination.country}
-                      </p>
-                      {request.destination.mobile && (
-                        <p className="text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" />{" "}
-                          {request.destination.mobile}
-                        </p>
-                      )}
-                      <Badge className="mt-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
-                        {request.destinationPickupMode === "Self"
-                          ? "Self Delivery"
-                          : "Company Delivery"}
-                      </Badge>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </Card>
 
               {/* Items Section */}
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Package className="w-4 h-4 text-primary" />
-                    Items ({request.items.length})
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Package className="w-5 h-5 text-primary" />
+                    Shipment Items
                   </h3>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Box className="w-4 h-4" /> {totalQuantity} units
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Scale className="w-4 h-4" /> {totalWeight.toFixed(1)} kg
-                    </span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <Badge variant="secondary" className="font-medium">
+                      <Box className="w-3.5 h-3.5 mr-1.5" /> 
+                      {totalQuantity} units
+                    </Badge>
+                    <Badge variant="secondary" className="font-medium">
+                      <Scale className="w-3.5 h-3.5 mr-1.5" /> 
+                      {totalWeight.toFixed(1)} kg
+                    </Badge>
                   </div>
                 </div>
 
@@ -567,54 +595,50 @@ export default function CompanyRequestDetailPage() {
                     .map((item, idx) => (
                       <div
                         key={idx}
-                        className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 border border-border"
+                        className="bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-900/20 rounded-lg p-4 border border-slate-200 dark:border-slate-700"
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <span className="text-base font-semibold text-foreground">
                                 {item.quantity}x {item.item || item.name}
                               </span>
                               {item.category && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-xs font-medium">
                                   <Tag className="w-3 h-3 mr-1" />
                                   {item.category}
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Scale className="w-3 h-3" /> {item.weight} kg
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1.5">
+                                <Scale className="w-3.5 h-3.5" /> 
+                                <span className="font-medium">{item.weight} kg</span>
                               </span>
                               {item.dimensions && (
-                                <span className="flex items-center gap-1">
-                                  <Ruler className="w-3 h-3" />{" "}
-                                  {item.dimensions}
+                                <span className="flex items-center gap-1.5">
+                                  <Ruler className="w-3.5 h-3.5" /> 
+                                  <span className="font-medium">{item.dimensions}</span>
                                 </span>
                               )}
                             </div>
                             {item.note && (
-                              <p className="text-sm text-amber-600 dark:text-amber-400 mt-2 flex items-start gap-1">
-                                <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
-                                {item.note}
-                              </p>
+                              <div className="mt-3 p-2.5 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+                                <p className="text-sm text-amber-700 dark:text-amber-300 flex items-start gap-1.5">
+                                  <MessageSquare className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                  <span>{item.note}</span>
+                                </p>
+                              </div>
                             )}
-                            {/* Services */}
                             {item.services && (
-                              <div className="flex gap-2 mt-2">
+                              <div className="flex gap-2 mt-3">
                                 {item.services.canBeAssembledDisassembled && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
+                                  <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs">
                                     Assembly/Disassembly
                                   </Badge>
                                 )}
                                 {item.services.packaging && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
+                                  <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-xs">
                                     Packaging
                                   </Badge>
                                 )}
@@ -624,7 +648,7 @@ export default function CompanyRequestDetailPage() {
 
                           {/* Item Media */}
                           {item.media && item.media.length > 0 && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 shrink-0">
                               {item.media.slice(0, 2).map((media, mediaIdx) => (
                                 <button
                                   key={mediaIdx}
@@ -632,7 +656,7 @@ export default function CompanyRequestDetailPage() {
                                     setSelectedImage(media.url);
                                     setShowImageModal(true);
                                   }}
-                                  className="relative w-16 h-16 rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
+                                  className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors"
                                 >
                                   <img
                                     src={media.url}
@@ -642,8 +666,10 @@ export default function CompanyRequestDetailPage() {
                                 </button>
                               ))}
                               {item.media.length > 2 && (
-                                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-sm font-medium">
-                                  +{item.media.length - 2}
+                                <div className="w-16 h-16 rounded-lg bg-muted border-2 border-border flex items-center justify-center">
+                                  <span className="text-sm font-semibold text-muted-foreground">
+                                    +{item.media.length - 2}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -676,134 +702,100 @@ export default function CompanyRequestDetailPage() {
               </Card>
 
               {/* Delivery Details */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-primary" />
-                  Delivery Details
+              <Card className="p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-5 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-primary" />
+                  Delivery Information
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Delivery Type
-                    </p>
-                    <p className="font-medium">{request.deliveryType}</p>
-                  </div>
-                  {request.startTime && (
-                    <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Preferred Time
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1.5 flex items-center gap-1">
+                        <Package className="w-3.5 h-3.5" />
+                        Delivery Type
                       </p>
-                      <p className="font-medium">{request.startTime}</p>
+                      <p className="text-base font-semibold text-foreground">{request.deliveryType}</p>
                     </div>
-                  )}
-                  {request.primaryCost && (
-                    <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Primary Cost
-                      </p>
-                      <p className="font-medium text-primary">
-                        ${request.primaryCost}
-                      </p>
-                    </div>
-                  )}
-                  {request.availableDays &&
-                    request.availableDays.length > 0 && (
-                      <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg md:col-span-2">
-                        <p className="text-xs text-muted-foreground mb-1">
-                          Available Days
+                    {request.startTime && (
+                      <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 border border-purple-200 dark:border-purple-800">
+                        <p className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-1.5 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          Preferred Time
                         </p>
-                        <div className="flex flex-wrap gap-1">
-                          {request.availableDays.includes("All Week") ? (
-                            <Badge variant="secondary">All Week</Badge>
-                          ) : (
-                            request.availableDays.map((day) => (
-                              <Badge key={day} variant="secondary">
-                                {day.slice(0, 3)}
-                              </Badge>
-                            ))
-                          )}
-                        </div>
+                        <p className="text-base font-semibold text-foreground">{request.startTime}</p>
                       </div>
                     )}
-                </div>
-                {request.comment && (
-                  <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1 flex items-center gap-1">
-                      <FileText className="w-3 h-3" /> Additional Notes
-                    </p>
-                    <p className="text-sm text-amber-700 dark:text-amber-300">
-                      {request.comment}
-                    </p>
                   </div>
-                )}
+                  
+                  {request.availableDays && request.availableDays.length > 0 && (
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 border border-amber-200 dark:border-amber-800">
+                      <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-2.5 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        Available Days
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {request.availableDays.includes("All Week") ? (
+                          <Badge className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100 border-0">
+                            All Week
+                          </Badge>
+                        ) : (
+                          request.availableDays.map((day) => (
+                            <Badge 
+                              key={day} 
+                              className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100 border-0"
+                            >
+                              {day}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {request.comment && (
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-900/20 border border-slate-200 dark:border-slate-700">
+                      <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5" />
+                        Additional Notes
+                      </p>
+                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {request.comment}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </Card>
             </div>
 
-            {/* Right Column - Client & Actions */}
+            {/* Right Column - Actions */}
             <div className="space-y-6">
-              {/* Client Info */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <UserIcon className="w-4 h-4 text-primary" />
-                  Client Information
-                </h3>
-                <div className="flex items-center gap-3 mb-4">
-                  <img
-                    src={
-                      typeof request.user === "object" &&
-                      request.user?.profilePicture
-                        ? request.user.profilePicture
-                        : "/default-avatar.png"
-                    }
-                    alt="Client"
-                    className="w-14 h-14 rounded-full object-cover border border-border"
-                  />
-                  <div>
-                    <p className="font-semibold text-foreground">
-                      {typeof request.user === "object"
-                        ? request.user?.fullName
-                        : "Unknown"}
-                    </p>
-                    {typeof request.user === "object" &&
-                      request.user?.email && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Mail className="w-3 h-3" /> {request.user.email}
-                        </p>
-                      )}
-                    {typeof request.user === "object" &&
-                      request.user?.mobile && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> {request.user.mobile}
-                        </p>
-                      )}
-                  </div>
-                </div>
-              </Card>
-
               {/* My Offers */}
               {myOffers.length > 0 && (
-                <Card className="p-4 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
-                  <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Your Offer{myOffers.length > 1 ? "s" : ""}
+                <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-blue-300 dark:border-blue-700">
+                  <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Your Active Offer{myOffers.length > 1 ? "s" : ""}
                   </h3>
                   <div className="space-y-3">
                     {myOffers.map((offer, idx) => (
                       <div
                         key={idx}
-                        className="bg-white dark:bg-slate-900/40 rounded-lg p-3 border border-blue-200 dark:border-blue-800"
+                        className="bg-white dark:bg-slate-900/60 rounded-lg p-4 border-2 border-blue-200 dark:border-blue-800 shadow-sm"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                            ${offer.cost.toFixed(2)}
-                          </span>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Your Bid</p>
+                            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                              ${offer.cost.toFixed(2)}
+                            </span>
+                          </div>
                           <Badge
                             className={
                               offer.status === "accepted"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200 border-green-300"
                                 : offer.status === "rejected"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
-                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                                  ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200 border-red-300"
+                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 border-blue-300"
                             }
                           >
                             {offer.status === "accepted" && (
@@ -812,17 +804,19 @@ export default function CompanyRequestDetailPage() {
                             {offer.status === "rejected" && (
                               <XCircle className="w-3 h-3 mr-1" />
                             )}
-                            {offer.status}
+                            {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
                           </Badge>
                         </div>
                         {offer.comment && (
-                          <p className="text-sm text-blue-600/80 dark:text-blue-300/80 italic">
-                            "{offer.comment}"
-                          </p>
+                          <div className="mt-3 p-2.5 bg-blue-50/50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                            <p className="text-sm text-blue-900 dark:text-blue-100 italic">
+                              "{offer.comment}"
+                            </p>
+                          </div>
                         )}
                         {offer.createdAt && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Submitted:{" "}
+                          <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
                             {new Date(offer.createdAt).toLocaleString()}
                           </p>
                         )}
@@ -834,46 +828,40 @@ export default function CompanyRequestDetailPage() {
 
               {/* Other Offers */}
               {request.costOffers &&
-                request.costOffers.filter((o) => o.company.id !== user?.id)
-                  .length > 0 && (
-                  <Card className="p-4">
-                    <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                request.costOffers.filter((o) => o.company.id !== user?.id).length > 0 && (
+                  <Card className="p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-900/20 border-slate-200 dark:border-slate-700">
+                    <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-primary" />
-                      Other Company Offers (
-                      {
-                        request.costOffers.filter(
-                          (o) => o.company.id !== user?.id,
-                        ).length
-                      }
-                      )
+                      Competing Offers ({request.costOffers.filter((o) => o.company.id !== user?.id).length})
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {request.costOffers
                         .filter((o) => o.company.id !== user?.id)
                         .map((offer, idx) => (
                           <div
                             key={idx}
-                            className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-3 border border-border"
+                            className="bg-white dark:bg-slate-900/40 rounded-lg p-3.5 border border-border hover:border-primary/50 transition-colors"
                           >
                             <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium text-foreground">
+                              <div className="flex-1">
+                                <p className="font-semibold text-foreground text-sm mb-1">
                                   {offer.company.name}
                                 </p>
-                                <p className="text-lg font-bold text-primary">
+                                <p className="text-xl font-bold text-primary">
                                   ${offer.cost.toFixed(2)}
                                 </p>
                               </div>
                               <Badge
+                                variant="outline"
                                 className={
                                   offer.status === "accepted"
-                                    ? "bg-green-100 text-green-800"
+                                    ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30"
                                     : offer.status === "rejected"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-gray-100 text-gray-800"
+                                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30"
+                                      : "border-border"
                                 }
                               >
-                                {offer.status}
+                                {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
                               </Badge>
                             </div>
                           </div>
@@ -883,103 +871,120 @@ export default function CompanyRequestDetailPage() {
                 )}
 
               {/* Offer Form */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-primary" />
-                  {myOffers.length > 0
-                    ? "Update Your Offer"
-                    : "Submit an Offer"}
-                </h3>
+              <Card className="p-5 sticky top-6 z-10">
+                <div className="space-y-4">
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-primary" />
+                    {myOffers.length > 0 ? "Update Your Offer" : "Submit an Offer"}
+                  </h3>
 
-                {!showOfferForm ? (
-                  <div className="space-y-3">
-                    <Button
-                      onClick={() => setShowOfferForm(true)}
-                      className="w-full gap-2"
-                    >
-                      <DollarSign className="w-4 h-4" />
-                      {myOffers.length > 0 ? "Update Offer" : "Make an Offer"}
-                    </Button>
-                    {myOffers.length === 0 && (
-                      <Button
-                        onClick={handleRejectRequest}
-                        variant="outline"
-                        className="w-full text-destructive hover:text-destructive gap-2"
-                        disabled={isSubmitting}
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Reject Request
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Your Price ($){" "}
-                        <span className="text-destructive">*</span>
-                      </label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <input
-                          type="number"
-                          placeholder="0.00"
-                          value={offerCost}
-                          onChange={(e) => setOfferCost(e.target.value)}
-                          className="w-full pl-9 pr-4 py-3 text-lg border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                          min="0"
-                          step="0.01"
-                          autoFocus
-                        />
+                  {/* Estimated Cost Display */}
+                  {request.primaryCost && (
+                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-0.5">Client's Estimated Cost</p>
+                          <p className="text-2xl font-bold text-primary">
+                            ${parseFloat(request.primaryCost).toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-xs text-muted-foreground text-right">
+                          <p>Base your</p>
+                          <p>offer accordingly</p>
+                        </div>
                       </div>
                     </div>
+                  )}
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Comment (optional)
-                      </label>
-                      <textarea
-                        placeholder="Add details about your offer, delivery timeline, or special conditions..."
-                        value={offerComment}
-                        onChange={(e) => setOfferComment(e.target.value)}
-                        className="w-full px-4 py-3 border border-border rounded-lg bg-background resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                        rows={3}
-                      />
+                  {!showOfferForm ? (
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => setShowOfferForm(true)}
+                        className="w-full gap-2"
+                      >
+                        <DollarSign className="w-4 h-4" />
+                        {myOffers.length > 0 ? "Update Offer" : "Make an Offer"}
+                      </Button>
+                      {myOffers.length === 0 && (
+                        <Button
+                          onClick={handleRejectRequest}
+                          variant="outline"
+                          className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+                          disabled={isSubmitting}
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Not Interested
+                        </Button>
+                      )}
                     </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Your Price <span className="text-destructive">*</span>
+                        </label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <input
+                            type="number"
+                            placeholder="0.00"
+                            value={offerCost}
+                            onChange={(e) => setOfferCost(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2.5 text-lg font-semibold border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            min="0"
+                            step="0.01"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => {
-                          setShowOfferForm(false);
-                          setOfferCost("");
-                          setOfferComment("");
-                        }}
-                        variant="outline"
-                        className="flex-1"
-                        disabled={isSubmitting}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleSubmitOffer}
-                        className="flex-1 gap-2"
-                        disabled={isSubmitting || !offerCost}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-4 h-4" />
-                            Submit Offer
-                          </>
-                        )}
-                      </Button>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Comment (optional)
+                        </label>
+                        <textarea
+                          placeholder="Add details about your offer..."
+                          value={offerComment}
+                          onChange={(e) => setOfferComment(e.target.value)}
+                          className="w-full px-4 py-2.5 border border-border rounded-lg bg-background resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            setShowOfferForm(false);
+                            setOfferCost("");
+                            setOfferComment("");
+                          }}
+                          variant="outline"
+                          className="flex-1"
+                          disabled={isSubmitting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleSubmitOffer}
+                          className="flex-1 gap-2"
+                          disabled={isSubmitting || !offerCost}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4" />
+                              Submit
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </Card>
             </div>
           </div>

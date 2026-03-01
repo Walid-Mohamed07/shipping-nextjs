@@ -370,7 +370,7 @@ export default function CompanyRequestsPage() {
                         </div>
 
                         {/* Quick Stats */}
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
                           <span className="flex items-center gap-1">
                             <Package className="w-3.5 h-3.5" />
                             {totalItems} items
@@ -384,29 +384,17 @@ export default function CompanyRequestsPage() {
                           </Badge>
                         </div>
 
-                        {/* Client Preview */}
-                        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                          <img
-                            src={
-                              typeof request.user === "object" &&
-                              request.user?.profilePicture
-                                ? request.user.profilePicture
-                                : "/default-avatar.png"
-                            }
-                            alt="Client"
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                          <span className="text-xs text-muted-foreground truncate flex-1">
-                            {typeof request.user === "object"
-                              ? request.user?.fullName
-                              : "Unknown"}
-                          </span>
-                          {request.primaryCost && (
-                            <span className="text-xs font-semibold text-primary">
-                              ${request.primaryCost}
-                            </span>
-                          )}
-                        </div>
+                        {/* Estimated Cost */}
+                        {request.primaryCost && (
+                          <div className="pt-2 border-t border-border/50">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">Estimated Cost</span>
+                              <span className="text-sm font-bold text-primary">
+                                ${parseFloat(request.primaryCost).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Offer Status Indicator */}
                         {myOffer && (
