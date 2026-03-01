@@ -4,10 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
-import { useLiveRequest, useLiveEvent } from "@/app/hooks/useLiveData";
-import { useRealTime } from "@/app/context/RealTimeContext";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -28,8 +25,6 @@ import {
   BoxSelect,
   ChevronDown,
   X,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
 import {
   Accordion,
@@ -88,17 +83,10 @@ export default function RequestDetailsPage() {
   const { user, isLoading: authLoading } = useProtectedRoute();
   const params = useParams();
   const requestId = params.id as string;
-  const { isConnected, subscribeToRequest } = useRealTime();
   
-  // Use live data hook for real-time request updates
-  const { 
-    data: liveRequest, 
-    isLoading: requestLoading, 
-    error: fetchError,
-    refresh: refreshRequest 
-  } = useLiveRequest(requestId);
-  
+  // Regular data fetching (not live)
   const [request, setRequest] = useState<Request | null>(null);
+  const [requestLoading, setRequestLoading] = useState(true);
   const [error, setError] = useState("");
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -120,46 +108,34 @@ export default function RequestDetailsPage() {
   
   const isLoading = authLoading || requestLoading;
 
-  // Update local request state when live data changes
-  useEffect(() => {
-    if (liveRequest) {
-      setRequest(liveRequest);
-    }
-    if (fetchError) {
-      setError(fetchError);
-    }
-  }, [liveRequest, fetchError]);
-
-  // Show toast notifications for real-time events on this request
-  useLiveEvent(
-    ["OFFER_SUBMITTED", "OFFER_UPDATED", "OFFER_ACCEPTED", "STATUS_CHANGED", "DELIVERY_STATUS_CHANGED", "WAREHOUSE_ASSIGNED"],
-    (event) => {
-      if (event.requestId !== requestId) return;
-      
-      if (event.type === "OFFER_SUBMITTED") {
-        toast.info("New offer received!", {
-          description: `${event.payload.companyName} submitted an offer of $${event.payload.cost}`,
-        });
-      } else if (event.type === "OFFER_ACCEPTED") {
-        toast.success("Offer accepted!", {
-          description: `Offer from ${event.payload.companyName} has been accepted`,
-        });
-      } else if (event.type === "STATUS_CHANGED") {
-        toast.info("Request status updated", {
-          description: `Status changed to: ${event.payload.newStatus}`,
-        });
-      } else if (event.type === "DELIVERY_STATUS_CHANGED") {
-        toast.success("Delivery update!", {
-          description: event.payload.message || `Status: ${event.payload.newStatus}`,
-        });
-      } else if (event.type === "WAREHOUSE_ASSIGNED") {
-        toast.info("Warehouse assigned", {
-          description: `${event.payload.warehouseType} warehouse: ${event.payload.warehouseName}`,
-        });
+  // Fetch request data on mount
+  const fetchRequest = useCallback(async () => {
+    if (!requestId) return;
+    
+    setRequestLoading(true);
+    try {
+      const response = await fetch(`/api/requests/${requestId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch request");
       }
-    },
-    requestId
-  );
+      const data = await response.json();
+      setRequest(data.request || data);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load request");
+    } finally {
+      setRequestLoading(false);
+    }
+  }, [requestId]);
+
+  useEffect(() => {
+    fetchRequest();
+  }, [fetchRequest]);
+
+  // Manual refresh function
+  const refreshRequest = useCallback(() => {
+    fetchRequest();
+  }, [fetchRequest]);
 
   const findNearbyWarehouses = () => {
     setShowLocationPrompt(true);
@@ -292,22 +268,23 @@ export default function RequestDetailsPage() {
     }
   };
 
-  // Data fetching is now handled by useLiveRequest hook above
+  // Data fetching is handled by fetchRequest above
   // Authorization check for non-owners viewing the request
   useEffect(() => {
-    if (authLoading || !user || !liveRequest) return;
+    if (authLoading || !user || !request) return;
     
     const userId = user._id || user.id;
     const isAdminRole = ["admin", "operator", "driver"].includes(user.role);
-    const requestUserId = String(
-      liveRequest.user?._id || liveRequest.user?.id || "",
-    );
+    const reqUser = request.user;
+    const requestUserId = typeof reqUser === "string" 
+      ? reqUser 
+      : String((reqUser as any)?._id || (reqUser as any)?.id || "");
     
     if (!isAdminRole && requestUserId !== String(userId)) {
       setError("Unauthorized");
       toast.error("Unauthorized");
     }
-  }, [authLoading, user, liveRequest]);
+  }, [authLoading, user, request]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -441,7 +418,7 @@ export default function RequestDetailsPage() {
           </div>
 
           {/* Live Tracking Map - Only show when In Transit or later */}
-          {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT ||
+          {/* {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT ||
             request.deliveryStatus ===
               RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
             request.deliveryStatus ===
@@ -453,7 +430,7 @@ export default function RequestDetailsPage() {
                 to={request.destination.country}
                 isInTransit={true}
               />
-            )}
+            )} */}
 
           {/* Location permission dialog - ask before sharing */}
           {showLocationPrompt && (

@@ -11,13 +11,10 @@ import {
   ChevronLeft,
   ChevronRight,
   X as XIcon,
-  Wifi,
-  WifiOff,
   RefreshCw,
 } from "lucide-react";
 import { RequestResponse } from "@/types/request";
 import { useAuth } from "../context/AuthContext";
-import { useLiveData, useLiveEvent } from "../hooks/useLiveData";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useToast, getErrorMessage } from "@/lib/useToast";
@@ -62,26 +59,9 @@ export function AdminRequestsTab() {
   const { user } = useAuth();
   const toastUtils = useToast();
   
-  // Use live data hook for real-time updates
-  const { 
-    data: liveRequests, 
-    isLoading: loading, 
-    refresh,
-    isConnected 
-  } = useLiveData<RequestResponse[]>({
-    endpoint: "/api/requests/manage",
-    eventTypes: [
-      "REQUEST_CREATED",
-      "REQUEST_UPDATED",
-      "OFFER_SUBMITTED",
-      "OFFER_ACCEPTED",
-      "STATUS_CHANGED",
-      "DELIVERY_STATUS_CHANGED",
-    ],
-    transform: (data) => Array.isArray(data) ? data : data.requests || [],
-  });
-  
+  // Regular data fetching (not live)
   const [requests, setRequests] = useState<RequestResponse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -91,29 +71,34 @@ export function AdminRequestsTab() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const itemsPerPage = 10;
 
-  // Update local state when live data changes
-  useEffect(() => {
-    if (liveRequests) {
-      setRequests(liveRequests);
-      setCurrentPage(1);
-    }
-  }, [liveRequests]);
-
-  // Show toast notifications for real-time events
-  useLiveEvent(
-    ["REQUEST_CREATED", "OFFER_SUBMITTED", "STATUS_CHANGED"],
-    (event) => {
-      if (event.type === "REQUEST_CREATED") {
-        toast.info("New request created", {
-          description: "A new shipping request has been submitted",
-        });
-      } else if (event.type === "OFFER_SUBMITTED") {
-        toast.info("New offer submitted", {
-          description: `${event.payload.companyName} submitted an offer of $${event.payload.cost}`,
-        });
+  // Fetch requests data
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/requests/manage");
+      if (!response.ok) {
+        throw new Error("Failed to fetch requests");
       }
+      const data = await response.json();
+      const requestsData = Array.isArray(data) ? data : data.requests || [];
+      setRequests(requestsData);
+    } catch (err) {
+      toast.error("Failed to load requests");
+      console.error("Failed to fetch requests:", err);
+    } finally {
+      setLoading(false);
     }
-  );
+  }, []);
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  // Manual refresh function
+  const refresh = useCallback(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -239,21 +224,7 @@ export function AdminRequestsTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold text-foreground">All Requests</h2>
-          {/* Real-time connection indicator */}
-          <div 
-            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-              isConnected 
-                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" 
-                : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-            }`}
-            title={isConnected ? "Live updates active" : "Connecting..."}
-          >
-            {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-            {isConnected ? "Live" : "..."}
-          </div>
-        </div>
+        <h2 className="text-2xl font-bold text-foreground">All Requests</h2>
         <Button variant="outline" size="sm" onClick={() => refresh()} className="gap-2">
           <RefreshCw className="w-4 h-4" />
           Refresh

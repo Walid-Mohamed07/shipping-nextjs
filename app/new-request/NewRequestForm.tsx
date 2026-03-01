@@ -274,29 +274,46 @@ export default function NewRequestForm() {
   const applyDeliverySurcharge = (baseCost: number) =>
     deliveryType === "Urgent" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
 
-  // Primary cost = base cost × delivery surcharge (Fast +25%); recalc when from, to, items, or deliveryType change
+  // Primary cost = base cost × delivery surcharge (Fast +25%); recalc when addresses, items, or deliveryType change
   React.useEffect(() => {
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current as ReturnType<typeof setTimeout>);
     }
     debounceTimeout.current = setTimeout(() => {
-      const firstItem = items[0] || { category: "", weight: "", quantity: 1 };
-      if (
-        from &&
-        to &&
-        firstItem.category &&
-        firstItem.weight &&
-        firstItem.quantity
-      ) {
-        const base = calculateCost(
-          firstItem.category,
-          firstItem.weight,
-          firstItem.quantity,
-          from,
-          to,
-        );
-        const primaryCostValue = applyDeliverySurcharge(base);
-        setPrimaryCost(primaryCostValue.toFixed(2));
+      // Check if source and destination addresses are selected
+      const sourceSelected = fromAddressIdx >= 0 && userLocations[fromAddressIdx];
+      const destSelected = toAddressIdx >= 0 && userLocations[toAddressIdx];
+      
+      if (sourceSelected && destSelected && items.length > 0) {
+        const sourceLocation = userLocations[fromAddressIdx];
+        const destLocation = userLocations[toAddressIdx];
+        
+        // Calculate total cost for ALL items
+        let totalBaseCost = 0;
+        let hasValidItems = true;
+        
+        for (const item of items) {
+          if (!item.category || !item.weight || !item.quantity) {
+            hasValidItems = false;
+            break;
+          }
+          
+          const itemCost = calculateCost(
+            item.category,
+            item.weight,
+            item.quantity,
+            sourceLocation.country || "",
+            destLocation.country || "",
+          );
+          totalBaseCost += itemCost;
+        }
+        
+        if (hasValidItems) {
+          const primaryCostValue = applyDeliverySurcharge(totalBaseCost);
+          setPrimaryCost(primaryCostValue.toFixed(2));
+        } else {
+          setPrimaryCost("");
+        }
       } else {
         setPrimaryCost("");
       }
@@ -304,7 +321,7 @@ export default function NewRequestForm() {
     return () => {
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     };
-  }, [from, to, items, deliveryType]);
+  }, [fromAddressIdx, toAddressIdx, userLocations, items, deliveryType]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -468,6 +485,20 @@ export default function NewRequestForm() {
       toast.error("Please add at least one item");
     }
 
+    // Validate items with assembly/disassembly checked but no handler selected
+    const itemsWithMissingHandler = items.filter(
+      (item) =>
+        item.services?.canBeAssembledDisassembled &&
+        !item.services?.assemblyDisassemblyHandler
+    );
+    if (itemsWithMissingHandler.length > 0) {
+      errors.assemblyHandler = true;
+      const itemNames = itemsWithMissingHandler.map((i) => i.name).join(", ");
+      toast.error(
+        `Please select who will handle assembly/disassembly for: ${itemNames}`
+      );
+    }
+
     // Validate available days (minimum 2 days required)
     if (availableDays.length < 2) {
       errors.availableDays = true;
@@ -501,6 +532,7 @@ export default function NewRequestForm() {
     const destination: any = { ...selectedDestLoc, pickupMode: destPickupMode };
 
     setIsLoading(true);
+    let uploadToastId: string | number | undefined;
     try {
       // Check if there are any media files to upload
       const hasMediaFiles = items.some(
@@ -508,7 +540,7 @@ export default function NewRequestForm() {
       );
 
       if (hasMediaFiles) {
-        toast.loading("Uploading media files...");
+        uploadToastId = toast.loading("Uploading media files...");
       }
 
       // Upload media files for items and get URLs
@@ -523,17 +555,25 @@ export default function NewRequestForm() {
               formData.append("files", file);
             }
 
-            const uploadResponse = await fetch("/api/upload/media", {
-              method: "POST",
-              body: formData,
-            });
+            try {
+              const uploadResponse = await fetch("/api/upload/media", {
+                method: "POST",
+                body: formData,
+              });
 
-            if (!uploadResponse.ok) {
-              throw new Error("Failed to upload media files");
+              if (!uploadResponse.ok) {
+                const errorData = await uploadResponse.json().catch(() => ({}));
+                console.error("Upload failed:", errorData);
+                throw new Error(errorData.error || "Failed to upload media files");
+              }
+
+              const uploadData = await uploadResponse.json();
+              uploadedUrls = uploadData.urls || [];
+            } catch (uploadErr) {
+              console.error("Media upload error:", uploadErr);
+              // Continue without media - don't fail the entire request
+              uploadedUrls = [];
             }
-
-            const uploadData = await uploadResponse.json();
-            uploadedUrls = uploadData.urls || [];
           }
 
           return {
@@ -549,8 +589,8 @@ export default function NewRequestForm() {
         }),
       );
 
-      if (hasMediaFiles) {
-        toast.dismiss();
+      if (uploadToastId) {
+        toast.dismiss(uploadToastId);
       }
 
       const requestBody = {
@@ -624,6 +664,10 @@ export default function NewRequestForm() {
         router.push("/my-requests");
       }, 2000);
     } catch (err) {
+      // Dismiss loading toast if it exists
+      if (uploadToastId) {
+        toast.dismiss(uploadToastId);
+      }
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create request";
       setError(errorMessage);
@@ -869,6 +913,7 @@ export default function NewRequestForm() {
                         </p>
                       </div>
                       <LocationMapPicker
+                        key={`source-map-${sourceCoords.lat}-${sourceCoords.lng}`}
                         position={{
                           lat: sourceCoords.lat,
                           lng: sourceCoords.lng,
@@ -1075,6 +1120,7 @@ export default function NewRequestForm() {
                           </p>
                         </div>
                         <LocationMapPicker
+                          key={`dest-map-${destCoords.lat}-${destCoords.lng}`}
                           position={{
                             lat: destCoords.lat,
                             lng: destCoords.lng,
