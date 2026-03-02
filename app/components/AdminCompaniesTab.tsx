@@ -8,9 +8,11 @@ import { Card } from "@/components/ui/card";
 import { Trash2, Edit2, Plus, Search } from "lucide-react";
 import { Company } from "@/types";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export function AdminCompaniesTab() {
   const toast = useToast();
+  const { t } = useTranslation();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,9 +87,9 @@ export function AdminCompaniesTab() {
       if (res.ok) {
         fetchCompanies();
         resetForm();
-        toast.create(editingId ? "Company updated successfully" : "Company created successfully");
+        toast.create(editingId ? t.adminCompanies.companyUpdated : t.adminCompanies.companyCreated);
       } else {
-        toast.error("Failed to save company");
+        toast.error(t.adminCompanies.failedSave);
       }
     } catch (error) {
       console.error("Failed to save company:", error);
@@ -96,7 +98,7 @@ export function AdminCompaniesTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure?")) return;
+    if (!confirm(t.adminCompanies.confirmDelete)) return;
 
     try {
       const res = await fetch(`/api/admin/companies?id=${id}`, {
@@ -105,9 +107,9 @@ export function AdminCompaniesTab() {
 
       if (res.ok) {
         fetchCompanies();
-        toast.delete("Company deleted successfully");
+        toast.delete(t.adminCompanies.companyDeleted);
       } else {
-        toast.error("Failed to delete company");
+        toast.error(t.adminCompanies.failedDelete);
       }
     } catch (error) {
       console.error("Failed to delete company:", error);
@@ -141,7 +143,7 @@ export function AdminCompaniesTab() {
     setShowForm(false);
   };
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  if (loading) return <div className="text-center py-8">{t.common.loading}</div>;
 
   const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -154,14 +156,14 @@ export function AdminCompaniesTab() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">Shipping Companies</h2>
+          <h2 className="text-xl font-semibold">{t.adminCompanies.title}</h2>
           <p className="text-sm text-muted-foreground">
             {filteredCompanies.length} companies
           </p>
         </div>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add Company
+          {t.adminCompanies.addCompany}
         </Button>
       </div>
 
@@ -171,7 +173,7 @@ export function AdminCompaniesTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Company Name
+                  {t.adminCompanies.companyName}
                 </label>
                 <input
                   type="text"
@@ -186,7 +188,7 @@ export function AdminCompaniesTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1">{t.common.email}</label>
                 <input
                   type="email"
                   required
@@ -200,7 +202,7 @@ export function AdminCompaniesTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
+                <label className="block text-sm font-medium mb-1">{t.common.phone}</label>
                 <input
                   type="tel"
                   required
@@ -214,7 +216,7 @@ export function AdminCompaniesTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Rating</label>
+                <label className="block text-sm font-medium mb-1">{t.adminCompanies.rating}</label>
                 <input
                   type="number"
                   step="0.1"
@@ -230,7 +232,7 @@ export function AdminCompaniesTab() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1">
-                  Address
+                  {t.common.address}
                 </label>
                 <input
                   type="text"
@@ -247,7 +249,7 @@ export function AdminCompaniesTab() {
 
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">
-                {editingId ? "Update" : "Create"} Company
+                {editingId ? t.adminCompanies.updateCompany : t.adminCompanies.createCompany}
               </Button>
               <Button
                 type="button"
@@ -255,7 +257,7 @@ export function AdminCompaniesTab() {
                 onClick={resetForm}
                 className="flex-1 bg-transparent"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </form>
@@ -269,7 +271,7 @@ export function AdminCompaniesTab() {
             <Search className="w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by company name or email..."
+              placeholder={t.adminCompanies.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent outline-none text-sm"
@@ -278,15 +280,15 @@ export function AdminCompaniesTab() {
 
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
-              Sort By
+              {t.adminCompanies.sortBy}
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
             >
-              <option value="name">Name (A-Z)</option>
-              <option value="rating">Rating (High to Low)</option>
+              <option value="name">{t.adminCompanies.nameAZ}</option>
+              <option value="rating">{t.adminCompanies.ratingHighLow}</option>
             </select>
           </div>
         </div>
@@ -296,7 +298,7 @@ export function AdminCompaniesTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {paginatedCompanies.length === 0 ? (
           <div className="col-span-full text-center py-8 text-muted-foreground">
-            No companies found matching your search
+            {t.adminCompanies.noCompaniesMatch}
           </div>
         ) : (
           paginatedCompanies.map((company) => (
@@ -304,21 +306,21 @@ export function AdminCompaniesTab() {
               <div className="mb-4">
                 <h3 className="font-semibold text-lg">{company.name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  ⭐ {company.rate} rating
+                  ⭐ {company.rate} {t.adminCompanies.ratingLabel}
                 </p>
               </div>
 
               <div className="space-y-2 text-sm mb-4">
                 <p>
-                  <span className="text-muted-foreground">Email:</span>{" "}
+                  <span className="text-muted-foreground">{t.common.email}:</span>{" "}
                   {company.email}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Phone:</span>{" "}
+                  <span className="text-muted-foreground">{t.common.phone}:</span>{" "}
                   {company.phoneNumber}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Address:</span>{" "}
+                  <span className="text-muted-foreground">{t.common.address}:</span>{" "}
                   {company.address}
                 </p>
               </div>
@@ -331,7 +333,7 @@ export function AdminCompaniesTab() {
                   className="flex-1 gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
-                  Edit
+                  {t.common.edit}
                 </Button>
                 <Button
                   size="sm"
@@ -340,7 +342,7 @@ export function AdminCompaniesTab() {
                   className="flex-1 gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t.common.delete}
                 </Button>
               </div>
             </Card>

@@ -8,6 +8,7 @@ import { Request, User } from "@/types";
 import { useLiveData, useLiveEvent } from "@/app/hooks/useLiveData";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Order extends Request {
   user?: User;
@@ -20,6 +21,7 @@ interface AdminOrdersTabProps {
 }
 
 export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
+  const { t } = useTranslation();
   // Use live data hook for real-time updates
   const { 
     data: liveOrders, 
@@ -52,8 +54,8 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
     ["REQUEST_CREATED", "STATUS_CHANGED"],
     (event) => {
       if (event.type === "REQUEST_CREATED") {
-        toast.info("New order received", {
-          description: "A new order has been submitted",
+        toast.info(t.adminOrders.newOrderReceived, {
+          description: t.adminOrders.newOrderDesc,
         });
       }
     }
@@ -105,7 +107,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
   };
 
   if (loading) {
-    return <div className="p-4">Loading orders...</div>;
+    return <div className="p-4">{t.adminOrders.loading}</div>;
   }
 
   const pendingOrders = orders.filter((o) => o.requestStatus === "Pending");
@@ -124,13 +126,13 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
       <div className="flex items-center gap-2 mb-4">
         <AlertCircle className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-semibold">
-          Pending Orders ({pendingOrders.length})
+          {t.adminOrders.pendingOrders} ({pendingOrders.length})
         </h3>
       </div>
 
       {pendingOrders.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-muted-foreground">No pending orders</p>
+          <p className="text-muted-foreground">{t.adminOrders.noPendingOrders}</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -193,54 +195,54 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                         {order.id}
                       </h4>
                       <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-                        Pending
+                        {t.adminOrders.pending}
                       </span>
                     </div>
 
                     {/* Route and Item Info */}
                     <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                       <div>
-                        <span className="text-muted-foreground">From:</span>{" "}
+                        <span className="text-muted-foreground">{t.adminOrders.from}</span>{" "}
                         <span className="font-medium">
                           {order.source?.city ?? "-"},{" "}
                           {order.source?.country ?? "-"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">To:</span>{" "}
+                        <span className="text-muted-foreground">{t.adminOrders.to}</span>{" "}
                         <span className="font-medium">
                           {order.destination?.city ?? "-"},{" "}
                           {order.destination?.country ?? "-"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Item:</span>{" "}
+                        <span className="text-muted-foreground">{t.adminOrders.item}</span>{" "}
                         <span className="font-medium">{itemName}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Category:</span>{" "}
+                        <span className="text-muted-foreground">{t.adminOrders.category}</span>{" "}
                         <span className="font-medium">{category}</span>
                       </div>
                       {weight && (
                         <div>
-                          <span className="text-muted-foreground">Weight:</span>{" "}
+                          <span className="text-muted-foreground">{t.adminOrders.weight}</span>{" "}
                           <span className="font-medium">{weight} kg</span>
                         </div>
                       )}
                       {quantity != null && (
                         <div>
                           <span className="text-muted-foreground">
-                            Quantity:
+                            {t.adminOrders.quantity}
                           </span>{" "}
                           <span className="font-medium">{quantity}</span>
                         </div>
                       )}
                       {order.availableDays && order.availableDays.length > 0 && (
                         <div className="col-span-2">
-                          <span className="text-muted-foreground">Available Days:</span>{" "}
+                          <span className="text-muted-foreground">{t.adminOrders.availableDays}</span>{" "}
                           {order.availableDays.includes("All Week") ? (
                             <span className="inline-flex items-center text-xs font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              All Week
+                              {t.adminOrders.allWeek}
                             </span>
                           ) : (
                             <span className="inline-flex flex-wrap gap-1">
@@ -267,7 +269,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                       className="gap-2 cursor-pointer"
                     >
                       <Check className="w-4 h-4" />
-                      Accept
+                      {t.adminOrders.accept}
                     </Button>
                     <Button
                       size="sm"
@@ -276,7 +278,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                       className="gap-2 cursor-pointer"
                     >
                       <X className="w-4 h-4" />
-                      Reject
+                      {t.adminOrders.reject}
                     </Button>
                     <Link href={`/admin/request/${order.publicId}`}>
                       <Button
@@ -285,7 +287,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
                         className="gap-2 cursor-pointer w-full"
                       >
                         <Eye className="w-4 h-4" />
-                        Details
+                        {t.adminOrders.details}
                       </Button>
                     </Link>
                   </div>
@@ -297,7 +299,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
       )}
 
       <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">All Orders</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.adminOrders.allOrders}</h3>
         <div className="space-y-2">
           {orders.map((order) => (
             <div

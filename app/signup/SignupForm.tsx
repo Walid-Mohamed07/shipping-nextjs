@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/app/context/AuthContext";
+import { useTranslation } from "@/app/context/LocaleContext";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import AddressForm from "@/app/components/AddressForm";
@@ -58,6 +59,7 @@ export function SignupForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const validatePassword = (password: string): { valid: boolean; message: string } => {
@@ -169,10 +171,10 @@ export function SignupForm() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="bg-card rounded-lg border border-border p-8 shadow-sm">
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          Create Account
+          {t.signup.createAccount}
         </h1>
         <p className="text-muted-foreground mb-8">
-          Join ShipHub and start shipping today
+          {t.signup.joinShipHub}
         </p>
 
         {error && (
@@ -185,7 +187,7 @@ export function SignupForm() {
         <form onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning>
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">
-              Account Information
+              {t.signup.accountInfo}
             </h2>
 
             <div>
@@ -193,7 +195,7 @@ export function SignupForm() {
                 htmlFor="fullName"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Full Name *
+                {t.signup.fullName} *
               </label>
               <Input
                 id="fullName"
@@ -211,7 +213,7 @@ export function SignupForm() {
                 htmlFor="email"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Email Address *
+                {t.signup.emailAddress} *
               </label>
               <Input
                 id="email"
@@ -229,7 +231,7 @@ export function SignupForm() {
                 htmlFor="mobile"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Mobile Number *
+                {t.signup.mobileNumber} *
               </label>
               <Input
                 id="mobile"
@@ -253,7 +255,7 @@ export function SignupForm() {
                 htmlFor="password"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Password *
+                {t.signup.password} *
               </label>
               <div className="relative">
                 <Input
@@ -279,7 +281,7 @@ export function SignupForm() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char (!@#$%^&*)
+                {t.signup.passwordRequirements}
               </p>
             </div>
 
@@ -288,7 +290,7 @@ export function SignupForm() {
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Confirm Password *
+                {t.signup.confirmPassword} *
               </label>
               <div className="relative">
                 <Input
@@ -320,7 +322,7 @@ export function SignupForm() {
                 htmlFor="birthDate"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Birth Date
+                {t.signup.birthDate}
               </label>
               <Input
                 id="birthDate"
@@ -334,7 +336,7 @@ export function SignupForm() {
 
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-4">
-              Delivery Address (Optional)
+              {t.signup.deliveryAddress}
             </h2>
             <AddressForm
               value={address}
@@ -348,17 +350,17 @@ export function SignupForm() {
             disabled={isLoading}
             className="w-full cursor-pointer text-base py-2 h-auto"
           >
-            {isLoading ? "Creating account..." : "Create Account"}
+            {isLoading ? t.signup.creatingAccount : t.signup.createAccount}
           </Button>
         </form>
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          {t.signup.alreadyHaveAccount}{" "}
           <Link
             href="/login"
             className="text-primary hover:underline font-medium"
           >
-            Sign in here
+            {t.signup.signInHere}
           </Link>
         </div>
       </div>

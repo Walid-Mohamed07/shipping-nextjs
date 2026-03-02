@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, TrendingUp, Package, Truck, Clock, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Metrics {
   totalShipments: number;
@@ -31,6 +32,7 @@ interface Metrics {
 }
 
 export function AdminPerformanceMetricsTab() {
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,7 +62,7 @@ export function AdminPerformanceMetricsTab() {
   };
 
   if (loading) {
-    return <p className="text-muted-foreground">Loading metrics...</p>;
+    return <p className="text-muted-foreground">{t.adminMetrics.loading}</p>;
   }
 
   if (error) {
@@ -81,10 +83,10 @@ export function AdminPerformanceMetricsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">
-            Delivery Performance Metrics
+            {t.adminMetrics.title}
           </h2>
           <p className="text-muted-foreground mt-1">
-            Track key performance indicators and delivery efficiency
+            {t.adminMetrics.subtitle}
           </p>
         </div>
         <Button
@@ -105,7 +107,7 @@ export function AdminPerformanceMetricsTab() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-sm font-medium">
-                Total Shipments
+                {t.adminMetrics.totalShipments}
               </p>
               <p className="text-4xl font-bold text-foreground mt-2">
                 {metrics.totalShipments}
@@ -119,7 +121,7 @@ export function AdminPerformanceMetricsTab() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-sm font-medium">
-                Delivered
+                {t.adminMetrics.delivered}
               </p>
               <p className="text-4xl font-bold text-green-700 dark:text-green-400 mt-2">
                 {metrics.deliveredShipments}
@@ -130,7 +132,7 @@ export function AdminPerformanceMetricsTab() {
                       (metrics.deliveredShipments / metrics.totalShipments) * 100
                     )
                   : 0}
-                % complete
+                % {t.adminMetrics.complete}
               </p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400 opacity-20" />
@@ -141,13 +143,13 @@ export function AdminPerformanceMetricsTab() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-sm font-medium">
-                In Transit
+                {t.adminMetrics.inTransit}
               </p>
               <p className="text-4xl font-bold text-purple-700 dark:text-purple-400 mt-2">
                 {metrics.inTransitShipments}
               </p>
               <p className="text-xs text-purple-600 dark:text-purple-500 mt-1">
-                Currently moving
+                {t.adminMetrics.currentlyMoving}
               </p>
             </div>
             <Truck className="w-8 h-8 text-purple-600 dark:text-purple-400 opacity-20" />
@@ -158,7 +160,7 @@ export function AdminPerformanceMetricsTab() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-sm font-medium">
-                Avg Delivery Time
+                {t.adminMetrics.avgDeliveryTime}
               </p>
               <p className="text-3xl font-bold text-orange-700 dark:text-orange-400 mt-2">
                 {metrics.averageDeliveryTime}
@@ -173,7 +175,7 @@ export function AdminPerformanceMetricsTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
           <h3 className="font-semibold text-foreground mb-4">
-            On-Time Delivery Rate
+            {t.adminMetrics.onTimeDeliveryRate}
           </h3>
           <div className="space-y-3">
             <div className="flex items-end justify-between">
@@ -182,7 +184,7 @@ export function AdminPerformanceMetricsTab() {
                   {metrics.onTimeDeliveryRate}%
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Target: 95%
+                  {t.adminMetrics.target}
                 </p>
               </div>
             </div>
@@ -197,7 +199,7 @@ export function AdminPerformanceMetricsTab() {
 
         <Card className="p-6">
           <h3 className="font-semibold text-foreground mb-4">
-            Vehicle Utilization
+            {t.adminMetrics.vehicleUtilization}
           </h3>
           <div className="space-y-3">
             <div className="flex items-end justify-between">
@@ -206,7 +208,7 @@ export function AdminPerformanceMetricsTab() {
                   {metrics.vehicleUtilization}%
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Fleet capacity usage
+                  {t.adminMetrics.fleetCapacity}
                 </p>
               </div>
             </div>
@@ -223,20 +225,20 @@ export function AdminPerformanceMetricsTab() {
       {/* Driver Performance */}
       <Card className="p-6">
         <h3 className="font-semibold text-foreground mb-4">
-          Driver Performance
+          {t.adminMetrics.driverPerformance}
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                  Driver
+                  {t.adminMetrics.driver}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                  Completed Deliveries
+                  {t.adminMetrics.completedCol}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                  On-Time Rate
+                  {t.adminMetrics.onTimeRate}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">
                   Status
@@ -282,7 +284,7 @@ export function AdminPerformanceMetricsTab() {
                           : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400"
                       }`}
                     >
-                      {driver.onTimeRate >= 85 ? "Excellent" : "Good"}
+                      {driver.onTimeRate >= 85 ? t.adminMetrics.excellent : t.adminMetrics.good}
                     </span>
                   </td>
                 </tr>

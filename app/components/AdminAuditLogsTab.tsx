@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, ChevronDown, Filter } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface AuditLog {
   id: string;
@@ -58,6 +59,7 @@ export function AdminAuditLogsTab() {
   const [sortBy, setSortBy] = useState<"date" | "action" | "user">("date");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchLogs();
@@ -98,7 +100,7 @@ export function AdminAuditLogsTab() {
       setFilteredLogs(data.logs || []);
       setError("");
     } catch (err) {
-      setError("Failed to load audit logs");
+      setError(t.adminAuditLogs.failedLoadLogs);
     } finally {
       setLoading(false);
     }
@@ -115,9 +117,9 @@ export function AdminAuditLogsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Audit Logs</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t.adminAuditLogs.title}</h2>
         <p className="text-muted-foreground mt-1">
-          Track all system actions and changes
+          {t.adminAuditLogs.subtitle}
         </p>
       </div>
 
@@ -140,7 +142,7 @@ export function AdminAuditLogsTab() {
                 size="sm"
                 className={filterAction === "" ? "" : "bg-transparent"}
               >
-                All Actions
+                {t.adminAuditLogs.allActions}
               </Button>
               {uniqueActions.map((action) => (
                 <Button
@@ -158,28 +160,28 @@ export function AdminAuditLogsTab() {
 
           <div className="flex items-center gap-3 pt-2 border-t border-border">
             <label className="text-xs font-medium text-muted-foreground min-w-max">
-              Sort By:
+              {t.adminAuditLogs.sortBy}
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="px-2 py-2 border border-border rounded text-sm bg-background"
             >
-              <option value="date">Date (Newest)</option>
-              <option value="action">Action (A-Z)</option>
-              <option value="user">User (A-Z)</option>
+              <option value="date">{t.adminAuditLogs.dateNewest}</option>
+              <option value="action">{t.adminAuditLogs.actionAZ}</option>
+              <option value="user">{t.adminAuditLogs.userAZ}</option>
             </select>
             <span className="text-xs text-muted-foreground ml-auto">
-              {filteredLogs.length} entries
+              {filteredLogs.length} {t.adminAuditLogs.entries}
             </span>
           </div>
         </div>
       </Card>
 
       {loading ? (
-        <p className="text-muted-foreground">Loading audit logs...</p>
+        <p className="text-muted-foreground">{t.adminAuditLogs.loading}</p>
       ) : paginatedLogs.length === 0 ? (
-        <p className="text-muted-foreground">No audit logs found</p>
+        <p className="text-muted-foreground">{t.adminAuditLogs.noLogsFound}</p>
       ) : (
         <div className="space-y-2">
           {paginatedLogs.map((log) => (
@@ -239,7 +241,7 @@ export function AdminAuditLogsTab() {
                 <div className="mt-4 pt-4 border-t border-border">
                   <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
                     <h4 className="font-semibold text-sm text-foreground mb-3">
-                      Changes Made:
+                      {t.adminAuditLogs.changesMade}
                     </h4>
                     <div className="space-y-2">
                       {Object.entries(log.changes).map(([key, value]) => (
@@ -262,10 +264,10 @@ export function AdminAuditLogsTab() {
                     <div className="mt-4 pt-4 border-t border-border">
                       <div className="text-xs text-muted-foreground space-y-1">
                         <p>
-                          <strong>User ID:</strong> {log.userId}
+                          <strong>{t.adminAuditLogs.userId}</strong> {log.userId}
                         </p>
                         <p>
-                          <strong>Timestamp:</strong>{" "}
+                          <strong>{t.adminAuditLogs.timestamp}</strong>{" "}
                           {new Date(log.timestamp).toISOString()}
                         </p>
                       </div>
@@ -286,7 +288,7 @@ export function AdminAuditLogsTab() {
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            {t.common.previous}
           </Button>
           <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -313,7 +315,7 @@ export function AdminAuditLogsTab() {
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
           >
-            Next
+            {t.common.next}
           </Button>
         </div>
       )}

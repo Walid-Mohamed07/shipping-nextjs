@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Edit2, Plus, Search, AlertCircle } from "lucide-react";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Category {
   _id: string;
@@ -16,6 +17,7 @@ interface Category {
 
 export function AdminCategoriesTab() {
   const toast = useToast();
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export function AdminCategoriesTab() {
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Category name is required";
+      newErrors.name = t.adminCategories.categoryNameRequired;
     }
 
     setErrors(newErrors);
@@ -84,7 +86,7 @@ export function AdminCategoriesTab() {
         });
 
         if (!response.ok) throw new Error("Failed to update category");
-        toast.create("Category updated successfully");
+        toast.create(t.adminCategories.categoryUpdated);
       } else {
         // Create new category
         const response = await fetch("/api/admin/categories", {
@@ -97,7 +99,7 @@ export function AdminCategoriesTab() {
           const error = await response.json();
           throw new Error(error.error || "Failed to create category");
         }
-        toast.create("Category created successfully");
+        toast.create(t.adminCategories.categoryCreated);
       }
 
       resetForm();
@@ -108,7 +110,7 @@ export function AdminCategoriesTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this category?")) return;
+    if (!confirm(t.adminCategories.confirmDelete)) return;
 
     try {
       const response = await fetch(`/api/admin/categories/${id}`, {
@@ -116,7 +118,7 @@ export function AdminCategoriesTab() {
       });
 
       if (!response.ok) throw new Error("Failed to delete category");
-      toast.create("Category deleted successfully");
+      toast.create(t.adminCategories.categoryDeleted);
       fetchCategories();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -149,9 +151,9 @@ export function AdminCategoriesTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t.adminCategories.title}</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Manage shipping categories for the system
+            {t.adminCategories.subtitle}
           </p>
         </div>
         <Button
@@ -162,7 +164,7 @@ export function AdminCategoriesTab() {
           className="gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add Category
+          {t.adminCategories.addCategory}
         </Button>
       </div>
 
@@ -171,7 +173,7 @@ export function AdminCategoriesTab() {
         <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Search categories..."
+          placeholder={t.adminCategories.searchPlaceholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -182,13 +184,13 @@ export function AdminCategoriesTab() {
       {showForm && (
         <Card className="p-6 border-2 border-blue-200 bg-blue-50">
           <h3 className="text-lg font-semibold mb-4">
-            {editingId ? "Edit Category" : "New Category"}
+            {editingId ? t.adminCategories.editCategory : t.adminCategories.newCategory}
           </h3>
           
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category Name *
+                {t.adminCategories.categoryNameLabel}
               </label>
               <input
                 type="text"
@@ -197,7 +199,7 @@ export function AdminCategoriesTab() {
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.name ? "border-red-500" : "border-gray-300"
                 }`}
-                placeholder="e.g., Electronics & Technology"
+                placeholder={t.adminCategories.categoryNamePlaceholder}
               />
               {errors.name && (
                 <p className="text-red-600 text-sm mt-1">{errors.name}</p>
@@ -206,23 +208,23 @@ export function AdminCategoriesTab() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description (Optional)
+                {t.adminCategories.descriptionOptional}
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Add a description for this category..."
+                placeholder={t.adminCategories.descriptionPlaceholder}
                 rows={3}
               />
             </div>
 
             <div className="flex gap-2">
               <Button onClick={handleSave} className="flex-1">
-                {editingId ? "Update" : "Create"}
+                {editingId ? t.common.update : t.common.create}
               </Button>
               <Button onClick={resetForm} variant="outline" className="flex-1">
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </div>
@@ -232,11 +234,11 @@ export function AdminCategoriesTab() {
       {/* Categories List */}
       <div className="space-y-3">
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading categories...</div>
+          <div className="text-center py-8 text-gray-500">{t.adminCategories.loading}</div>
         ) : paginatedCategories.length === 0 ? (
           <Card className="p-8 text-center">
             <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-600">No categories found</p>
+            <p className="text-gray-600">{t.adminCategories.noCategories}</p>
           </Card>
         ) : (
           paginatedCategories.map((category) => (
@@ -258,7 +260,7 @@ export function AdminCategoriesTab() {
                   className="gap-1"
                 >
                   <Edit2 className="w-4 h-4" />
-                  Edit
+                  {t.common.edit}
                 </Button>
                 <Button
                   size="sm"
@@ -267,7 +269,7 @@ export function AdminCategoriesTab() {
                   className="gap-1"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t.common.delete}
                 </Button>
               </div>
             </Card>
@@ -283,17 +285,17 @@ export function AdminCategoriesTab() {
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => p - 1)}
           >
-            Previous
+            {t.common.previous}
           </Button>
           <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
+            {t.common.page} {currentPage} {t.common.of} {totalPages}
           </span>
           <Button
             variant="outline"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => p + 1)}
           >
-            Next
+            {t.common.next}
           </Button>
         </div>
       )}

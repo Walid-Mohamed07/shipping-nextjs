@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Edit2, Plus, MapPin, Search } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Address {
   id: string;
@@ -56,6 +57,7 @@ interface Driver {
 }
 
 export function AdminDriversTab() {
+  const { t } = useTranslation();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,7 +211,7 @@ export function AdminDriversTab() {
     setShowForm(false);
   };
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  if (loading) return <div className="text-center py-8">{t.common.loading}</div>;
 
   const totalPages = Math.ceil(filteredDrivers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -222,10 +224,10 @@ export function AdminDriversTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Driver Management</h2>
+        <h2 className="text-2xl font-bold">{t.adminDrivers.title}</h2>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add Driver
+          {t.adminDrivers.addDriver}
         </Button>
       </div>
 
@@ -235,7 +237,7 @@ export function AdminDriversTab() {
             <div className="grid grid-cols-2 gap-4">
               <input
                 type="text"
-                placeholder="Full Name"
+                placeholder={t.adminDrivers.fullNamePlaceholder}
                 value={formData.fullName}
                 onChange={(e) =>
                   setFormData({ ...formData, fullName: e.target.value })
@@ -245,7 +247,7 @@ export function AdminDriversTab() {
               />
               <input
                 type="text"
-                placeholder="Username"
+                placeholder={t.adminDrivers.usernamePlaceholder}
                 value={formData.username}
                 onChange={(e) =>
                   setFormData({ ...formData, username: e.target.value })
@@ -265,7 +267,7 @@ export function AdminDriversTab() {
               />
               <input
                 type="text"
-                placeholder="License/Passport Number"
+                placeholder={t.adminDrivers.licensePassport}
                 value={formData.nationalOrPassportNumber}
                 onChange={(e) =>
                   setFormData({
@@ -298,7 +300,7 @@ export function AdminDriversTab() {
             </div>
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">
-                {editingId ? "Update" : "Create"}
+                {editingId ? t.adminDrivers.update : t.adminDrivers.create}
               </Button>
               <Button
                 type="button"
@@ -306,7 +308,7 @@ export function AdminDriversTab() {
                 onClick={resetForm}
                 className="flex-1 bg-transparent"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </form>
@@ -320,7 +322,7 @@ export function AdminDriversTab() {
             <Search className="w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={t.adminDrivers.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent outline-none text-sm"
@@ -329,14 +331,14 @@ export function AdminDriversTab() {
 
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
-              Status
+              {t.adminDrivers.filterStatus}
             </label>
             <select
               value={statusFilter || ""}
               onChange={(e) => setStatusFilter(e.target.value || null)}
               className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
             >
-              <option value="">All</option>
+                <option value="">{t.adminDrivers.allStatus}</option>
               {statuses.map((s) => (
                 <option key={s} value={s}>
                   {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -347,15 +349,15 @@ export function AdminDriversTab() {
 
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
-              Sort By
+              {t.adminDrivers.sortBy}
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
             >
-              <option value="name">Name (A-Z)</option>
-              <option value="date">Date Joined (Newest)</option>
+                <option value="name">{t.adminDrivers.nameAZ}</option>
+                <option value="date">{t.adminDrivers.dateJoinedNewest}</option>
             </select>
           </div>
         </div>
@@ -427,22 +429,17 @@ export function AdminDriversTab() {
             );
           })
         )}
-        {paginatedDrivers.length === 0 && drivers.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No drivers found. Create your first driver to get started.
-          </div>
-        )}
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
+        <div className="flex items-center justify-center gap-4">
           <Button
             variant="outline"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            {t.common.previous}
           </Button>
           <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -469,7 +466,7 @@ export function AdminDriversTab() {
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
           >
-            Next
+            {t.common.next}
           </Button>
         </div>
       )}

@@ -20,9 +20,11 @@ import {
 import { type User } from "@/types";
 import ProfilePictureUpload from "@/app/components/ProfilePictureUpload";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export function AdminUsersTab() {
   const toast = useToast();
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,18 +174,18 @@ export function AdminUsersTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email || !formData.username) {
-      toast.error("Please fill in all required fields");
+      toast.error(t.adminUsers.fillRequired);
       return;
     }
 
     // For create mode, validate password
     if (!editingId) {
       if (!formData.password) {
-        toast.error("Password is required");
+        toast.error(t.adminUsers.passwordRequired);
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        toast.error("Passwords do not match");
+        toast.error(t.adminUsers.passwordsNoMatch);
         return;
       }
       const passwordValidation = validatePassword(formData.password);
@@ -196,11 +198,11 @@ export function AdminUsersTab() {
     // For update mode with change password
     if (editingId && changePasswordMode) {
       if (!newPassword) {
-        toast.error("Please enter a new password");
+        toast.error(t.adminUsers.enterNewPasswordError);
         return;
       }
       if (newPassword !== confirmNewPassword) {
-        toast.error("New passwords do not match");
+        toast.error(t.adminUsers.newPasswordsNoMatch);
         return;
       }
       const passwordValidation = validatePassword(newPassword);
@@ -262,7 +264,7 @@ export function AdminUsersTab() {
               : u,
           ),
         );
-        toast.update("User updated successfully");
+        toast.update(t.adminUsers.userUpdated);
       } else {
         // Create new user via API
         const createPayload: any = {
@@ -306,7 +308,7 @@ export function AdminUsersTab() {
           updatedAt: data.user.createdAt,
         };
         setUsers([...users, newUser]);
-        toast.create("User created successfully");
+        toast.create(t.adminUsers.userCreated);
       }
 
       resetForm();
@@ -328,9 +330,9 @@ export function AdminUsersTab() {
       });
       if (response.ok) {
         setUsers(users.filter((u) => (u._id as string) === id || u.id === id));
-        toast.delete("User deleted successfully");
+        toast.delete(t.adminUsers.userDeleted);
       } else {
-        toast.error("Failed to delete user");
+        toast.error(t.adminUsers.failedDelete);
       }
     } catch (error) {
       console.error("Failed to delete user:", error);
@@ -395,7 +397,7 @@ export function AdminUsersTab() {
     setShowConfirmNewPassword(false);
   };
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  if (loading) return <div className="text-center py-8">{t.common.loading}</div>;
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -409,10 +411,10 @@ export function AdminUsersTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">User Management</h2>
+        <h2 className="text-2xl font-bold">{t.adminUsers.title}</h2>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add User
+          {t.adminUsers.addUser}
         </Button>
       </div>
 
@@ -424,10 +426,10 @@ export function AdminUsersTab() {
               className={`space-y-4 ${editingId ? "opacity-60 pointer-events-none" : ""}`}
             >
               <h3 className="text-lg font-semibold text-foreground">
-                Account Information
+                {t.adminUsers.accountInfo}
                 {editingId && (
                   <span className="text-xs font-normal text-muted-foreground ml-2">
-                    (Read-only)
+                    {t.adminUsers.readOnly}
                   </span>
                 )}
               </h3>
@@ -439,7 +441,7 @@ export function AdminUsersTab() {
                     htmlFor="fullName"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Full Name *
+                    {t.adminUsers.fullName}
                   </label>
                   <Input
                     id="fullName"
@@ -460,7 +462,7 @@ export function AdminUsersTab() {
                     htmlFor="username"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Username *
+                    {t.adminUsers.username}
                   </label>
                   <Input
                     id="username"
@@ -484,7 +486,7 @@ export function AdminUsersTab() {
                     htmlFor="email"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Email Address *
+                    {t.adminUsers.emailAddress}
                   </label>
                   <Input
                     id="email"
@@ -505,7 +507,7 @@ export function AdminUsersTab() {
                     htmlFor="mobile"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Mobile Number
+                    {t.adminUsers.mobileNumber}
                   </label>
                   <Input
                     id="mobile"
@@ -527,7 +529,7 @@ export function AdminUsersTab() {
                   htmlFor="birthDate"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Birth Date
+                  {t.adminUsers.birthDate}
                 </label>
                 <Input
                   id="birthDate"
@@ -544,7 +546,7 @@ export function AdminUsersTab() {
               {/* Profile Picture - Full Width */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Profile Picture
+                  {t.adminUsers.profilePicture}
                 </label>
                 <ProfilePictureUpload
                   value={profilePicture}
@@ -559,7 +561,7 @@ export function AdminUsersTab() {
             {!editingId && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="text-lg font-semibold text-foreground">
-                  Password
+                  {t.adminUsers.passwordSection}
                 </h3>
 
                 {/* Password & Confirm Password */}
@@ -569,13 +571,13 @@ export function AdminUsersTab() {
                       htmlFor="password"
                       className="block text-sm font-medium text-foreground mb-2"
                     >
-                      Password *
+                      {t.adminUsers.passwordLabel}
                     </label>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter password"
+                        placeholder={t.adminUsers.enterPassword}
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({
@@ -599,7 +601,7 @@ export function AdminUsersTab() {
                       </button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char (!@#$%^&*)
+                      {t.adminUsers.passwordHint}
                     </p>
                   </div>
 
@@ -608,13 +610,13 @@ export function AdminUsersTab() {
                       htmlFor="confirmPassword"
                       className="block text-sm font-medium text-foreground mb-2"
                     >
-                      Confirm Password *
+                      {t.adminUsers.confirmPasswordLabel}
                     </label>
                     <div className="relative">
                       <Input
                         id="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm password"
+                        placeholder={t.adminUsers.confirmPasswordPlaceholder}
                         value={formData.confirmPassword}
                         onChange={(e) =>
                           setFormData({
@@ -647,7 +649,7 @@ export function AdminUsersTab() {
             {/* Role and Status Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">
-                Permissions & Status
+                {t.adminUsers.permissionsStatus}
               </h3>
 
               <div className="grid grid-cols-2 gap-4">
@@ -657,7 +659,7 @@ export function AdminUsersTab() {
                     htmlFor="role"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Role *
+                    {t.adminUsers.roleLabel}
                   </label>
                   <select
                     id="role"
@@ -667,11 +669,11 @@ export function AdminUsersTab() {
                     }
                     className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
                   >
-                    <option value="client">Client</option>
-                    <option value="admin">Admin</option>
-                    <option value="operator">Operator</option>
-                    <option value="company">Company</option>
-                    <option value="driver">Driver</option>
+                    <option value="client">{t.adminUsers.clientRole}</option>
+                    <option value="admin">{t.adminUsers.adminRole}</option>
+                    <option value="operator">{t.adminUsers.operatorRole}</option>
+                    <option value="company">{t.adminUsers.companyRole}</option>
+                    <option value="driver">{t.adminUsers.driverRole}</option>
                   </select>
                 </div>
 
@@ -681,7 +683,7 @@ export function AdminUsersTab() {
                     htmlFor="status"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Status *
+                    {t.adminUsers.statusLabel}
                   </label>
                   <select
                     id="status"
@@ -712,7 +714,7 @@ export function AdminUsersTab() {
                   <div className="flex items-center justify-center py-8 border border-border rounded-md bg-muted">
                     <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mr-2" />
                     <span className="text-muted-foreground">
-                      Loading companies...
+                      {t.adminUsers.loadingCompanies}
                     </span>
                   </div>
                 ) : companies.length > 0 ? (
@@ -757,7 +759,7 @@ export function AdminUsersTab() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-20 border border-border rounded-md bg-muted text-muted-foreground text-sm">
-                    No companies available
+                    {t.adminUsers.noCompanies}
                   </div>
                 )}
               </div>
@@ -777,7 +779,7 @@ export function AdminUsersTab() {
                       onClick={() => setChangePasswordMode(true)}
                       className="cursor-pointer"
                     >
-                      Change Password
+                      {t.adminUsers.changePassword}
                     </Button>
                   )}
                 </div>
@@ -785,7 +787,7 @@ export function AdminUsersTab() {
                 {changePasswordMode && (
                   <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      Enter the new password for this user.
+                      {t.adminUsers.newPasswordHint}
                     </p>
 
                     {/* New Password & Confirm New Password */}
@@ -795,13 +797,13 @@ export function AdminUsersTab() {
                           htmlFor="newPassword"
                           className="block text-sm font-medium text-foreground mb-2"
                         >
-                          New Password *
+                          {t.adminUsers.newPasswordLabel}
                         </label>
                         <div className="relative">
                           <Input
                             id="newPassword"
                             type={showNewPassword ? "text" : "password"}
-                            placeholder="Enter new password"
+                            placeholder={t.adminUsers.enterNewPassword}
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                             className="bg-background pr-10"
@@ -819,7 +821,7 @@ export function AdminUsersTab() {
                           </button>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char (!@#$%^&*)
+                          {t.adminUsers.passwordHint}
                         </p>
                       </div>
 
@@ -828,13 +830,13 @@ export function AdminUsersTab() {
                           htmlFor="confirmNewPassword"
                           className="block text-sm font-medium text-foreground mb-2"
                         >
-                          Confirm New Password *
+                          {t.adminUsers.confirmNewPasswordLabel}
                         </label>
                         <div className="relative">
                           <Input
                             id="confirmNewPassword"
                             type={showConfirmNewPassword ? "text" : "password"}
-                            placeholder="Confirm new password"
+                            placeholder={t.adminUsers.confirmNewPasswordPlaceholder}
                             value={confirmNewPassword}
                             onChange={(e) =>
                               setConfirmNewPassword(e.target.value)
@@ -869,7 +871,7 @@ export function AdminUsersTab() {
                       }}
                       className="text-sm text-muted-foreground hover:text-foreground cursor-pointer"
                     >
-                      Cancel Password Change
+                      {t.adminUsers.cancelPasswordChange}
                     </button>
                   </div>
                 )}
@@ -886,12 +888,12 @@ export function AdminUsersTab() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {editingId ? "Updating..." : "Creating..."}
+                    {editingId ? t.adminUsers.updating : t.adminUsers.creating}
                   </>
                 ) : editingId ? (
-                  "Update User"
+                  t.adminUsers.updateUser
                 ) : (
-                  "Create User"
+                  t.adminUsers.createUser
                 )}
               </Button>
               <Button
@@ -915,7 +917,7 @@ export function AdminUsersTab() {
             <Search className="w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by name, username, or email..."
+              placeholder={t.adminUsers.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent outline-none text-sm"
@@ -925,14 +927,14 @@ export function AdminUsersTab() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Status
+                {t.adminUsers.filterStatus}
               </label>
               <select
                 value={statusFilter || ""}
                 onChange={(e) => setStatusFilter(e.target.value || null)}
                 className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
               >
-                <option value="">All Statuses</option>
+                <option value="">{t.adminUsers.allStatuses}</option>
                 {statuses.map((s) => (
                   <option key={s} value={s}>
                     {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -943,14 +945,14 @@ export function AdminUsersTab() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Role
+                {t.adminUsers.filterRole}
               </label>
               <select
                 value={roleFilter || ""}
                 onChange={(e) => setRoleFilter(e.target.value || null)}
                 className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
               >
-                <option value="">All Roles</option>
+                <option value="">{t.adminUsers.allRoles}</option>
                 {roles.map((r) => (
                   <option key={r} value={r}>
                     {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -961,25 +963,25 @@ export function AdminUsersTab() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Sort By
+                {t.adminUsers.sortBy}
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
               >
-                <option value="name">Name (A-Z)</option>
-                <option value="role">Role</option>
-                <option value="date">Date Created (Newest)</option>
+                <option value="name">{t.adminUsers.nameAZ}</option>
+                <option value="role">{t.adminUsers.sortByRole}</option>
+                <option value="date">{t.adminUsers.dateCreated}</option>
               </select>
             </div>
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Results
+                {t.adminUsers.results}
               </label>
               <div className="flex items-center justify-center h-9 px-2 border border-border rounded bg-background text-sm">
-                {filteredUsers.length} total
+                {filteredUsers.length} {t.adminUsers.total}
               </div>
             </div>
           </div>
@@ -990,7 +992,7 @@ export function AdminUsersTab() {
       <div className="space-y-2">
         {paginatedUsers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No users found matching your criteria
+            {t.adminUsers.noUsersFound}
           </div>
         ) : (
           paginatedUsers.map((user) => {

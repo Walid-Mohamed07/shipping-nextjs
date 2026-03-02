@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
 import { useLocale, useTranslation } from "@/app/context/LocaleContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, ChevronDown, Languages } from "lucide-react";
+import { LogOut, User, ChevronDown, Globe  } from "lucide-react";
 import Image from "next/image";
 import { MessageNotification } from "./MessageNotification";
 import { useState, useRef, useEffect } from "react";
@@ -68,7 +68,7 @@ export function Header() {
               className="flex items-center gap-1 hover:opacity-80 transition-opacity text-foreground"
               aria-label="Change language"
             >
-              <Languages className="w-5 h-5" />
+              <Globe  className="w-5 h-5" />
               <span className="text-sm hidden sm:inline">{locale === "ar" ? "العربية" : "EN"}</span>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
