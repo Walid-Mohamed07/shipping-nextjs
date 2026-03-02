@@ -40,6 +40,7 @@ import {
 import { Request, CostOffer } from "@/types";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 // Dynamically import map component
 const SimpleLocationMap = dynamic(
@@ -93,6 +94,7 @@ export default function CompanyRequestDetailPage() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [mapView, setMapView] = useState<"pickup" | "delivery">("pickup");
+  const { t } = useTranslation();
 
   const loading = authLoading || requestLoading;
 
@@ -118,12 +120,12 @@ export default function CompanyRequestDetailPage() {
         event.type === "OFFER_SUBMITTED" &&
         event.payload.companyId !== user?.id
       ) {
-        toast.info("Another company submitted an offer", {
+        toast.info(t.companyRequestDetail.toastOfferSubmitted.split(".")[0], {
           description: "The competition is on!",
         });
       } else if (event.type === "OFFER_ACCEPTED") {
         if (event.payload.companyId === user?.id) {
-          toast.success("Your offer was accepted!", {
+          toast.success(t.company.offerAccepted, {
             description: "You can now manage this shipment",
           });
         } else {
@@ -174,13 +176,13 @@ export default function CompanyRequestDetailPage() {
 
   const handleSubmitOffer = async () => {
     if (!offerCost) {
-      showError("Please enter a cost amount");
+      showError(t.companyRequestDetail.enterCost);
       return;
     }
 
     const cost = parseFloat(offerCost);
     if (isNaN(cost) || cost <= 0) {
-      showError("Please enter a valid cost amount");
+      showError(t.companyRequestDetail.enterValidCost);
       return;
     }
 
@@ -211,8 +213,8 @@ export default function CompanyRequestDetailPage() {
           request?.costOffers?.some((o) => o.company.id === user?.id) ?? false;
         create(
           hasExisting
-            ? "Offer updated successfully!"
-            : "Offer submitted successfully! The client will review your offer.",
+            ? t.companyRequestDetail.toastOfferUpdated
+            : t.companyRequestDetail.toastOfferSubmitted,
         );
         setOfferCost("");
         setOfferComment("");
@@ -222,11 +224,11 @@ export default function CompanyRequestDetailPage() {
         await refreshRequest();
       } else {
         const errorData = await response.json();
-        showError(errorData.error || "Failed to submit offer");
+        showError(errorData.error || t.companyRequestDetail.toastFailedSubmit);
       }
     } catch (error) {
       console.error("Failed to submit offer:", error);
-      showError("Failed to submit offer");
+      showError(t.companyRequestDetail.toastFailedSubmit);
     } finally {
       setIsSubmitting(false);
     }
@@ -234,9 +236,7 @@ export default function CompanyRequestDetailPage() {
 
   const handleRejectRequest = async () => {
     if (
-      !confirm(
-        "Are you sure you want to reject this request? You won't see it again.",
-      )
+      !confirm(t.companyRequestDetail.confirmReject)
     ) {
       return;
     }
@@ -310,16 +310,16 @@ export default function CompanyRequestDetailPage() {
     return (
       <div className="flex flex-col justify-center items-center h-screen gap-4">
         <AlertCircle className="w-12 h-12 text-destructive" />
-        <p className="text-muted-foreground">Failed to load request</p>
+        <p className="text-muted-foreground">{t.common.failedToLoad}</p>
         <p className="text-sm text-destructive">{requestError}</p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => refreshRequest()}>
-            Try Again
+            {t.common.tryAgain}
           </Button>
           <Link href="/company/requests">
             <Button variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Requests
+              {t.companyRequestDetail.backToRequests}
             </Button>
           </Link>
         </div>
@@ -331,11 +331,11 @@ export default function CompanyRequestDetailPage() {
     return (
       <div className="flex flex-col justify-center items-center h-screen gap-4">
         <AlertCircle className="w-12 h-12 text-muted-foreground" />
-        <p className="text-muted-foreground">Request not found</p>
+        <p className="text-muted-foreground">{t.common.requestNotFound}</p>
         <Link href="/company/requests">
           <Button variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Requests
+            {t.companyRequestDetail.backToRequests}
           </Button>
         </Link>
       </div>
@@ -362,7 +362,7 @@ export default function CompanyRequestDetailPage() {
               <Link href="/company/requests">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
+                  {t.common.back}
                 </Button>
               </Link>
               <div>
@@ -383,7 +383,7 @@ export default function CompanyRequestDetailPage() {
                     ) : (
                       <WifiOff className="w-3 h-3" />
                     )}
-                    {isConnected ? "Live" : "..."}
+                    {isConnected ? t.common.live : "..."}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
@@ -414,7 +414,7 @@ export default function CompanyRequestDetailPage() {
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" />
-                    Shipping Route
+                    {t.companyRequestDetail.shippingRoute}
                   </h3>
                   
                   {/* Map Toggle */}
@@ -428,7 +428,7 @@ export default function CompanyRequestDetailPage() {
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        Pickup
+                        {t.companyRequestDetail.pickup}
                       </button>
                       <button
                         onClick={() => setMapView("delivery")}
@@ -438,7 +438,7 @@ export default function CompanyRequestDetailPage() {
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        Delivery
+                        {t.companyRequestDetail.delivery}
                       </button>
                     </div>
                   )}
@@ -457,10 +457,10 @@ export default function CompanyRequestDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="text-base font-semibold text-green-700 dark:text-green-300">
-                              Pickup Location
+                              {t.companyRequestDetail.pickupLocation}
                             </h4>
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300">
-                              {request.sourcePickupMode === "Self" ? "Self Pickup" : "Company Pickup"}
+                              {request.sourcePickupMode === "Self" ? t.companyRequestDetail.selfPickup : t.companyRequestDetail.companyPickup}
                             </Badge>
                           </div>
                           <div className="space-y-1.5 text-sm">
@@ -501,10 +501,10 @@ export default function CompanyRequestDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="text-base font-semibold text-blue-700 dark:text-blue-300">
-                              Delivery Destination
+                              {t.companyRequestDetail.deliveryDestination}
                             </h4>
                             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300">
-                              {request.destinationPickupMode === "Self" ? "Self Delivery" : "Company Delivery"}
+                              {request.destinationPickupMode === "Self" ? t.companyRequestDetail.selfDelivery : t.companyRequestDetail.companyDelivery}
                             </Badge>
                           </div>
                           <div className="space-y-1.5 text-sm">
@@ -552,8 +552,8 @@ export default function CompanyRequestDetailPage() {
                             }
                             label={
                               mapView === "pickup"
-                                ? `Pickup: ${request.source.city}`
-                                : `Delivery: ${request.destination.city}`
+                                ? `${t.companyRequestDetail.pickup}: ${request.source.city}`
+                                : `${t.companyRequestDetail.delivery}: ${request.destination.city}`
                             }
                           />
                         </div>
@@ -561,7 +561,7 @@ export default function CompanyRequestDetailPage() {
                         <div className="h-48 bg-muted flex items-center justify-center text-muted-foreground">
                           <div className="text-center">
                             <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Map coordinates not available for this location</p>
+                            <p className="text-sm">{t.companyRequestDetail.mapUnavailable}</p>
                           </div>
                         </div>
                       )}
@@ -575,12 +575,12 @@ export default function CompanyRequestDetailPage() {
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <Package className="w-5 h-5 text-primary" />
-                    Shipment Items
+                    {t.companyRequestDetail.shipmentItems}
                   </h3>
                   <div className="flex items-center gap-4 text-sm">
                     <Badge variant="secondary" className="font-medium">
                       <Box className="w-3.5 h-3.5 mr-1.5" /> 
-                      {totalQuantity} units
+                      {totalQuantity} {t.company.units}
                     </Badge>
                     <Badge variant="secondary" className="font-medium">
                       <Scale className="w-3.5 h-3.5 mr-1.5" /> 
@@ -634,12 +634,12 @@ export default function CompanyRequestDetailPage() {
                               <div className="flex gap-2 mt-3">
                                 {item.services.canBeAssembledDisassembled && (
                                   <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs">
-                                    Assembly/Disassembly
+                                    {t.companyRequestDetail.assemblyDisassembly}
                                   </Badge>
                                 )}
                                 {item.services.packaging && (
                                   <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-xs">
-                                    Packaging
+                                    {t.companyRequestDetail.packaging}
                                   </Badge>
                                 )}
                               </div>
@@ -689,12 +689,12 @@ export default function CompanyRequestDetailPage() {
                     {expandedItems ? (
                       <>
                         <ChevronUp className="w-4 h-4 mr-2" />
-                        Show Less
+                        {t.common.showLess}
                       </>
                     ) : (
                       <>
                         <ChevronDown className="w-4 h-4 mr-2" />
-                        Show All {request.items.length} Items
+                        {t.companyRequestDetail.showAllItems} ({request.items.length})
                       </>
                     )}
                   </Button>
@@ -705,14 +705,14 @@ export default function CompanyRequestDetailPage() {
               <Card className="p-6">
                 <h3 className="text-xl font-semibold text-foreground mb-5 flex items-center gap-2">
                   <Truck className="w-5 h-5 text-primary" />
-                  Delivery Information
+                  {t.companyRequestDetail.deliveryInformation}
                 </h3>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200 dark:border-blue-800">
                       <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1.5 flex items-center gap-1">
                         <Package className="w-3.5 h-3.5" />
-                        Delivery Type
+                        {t.companyRequestDetail.deliveryType}
                       </p>
                       <p className="text-base font-semibold text-foreground">{request.deliveryType}</p>
                     </div>
@@ -731,12 +731,12 @@ export default function CompanyRequestDetailPage() {
                     <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 border border-amber-200 dark:border-amber-800">
                       <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-2.5 flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
-                        Available Days
+                        {t.companyRequestDetail.availableDays}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {request.availableDays.includes("All Week") ? (
                           <Badge className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100 border-0">
-                            All Week
+                            {t.common.allWeek}
                           </Badge>
                         ) : (
                           request.availableDays.map((day) => (
@@ -756,7 +756,7 @@ export default function CompanyRequestDetailPage() {
                     <div className="p-4 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-900/20 border border-slate-200 dark:border-slate-700">
                       <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
                         <FileText className="w-3.5 h-3.5" />
-                        Additional Notes
+                        {t.companyRequestDetail.additionalNotes}
                       </p>
                       <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                         {request.comment}
@@ -774,7 +774,7 @@ export default function CompanyRequestDetailPage() {
                 <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-blue-300 dark:border-blue-700">
                   <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
-                    Your Active Offer{myOffers.length > 1 ? "s" : ""}
+                    {t.companyRequestDetail.yourActiveOffer}{myOffers.length > 1 ? "s" : ""}
                   </h3>
                   <div className="space-y-3">
                     {myOffers.map((offer, idx) => (
@@ -784,7 +784,7 @@ export default function CompanyRequestDetailPage() {
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">Your Bid</p>
+                            <p className="text-xs text-muted-foreground mb-1">{t.companyRequestDetail.yourBid}</p>
                             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                               ${offer.cost.toFixed(2)}
                             </span>
@@ -832,7 +832,7 @@ export default function CompanyRequestDetailPage() {
                   <Card className="p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-900/20 border-slate-200 dark:border-slate-700">
                     <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-primary" />
-                      Competing Offers ({request.costOffers.filter((o) => o.company.id !== user?.id).length})
+                      {t.companyRequestDetail.competingOffers} ({request.costOffers.filter((o) => o.company.id !== user?.id).length})
                     </h3>
                     <div className="space-y-2.5">
                       {request.costOffers
@@ -875,7 +875,7 @@ export default function CompanyRequestDetailPage() {
                 <div className="space-y-4">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-primary" />
-                    {myOffers.length > 0 ? "Update Your Offer" : "Submit an Offer"}
+                    {myOffers.length > 0 ? t.companyRequestDetail.updateYourOffer : t.companyRequestDetail.submitAnOffer}
                   </h3>
 
                   {/* Estimated Cost Display */}
@@ -883,14 +883,13 @@ export default function CompanyRequestDetailPage() {
                     <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-0.5">Client's Estimated Cost</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">{t.companyRequestDetail.clientEstimatedCost}</p>
                           <p className="text-2xl font-bold text-primary">
                             ${parseFloat(request.primaryCost).toFixed(2)}
                           </p>
                         </div>
                         <div className="text-xs text-muted-foreground text-right">
-                          <p>Base your</p>
-                          <p>offer accordingly</p>
+                          <p>{t.companyRequestDetail.baseYourOffer}</p>
                         </div>
                       </div>
                     </div>
@@ -903,7 +902,7 @@ export default function CompanyRequestDetailPage() {
                         className="w-full gap-2"
                       >
                         <DollarSign className="w-4 h-4" />
-                        {myOffers.length > 0 ? "Update Offer" : "Make an Offer"}
+                        {myOffers.length > 0 ? t.companyRequestDetail.updateOffer : t.companyRequestDetail.makeAnOffer}
                       </Button>
                       {myOffers.length === 0 && (
                         <Button
@@ -913,7 +912,7 @@ export default function CompanyRequestDetailPage() {
                           disabled={isSubmitting}
                         >
                           <XCircle className="w-4 h-4" />
-                          Not Interested
+                          {t.companyRequestDetail.notInterested}
                         </Button>
                       )}
                     </div>
@@ -921,7 +920,7 @@ export default function CompanyRequestDetailPage() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Your Price <span className="text-destructive">*</span>
+                          {t.companyRequestDetail.yourPrice} <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -940,10 +939,10 @@ export default function CompanyRequestDetailPage() {
 
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Comment (optional)
+                          {t.companyRequestDetail.commentOptional}
                         </label>
                         <textarea
-                          placeholder="Add details about your offer..."
+                          placeholder={t.companyRequestDetail.offerPlaceholder}
                           value={offerComment}
                           onChange={(e) => setOfferComment(e.target.value)}
                           className="w-full px-4 py-2.5 border border-border rounded-lg bg-background resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -962,7 +961,7 @@ export default function CompanyRequestDetailPage() {
                           className="flex-1"
                           disabled={isSubmitting}
                         >
-                          Cancel
+                          {t.common.cancel}
                         </Button>
                         <Button
                           onClick={handleSubmitOffer}
@@ -972,12 +971,12 @@ export default function CompanyRequestDetailPage() {
                           {isSubmitting ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              Submitting...
+                              {t.common.submitting}
                             </>
                           ) : (
                             <>
                               <Send className="w-4 h-4" />
-                              Submit
+                              {t.common.submit}
                             </>
                           )}
                         </Button>

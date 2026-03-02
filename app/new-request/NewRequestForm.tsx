@@ -8,6 +8,7 @@ import type { ReviewData } from "./ReviewModal";
 import { useRouter } from "next/navigation";
 import type { Item, Address, DayOfWeek } from "@/types";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 const LocationMapPicker = dynamic(
   () =>
@@ -69,6 +70,7 @@ const NEARBY_RADIUS_KM = 50;
 export default function NewRequestForm() {
   const { user } = useAuth();
   const toast = useToast();
+  const { t } = useTranslation();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -505,7 +507,7 @@ export default function NewRequestForm() {
     }
 
     if (!addressId) return;
-    if (!confirm("Delete this address?")) return;
+    if (!confirm(t.newRequest.deleteAddress)) return;
 
     try {
       const res = await fetch("/api/user/addresses", {
@@ -557,7 +559,7 @@ export default function NewRequestForm() {
     // Validate source address
     if (!selectedSourceLoc || Object.keys(selectedSourceLoc).length === 0) {
       errors.sourceAddress = true;
-      toast.error("Please select a source address");
+      toast.error(t.newRequest.errSelectSource);
     }
 
     // Validate destination address
@@ -567,13 +569,13 @@ export default function NewRequestForm() {
       toAddressIdx === -1
     ) {
       errors.destinationAddress = true;
-      toast.error("Please select a destination address");
+      toast.error(t.newRequest.errSelectDest);
     }
 
     // Validate items
     if (items.length === 0) {
       errors.items = true;
-      toast.error("Please add at least one item");
+      toast.error(t.newRequest.errAddItem);
     }
 
     // Validate items with assembly/disassembly checked but no handler selected
@@ -585,27 +587,25 @@ export default function NewRequestForm() {
     if (itemsWithMissingHandler.length > 0) {
       errors.assemblyHandler = true;
       const itemNames = itemsWithMissingHandler.map((i) => i.name).join(", ");
-      toast.error(
-        `Please select who will handle assembly/disassembly for: ${itemNames}`,
-      );
+      toast.error(`${t.newRequest.errAssemblyHandlerForItems} ${itemNames}`);
     }
 
     // Validate available days (minimum 2 days required)
     if (availableDays.length < 2) {
       errors.availableDays = true;
-      toast.error("Please select at least 2 available days");
+      toast.error(t.newRequest.errAvailableDays);
     }
 
     // Validate mobile
     if (!mobile || mobile.trim() === "") {
       errors.mobile = true;
-      toast.error("Please enter mobile number");
+      toast.error(t.newRequest.errMobile);
     }
 
     // If there are validation errors, stop submission
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      toast.error("Please fill in all required fields");
+      toast.error(t.newRequest.errRequiredFields);
       return;
     }
 
@@ -633,7 +633,7 @@ export default function NewRequestForm() {
       );
 
       if (hasMediaFiles) {
-        uploadToastId = toast.loading("Uploading media files...");
+        uploadToastId = toast.loading(t.newRequest.uploadingMedia);
       }
 
       // Upload media files for items and get URLs
@@ -759,7 +759,7 @@ export default function NewRequestForm() {
 
       setSuccess(true);
       setShowReview(false);
-      toast.create("Request created successfully!");
+      toast.create(t.newRequest.requestCreated);
 
       // Reset form inputs
       setItems([]);
@@ -830,9 +830,7 @@ export default function NewRequestForm() {
       <div className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            <p className="text-gray-600">
-              Please log in to create a shipping request.
-            </p>
+            <p className="text-gray-600">{t.newRequest.loginToCreate}</p>
           </div>
         </div>
       </div>
@@ -846,10 +844,10 @@ export default function NewRequestForm() {
           {/* Header */}
           <div className="bg-white rounded-lg border border-gray-200 mb-6 p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Create Shipping Request
+              {t.newRequest.createTitle}
             </h1>
             <p className="text-gray-600 text-sm">
-              Fill in the details below to request your shipment
+              {t.newRequest.createSubtitle}
             </p>
           </div>
 
@@ -867,10 +865,10 @@ export default function NewRequestForm() {
                   <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-green-900">
-                      Request created successfully!
+                      {t.newRequest.requestSubmitted}
                     </p>
                     <p className="text-xs text-gray-600 mt-0.5">
-                      Redirecting to My Requests...
+                      {t.newRequest.redirectingToRequests}
                     </p>
                   </div>
                 </div>
@@ -890,10 +888,10 @@ export default function NewRequestForm() {
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-gray-900">
-                        Source (Origin)
+                        {t.newRequest.sourceOrigin}
                       </h2>
                       <p className="text-sm text-gray-600 mt-0.5">
-                        Pick where your shipment will be collected from
+                        {t.newRequest.sourceSubtitle}
                       </p>
                     </div>
                   </div>
@@ -939,7 +937,7 @@ export default function NewRequestForm() {
                               <div className="pt-2 space-y-1 text-sm text-gray-700 border-t border-gray-200 mt-2">
                                 <div>
                                   <span className="font-medium text-gray-900">
-                                    Country:
+                                    {t.newRequest.countryLabel}
                                   </span>{" "}
                                   <span className="text-gray-600">
                                     {loc.country}
@@ -947,7 +945,7 @@ export default function NewRequestForm() {
                                 </div>
                                 <div>
                                   <span className="font-medium text-gray-900">
-                                    Postal Code:
+                                    {t.newRequest.postalCodeLabel}
                                   </span>{" "}
                                   <span className="text-gray-600">
                                     {loc.postalCode}
@@ -955,7 +953,7 @@ export default function NewRequestForm() {
                                 </div>
                                 <div>
                                   <span className="font-medium text-gray-900">
-                                    Mobile:
+                                    {t.newRequest.mobileLabel}
                                   </span>{" "}
                                   <span className="text-gray-600">
                                     {loc.mobile}
@@ -963,7 +961,7 @@ export default function NewRequestForm() {
                                 </div>
                                 <div>
                                   <span className="font-medium text-gray-900">
-                                    Type:
+                                    {t.newRequest.typeLabel}
                                   </span>{" "}
                                   <span className="text-gray-600">
                                     {loc.addressType}
@@ -973,7 +971,7 @@ export default function NewRequestForm() {
                                 {loc.landmark && (
                                   <div className="text-xs text-gray-600">
                                     <span className="font-medium">
-                                      Landmark:
+                                      {t.newRequest.landmarkLabel}
                                     </span>{" "}
                                     {loc.landmark}
                                   </div>
@@ -982,7 +980,7 @@ export default function NewRequestForm() {
                                 {loc.deliveryInstructions && (
                                   <div className="text-xs text-gray-600">
                                     <span className="font-medium">
-                                      Instructions:
+                                      {t.newRequest.instructionsLabel}
                                     </span>{" "}
                                     {loc.deliveryInstructions}
                                   </div>
@@ -991,7 +989,7 @@ export default function NewRequestForm() {
                                 {loc.building && (
                                   <div className="text-xs text-gray-600">
                                     <span className="font-medium">
-                                      Building:
+                                      {t.newRequest.buildingLabel}
                                     </span>{" "}
                                     {loc.building}
                                   </div>
@@ -999,7 +997,7 @@ export default function NewRequestForm() {
 
                                 {loc.primary && (
                                   <div className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded mt-2">
-                                    ⭐ Primary
+                                    ⭐ {t.newRequest.primaryLabel}
                                   </div>
                                 )}
                               </div>
@@ -1049,7 +1047,7 @@ export default function NewRequestForm() {
                         className="w-full cursor-pointer border border-dashed border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-500 hover:text-gray-900 bg-white rounded-lg h-11 font-medium"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add new address
+                        {t.newRequest.addNewAddress}
                       </Button>
                     </div>
                   </div>
@@ -1089,10 +1087,10 @@ export default function NewRequestForm() {
                       </div>
                       <div>
                         <h2 className="text-lg font-bold text-gray-900">
-                          Destination
+                          {t.newRequest.destination}
                         </h2>
                         <p className="text-sm text-gray-600 mt-0.5">
-                          Where should your shipment be delivered?
+                          {t.newRequest.destinationSubtitle}
                         </p>
                       </div>
                     </div>
@@ -1143,7 +1141,7 @@ export default function NewRequestForm() {
                                   <div className="pt-3 space-y-1.5 text-sm text-gray-700 border-t border-gray-200 mt-3">
                                     <div>
                                       <span className="font-semibold text-gray-900">
-                                        Country:
+                                        {t.newRequest.countryLabel}
                                       </span>{" "}
                                       <span className="text-gray-600">
                                         {loc.country}
@@ -1151,7 +1149,7 @@ export default function NewRequestForm() {
                                     </div>
                                     <div>
                                       <span className="font-semibold text-gray-900">
-                                        Postal Code:
+                                        {t.newRequest.postalCodeLabel}
                                       </span>{" "}
                                       <span className="text-gray-600">
                                         {loc.postalCode}
@@ -1159,7 +1157,7 @@ export default function NewRequestForm() {
                                     </div>
                                     <div>
                                       <span className="font-semibold text-gray-900">
-                                        Mobile:
+                                        {t.newRequest.mobileLabel}
                                       </span>{" "}
                                       <span className="text-gray-600">
                                         {loc.mobile}
@@ -1167,7 +1165,7 @@ export default function NewRequestForm() {
                                     </div>
                                     <div>
                                       <span className="font-semibold text-gray-900">
-                                        Type:
+                                        {t.newRequest.typeLabel}
                                       </span>{" "}
                                       <span className="text-gray-600">
                                         {loc.addressType}
@@ -1177,7 +1175,7 @@ export default function NewRequestForm() {
                                     {loc.landmark && (
                                       <div className="text-xs text-gray-600">
                                         <span className="font-semibold">
-                                          Landmark:
+                                          {t.newRequest.landmarkLabel}
                                         </span>{" "}
                                         {loc.landmark}
                                       </div>
@@ -1186,7 +1184,7 @@ export default function NewRequestForm() {
                                     {loc.deliveryInstructions && (
                                       <div className="text-xs text-gray-600">
                                         <span className="font-semibold">
-                                          Instructions:
+                                          {t.newRequest.instructionsLabel}
                                         </span>{" "}
                                         {loc.deliveryInstructions}
                                       </div>
@@ -1195,7 +1193,7 @@ export default function NewRequestForm() {
                                     {loc.building && (
                                       <div className="text-xs text-gray-600">
                                         <span className="font-semibold">
-                                          Building:
+                                          {t.newRequest.buildingLabel}
                                         </span>{" "}
                                         {loc.building}
                                       </div>
@@ -1203,7 +1201,7 @@ export default function NewRequestForm() {
 
                                     {loc.primary && (
                                       <div className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded mt-2">
-                                        ⭐ Primary
+                                        ⭐ {t.newRequest.primaryLabel}
                                       </div>
                                     )}
                                   </div>
@@ -1255,7 +1253,7 @@ export default function NewRequestForm() {
                           className="w-full cursor-pointer border border-dashed border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-500 hover:text-gray-900 bg-white rounded-lg h-11 font-medium"
                         >
                           <Plus className="w-4 h-4 mr-2" />
-                          Add new address
+                          {t.newRequest.addNewAddress}
                         </Button>
                       </div>
                     </div>
@@ -1264,7 +1262,7 @@ export default function NewRequestForm() {
                       <div className="mt-5 rounded-lg overflow-hidden border border-gray-200">
                         <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
                           <p className="text-xs font-medium text-gray-700">
-                            Destination location on map
+                            {t.newRequest.destinationLocationOnMap}
                           </p>
                         </div>
                         <LocationMapPicker
@@ -1289,14 +1287,14 @@ export default function NewRequestForm() {
                       <Package className="w-4 h-4 text-white" />
                     </div>
                     <h2 className="text-lg font-bold text-gray-900">
-                      Pickup Options
+                      {t.newRequest.pickupOptions}
                     </h2>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
-                        Source Pickup Mode
+                        {t.newRequest.sourcePickupMode}
                       </label>
                       <select
                         className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1305,13 +1303,15 @@ export default function NewRequestForm() {
                         disabled={isLoading}
                         required
                       >
-                        <option value="Delegate">Delegate</option>
-                        <option value="Self">Self</option>
+                        <option value="Delegate">
+                          {t.newRequest.delegate}
+                        </option>
+                        <option value="Self">{t.newRequest.self}</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
-                        Destination Pickup Mode
+                        {t.newRequest.destinationPickupMode}
                       </label>
                       <select
                         className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1320,8 +1320,10 @@ export default function NewRequestForm() {
                         disabled={isLoading}
                         required
                       >
-                        <option value="Delegate">Delegate</option>
-                        <option value="Self">Self</option>
+                        <option value="Delegate">
+                          {t.newRequest.delegate}
+                        </option>
+                        <option value="Self">{t.newRequest.self}</option>
                       </select>
                     </div>
                   </div>
@@ -1339,19 +1341,21 @@ export default function NewRequestForm() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold">
                       3
                     </div>
-                    <h2 className="text-lg font-bold text-gray-900">Contact</h2>
+                    <h2 className="text-lg font-bold text-gray-900">
+                      {t.newRequest.contact}
+                    </h2>
                   </div>
                   <div>
                     <label
                       htmlFor="mobile"
                       className="block text-sm font-medium text-gray-900 mb-2"
                     >
-                      Mobile Number
+                      {t.newRequest.mobileNumber}
                     </label>
                     <Input
                       id="mobile"
                       type="tel"
-                      placeholder="Enter your mobile number"
+                      placeholder={t.newRequest.mobileNumberPlaceholder}
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       disabled={isLoading}
@@ -1377,16 +1381,96 @@ export default function NewRequestForm() {
                       </div>
                       <div>
                         <h2 className="text-lg font-bold text-gray-900">
-                          Shipment Items
+                          {t.newRequest.shipmentItems}
                         </h2>
                         <p className="text-sm text-gray-600 mt-0.5">
                           {items.length === 0
-                            ? "Add at least one item to continue"
-                            : `${items.length} item${items.length !== 1 ? "s" : ""} added`}
+                            ? t.newRequest.addAtLeastOne
+                            : `${items.length} ${items.length !== 1 ? t.newRequest.itemsAddedPlural : t.newRequest.itemsAdded}`}
                         </p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Item list */}
+                  {items.length > 0 && (
+                    <div className="space-y-3 mb-5">
+                      {items.map((itm, idx) => (
+                        <div
+                          key={idx}
+                          className="group flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-gray-400 hover:bg-gray-50"
+                        >
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
+                            {idx + 1}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-gray-900">
+                                {itm.name}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="text-xs bg-blue-100 text-blue-700"
+                              >
+                                {itm.category}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-gray-600">
+                              {t.newRequest.dimensionsInItem} {itm.dimensions}
+                              <span className="mx-1.5">·</span>
+                              {itm.weight} kg
+                              <span className="mx-1.5">·</span>
+                              {t.newRequest.qtyInItem} {itm.quantity}
+                            </p>
+                            {(itm.services?.canBeAssembledDisassembled ||
+                              itm.services?.packaging) && (
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {itm.services?.canBeAssembledDisassembled && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs border-amber-300 bg-amber-50 text-amber-700"
+                                  >
+                                    <Wrench className="w-3 h-3 mr-1" />
+                                    {itm.services
+                                      ?.assemblyDisassemblyHandler === "company"
+                                      ? t.newRequest.assemblyCompanyBadge
+                                      : t.newRequest.assemblySelfBadge}
+                                  </Badge>
+                                )}
+                                {itm.services?.packaging && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs border-purple-300 bg-purple-50 text-purple-700"
+                                  >
+                                    <Package className="w-3 h-3 mr-1" />
+                                    {t.newRequest.packagingBadge}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            {itm.note && (
+                              <p className="mt-2 text-xs text-gray-600 italic bg-gray-50 rounded px-2 py-1 inline-block">
+                                {t.newRequest.noteLabel} {itm.note}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              setItems(items.filter((_, i) => i !== idx))
+                            }
+                            disabled={isLoading}
+                            className="h-8 w-8 shrink-0 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Add item form */}
                   <Card className="border border-dashed border-gray-300 bg-gray-50 rounded-lg">
@@ -1394,16 +1478,16 @@ export default function NewRequestForm() {
                       <div className="flex items-center gap-2">
                         <Plus className="w-4 h-4 text-gray-700" />
                         <p className="text-sm font-semibold text-gray-900">
-                          Add new item
+                          {t.newRequest.addNewItem}
                         </p>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="sm:col-span-2">
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Item name
+                            {t.newRequest.itemName}
                           </label>
                           <Input
-                            placeholder="e.g. Laptop, Documents, Clothing"
+                            placeholder={t.newRequest.itemNamePlaceholder}
                             value={newItem.name}
                             onChange={(e) =>
                               setNewItem({ ...newItem, name: e.target.value })
@@ -1414,7 +1498,7 @@ export default function NewRequestForm() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Category
+                            {t.newRequest.category}
                           </label>
                           <Select
                             value={newItem.category}
@@ -1426,17 +1510,19 @@ export default function NewRequestForm() {
                             <SelectTrigger
                               className={`w-full h-10 rounded-lg ${itemValidationErrors.itemCategory ? "border-red-500 bg-red-50" : ""}`}
                             >
-                              <SelectValue placeholder="Select category" />
+                              <SelectValue
+                                placeholder={t.newRequest.selectCategory}
+                              />
                             </SelectTrigger>
                             <SelectContent>{categoryOptions}</SelectContent>
                           </Select>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Dimensions (cm)
+                            {t.newRequest.dimensionsCm}
                           </label>
                           <Input
-                            placeholder="e.g. 30×20×10 cm"
+                            placeholder={t.newRequest.dimensionsPlaceholder}
                             value={newItem.dimensions}
                             onChange={(e) =>
                               setNewItem({
@@ -1450,7 +1536,7 @@ export default function NewRequestForm() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Weight (kg)
+                            {t.newRequest.weightKg}
                           </label>
                           <Input
                             type="number"
@@ -1467,7 +1553,7 @@ export default function NewRequestForm() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Quantity
+                            {t.newRequest.quantity}
                           </label>
                           <Input
                             type="number"
@@ -1488,11 +1574,10 @@ export default function NewRequestForm() {
                         {/* Note (optional, multiline) */}
                         <div className="sm:col-span-2">
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Note{" "}
-                            <span className="text-gray-500">(optional)</span>
+                            {t.newRequest.noteOptional}
                           </label>
                           <textarea
-                            placeholder="e.g. Handle with care, leave at reception"
+                            placeholder={t.newRequest.notePlaceholder}
                             value={newItem.note}
                             onChange={(e) =>
                               setNewItem({ ...newItem, note: e.target.value })
@@ -1507,7 +1592,7 @@ export default function NewRequestForm() {
                           <label className="block text-sm font-medium text-gray-900 mb-2">
                             Media{" "}
                             <span className="text-gray-500">
-                              (optional, max 4 images)
+                              {t.newRequest.mediaOptional}
                             </span>
                           </label>
                           <div className="flex flex-wrap gap-2">
@@ -1555,8 +1640,7 @@ export default function NewRequestForm() {
                         {/* Services (optional) */}
                         <div className="sm:col-span-2">
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Additional Services{" "}
-                            <span className="text-gray-500">(optional)</span>
+                            {t.newRequest.additionalServicesOptional}
                           </label>
                           <div className="space-y-3">
                             {/* Assembly & Disassembly - Primary Question */}
@@ -1589,13 +1673,11 @@ export default function NewRequestForm() {
                                   <div className="flex items-center gap-1.5">
                                     <Wrench className="w-4 h-4 text-gray-700" />
                                     <span className="font-medium text-gray-900 text-sm">
-                                      Can this item be assembled and
-                                      disassembled?
+                                      {t.newRequest.assemblyCanItem}
                                     </span>
                                   </div>
                                   <p className="text-xs text-gray-600 mt-1">
-                                    Check if this item can be disassembled for
-                                    transport and reassembled at destination
+                                    {t.newRequest.assemblyDesc}
                                   </p>
                                 </div>
                               </label>
@@ -1605,11 +1687,10 @@ export default function NewRequestForm() {
                                 <div className="mt-3 pl-6 space-y-2 border-l-2 border-gray-400">
                                   <div>
                                     <p className="text-sm font-medium text-gray-900 mb-1">
-                                      Assembly &amp; Disassembly Options
+                                      {t.newRequest.assemblyOptions}
                                     </p>
                                     <p className="text-xs text-gray-600 mb-2">
-                                      Who will handle the assembly and
-                                      disassembly?
+                                      {t.newRequest.assemblyWhoHandles}
                                     </p>
                                   </div>
 
@@ -1637,11 +1718,10 @@ export default function NewRequestForm() {
                                     />
                                     <div className="flex-1">
                                       <span className="text-sm font-medium text-gray-900">
-                                        I will handle the assembly and
-                                        disassembly myself
+                                        {t.newRequest.assemblySelf}
                                       </span>
                                       <p className="text-xs text-gray-600 mt-0.5">
-                                        No additional cost
+                                        {t.newRequest.assemblySelfDesc}
                                       </p>
                                     </div>
                                   </label>
@@ -1672,11 +1752,10 @@ export default function NewRequestForm() {
                                     />
                                     <div className="flex-1">
                                       <span className="text-sm font-medium text-gray-900">
-                                        The company will handle the assembly and
-                                        disassembly for me
+                                        {t.newRequest.assemblyCompany}
                                       </span>
                                       <p className="text-xs text-amber-600 mt-0.5 font-medium">
-                                        May include additional cost
+                                        {t.newRequest.assemblyCompanyDesc}
                                       </p>
                                     </div>
                                   </label>
@@ -1705,12 +1784,11 @@ export default function NewRequestForm() {
                                 <div className="flex items-center gap-1.5">
                                   <BoxSelect className="w-4 h-4 text-gray-700" />
                                   <span className="font-medium text-gray-900 text-sm">
-                                    Packaging
+                                    {t.newRequest.packagingLabel}
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-600 mt-1">
-                                  Professional packaging to protect during
-                                  shipping
+                                  {t.newRequest.packagingDesc}
                                 </p>
                               </div>
                             </label>
@@ -1727,23 +1805,23 @@ export default function NewRequestForm() {
                           // Validate required fields
                           if (!newItem.name) {
                             errors.itemName = true;
-                            toast.error("Item name is required");
+                            toast.error(t.newRequest.errItemName);
                           }
                           if (!newItem.category) {
                             errors.itemCategory = true;
-                            toast.error("Category is required");
+                            toast.error(t.newRequest.errItemCategory);
                           }
                           if (!newItem.dimensions) {
                             errors.itemDimensions = true;
-                            toast.error("Dimensions are required");
+                            toast.error(t.newRequest.errItemDimensions);
                           }
                           if (!newItem.weight) {
                             errors.itemWeight = true;
-                            toast.error("Weight is required");
+                            toast.error(t.newRequest.errItemWeight);
                           }
                           if (!newItem.quantity) {
                             errors.itemQuantity = true;
-                            toast.error("Quantity is required");
+                            toast.error(t.newRequest.errItemQuantity);
                           }
 
                           // Validate assembly/disassembly handler if checkbox is checked
@@ -1752,16 +1830,12 @@ export default function NewRequestForm() {
                             !newItem.services.assemblyDisassemblyHandler
                           ) {
                             errors.assemblyHandler = true;
-                            toast.error(
-                              "Please select who will handle assembly and disassembly",
-                            );
+                            toast.error(t.newRequest.errAssemblyHandler);
                           }
 
                           if (Object.keys(errors).length > 0) {
                             setItemValidationErrors(errors);
-                            toast.error(
-                              "Please fill in all required item fields",
-                            );
+                            toast.error(t.newRequest.errRequiredItemFields);
                             return;
                           }
 
@@ -1800,7 +1874,7 @@ export default function NewRequestForm() {
                           }
 
                           setItems([...items, newItemObj]);
-                          toast.create("Item added successfully!");
+                          toast.create(t.newRequest.itemAddedSuccess);
                           // Revoke object URLs before reset to avoid memory leaks
                           newItem.mediaPreviews.forEach((url) =>
                             URL.revokeObjectURL(url),
@@ -1825,7 +1899,7 @@ export default function NewRequestForm() {
                         className="w-full sm:w-auto gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium h-10 px-6 rounded-lg"
                       >
                         <Plus className="w-4 h-4" />
-                        Add item
+                        {t.newRequest.addItemBtn}
                       </Button>
                     </CardContent>
                   </Card>
@@ -1954,7 +2028,7 @@ export default function NewRequestForm() {
                       4
                     </div>
                     <h2 className="text-lg font-bold text-gray-900">
-                      Delivery &amp; Cost
+                      {t.newRequest.deliveryCost}
                     </h2>
                   </div>
 
@@ -1962,7 +2036,8 @@ export default function NewRequestForm() {
                     {/* Delivery Type Card */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <label className="block text-sm font-semibold text-gray-900 mb-3">
-                        Delivery Type <span className="text-red-500">*</span>
+                        {t.newRequest.deliveryType}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <select
                         className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -1972,31 +2047,35 @@ export default function NewRequestForm() {
                         }
                         disabled={isLoading}
                       >
-                        <option value="Normal">🚚 Normal Delivery</option>
+                        <option value="Normal">
+                          🚚 {t.newRequest.normalDelivery}
+                        </option>
                         <option value="Urgent">
-                          ⚡ Urgent Delivery (+25% surcharge)
+                          ⚡ {t.newRequest.urgentDelivery}
                         </option>
                       </select>
                       <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        Urgent delivery adds a 25% surcharge to the base cost.
+                        {t.newRequest.urgentSurchargeNote}
                       </p>
                     </div>
 
                     {/* Primary Cost Display */}
                     <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                       <label className="block text-sm font-semibold text-gray-900 mb-3">
-                        Estimated Primary Cost
+                        {t.newRequest.estimatedPrimaryCost}
                       </label>
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
                           <div className="text-3xl font-bold text-blue-600">
-                            {primaryCost ? `$${primaryCost}` : "Calculating..."}
+                            {primaryCost
+                              ? `$${primaryCost}`
+                              : t.newRequest.calculating}
                           </div>
                           {deliveryType === "Urgent" && primaryCost && (
                             <p className="text-xs text-amber-700 mt-1.5 font-medium flex items-center gap-1">
                               <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                              Includes Urgent delivery surcharge (+25%)
+                              {t.newRequest.includesUrgentSurcharge}
                             </p>
                           )}
                         </div>
@@ -2007,7 +2086,8 @@ export default function NewRequestForm() {
                     <div className="sm:col-span-2">
                       <div className="flex items-center justify-between mb-3">
                         <label className="block text-sm font-medium text-gray-900">
-                          Available Days <span className="text-red-500">*</span>
+                          {t.newRequest.availableDays}{" "}
+                          <span className="text-red-500">*</span>
                         </label>
                         <button
                           type="button"
@@ -2021,13 +2101,12 @@ export default function NewRequestForm() {
                           className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
                         >
                           {availableDays.length === 7
-                            ? "Clear All"
-                            : "Select All Days"}
+                            ? t.newRequest.clearAll
+                            : t.newRequest.selectAllDays}
                         </button>
                       </div>
                       <p className="text-xs text-gray-600 mb-3">
-                        Select the days you are available for pickup (minimum 2
-                        days required)
+                        {t.newRequest.availableDaysRequired}
                       </p>
                       <div
                         className={`grid grid-cols-7 gap-2 ${validationErrors.availableDays ? "p-2 border-2 border-red-300 rounded-lg bg-red-50" : ""}`}
@@ -2069,12 +2148,14 @@ export default function NewRequestForm() {
                         <span
                           className={`text-xs font-medium ${availableDays.length >= 2 ? "text-green-600" : "text-amber-600"}`}
                         >
-                          {availableDays.length} day
-                          {availableDays.length !== 1 ? "s" : ""} selected
+                          {availableDays.length}{" "}
+                          {availableDays.length !== 1
+                            ? t.newRequest.daysSelectedPlural
+                            : t.newRequest.daysSelected}
                         </span>
                         {availableDays.length < 2 && (
                           <span className="text-xs text-red-500">
-                            (Need at least 2)
+                            {t.newRequest.needAtLeast2}
                           </span>
                         )}
                       </div>
@@ -2085,10 +2166,10 @@ export default function NewRequestForm() {
                 {/* ——— Comments Section ——— */}
                 <section className="rounded-lg border border-gray-200 bg-white p-6">
                   <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Comments <span className="text-gray-500">(optional)</span>
+                    {t.newRequest.commentsOptional}
                   </label>
                   <textarea
-                    placeholder="Add any additional comments or special instructions"
+                    placeholder={t.newRequest.commentsPlaceholder}
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
                     disabled={isLoading}
@@ -2107,10 +2188,10 @@ export default function NewRequestForm() {
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating...
+                        {t.newRequest.creating}
                       </>
                     ) : (
-                      "Review & Submit"
+                      <span>{t.newRequest.reviewSubmit}</span>
                     )}
                   </Button>
                   <Button
@@ -2120,160 +2201,162 @@ export default function NewRequestForm() {
                     disabled={isLoading}
                     className="flex-1 cursor-pointer border border-gray-300 text-gray-700 hover:bg-gray-50 bg-white font-medium h-12 rounded-lg"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </Button>
                 </div>
-              </form>
-            </div>
 
-            <ReviewModal
-              open={showReview}
-              onClose={() => setShowReview(false)}
-              onConfirm={handleConfirmSubmit}
-              isLoading={isLoading}
-              data={{
-                items,
-                sourceAddress:
-                  (userLocations[fromAddressIdx] as Address) || null,
-                destinationAddress:
-                  toAddressIdx >= 0
-                    ? (userLocations[toAddressIdx] as Address) || null
-                    : null,
-                sourcePickupMode,
-                destPickupMode,
-                deliveryType,
-                availableDays,
-                mobile,
-                primaryCost,
-                comments,
-              }}
-            />
+                <ReviewModal
+                  open={showReview}
+                  onClose={() => setShowReview(false)}
+                  onConfirm={handleConfirmSubmit}
+                  isLoading={isLoading}
+                  data={{
+                    items,
+                    sourceAddress:
+                      (userLocations[fromAddressIdx] as Address) || null,
+                    destinationAddress:
+                      toAddressIdx >= 0
+                        ? (userLocations[toAddressIdx] as Address) || null
+                        : null,
+                    sourcePickupMode,
+                    destPickupMode,
+                    deliveryType,
+                    availableDays,
+                    mobile,
+                    primaryCost,
+                    comments,
+                  }}
+                />
 
-            <AddAddressDialog
-              key={`address-dialog-${addAddressType}-${editingAddress?.id || "new"}`}
-              open={showAddAddress}
-              onOpenChange={(open) => {
-                setShowAddAddress(open);
-                if (!open) setEditingAddress(null);
-              }}
-              editAddress={editingAddress}
-              onSave={async (address) => {
-                if (!user?.id) return;
+                <AddAddressDialog
+                  key={`address-dialog-${addAddressType}-${editingAddress?.id || "new"}`}
+                  open={showAddAddress}
+                  onOpenChange={(open) => {
+                    setShowAddAddress(open);
+                    if (!open) setEditingAddress(null);
+                  }}
+                  editAddress={editingAddress}
+                  onSave={async (address) => {
+                    if (!user?.id) return;
 
-                try {
-                  // Store current selections to preserve them
-                  const currentSourceIdx = fromAddressIdx;
-                  const currentDestIdx = toAddressIdx;
-                  const currentSourceData = userLocations[currentSourceIdx];
-                  const currentDestData =
-                    toAddressIdx >= 0 ? userLocations[currentDestIdx] : null;
+                    try {
+                      // Store current selections to preserve them
+                      const currentSourceIdx = fromAddressIdx;
+                      const currentDestIdx = toAddressIdx;
+                      const currentSourceData = userLocations[currentSourceIdx];
+                      const currentDestData =
+                        toAddressIdx >= 0
+                          ? userLocations[currentDestIdx]
+                          : null;
 
-                  // Fetch updated locations list
-                  const res = await fetch(
-                    `/api/user/addresses?userId=${user.id}`,
-                  );
-                  const data = await res.json();
+                      // Fetch updated locations list
+                      const res = await fetch(
+                        `/api/user/addresses?userId=${user.id}`,
+                      );
+                      const data = await res.json();
 
-                  if (Array.isArray(data.addresses)) {
-                    setUserLocations(data.addresses);
+                      if (Array.isArray(data.addresses)) {
+                        setUserLocations(data.addresses);
 
-                    // Find the newly added address
-                    const newAddressIdx = data.addresses.findIndex(
-                      (loc: { street?: string; postalCode?: string }) =>
-                        loc.street === address.street &&
-                        loc.postalCode === address.postalCode,
-                    );
-                    const finalNewIdx =
-                      newAddressIdx !== -1
-                        ? newAddressIdx
-                        : data.addresses.length - 1;
-
-                    if (addAddressType === "source") {
-                      // Set the new source address
-                      setFromAddressIdx(finalNewIdx);
-                      setSourceType("my");
-                      setFrom(address.country || "");
-                      setFromAddress(address.street || "");
-                      setFromPostalCode(address.postalCode || "");
-
-                      // Preserve destination if it was already set and still exists
-                      if (currentDestData && toAddressIdx >= 0) {
-                        const destStillExists = data.addresses.findIndex(
+                        // Find the newly added address
+                        const newAddressIdx = data.addresses.findIndex(
                           (loc: { street?: string; postalCode?: string }) =>
-                            loc.street === currentDestData.street &&
-                            loc.postalCode === currentDestData.postalCode,
+                            loc.street === address.street &&
+                            loc.postalCode === address.postalCode,
                         );
-                        if (destStillExists !== -1) {
-                          setToAddressIdx(destStillExists);
+                        const finalNewIdx =
+                          newAddressIdx !== -1
+                            ? newAddressIdx
+                            : data.addresses.length - 1;
+
+                        if (addAddressType === "source") {
+                          // Set the new source address
+                          setFromAddressIdx(finalNewIdx);
+                          setSourceType("my");
+                          setFrom(address.country || "");
+                          setFromAddress(address.street || "");
+                          setFromPostalCode(address.postalCode || "");
+
+                          // Preserve destination if it was already set and still exists
+                          if (currentDestData && toAddressIdx >= 0) {
+                            const destStillExists = data.addresses.findIndex(
+                              (loc: { street?: string; postalCode?: string }) =>
+                                loc.street === currentDestData.street &&
+                                loc.postalCode === currentDestData.postalCode,
+                            );
+                            if (destStillExists !== -1) {
+                              setToAddressIdx(destStillExists);
+                            }
+                          }
+                        } else {
+                          // Set the new destination address
+                          setToAddressIdx(finalNewIdx);
+                          setDestType("my");
+                          setTo(address.country || "");
+                          setToAddress(address.street || "");
+                          setToPostalCode(address.postalCode || "");
+
+                          // Preserve source if it was already set and still exists
+                          if (currentSourceData) {
+                            const sourceStillExists = data.addresses.findIndex(
+                              (loc: { street?: string; postalCode?: string }) =>
+                                loc.street === currentSourceData.street &&
+                                loc.postalCode === currentSourceData.postalCode,
+                            );
+                            if (sourceStillExists !== -1) {
+                              setFromAddressIdx(sourceStillExists);
+                            }
+                          }
                         }
                       }
-                    } else {
-                      // Set the new destination address
-                      setToAddressIdx(finalNewIdx);
-                      setDestType("my");
-                      setTo(address.country || "");
-                      setToAddress(address.street || "");
-                      setToPostalCode(address.postalCode || "");
-
-                      // Preserve source if it was already set and still exists
-                      if (currentSourceData) {
-                        const sourceStillExists = data.addresses.findIndex(
-                          (loc: { street?: string; postalCode?: string }) =>
-                            loc.street === currentSourceData.street &&
-                            loc.postalCode === currentSourceData.postalCode,
-                        );
-                        if (sourceStillExists !== -1) {
-                          setFromAddressIdx(sourceStillExists);
-                        }
-                      }
+                      // Clear editing state after successful save
+                      setEditingAddress(null);
+                    } catch (error) {
+                      console.error("Error updating addresses:", error);
+                      toast.error(t.newRequest.errUpdateAddressList);
                     }
-                  }
-                  // Clear editing state after successful save
-                  setEditingAddress(null);
-                } catch (error) {
-                  console.error("Error updating addresses:", error);
-                  toast.error("Failed to update address list");
-                }
-              }}
-              type={addAddressType}
-              userName={user?.fullName || ""}
-              userId={user?.id || ""}
-            />
+                  }}
+                  type={addAddressType}
+                  userName={user?.fullName || ""}
+                  userId={user?.id || ""}
+                />
 
-            {/* Image Zoom Modal */}
-            {showImageZoom && selectedImageUrl && (
-              <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-                onClick={() => {
-                  setShowImageZoom(false);
-                  setSelectedImageUrl(null);
-                }}
-              >
-                <div
-                  className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <img
-                    src={selectedImageUrl}
-                    alt="Zoomed image"
-                    className="max-w-full max-h-full object-contain rounded-lg"
-                  />
-                  <button
+                {/* Image Zoom Modal */}
+                {showImageZoom && selectedImageUrl && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
                     onClick={() => {
                       setShowImageZoom(false);
                       setSelectedImageUrl(null);
                     }}
-                    className="absolute top-4 right-4 p-2 rounded-lg bg-gray-900/50 hover:bg-gray-900 text-white transition-colors cursor-pointer"
-                    aria-label="Close zoomed image"
                   >
-                    <X className="w-6 h-6" />
-                  </button>
-                  <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
-                    Click outside or press ESC to close
-                  </p>
-                </div>
-              </div>
-            )}
+                    <div
+                      className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <img
+                        src={selectedImageUrl}
+                        alt="Zoomed image"
+                        className="max-w-full max-h-full object-contain rounded-lg"
+                      />
+                      <button
+                        onClick={() => {
+                          setShowImageZoom(false);
+                          setSelectedImageUrl(null);
+                        }}
+                        className="absolute top-4 right-4 p-2 rounded-lg bg-gray-900/50 hover:bg-gray-900 text-white transition-colors cursor-pointer"
+                        aria-label="Close zoomed image"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                      <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
+                        Click outside or press ESC to close
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       </div>

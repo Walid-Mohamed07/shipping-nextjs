@@ -15,6 +15,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { Request } from "@/types";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface CompanyWarehouse {
   id: string;
@@ -36,6 +37,7 @@ export default function CompanyOngoingRequestsPage() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<{
     [key: string]: string;
   }>({});
+  const { t } = useTranslation();
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
@@ -95,7 +97,7 @@ export default function CompanyOngoingRequestsPage() {
   const handleAssignWarehouse = async (requestId: string) => {
     const warehouseId = selectedWarehouseId[requestId];
     if (!warehouseId) {
-      alert("Please select a warehouse");
+      alert(t.company.pleaseSelectWarehouse);
       return;
     }
 
@@ -112,17 +114,15 @@ export default function CompanyOngoingRequestsPage() {
       });
 
       if (response.ok) {
-        alert(
-          "Warehouse assigned successfully! The client has been notified of the pickup location.",
-        );
+        alert(t.company.warehouseAssignedMsg);
         await fetchData();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to assign warehouse");
+        alert(errorData.error || t.company.failedAssignWarehouse);
       }
     } catch (error) {
       console.error("Failed to assign warehouse:", error);
-      alert("Failed to assign warehouse");
+      alert(t.company.failedAssignWarehouse);
     } finally {
       setAssigningWarehouse(null);
     }
@@ -148,7 +148,7 @@ export default function CompanyOngoingRequestsPage() {
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <p className="text-muted-foreground">
-            Access denied. This page is for companies only.
+            {t.company.accessDeniedCompany}
           </p>
         </div>
       </div>
@@ -170,10 +170,10 @@ export default function CompanyOngoingRequestsPage() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">
-            Ongoing Requests
+            {t.company.ongoingRequests}
           </h1>
           <p className="text-muted-foreground">
-            Manage ongoing requests assigned to your company
+            {t.company.manageOngoingRequests}
           </p>
         </div>
 
@@ -181,16 +181,16 @@ export default function CompanyOngoingRequestsPage() {
           <Card className="p-12 text-center">
             <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              No ongoing requests at the moment
+              {t.company.noOngoingRequests}
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Submit offers on available requests to get started
+              {t.company.submitOffers}
             </p>
             <Button
               onClick={() => router.push("/company/requests")}
               className="mt-4"
             >
-              Browse Available Requests
+              {t.company.browseAvailableRequests}
             </Button>
           </Card>
         ) : (
@@ -216,13 +216,13 @@ export default function CompanyOngoingRequestsPage() {
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-lg">{request.publicId}</h3>
                       <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
-                        Ongoing
+                        {t.company.ongoingBadge}
                       </span>
                     </div>
 
                     {needsWarehouse && (
                       <span className="text-xs px-2 py-1 rounded bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200 inline-block">
-                        ⚠️ Action Required
+                        ⚠️ {t.company.actionRequired}
                       </span>
                     )}
 
@@ -258,7 +258,7 @@ export default function CompanyOngoingRequestsPage() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="flex items-center gap-1 text-muted-foreground">
                           <Package className="w-3 h-3" />
-                          {request.items.length} items
+                            {request.items.length} {t.common.items}
                         </span>
                         {(sourceIsSelfPickup || destinationIsSelfDelivery) && (
                           <span className="text-xs text-orange-600 dark:text-orange-400">
@@ -294,13 +294,13 @@ export default function CompanyOngoingRequestsPage() {
                             <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                               <Warehouse className="w-3 h-3" />
                               <span className="truncate">
-                                Source: {request.sourceWarehouse.name}
+                              {t.company.sourceWarehouseLabel} {request.sourceWarehouse.name}
                               </span>
                             </div>
                           ) : (
                             <div className="text-xs text-orange-600 dark:text-orange-400">
                               <Warehouse className="w-3 h-3 inline mr-1" />
-                              No source warehouse
+                              {t.company.noSourceWarehouse}
                             </div>
                           ))}
                         {destinationIsSelfDelivery &&
@@ -308,13 +308,13 @@ export default function CompanyOngoingRequestsPage() {
                             <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                               <Warehouse className="w-3 h-3" />
                               <span className="truncate">
-                                Dest: {request.destinationWarehouse.name}
+                              {t.company.destWarehouseLabel} {request.destinationWarehouse.name}
                               </span>
                             </div>
                           ) : (
                             <div className="text-xs text-purple-600 dark:text-purple-400">
                               <Warehouse className="w-3 h-3 inline mr-1" />
-                              No destination warehouse
+                              {t.company.noDestWarehouse}
                             </div>
                           ))}
                       </div>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Request, Address, Item } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -28,6 +29,7 @@ const formatLocation = (loc: Address) => {
 
 export default function MyRequestsPage() {
   const { user, isLoading: authLoading } = useProtectedRoute();
+  const { t } = useTranslation();
   
   // Regular data fetching (not live)
   const [requests, setRequests] = useState<Request[]>([]);
@@ -110,20 +112,20 @@ export default function MyRequestsPage() {
         <div className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">
-              My Shipping Requests
+              {t.myRequests.title}
             </h1>
             <p className="text-muted-foreground">
-              Track all your shipments in one place
+              {t.myRequests.subtitle}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => refresh()} className="gap-2 cursor-pointer">
-              Refresh
+              {t.common.refresh}
             </Button>
             <Link href="/new-request">
               <Button className="gap-2 cursor-pointer">
                 <Package className="w-4 h-4" />
-                New Request
+                {t.myRequests.newRequest}
               </Button>
             </Link>
           </div>
@@ -141,14 +143,14 @@ export default function MyRequestsPage() {
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h2 className="text-xl font-semibold text-foreground mb-2">
-              No Requests Yet
+              {t.myRequests.noRequestsYet}
             </h2>
             <p className="text-muted-foreground mb-6">
-              Create your first shipping request to get started
+              {t.myRequests.createFirstRequest}
             </p>
             <Link href="/new-request">
               <Button className="cursor-pointer">
-                Create Your First Request
+                {t.myRequests.createYourFirstRequest}
               </Button>
             </Link>
           </div>
@@ -206,7 +208,7 @@ export default function MyRequestsPage() {
                       ) && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                           <Wrench className="w-3 h-3" />
-                          Assembly
+                          {t.myRequests.assembly}
                         </span>
                       )}
                       {request.items?.some(
@@ -214,7 +216,7 @@ export default function MyRequestsPage() {
                       ) && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                           <BoxSelect className="w-3 h-3" />
-                          Packaging
+                          {t.myRequests.packaging}
                         </span>
                       )}
                     </div>
@@ -232,9 +234,8 @@ export default function MyRequestsPage() {
                         <Calendar className="w-4 h-4 shrink-0" />
                         <span>
                           {request.deliveryType === "Urgent"
-                            ? "Urgent"
-                            : "Normal"}{" "}
-                          Delivery
+                            ? t.myRequests.urgentDelivery
+                            : t.myRequests.normalDelivery}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -244,7 +245,7 @@ export default function MyRequestsPage() {
                             <span className="font-semibold text-primary">
                               ${Number(request.selectedCompany.cost).toFixed(2)}
                             </span>
-                            <span className="text-xs text-green-600 dark:text-green-400">(accepted)</span>
+                            <span className="text-xs text-green-600 dark:text-green-400">({t.myRequests.accepted})</span>
                           </>
                         ) : (
                           <>
@@ -255,7 +256,7 @@ export default function MyRequestsPage() {
                                   ? `$${Number(request.cost).toFixed(2)}`
                                   : "N/A"}
                             </span>
-                            <span className="text-xs">(estimated)</span>
+                            <span className="text-xs">({t.myRequests.estimated})</span>
                           </>
                         )}
                       </div>

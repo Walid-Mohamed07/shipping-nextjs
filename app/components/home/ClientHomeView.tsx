@@ -3,9 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Globe, Zap, Shield, ArrowRight } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export function ClientHomeView() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleShipNow = () => {
     router.push("/new-request");
@@ -15,14 +17,12 @@ export function ClientHomeView() {
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
       <div className="text-center">
         <h1 className="text-5xl sm:text-6xl font-bold text-foreground mb-6 leading-tight">
-          Ship Your Packages
-          <span className="block text-primary">Anywhere in the World</span>
+          {t.home.heroTitle}
+          <span className="block text-primary">{t.home.heroHighlight}</span>
         </h1>
 
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Fast, reliable, and affordable shipping services. Track your
-          shipments in real-time and enjoy hassle-free delivery to over 200
-          countries.
+          {t.home.heroDescription}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -31,15 +31,15 @@ export function ClientHomeView() {
             onClick={handleShipNow}
             className="gap-2 text-base px-8 cursor-pointer"
           >
-            Ship Now
-            <ArrowRight className="w-5 h-5" />
+            {t.home.shipNow}
+            <ArrowRight className="w-5 h-5 rtl:rotate-180" />
           </Button>
           <Button
             size="lg"
             variant="outline"
             className="text-base px-8 bg-transparent cursor-pointer"
           >
-            Learn More
+            {t.common.learnMore}
           </Button>
         </div>
 
@@ -50,11 +50,10 @@ export function ClientHomeView() {
               <Globe className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-3">
-              Global Coverage
+              {t.home.globalCoverage}
             </h3>
             <p className="text-muted-foreground">
-              Ship to over 200 countries and territories worldwide with our
-              extensive network.
+              {t.home.globalCoverageDesc}
             </p>
           </div>
 
@@ -63,11 +62,10 @@ export function ClientHomeView() {
               <Zap className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-3">
-              Fast Delivery
+              {t.home.fastDelivery}
             </h3>
             <p className="text-muted-foreground">
-              Get your packages delivered quickly with our optimized logistics
-              network.
+              {t.home.fastDeliveryDesc}
             </p>
           </div>
 
@@ -76,11 +74,10 @@ export function ClientHomeView() {
               <Shield className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-3">
-              Secure & Safe
+              {t.home.secureAndSafe}
             </h3>
             <p className="text-muted-foreground">
-              Your packages are fully insured and handled with care every step
-              of the way.
+              {t.home.secureAndSafeDesc}
             </p>
           </div>
         </div>

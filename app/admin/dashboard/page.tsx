@@ -5,10 +5,12 @@ import { useAuth } from "@/app/context/AuthContext";
 import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/app/components/loaders";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (
@@ -23,7 +25,7 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex">
-          <div className="w-64 border-r border-border p-4 space-y-3">
+          <div className="w-64 border-e border-border p-4 space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="w-full h-10" />
             ))}
@@ -56,19 +58,19 @@ export default function AdminDashboard() {
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">
-              Admin Dashboard
+              {t.admin.dashboard}
             </h1>
             <p className="text-muted-foreground">
-              Select a section from the sidebar to get started
+              {t.admin.selectSection}
             </p>
           </div>
 
           <div className="bg-muted/50 border border-border rounded-lg p-8 text-center">
             <p className="text-muted-foreground mb-4">
-              Welcome to the Admin Dashboard
+              {t.admin.welcomeToDashboard}
             </p>
             <p className="text-sm text-muted-foreground">
-              Use the navigation menu on the left to access different sections
+              {t.admin.useNavigationRight}
             </p>
           </div>
         </main>

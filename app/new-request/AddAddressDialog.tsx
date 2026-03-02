@@ -10,6 +10,7 @@ import { Address } from "@/types";
 import { MapPinned, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import type { AddressData } from "@/app/components/LocationMapPicker";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 // Formatting utility functions
 const formatters = {
@@ -112,8 +113,7 @@ export default function AddAddressDialog({
   userName,
   userId,
   editAddress,
-}: AddAddressDialogProps) {
-  const isEditMode = !!editAddress;
+}: AddAddressDialogProps) {  const { t } = useTranslation();  const isEditMode = !!editAddress;
   // Initial form state factory function to get fresh state
   const getInitialFormState = () => ({
     country: "",
@@ -306,62 +306,62 @@ export default function AddAddressDialog({
 
     // Validate userId is available
     if (!userId) {
-      setError("User ID is not available. Please refresh the page and try again.");
-      toast.error("User ID is not available. Please refresh the page.");
+      setError(t.address.errUserIdMissing);
+      toast.error(t.address.errUserIdMissing);
       return;
     }
 
     // For edit mode, validate that addressId is available
     if (isEditMode && !editAddress?.id) {
-      setError("Address ID is not available. Please refresh the page and try again.");
-      toast.error("Address ID is not available. Please refresh the page.");
+      setError(t.address.errAddressIdMissing);
+      toast.error(t.address.errAddressIdMissing);
       return;
     }
 
     // Validate required fields
     if (!form.country) {
       errors.country = true;
-      toast.error("Country is required");
+      toast.error(t.address.errCountryRequired);
     }
     
     // Validate full name
     if (!form.fullName || !formatters.validateName(form.fullName)) {
       errors.fullName = true;
-      toast.error("Please enter a valid full name (min 2 characters, letters only)");
+      toast.error(t.address.errFullNameRequired);
     }
     
     // Validate street address
     if (!form.street || !formatters.validateStreet(form.street)) {
       errors.street = true;
-      toast.error("Street address is required (min 3 characters)");
+      toast.error(t.address.errStreetRequired);
     }
     
     // Validate postal code
     if (!form.postalCode || !form.postalCode.trim()) {
       errors.postalCode = true;
-      toast.error("Postal code is required");
+      toast.error(t.address.errPostalRequired);
     }
     
     // Validate mobile number
     if (!form.mobileNumber || form.mobileNumber.length < 8) {
       errors.mobile = true;
-      toast.error("Please enter a valid mobile number (at least 8 digits)");
+      toast.error(t.address.errMobileLength);
     }
     
     if (!form.phoneCode) {
       errors.phoneCode = true;
-      toast.error("Please select or enter a country code");
+      toast.error(t.address.errPhoneCodeRequired);
     }
     
     // Validate city
     if (!form.city || form.city.trim().length < 2) {
       errors.city = true;
-      toast.error("City is required");
+      toast.error(t.address.errCityRequired);
     }
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      setError("Please fill in all required fields correctly");
+      setError(t.address.errRequiredFields);
       return;
     }
 
@@ -412,7 +412,7 @@ export default function AddAddressDialog({
         ? resData.address 
         : (resData.addresses?.[resData.addresses.length - 1] ?? addressToSave);
 
-      toast.success(`Address ${isEditMode ? "updated" : "saved"} successfully!`);
+      toast.success(isEditMode ? t.address.addressUpdated : t.address.addressSavedOk);
 
       // Call parent's onSave callback and wait for it to complete
       await Promise.resolve(onSave(savedAddress as Address));
@@ -441,7 +441,7 @@ export default function AddAddressDialog({
           style={{ maxHeight: "90vh", overflowY: "scroll" }}
         >
           <Dialog.Title className="text-lg font-bold mb-4">
-            {isEditMode ? "Edit Address" : "Add New Address"} ({type === "source" ? "Source" : "Destination"})
+            {isEditMode ? t.address.editAddressTitle : t.address.addNewAddress} ({type === "source" ? t.address.sourceType : t.address.destinationType})
           </Dialog.Title>
           {error && (
             <div className="mb-2 text-red-600 dark:text-red-400 text-sm">
@@ -452,7 +452,7 @@ export default function AddAddressDialog({
           {/* Location capture - store lat/long for map display */}
           <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30">
             <p className="text-sm font-medium text-foreground mb-2">
-              Set location (stored for map display)
+              {t.address.setLocation}
             </p>
             {!showMap ? (
               <div className="flex flex-wrap gap-2">
@@ -473,16 +473,16 @@ export default function AddAddressDialog({
                           }));
                           setShowMap(true);
                         },
-                        () => setError("Could not get location"),
+                        () => setError(t.address.couldNotGetLocation),
                       );
                     } else {
-                      setError("Geolocation not supported");
+                      setError(t.address.geolocationNotSupported);
                     }
                   }}
                   className="gap-2 cursor-pointer"
                 >
                   <Navigation className="w-4 h-4" />
-                  Use my location
+                  {t.address.useMyLocation}
                 </Button>
                 <Button
                   type="button"
@@ -496,7 +496,7 @@ export default function AddAddressDialog({
                   className="gap-2 cursor-pointer"
                 >
                   <MapPinned className="w-4 h-4" />
-                  Pick on map
+                  {t.address.pickOnMap}
                 </Button>
               </div>
             ) : (
@@ -552,11 +552,11 @@ export default function AddAddressDialog({
                         size="sm"
                         onClick={() => {
                           setUserEditedFields(new Set());
-                          toast.success("You can now re-import from map by moving the pin");
+                          toast.success(t.address.allowMapUpdatesHint);
                         }}
                         className="text-blue-600 border-blue-300 hover:bg-blue-50 cursor-pointer"
                       >
-                        Allow map updates
+                        {t.address.allowMapUpdates}
                       </Button>
                     )}
                     <Button
@@ -569,7 +569,7 @@ export default function AddAddressDialog({
                       }}
                       className="text-muted-foreground cursor-pointer"
                     >
-                      Hide map
+                      {t.address.hideMap}
                     </Button>
                   </div>
                 )}
@@ -581,11 +581,11 @@ export default function AddAddressDialog({
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Full Name <span className="text-red-500">*</span>
+                {t.address.fullName} <span className="text-red-500">*</span>
               </label>
               <Input
                 name="fullName"
-                placeholder="e.g., Ahmed Hassan"
+                placeholder={t.address.fullNamePlaceholder}
                 value={form.fullName}
                 onChange={handleChange}
                 required
@@ -596,7 +596,7 @@ export default function AddAddressDialog({
             {/* Country Select */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Country <span className="text-red-500">*</span>
+                {t.address.country} <span className="text-red-500">*</span>
               </label>
               <select
                 name="country"
@@ -608,7 +608,7 @@ export default function AddAddressDialog({
                 }`}
               >
                 <option value="" disabled>
-                  Select country
+                  {t.address.selectCountry}
                 </option>
                 {countries.map((country) => (
                   <option
@@ -626,11 +626,11 @@ export default function AddAddressDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  City <span className="text-red-500">*</span>
+                  {t.address.city} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   name="city"
-                  placeholder="e.g., Cairo, Dubai, Riyadh"
+                  placeholder={t.address.cityPlaceholder}
                   value={form.city}
                   onChange={handleChange}
                   required
@@ -640,11 +640,11 @@ export default function AddAddressDialog({
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Postal Code <span className="text-red-500">*</span>
+                  {t.address.postalCode} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   name="postalCode"
-                  placeholder="e.g., 12345"
+                  placeholder={t.address.postalCodePlaceholder}
                   value={form.postalCode}
                   onChange={handleChange}
                   required
@@ -656,11 +656,11 @@ export default function AddAddressDialog({
             {/* Street Address */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Street Address <span className="text-red-500">*</span>
+                {t.address.streetAddress} <span className="text-red-500">*</span>
               </label>
               <Input
                 name="street"
-                placeholder="e.g., 123 Main St., Apartment 5"
+                placeholder={t.address.streetPlaceholder}
                 value={form.street}
                 onChange={handleChange}
                 required
@@ -672,11 +672,11 @@ export default function AddAddressDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Building / Apt
+                  {t.address.buildingApt}
                 </label>
                 <Input
                   name="building"
-                  placeholder="e.g., Building 5, Apt 12"
+                  placeholder={t.address.buildingPlaceholder}
                   value={form.building}
                   onChange={handleChange}
                 />
@@ -684,11 +684,11 @@ export default function AddAddressDialog({
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  District
+                  {t.address.district}
                 </label>
                 <Input
                   name="district"
-                  placeholder="e.g., Maadi, Jumeirah"
+                  placeholder={t.address.districtPlaceholder}
                   value={form.district}
                   onChange={handleChange}
                 />
@@ -698,11 +698,11 @@ export default function AddAddressDialog({
             {/* Governorate */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Governorate / State
+                {t.address.governorateState}
               </label>
               <Input
                 name="governorate"
-                placeholder="e.g., Cairo Governorate"
+                placeholder={t.address.governoratePlaceholder}
                 value={form.governorate}
                 onChange={handleChange}
               />
@@ -711,7 +711,7 @@ export default function AddAddressDialog({
             {/* Mobile Number */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Mobile Number <span className="text-red-500">*</span>
+                {t.address.mobileNumber} <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-2">
                 {/* Country Code Dropdown */}
@@ -728,7 +728,7 @@ export default function AddAddressDialog({
                       validationErrors.phoneCode ? "border-red-500" : "border-border"
                     }`}
                   >
-                    <option value="">Select code</option>
+                    <option value="">{t.address.selectCode}</option>
                     {countries.map((country) => (
                       <option
                         key={country}
@@ -745,7 +745,7 @@ export default function AddAddressDialog({
                   <Input
                     name="mobileNumber"
                     type="tel"
-                    placeholder="Enter phone number"
+                    placeholder={t.address.phonePlaceholder}
                     value={form.mobileNumber}
                     onChange={handleChange}
                     onBlur={handleMobileBlur}
@@ -756,7 +756,7 @@ export default function AddAddressDialog({
               </div>
               {(!form.phoneCode || !form.mobileNumber) && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Select country code and enter phone number
+                  {t.address.selectCodeAndEnter}
                 </p>
               )}
             </div>
@@ -764,11 +764,11 @@ export default function AddAddressDialog({
             {/* Landmark */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Landmark
+                {t.address.landmark}
               </label>
               <Input
                 name="landmark"
-                placeholder="e.g., Near City Mall"
+                placeholder={t.address.landmarkPlaceholder}
                 value={form.landmark}
                 onChange={handleChange}
               />
@@ -777,11 +777,11 @@ export default function AddAddressDialog({
             {/* Delivery Instructions */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Delivery Instructions
+                {t.address.deliveryInstructions}
               </label>
               <Input
                 name="deliveryInstructions"
-                placeholder="e.g., Leave at reception, call on arrival"
+                placeholder={t.address.deliveryInstructionsPlaceholder}
                 value={form.deliveryInstructions}
                 onChange={handleChange}
               />
@@ -790,7 +790,7 @@ export default function AddAddressDialog({
             {/* Address Type Radio */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Address Type
+                {t.address.addressType}
               </label>
               <div className="flex flex-col sm:flex-row gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -803,9 +803,9 @@ export default function AddAddressDialog({
                     className="cursor-pointer"
                   />
                   <span className="text-sm">
-                    Home{" "}
+                    {t.address.home}{" "}
                     <span className="text-xs text-muted-foreground">
-                      (7am-9pm, all days)
+                      {t.address.homeHours}
                     </span>
                   </span>
                 </label>
@@ -819,9 +819,9 @@ export default function AddAddressDialog({
                     className="cursor-pointer"
                   />
                   <span className="text-sm">
-                    Office{" "}
+                    {t.address.office}{" "}
                     <span className="text-xs text-muted-foreground">
-                      (9am-6pm, Weekdays)
+                      {t.address.officeHours}
                     </span>
                   </span>
                 </label>
@@ -838,11 +838,11 @@ export default function AddAddressDialog({
                   onChange={handleChange}
                   className="cursor-pointer"
                 />
-                <span className="text-sm font-medium">Set as Primary Address</span>
+                <span className="text-sm font-medium">{t.address.setAsPrimaryAddress}</span>
               </label>
               {form.primary && (
                 <p className="text-xs text-muted-foreground mt-2 ml-6">
-                  This will be your default address for new requests
+                  {t.address.primaryDefault}
                 </p>
               )}
             </div>
@@ -854,10 +854,10 @@ export default function AddAddressDialog({
               variant="outline"
               disabled={loading}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="button" onClick={handleSave} disabled={loading}>
-              {loading ? "Saving..." : (isEditMode ? "Update Address" : "Save Address")}
+              {loading ? t.address.saving : (isEditMode ? t.address.updateAddress : t.address.saveAddress)}
             </Button>
           </div>
         </Dialog.Content>

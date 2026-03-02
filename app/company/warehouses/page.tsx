@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { AddressData } from "@/app/components/LocationMapPicker";
 import { CardSkeleton, MapSkeleton } from "@/app/components/loaders";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 const LocationMapPicker = dynamic(
   () =>
@@ -66,6 +67,7 @@ export default function CompanyWarehousesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [mapEditable, setMapEditable] = useState(true);
+  const { t } = useTranslation();
 
   const fetchWarehouses = useCallback(async () => {
     if (!user?.id) return;
@@ -148,7 +150,7 @@ export default function CompanyWarehousesPage() {
     e.preventDefault();
 
     if (!formData.name || !formData.address || !formData.country) {
-      alert("Name, address, and country are required");
+      alert(t.company.warehouseFieldsRequired);
       return;
     }
 
@@ -183,18 +185,18 @@ export default function CompanyWarehousesPage() {
       if (response.ok) {
         alert(
           editingWarehouse
-            ? "Warehouse updated successfully!"
-            : "Warehouse created successfully!",
+            ? t.company.warehouseUpdated
+            : t.company.warehouseCreated,
         );
         resetForm();
         await fetchWarehouses();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to save warehouse");
+        alert(errorData.error || t.company.failedSaveWarehouse);
       }
     } catch (error) {
       console.error("Failed to save warehouse:", error);
-      alert("Failed to save warehouse");
+      alert(t.company.failedSaveWarehouse);
     } finally {
       setSaving(false);
     }
@@ -202,9 +204,7 @@ export default function CompanyWarehousesPage() {
 
   const handleDelete = async (warehouseId: string) => {
     if (
-      !confirm(
-        "Are you sure you want to delete this warehouse? This action cannot be undone.",
-      )
+      !confirm(t.company.confirmDeleteWarehouse)
     ) {
       return;
     }
@@ -217,15 +217,15 @@ export default function CompanyWarehousesPage() {
       );
 
       if (response.ok) {
-        alert("Warehouse deleted successfully!");
+        alert(t.company.warehouseDeleted);
         await fetchWarehouses();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to delete warehouse");
+        alert(errorData.error || t.company.failedDeleteWarehouse);
       }
     } catch (error) {
       console.error("Failed to delete warehouse:", error);
-      alert("Failed to delete warehouse");
+      alert(t.company.failedDeleteWarehouse);
     } finally {
       setDeleting(null);
     }
@@ -236,7 +236,7 @@ export default function CompanyWarehousesPage() {
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
           <p className="text-muted-foreground">
-            Access denied. This page is for companies only.
+            {t.company.accessDeniedCompany}
           </p>
         </div>
       </div>
@@ -266,15 +266,15 @@ export default function CompanyWarehousesPage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">
-              My Warehouses
+              {t.company.myWarehouses}
             </h1>
             <p className="text-muted-foreground">
-              Manage your warehouse locations for self-pickup orders
+              {t.company.warehouseSubtitle}
             </p>
           </div>
           <Button onClick={() => setIsFormOpen(true)} className="gap-2">
             <Plus className="w-4 h-4" />
-            Add Warehouse
+            {t.company.addWarehouse}
           </Button>
         </div>
 
@@ -283,7 +283,7 @@ export default function CompanyWarehousesPage() {
           <Card className="p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">
-                {editingWarehouse ? "Edit Warehouse" : "Add New Warehouse"}
+                {editingWarehouse ? t.company.editWarehouseTitle : t.company.addNewWarehouse}
               </h2>
               <Button variant="ghost" size="sm" onClick={resetForm}>
                 <X className="w-4 h-4" />
@@ -294,7 +294,7 @@ export default function CompanyWarehousesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Warehouse Name *
+                    {t.company.warehouseNameLabel} *
                   </label>
                   <input
                     type="text"
@@ -310,7 +310,7 @@ export default function CompanyWarehousesPage() {
 
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Address *
+                    {t.common.address} *
                   </label>
                   <input
                     type="text"
@@ -325,7 +325,7 @@ export default function CompanyWarehousesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">City</label>
+                  <label className="block text-sm font-medium mb-1">{t.address.city}</label>
                   <input
                     type="text"
                     value={formData.city}
@@ -339,7 +339,7 @@ export default function CompanyWarehousesPage() {
 
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Country *
+                    {t.address.country} *
                   </label>
                   <input
                     type="text"
@@ -357,7 +357,7 @@ export default function CompanyWarehousesPage() {
               {/* Location capture - store lat/long for map display */}
               <div className="p-3 rounded-lg border border-border bg-muted/30">
                 <p className="text-sm font-medium text-foreground mb-3">
-                  Set location (optional)
+                  {t.company.setLocation}
                 </p>
                 {!showMap ? (
                   <div className="flex flex-wrap gap-2">
@@ -377,16 +377,16 @@ export default function CompanyWarehousesPage() {
                               setShowMap(true);
                               setMapEditable(true);
                             },
-                            () => alert("Could not get your location"),
+                            () => alert(t.company.geoError),
                           );
                         } else {
-                          alert("Geolocation not supported");
+                          alert(t.company.geoNotSupported);
                         }
                       }}
                       className="gap-2 cursor-pointer"
                     >
                       <Navigation className="w-4 h-4" />
-                      Use my location
+                      {t.company.useMyLocation}
                     </Button>
                     <Button
                       type="button"
@@ -399,7 +399,7 @@ export default function CompanyWarehousesPage() {
                       className="gap-2 cursor-pointer"
                     >
                       <MapPinned className="w-4 h-4" />
-                      Pick on map
+                      {t.company.pickOnMap}
                     </Button>
                   </div>
                 ) : (
@@ -448,7 +448,7 @@ export default function CompanyWarehousesPage() {
                         }}
                         className="text-muted-foreground cursor-pointer"
                       >
-                        Hide map
+                        {t.company.hideMap}
                       </Button>
                     )}
                   </div>
@@ -462,7 +462,7 @@ export default function CompanyWarehousesPage() {
                   onClick={resetForm}
                   className="flex-1"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </Button>
                 <Button
                   type="submit"
@@ -471,10 +471,10 @@ export default function CompanyWarehousesPage() {
                 >
                   <Save className="w-4 h-4" />
                   {saving
-                    ? "Saving..."
+                    ? t.common.saving
                     : editingWarehouse
-                      ? "Update"
-                      : "Create"}
+                      ? t.common.update
+                      : t.common.create}
                 </Button>
               </div>
             </form>
@@ -486,15 +486,14 @@ export default function CompanyWarehousesPage() {
           <Card className="p-12 text-center">
             <Warehouse className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              You don't have any warehouses yet
+              {t.company.noWarehousesYet}
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Add a warehouse to enable self-pickup options for your shipping
-              orders
+              {t.company.noWarehousesDesc}
             </p>
             <Button onClick={() => setIsFormOpen(true)} className="mt-4 gap-2">
               <Plus className="w-4 h-4" />
-              Add Your First Warehouse
+              {t.company.addFirstWarehouse}
             </Button>
           </Card>
         ) : (
@@ -547,13 +546,13 @@ export default function CompanyWarehousesPage() {
 
                   {warehouse.coordinates && (
                     <p className="text-xs text-muted-foreground">
-                      Coordinates: {warehouse.coordinates.latitude.toFixed(4)},{" "}
+                      {t.company.coordinatesLabel} {warehouse.coordinates.latitude.toFixed(4)},{" "}
                       {warehouse.coordinates.longitude.toFixed(4)}
                     </p>
                   )}
 
                   <p className="text-xs text-muted-foreground">
-                    Created:{" "}
+                    {t.company.createdDateLabel}{" "}
                     {new Date(warehouse.createdAt).toLocaleDateString()}
                   </p>
                 </div>
