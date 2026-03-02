@@ -25,7 +25,15 @@ export enum RequestDeliveryStatus {
 export type DeliveryStatus = RequestDeliveryStatus;
 export type PickupMode = "Delegate" | "Self";
 export type DeliveryType = "Normal" | "Urgent";
-export type DayOfWeek = "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "All Week";
+export type DayOfWeek =
+  | "Sunday"
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday"
+  | "All Week";
 
 // User info returned in populated responses
 export interface UserDetails {

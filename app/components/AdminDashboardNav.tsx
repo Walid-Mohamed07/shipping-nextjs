@@ -12,6 +12,9 @@ import {
   Lock,
   Building2,
   ArrowLeft,
+  Settings,
+  DollarSign,
+  Tag,
 } from "lucide-react";
 
 interface NavItem {
@@ -71,6 +74,18 @@ const allNavItems: NavItem[] = [
     label: "Audit",
     href: "/admin/dashboard/audit",
     icon: LayoutDashboard,
+    roles: ["admin"],
+  },
+  {
+    label: "Categories",
+    href: "/admin/dashboard/categories",
+    icon: Tag,
+    roles: ["admin"],
+  },
+  {
+    label: "Cost Criteria",
+    href: "/admin/dashboard/cost-criteria",
+    icon: DollarSign,
     roles: ["admin"],
   },
 ];

@@ -14,6 +14,8 @@ import { AdminCompaniesTab } from "@/app/components/AdminCompaniesTab";
 import { AdminUsersTab } from "@/app/components/AdminUsersTab";
 import { AdminDriversTab } from "@/app/components/AdminDriversTab";
 import { OperatorCostOffersTab } from "@/app/components/OperatorCostOffersTab";
+import { AdminCategoriesTab } from "@/app/components/AdminCategoriesTab";
+import { AdminCostCriteriaTab } from "@/app/components/AdminCostCriteriaTab";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
@@ -31,6 +33,8 @@ const sectionTitles: Record<string, string> = {
   override: "Override Assignments",
   metrics: "Performance Metrics",
   audit: "Audit Logs",
+  categories: "Constants Management - Categories",
+  "cost-criteria": "Constants Management - Cost Criteria",
 };
 
 interface DashboardSectionProps {
@@ -85,6 +89,10 @@ export default function DashboardSection({
         return <AdminPerformanceMetricsTab />;
       case "audit":
         return <AdminAuditLogsTab />;
+      case "categories":
+        return <AdminCategoriesTab />;
+      case "cost-criteria":
+        return <AdminCostCriteriaTab />;
       default:
         return <div className="text-center py-8">Section not found</div>;
     }

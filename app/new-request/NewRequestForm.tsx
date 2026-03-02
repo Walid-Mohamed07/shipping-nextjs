@@ -112,6 +112,37 @@ export default function NewRequestForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  // Fetch categories and cost criteria
+  const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
+  const [costCriteria, setCostCriteria] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch categories
+        const catRes = await fetch("/api/admin/categories");
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          const categoryNames = (catData.categories || []).map(
+            (cat: any) => cat.name,
+          );
+          setDynamicCategories(categoryNames);
+        }
+
+        // Fetch cost criteria
+        const costRes = await fetch("/api/admin/cost-criteria");
+        if (costRes.ok) {
+          const costData = await costRes.json();
+          setCostCriteria(costData.costCriteria);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dynamic data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const primaryLocation =
     userLocations.length > 0
       ? userLocations.find((loc: any) => loc.primary) || userLocations[0]
@@ -132,7 +163,8 @@ export default function NewRequestForm() {
   // Initialize source address from primary location when userLocations loads
   useEffect(() => {
     if (userLocations.length > 0 && !from && !fromAddress) {
-      const primary = userLocations.find((loc: any) => loc.primary) || userLocations[0];
+      const primary =
+        userLocations.find((loc: any) => loc.primary) || userLocations[0];
       if (primary) {
         setFrom(primary.country || "");
         setFromAddress(primary.street || "");
@@ -187,8 +219,8 @@ export default function NewRequestForm() {
   }, [userLocations, toAddressIdx, addressForm.coordinates]);
 
   // Pickup modes
-  const [sourcePickupMode, setSourcePickupMode] = useState("Self");
-  const [destPickupMode, setDestPickupMode] = useState("Self");
+  const [sourcePickupMode, setSourcePickupMode] = useState("Delegate");
+  const [destPickupMode, setDestPickupMode] = useState("Delegate");
 
   // Modal state for adding/editing address
   const [showAddAddress, setShowAddAddress] = useState(false);
@@ -202,6 +234,14 @@ export default function NewRequestForm() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
   const [items, setItems] = useState<Item[]>([]);
+  // Track mediaFiles for each item by index (separate from items array)
+  const [itemMediaFilesMap, setItemMediaFilesMap] = useState<
+    Record<number, File[]>
+  >({});
+  // Track preview URLs (blob URLs) for each item for display purposes
+  const [itemMediaPreviewsMap, setItemMediaPreviewsMap] = useState<
+    Record<number, string[]>
+  >({});
   // For new item input fields: note (optional), media (up to 4 images, preview only)
   const [newItem, setNewItem] = useState({
     name: "",
@@ -223,7 +263,15 @@ export default function NewRequestForm() {
     "Normal",
   );
   // Available days of the week
-  const DAYS_OF_WEEK: DayOfWeek[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const DAYS_OF_WEEK: DayOfWeek[] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
   const [availableDays, setAvailableDays] = useState<DayOfWeek[]>([]);
   // Mobile is now per address location, so default to primary location's mobile or user's mobile
   const [mobile, setMobile] = useState("");
@@ -252,27 +300,55 @@ export default function NewRequestForm() {
     from: string,
     to: string,
   ) => {
-    const baseRates: Record<string, number> = {
-      Electronics: 20,
-      Clothing: 10,
-      Books: 8,
-      Furniture: 30,
-      "Food & Beverages": 12,
-      Cosmetics: 15,
-      Jewelry: 25,
-      Documents: 5,
-      Other: 10,
-    };
-    const base = baseRates[category] ?? 10;
+    // Use cost criteria if available, otherwise fall back to hardcoded rates
+    let baseRate = 10; // default fallback
+
+    if (costCriteria && costCriteria.categoryRates) {
+      const categoryRate = costCriteria.categoryRates.find(
+        (rate: any) => rate.category === category,
+      );
+      if (categoryRate) {
+        baseRate = categoryRate.baseRate;
+      }
+    } else {
+      // Fallback to hardcoded rates
+      const hardcodedRates: Record<string, number> = {
+        Electronics: 20,
+        Clothing: 10,
+        Books: 8,
+        Furniture: 30,
+        "Food & Beverages": 12,
+        Cosmetics: 15,
+        Jewelry: 25,
+        Documents: 5,
+        Other: 10,
+      };
+      baseRate = hardcodedRates[category] ?? 10;
+    }
+
     const weightNum = parseFloat(weight) || 1;
-    const distanceMultiplier = from === to ? 1 : 1.5;
-    return base * weightNum * quantity * distanceMultiplier;
+    const weightMultiplier = costCriteria?.weightMultiplier || 1;
+    const quantityMultiplier = costCriteria?.quantityMultiplier || 1;
+    const sameLocationMultiplier = costCriteria?.sameLocationMultiplier || 1;
+    const differentLocationMultiplier =
+      costCriteria?.differentLocationMultiplier || 1.5;
+
+    const distanceMultiplier =
+      from === to ? sameLocationMultiplier : differentLocationMultiplier;
+
+    return (
+      baseRate *
+      (weightNum * weightMultiplier) *
+      (quantity * quantityMultiplier) *
+      distanceMultiplier
+    );
   };
 
-  // Apply delivery type surcharge: Fast = +25% on base cost
-  const FAST_DELIVERY_SURCHARGE = 1.25;
-  const applyDeliverySurcharge = (baseCost: number) =>
-    deliveryType === "Urgent" ? baseCost * FAST_DELIVERY_SURCHARGE : baseCost;
+  // Apply delivery type surcharge: Fast = configurable surcharge on base cost
+  const applyDeliverySurcharge = (baseCost: number) => {
+    const surcharge = costCriteria?.urgentDeliverySurcharge || 1.25;
+    return deliveryType === "Urgent" ? baseCost * surcharge : baseCost;
+  };
 
   // Primary cost = base cost × delivery surcharge (Fast +25%); recalc when addresses, items, or deliveryType change
   React.useEffect(() => {
@@ -281,23 +357,24 @@ export default function NewRequestForm() {
     }
     debounceTimeout.current = setTimeout(() => {
       // Check if source and destination addresses are selected
-      const sourceSelected = fromAddressIdx >= 0 && userLocations[fromAddressIdx];
+      const sourceSelected =
+        fromAddressIdx >= 0 && userLocations[fromAddressIdx];
       const destSelected = toAddressIdx >= 0 && userLocations[toAddressIdx];
-      
+
       if (sourceSelected && destSelected && items.length > 0) {
         const sourceLocation = userLocations[fromAddressIdx];
         const destLocation = userLocations[toAddressIdx];
-        
+
         // Calculate total cost for ALL items
         let totalBaseCost = 0;
         let hasValidItems = true;
-        
+
         for (const item of items) {
           if (!item.category || !item.weight || !item.quantity) {
             hasValidItems = false;
             break;
           }
-          
+
           const itemCost = calculateCost(
             item.category,
             item.weight,
@@ -307,7 +384,7 @@ export default function NewRequestForm() {
           );
           totalBaseCost += itemCost;
         }
-        
+
         if (hasValidItems) {
           const primaryCostValue = applyDeliverySurcharge(totalBaseCost);
           setPrimaryCost(primaryCostValue.toFixed(2));
@@ -321,7 +398,14 @@ export default function NewRequestForm() {
     return () => {
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     };
-  }, [fromAddressIdx, toAddressIdx, userLocations, items, deliveryType]);
+  }, [
+    fromAddressIdx,
+    toAddressIdx,
+    userLocations,
+    items,
+    deliveryType,
+    costCriteria,
+  ]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -356,6 +440,11 @@ export default function NewRequestForm() {
       mediaPreviews: newPreviews,
     }));
     e.target.value = "";
+    console.log(`Selected files: ${files.map((f) => f.name).join(", ")}`);
+    console.log(
+      `New media files added: ${toAdd.map((f) => f.name).join(", ")}`,
+    );
+    console.log(`New Item: ${JSON.stringify(newItem, null, 2)}`);
   };
   const removeMediaAt = (index: number) => {
     const newFiles = newItem.mediaFiles.filter((_, i) => i !== index);
@@ -380,12 +469,14 @@ export default function NewRequestForm() {
   );
   const categoryOptions = useMemo(
     () =>
-      categories.map((cat) => (
-        <SelectItem key={cat} value={cat}>
-          {cat}
-        </SelectItem>
-      )),
-    [],
+      (dynamicCategories.length > 0 ? dynamicCategories : categories).map(
+        (cat) => (
+          <SelectItem key={cat} value={cat}>
+            {cat}
+          </SelectItem>
+        ),
+      ),
+    [dynamicCategories],
   );
 
   const handleDeleteAddress = async (
@@ -489,13 +580,13 @@ export default function NewRequestForm() {
     const itemsWithMissingHandler = items.filter(
       (item) =>
         item.services?.canBeAssembledDisassembled &&
-        !item.services?.assemblyDisassemblyHandler
+        !item.services?.assemblyDisassemblyHandler,
     );
     if (itemsWithMissingHandler.length > 0) {
       errors.assemblyHandler = true;
       const itemNames = itemsWithMissingHandler.map((i) => i.name).join(", ");
       toast.error(
-        `Please select who will handle assembly/disassembly for: ${itemNames}`
+        `Please select who will handle assembly/disassembly for: ${itemNames}`,
       );
     }
 
@@ -535,8 +626,10 @@ export default function NewRequestForm() {
     let uploadToastId: string | number | undefined;
     try {
       // Check if there are any media files to upload
-      const hasMediaFiles = items.some(
-        (item) => item.mediaFiles && item.mediaFiles.length > 0,
+      const hasMediaFiles = Object.keys(itemMediaFilesMap).some(
+        (key) =>
+          itemMediaFilesMap[parseInt(key)] &&
+          itemMediaFilesMap[parseInt(key)].length > 0,
       );
 
       if (hasMediaFiles) {
@@ -545,32 +638,58 @@ export default function NewRequestForm() {
 
       // Upload media files for items and get URLs
       const formattedItems = await Promise.all(
-        items.map(async (item) => {
+        items.map(async (item, itemIndex) => {
           let uploadedUrls: string[] = [];
 
+          // Get mediaFiles for this item from the map
+          const mediaFiles = itemMediaFilesMap[itemIndex];
+
           // Upload media files if they exist
-          if (item.mediaFiles && item.mediaFiles.length > 0) {
+          if (mediaFiles && mediaFiles.length > 0) {
+            console.log(`[MEDIA UPLOAD] Processing item: ${item.name}`);
+            console.log(`[MEDIA UPLOAD] Files count: ${mediaFiles.length}`);
+
             const formData = new FormData();
-            for (const file of item.mediaFiles) {
-              formData.append("files", file);
+            for (const file of mediaFiles) {
+              if (file instanceof File) {
+                console.log(
+                  `[MEDIA UPLOAD] Adding file: ${file.name} (${file.size} bytes, type: ${file.type})`,
+                );
+                formData.append("files", file);
+              }
             }
 
             try {
+              console.log(
+                "[MEDIA UPLOAD] Sending request to /api/upload/media",
+              );
               const uploadResponse = await fetch("/api/upload/media", {
                 method: "POST",
                 body: formData,
               });
 
+              console.log(
+                `[MEDIA UPLOAD] Response status: ${uploadResponse.status}`,
+              );
+
               if (!uploadResponse.ok) {
                 const errorData = await uploadResponse.json().catch(() => ({}));
-                console.error("Upload failed:", errorData);
-                throw new Error(errorData.error || "Failed to upload media files");
+                console.error("[MEDIA UPLOAD] Upload failed:", errorData);
+                throw new Error(
+                  errorData.error || "Failed to upload media files",
+                );
               }
 
               const uploadData = await uploadResponse.json();
               uploadedUrls = uploadData.urls || [];
+              console.log(
+                `[MEDIA UPLOAD] Successfully uploaded. URLs: ${JSON.stringify(uploadedUrls)}`,
+              );
             } catch (uploadErr) {
-              console.error("Media upload error:", uploadErr);
+              console.error(
+                "[MEDIA UPLOAD] Error occurred:",
+                uploadErr instanceof Error ? uploadErr.message : uploadErr,
+              );
               // Continue without media - don't fail the entire request
               uploadedUrls = [];
             }
@@ -599,28 +718,57 @@ export default function NewRequestForm() {
         destination,
         items: formattedItems,
         deliveryType,
-        availableDays: availableDays.length === 7 ? ["All Week"] : availableDays,
+        availableDays:
+          availableDays.length === 7 ? ["All Week"] : availableDays,
         primaryCost: primaryCost,
         cost: primaryCost,
         requestStatus: "Pending",
         deliveryStatus: "Pending",
         comment: comments || "",
       };
+
+      console.log(
+        "[REQUEST SUBMIT] Formatted items with media:",
+        JSON.stringify(
+          formattedItems.map((item) => ({
+            name: item.name,
+            mediaCount: item.media?.length || 0,
+            media: item.media,
+          })),
+          null,
+          2,
+        ),
+      );
+
       const response = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
+
+      console.log(`[REQUEST SUBMIT] Response status: ${response.status}`);
+
       if (!response.ok) {
         const errData = await response.json();
+        console.error("[REQUEST SUBMIT] Failed:", errData);
         throw new Error(errData.error || "Failed to create request");
       }
+
+      const responseData = await response.json();
+      console.log("[REQUEST SUBMIT] Success:", responseData);
+
       setSuccess(true);
       setShowReview(false);
       toast.create("Request created successfully!");
 
       // Reset form inputs
       setItems([]);
+      setItemMediaFilesMap({});
+      // Revoke all remaining preview URLs
+      Object.values(itemMediaPreviewsMap).forEach((urls) => {
+        urls.forEach((url) => URL.revokeObjectURL(url));
+      });
+      setItemMediaPreviewsMap({});
       setNewItem({
         name: "",
         category: "",
@@ -657,8 +805,8 @@ export default function NewRequestForm() {
       setToPostalCode("");
 
       // Reset pickup modes
-      setSourcePickupMode("Self");
-      setDestPickupMode("Self");
+      setSourcePickupMode("Delegate");
+      setDestPickupMode("Delegate");
 
       setTimeout(() => {
         router.push("/my-requests");
@@ -1157,8 +1305,8 @@ export default function NewRequestForm() {
                         disabled={isLoading}
                         required
                       >
-                        <option value="Self">Self</option>
                         <option value="Delegate">Delegate</option>
+                        <option value="Self">Self</option>
                       </select>
                     </div>
                     <div>
@@ -1172,8 +1320,8 @@ export default function NewRequestForm() {
                         disabled={isLoading}
                         required
                       >
-                        <option value="Self">Self</option>
                         <option value="Delegate">Delegate</option>
+                        <option value="Self">Self</option>
                       </select>
                     </div>
                   </div>
@@ -1239,87 +1387,6 @@ export default function NewRequestForm() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Item list */}
-                  {items.length > 0 && (
-                    <div className="space-y-3 mb-5">
-                      {items.map((itm, idx) => (
-                        <div
-                          key={idx}
-                          className="group flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-gray-400 hover:bg-gray-50"
-                        >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-                            {idx + 1}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-gray-900">
-                                {itm.name}
-                              </span>
-                              <Badge
-                                variant="secondary"
-                                className="text-xs bg-blue-100 text-blue-700"
-                              >
-                                {itm.category}
-                              </Badge>
-                            </div>
-                            <p className="mt-1 text-sm text-gray-600">
-                              Dimensions: {itm.dimensions}
-                              <span className="mx-1.5">·</span>
-                              {itm.weight} kg
-                              <span className="mx-1.5">·</span>
-                              Qty: {itm.quantity}
-                            </p>
-                            {(itm.services?.canBeAssembledDisassembled ||
-                              itm.services?.packaging) && (
-                              <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {itm.services?.canBeAssembledDisassembled && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs border-amber-300 bg-amber-50 text-amber-700"
-                                  >
-                                    <Wrench className="w-3 h-3 mr-1" />
-                                    Assembly/Disassembly
-                                    {itm.services
-                                      ?.assemblyDisassemblyHandler === "company"
-                                      ? " (Company)"
-                                      : " (Self)"}
-                                  </Badge>
-                                )}
-                                {itm.services?.packaging && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs border-purple-300 bg-purple-50 text-purple-700"
-                                  >
-                                    <Package className="w-3 h-3 mr-1" />
-                                    Packaging
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                            {itm.note && (
-                              <p className="mt-2 text-xs text-gray-600 italic bg-gray-50 rounded px-2 py-1 inline-block">
-                                Note: {itm.note}
-                              </p>
-                            )}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              setItems(items.filter((_, i) => i !== idx))
-                            }
-                            disabled={isLoading}
-                            className="h-8 w-8 shrink-0 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
-                            aria-label="Remove item"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Add item form */}
                   <Card className="border border-dashed border-gray-300 bg-gray-50 rounded-lg">
@@ -1706,8 +1773,7 @@ export default function NewRequestForm() {
                             weight: newItem.weight,
                             quantity: newItem.quantity,
                             note: newItem.note.trim() || undefined,
-                            media: [], // Media URLs would be added after upload
-                            mediaFiles: newItem.mediaFiles, // Store files for later upload
+                            media: [], // Will be populated after file upload
                             services: {
                               canBeAssembledDisassembled:
                                 newItem.services.canBeAssembledDisassembled,
@@ -1718,6 +1784,21 @@ export default function NewRequestForm() {
                               packaging: newItem.services.packaging,
                             },
                           };
+
+                          // Store mediaFiles and preview URLs separately by item index
+                          const itemIndex = items.length;
+                          if (newItem.mediaFiles.length > 0) {
+                            setItemMediaFilesMap((prev) => ({
+                              ...prev,
+                              [itemIndex]: newItem.mediaFiles,
+                            }));
+                            // Store preview URLs (blob URLs) for display until upload
+                            setItemMediaPreviewsMap((prev) => ({
+                              ...prev,
+                              [itemIndex]: newItem.mediaPreviews,
+                            }));
+                          }
+
                           setItems([...items, newItemObj]);
                           toast.create("Item added successfully!");
                           // Revoke object URLs before reset to avoid memory leaks
@@ -1748,6 +1829,122 @@ export default function NewRequestForm() {
                       </Button>
                     </CardContent>
                   </Card>
+
+                  {/* Item list */}
+                  {items.length > 0 && (
+                    <div className="space-y-3 mt-5">
+                      {items.map((itm, idx) => (
+                        <div
+                          key={idx}
+                          className="group flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-gray-400 hover:bg-gray-50"
+                        >
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
+                            {idx + 1}
+                          </div>
+                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-50 flex items-center justify-center">
+                            <img
+                              src={
+                                itemMediaPreviewsMap[idx]?.[0] ||
+                                itm.media?.[0]?.url ||
+                                "/assets/images/items/ShipHub_logo.png"
+                              }
+                              alt={itm.name}
+                              className="h-12 w-12 object-cover rounded-md"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-gray-900">
+                                {itm.name}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="text-xs bg-blue-100 text-blue-700"
+                              >
+                                {itm.category}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-gray-600">
+                              Dimensions: {itm.dimensions}
+                              <span className="mx-1.5">·</span>
+                              {itm.weight} kg
+                              <span className="mx-1.5">·</span>
+                              Qty: {itm.quantity}
+                            </p>
+                            {(itm.services?.canBeAssembledDisassembled ||
+                              itm.services?.packaging) && (
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {itm.services?.canBeAssembledDisassembled && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs border-amber-300 bg-amber-50 text-amber-700"
+                                  >
+                                    <Wrench className="w-3 h-3 mr-1" />
+                                    Assembly/Disassembly
+                                    {itm.services
+                                      ?.assemblyDisassemblyHandler === "company"
+                                      ? " (Company)"
+                                      : " (Delegate)"}
+                                  </Badge>
+                                )}
+                                {itm.services?.packaging && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs border-purple-300 bg-purple-50 text-purple-700"
+                                  >
+                                    <Package className="w-3 h-3 mr-1" />
+                                    Packaging
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            {itm.note && (
+                              <p className="mt-2 text-xs text-gray-600 italic bg-gray-50 rounded px-2 py-1 inline-block">
+                                Note: {itm.note}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const newItems = items.filter(
+                                (_, i) => i !== idx,
+                              );
+                              setItems(newItems);
+
+                              // Update mediaFiles map: remove deleted item and reindex remaining items
+                              setItemMediaFilesMap((prev) => {
+                                const newMap: Record<number, File[]> = {};
+                                let newIndex = 0;
+                                Object.entries(prev).forEach(
+                                  ([oldIndex, files]) => {
+                                    const oldIndexNum = parseInt(oldIndex);
+                                    // Skip the deleted item's files
+                                    if (oldIndexNum !== idx) {
+                                      // If this item comes after the deleted one, shift its index down
+                                      if (oldIndexNum > idx) {
+                                        newMap[oldIndexNum - 1] = files;
+                                      } else {
+                                        newMap[oldIndexNum] = files;
+                                      }
+                                    }
+                                  },
+                                );
+                                return newMap;
+                              });
+                            }}
+                            disabled={isLoading}
+                            className="h-8 w-8 shrink-0 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
 
                 {/* ——— Section 4: Delivery & Cost ——— */}
@@ -1760,7 +1957,7 @@ export default function NewRequestForm() {
                       Delivery &amp; Cost
                     </h2>
                   </div>
-                  
+
                   <div className="space-y-6">
                     {/* Delivery Type Card */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -1776,7 +1973,9 @@ export default function NewRequestForm() {
                         disabled={isLoading}
                       >
                         <option value="Normal">🚚 Normal Delivery</option>
-                        <option value="Urgent">⚡ Urgent Delivery (+25% surcharge)</option>
+                        <option value="Urgent">
+                          ⚡ Urgent Delivery (+25% surcharge)
+                        </option>
                       </select>
                       <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
@@ -1821,13 +2020,18 @@ export default function NewRequestForm() {
                           }}
                           className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
                         >
-                          {availableDays.length === 7 ? "Clear All" : "Select All Days"}
+                          {availableDays.length === 7
+                            ? "Clear All"
+                            : "Select All Days"}
                         </button>
                       </div>
                       <p className="text-xs text-gray-600 mb-3">
-                        Select the days you are available for pickup (minimum 2 days required)
+                        Select the days you are available for pickup (minimum 2
+                        days required)
                       </p>
-                      <div className={`grid grid-cols-7 gap-2 ${validationErrors.availableDays ? "p-2 border-2 border-red-300 rounded-lg bg-red-50" : ""}`}>
+                      <div
+                        className={`grid grid-cols-7 gap-2 ${validationErrors.availableDays ? "p-2 border-2 border-red-300 rounded-lg bg-red-50" : ""}`}
+                      >
                         {DAYS_OF_WEEK.map((day) => {
                           const isSelected = availableDays.includes(day);
                           const shortDay = day.slice(0, 3);
@@ -1837,7 +2041,9 @@ export default function NewRequestForm() {
                               type="button"
                               onClick={() => {
                                 if (isSelected) {
-                                  setAvailableDays(availableDays.filter(d => d !== day));
+                                  setAvailableDays(
+                                    availableDays.filter((d) => d !== day),
+                                  );
                                 } else {
                                   setAvailableDays([...availableDays, day]);
                                 }
@@ -1849,15 +2055,22 @@ export default function NewRequestForm() {
                                   : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
                               }`}
                             >
-                              <span className="text-xs font-bold uppercase">{shortDay}</span>
-                              <span className="text-[10px] mt-0.5 opacity-70">{day}</span>
+                              <span className="text-xs font-bold uppercase">
+                                {shortDay}
+                              </span>
+                              <span className="text-[10px] mt-0.5 opacity-70">
+                                {day}
+                              </span>
                             </button>
                           );
                         })}
                       </div>
                       <div className="mt-3 flex items-center gap-2">
-                        <span className={`text-xs font-medium ${availableDays.length >= 2 ? "text-green-600" : "text-amber-600"}`}>
-                          {availableDays.length} day{availableDays.length !== 1 ? "s" : ""} selected
+                        <span
+                          className={`text-xs font-medium ${availableDays.length >= 2 ? "text-green-600" : "text-amber-600"}`}
+                        >
+                          {availableDays.length} day
+                          {availableDays.length !== 1 ? "s" : ""} selected
                         </span>
                         {availableDays.length < 2 && (
                           <span className="text-xs text-red-500">
@@ -1937,7 +2150,7 @@ export default function NewRequestForm() {
             />
 
             <AddAddressDialog
-              key={`address-dialog-${addAddressType}-${editingAddress?.id || 'new'}`}
+              key={`address-dialog-${addAddressType}-${editingAddress?.id || "new"}`}
               open={showAddAddress}
               onOpenChange={(open) => {
                 setShowAddAddress(open);

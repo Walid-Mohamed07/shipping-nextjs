@@ -8,3 +8,5 @@ export { Message } from './Message';
 export { Company } from './Company';
 export { Assignment } from './Assignment';
 export { AuditLog } from './AuditLog';
+export { Category } from './Category';
+export { CostCriteria } from './CostCriteria';
