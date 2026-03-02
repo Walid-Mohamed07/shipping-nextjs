@@ -8,6 +8,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import { useLiveRequest, useLiveEvent } from "@/app/hooks/useLiveData";
 import { useRealTime } from "@/app/context/RealTimeContext";
+import { useTranslation } from "@/app/context/LocaleContext";
 import { toast } from "sonner";
 import {
   MapPin,
@@ -65,6 +66,7 @@ export default function OngoingRequestDetailPage() {
   const params = useParams();
   const requestId = params?.id as string;
   const { isConnected } = useRealTime();
+  const { t } = useTranslation();
 
   // Use live data hook for real-time request updates
   const {
@@ -100,15 +102,15 @@ export default function OngoingRequestDetailPage() {
       if (event.requestId !== requestId) return;
 
       if (event.type === "DELIVERY_STATUS_CHANGED") {
-        toast.success("Delivery status updated!", {
+        toast.success(t.companyOngoingDetail.toastDeliveryStatusUpdated, {
           description: `Status: ${event.payload.newStatus}`,
         });
       } else if (event.type === "WAREHOUSE_ASSIGNED") {
-        toast.info("Warehouse assigned", {
+        toast.info(t.companyOngoingDetail.toastWarehouseAssigned, {
           description: `${event.payload.warehouseType} warehouse: ${event.payload.warehouseName}`,
         });
       } else if (event.type === "STATUS_CHANGED") {
-        toast.info("Request status updated", {
+        toast.info(t.companyOngoingDetail.toastDeliveryStatusUpdated, {
           description: `Status: ${event.payload.newStatus}`,
         });
       }
@@ -147,7 +149,7 @@ export default function OngoingRequestDetailPage() {
     const setAssigning = warehouseType === "source" ? setAssigningSourceWarehouse : setAssigningDestinationWarehouse;
 
     if (!warehouseId) {
-      toast.error("Please select a warehouse");
+      toast.error(t.companyOngoingDetail.pleaseSelectWarehouse);
       return;
     }
 
@@ -165,18 +167,18 @@ export default function OngoingRequestDetailPage() {
       });
 
       if (response.ok) {
-        const locationLabel = warehouseType === "source" ? "pickup" : "delivery";
-        toast.success("Warehouse assigned!", {
-          description: `The client has been notified of the ${locationLabel} location.`,
+        const locationLabel = warehouseType === "source" ? t.companyOngoingDetail.pickup : t.companyOngoingDetail.delivery;
+        toast.success(t.companyOngoingDetail.toastWarehouseAssigned, {
+          description: `${t.companyOngoingDetail.toastClientNotified}`,
         });
         // Real-time update will refresh the request automatically
       } else {
         const errorData = await response.json();
-        toast.error(errorData.error || "Failed to assign warehouse");
+        toast.error(errorData.error || t.companyOngoingDetail.toastFailedAssignWarehouse);
       }
     } catch (error) {
       console.error("Failed to assign warehouse:", error);
-      toast.error("Failed to assign warehouse");
+      toast.error(t.companyOngoingDetail.toastFailedAssignWarehouse);
     } finally {
       setAssigning(false);
     }
@@ -200,21 +202,21 @@ export default function OngoingRequestDetailPage() {
 
   // Delivery Status Management
   const DELIVERY_STATUSES = [
-    { key: "Pending", label: "Pending", icon: Clock },
-    { key: "Picked Up Source", label: "Picked Up", icon: Package },
+    { key: "Pending", label: t.companyOngoingDetail.deliveryStatusPending, icon: Clock },
+    { key: "Picked Up Source", label: t.companyOngoingDetail.deliveryStatusPickedUp, icon: Package },
     {
       key: "Warehouse Source Received",
-      label: "At Source Warehouse",
+      label: t.companyOngoingDetail.deliveryStatusAtSourceWarehouse,
       icon: Building2,
     },
-    { key: "In Transit", label: "In Transit", icon: Truck },
+    { key: "In Transit", label: t.companyOngoingDetail.deliveryStatusInTransit, icon: Truck },
     {
       key: "Warehouse Destination Received",
-      label: "At Destination Warehouse",
+      label: t.companyOngoingDetail.deliveryStatusAtDestWarehouse,
       icon: Building2,
     },
-    { key: "Shipment Deliver", label: "Out for Delivery", icon: Navigation },
-    { key: "Delivered", label: "Delivered", icon: CheckCircle2 },
+    { key: "Shipment Deliver", label: t.companyOngoingDetail.deliveryStatusOutForDelivery, icon: Navigation },
+    { key: "Delivered", label: t.companyOngoingDetail.deliveryStatusDelivered, icon: CheckCircle2 },
   ];
 
   const getAvailableActions = (req: Request | null) => {
@@ -246,8 +248,8 @@ export default function OngoingRequestDetailPage() {
         if (sourceMode === "Delegate") {
           actions.push({
             status: "Picked Up Source",
-            label: "Confirm Pickup",
-            description: "Mark items as picked up from customer's location",
+            label: t.companyOngoingDetail.actionConfirmPickup,
+            description: t.companyOngoingDetail.actionConfirmPickupDesc,
             icon: Package,
             variant: "default",
           });
@@ -256,8 +258,8 @@ export default function OngoingRequestDetailPage() {
           if (req.sourceWarehouse) {
             actions.push({
               status: "Warehouse Source Received",
-              label: "Confirm Customer Drop-off",
-              description: `Customer dropped items at ${req.sourceWarehouse.name}`,
+              label: t.companyOngoingDetail.actionConfirmDropoff,
+              description: `${t.companyOngoingDetail.actionConfirmDropoff}: ${req.sourceWarehouse.name}`,
               icon: Building2,
               variant: "default",
             });
@@ -268,8 +270,8 @@ export default function OngoingRequestDetailPage() {
       case "Picked Up Source":
         actions.push({
           status: "Warehouse Source Received",
-          label: "Mark Received at Warehouse",
-          description: "Items have arrived at your source warehouse",
+          label: t.companyOngoingDetail.actionStartTransit,
+          description: t.companyOngoingDetail.actionStartTransitDesc,
           icon: Building2,
           variant: "default",
         });
@@ -278,9 +280,8 @@ export default function OngoingRequestDetailPage() {
       case "Warehouse Source Received":
         actions.push({
           status: "In Transit",
-          label: "Start Transit",
-          description:
-            "Items are leaving warehouse and in transit to destination",
+          label: t.companyOngoingDetail.actionStartTransit,
+          description: t.companyOngoingDetail.actionStartTransitDesc,
           icon: Truck,
           variant: "default",
         });
@@ -290,16 +291,16 @@ export default function OngoingRequestDetailPage() {
         if (destMode === "Self" && req.destinationWarehouse) {
           actions.push({
             status: "Warehouse Destination Received",
-            label: "Mark Arrived at Destination",
-            description: `Items arrived at ${req.destinationWarehouse.name}`,
+            label: t.companyOngoingDetail.actionConfirmDropoff,
+            description: `${t.companyOngoingDetail.actionConfirmDropoff}: ${req.destinationWarehouse.name}`,
             icon: Building2,
             variant: "default",
           });
         } else {
           actions.push({
             status: "Shipment Deliver",
-            label: "Out for Delivery",
-            description: "Items are out for final delivery to customer",
+            label: t.companyOngoingDetail.actionOutForDelivery,
+            description: t.companyOngoingDetail.actionOutForDeliveryDesc,
             icon: Navigation,
             variant: "default",
           });
@@ -309,8 +310,8 @@ export default function OngoingRequestDetailPage() {
       case "Warehouse Destination Received":
         actions.push({
           status: "Delivered",
-          label: "Confirm Customer Pickup",
-          description: "Customer has picked up their items",
+          label: t.companyOngoingDetail.actionConfirmCustomerPickup,
+          description: t.companyOngoingDetail.actionConfirmCustomerPickupDesc,
           icon: CheckCircle2,
           variant: "default",
         });
@@ -319,8 +320,8 @@ export default function OngoingRequestDetailPage() {
       case "Shipment Deliver":
         actions.push({
           status: "Delivered",
-          label: "Mark Delivered",
-          description: "Items have been delivered to customer",
+          label: t.companyOngoingDetail.actionMarkDelivered,
+          description: t.companyOngoingDetail.actionMarkDeliveredDesc,
           icon: CheckCircle2,
           variant: "default",
         });
@@ -352,16 +353,16 @@ export default function OngoingRequestDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        toast.success(data.message || "Delivery status updated!");
+        toast.success(data.message || t.companyOngoingDetail.toastDeliveryStatusUpdated);
         setDeliveryNote("");
         // Real-time update will refresh the request automatically
       } else {
         const errorData = await response.json();
-        toast.error(errorData.error || "Failed to update delivery status");
+        toast.error(errorData.error || t.companyOngoingDetail.toastFailedUpdateStatus);
       }
     } catch (error) {
       console.error("Failed to update delivery status:", error);
-      toast.error("Failed to update delivery status");
+      toast.error(t.companyOngoingDetail.toastFailedUpdateStatus);
     } finally {
       setUpdatingDeliveryStatus(false);
     }
@@ -382,9 +383,9 @@ export default function OngoingRequestDetailPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground">Access denied. This page is for companies only.</p>
+          <p className="text-muted-foreground">{t.common.accessDenied}. {t.common.pageFor} {t.common.only}.</p>
           <Button variant="outline" onClick={() => router.push("/")} className="mt-4">
-            Go Home
+            {t.common.goHome}
           </Button>
         </div>
       </div>
@@ -397,13 +398,13 @@ export default function OngoingRequestDetailPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground mb-2">Failed to load request</p>
+          <p className="text-muted-foreground mb-2">{t.common.failedToLoad}</p>
           <p className="text-sm text-destructive mb-4">{requestError}</p>
           <div className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={() => refreshRequest()}>Try Again</Button>
+            <Button variant="outline" onClick={() => refreshRequest()}>{t.common.tryAgain}</Button>
             <Button variant="outline" onClick={() => router.push("/company/ongoing")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              {t.common.back}
             </Button>
           </div>
         </div>
@@ -417,10 +418,10 @@ export default function OngoingRequestDetailPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Request not found</p>
+          <p className="text-muted-foreground">{t.common.requestNotFound}</p>
           <Button variant="outline" onClick={() => router.push("/company/ongoing")} className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Ongoing
+            {t.companyOngoingDetail.backToOngoing}
           </Button>
         </div>
       </div>
@@ -446,7 +447,7 @@ export default function OngoingRequestDetailPage() {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={() => router.push("/company/ongoing")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              {t.common.back}
             </Button>
             <div>
               <div className="flex items-center gap-3">
@@ -454,7 +455,7 @@ export default function OngoingRequestDetailPage() {
                   {request.publicId || `Request ${request.id}`}
                 </h1>
                 <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
-                  Ongoing
+                  {t.companyOngoingDetail.ongoing}
                 </Badge>
                 {/* Real-time connection indicator */}
                 <div
@@ -465,20 +466,20 @@ export default function OngoingRequestDetailPage() {
                   }`}
                 >
                   {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                  {isConnected ? "Live" : "..."}
+                  {isConnected ? t.common.live : "..."}
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 {needsSourceWarehouse && (
                   <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200">
                     <AlertCircle className="w-3 h-3 mr-1" />
-                    Source Warehouse Required
+                    {t.companyOngoingDetail.sourceWarehouseRequired}
                   </Badge>
                 )}
                 {needsDestWarehouse && (
                   <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200">
                     <AlertCircle className="w-3 h-3 mr-1" />
-                    Destination Warehouse Required
+                    {t.companyOngoingDetail.destinationWarehouseRequired}
                   </Badge>
                 )}
               </div>
@@ -487,7 +488,7 @@ export default function OngoingRequestDetailPage() {
           <div className="text-right text-sm text-muted-foreground">
             <div className="flex items-center gap-1 justify-end">
               <Calendar className="w-3 h-3" />
-              {new Date(request.createdAt).toLocaleDateString()}
+              {new Date(request.createdAt || "").toLocaleDateString()}
             </div>
           </div>
         </div>
@@ -499,7 +500,7 @@ export default function OngoingRequestDetailPage() {
             <Card className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Navigation className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold">Delivery Progress</h2>
+                <h2 className="text-lg font-semibold">{t.companyOngoingDetail.deliveryProgress}</h2>
               </div>
 
               {/* Progress Bar */}
@@ -513,8 +514,8 @@ export default function OngoingRequestDetailPage() {
                   />
                 </div>
                 <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-                  <span>Step {getCurrentStatusIndex(request.deliveryStatus || "Pending") + 1}</span>
-                  <span>of {DELIVERY_STATUSES.length}</span>
+                  <span>{t.companyOngoingDetail.step} {getCurrentStatusIndex(request.deliveryStatus || "Pending") + 1}</span>
+                  <span>{t.common.of} {DELIVERY_STATUSES.length}</span>
                 </div>
               </div>
 
@@ -574,7 +575,7 @@ export default function OngoingRequestDetailPage() {
                           <Icon className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Current Status</p>
+                          <p className="text-sm text-muted-foreground">{t.companyOngoingDetail.currentStatus}</p>
                           <p className="text-lg font-bold">{currentStatus?.label || request.deliveryStatus}</p>
                         </div>
                       </>
@@ -605,7 +606,7 @@ export default function OngoingRequestDetailPage() {
                                 <div className="flex gap-2 items-center">
                                   <input
                                     type="text"
-                                    placeholder="Add note (optional)..."
+                                    placeholder={t.companyOngoingDetail.addNotePlaceholder}
                                     value={deliveryNote}
                                     onChange={(e) => setDeliveryNote(e.target.value)}
                                     className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background"
@@ -619,7 +620,7 @@ export default function OngoingRequestDetailPage() {
                                     ) : (
                                       <>
                                         <ActionIcon className="w-4 h-4 mr-2" />
-                                        Update
+                                        {t.common.update}
                                       </>
                                     )}
                                   </Button>
@@ -635,13 +636,13 @@ export default function OngoingRequestDetailPage() {
                       <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-medium text-yellow-800 dark:text-yellow-200">Action Required</p>
+                          <p className="font-medium text-yellow-800 dark:text-yellow-200">{t.companyOngoingDetail.actionRequired}</p>
                           <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                             {needsSourceWarehouse && needsDestWarehouse
-                              ? "Please assign both source and destination warehouses before updating delivery status."
+                              ? t.companyOngoingDetail.assignBothWarehousesMsg
                               : needsSourceWarehouse
-                                ? "Please assign a source warehouse first."
-                                : "Please assign a destination warehouse first."}
+                                ? t.companyOngoingDetail.assignSourceWarehouseFirst
+                                : t.companyOngoingDetail.assignDestWarehouseFirst}
                           </p>
                         </div>
                       </div>
@@ -651,8 +652,8 @@ export default function OngoingRequestDetailPage() {
               ) : (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
                   <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                  <h3 className="font-bold text-green-800 dark:text-green-200">Delivery Completed</h3>
-                  <p className="text-sm text-green-700 dark:text-green-300">Successfully delivered to the customer.</p>
+                  <h3 className="font-bold text-green-800 dark:text-green-200">{t.companyOngoingDetail.deliveryCompleted}</h3>
+                  <p className="text-sm text-green-700 dark:text-green-300">{t.companyOngoingDetail.deliveryCompletedDesc}</p>
                 </div>
               )}
             </Card>
@@ -662,7 +663,7 @@ export default function OngoingRequestDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
-                  Route Details
+                  {t.companyOngoingDetail.routeDetails}
                 </h3>
                 
                 {/* Map Toggle */}
@@ -675,7 +676,7 @@ export default function OngoingRequestDetailPage() {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    Pickup
+                    {t.companyOngoingDetail.pickup}
                   </button>
                   <button
                     onClick={() => setMapView("delivery")}
@@ -685,7 +686,7 @@ export default function OngoingRequestDetailPage() {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    Delivery
+                    {t.companyOngoingDetail.delivery}
                   </button>
                 </div>
               </div>
@@ -696,10 +697,10 @@ export default function OngoingRequestDetailPage() {
                   <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border-l-4 border-green-500">
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="w-5 h-5 text-green-500" />
-                      <h3 className="font-semibold">Pickup Location</h3>
+                      <h3 className="font-semibold">{t.companyOngoingDetail.pickupLocation}</h3>
                       {sourceIsSelfPickup && (
                         <Badge className="ml-auto bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200">
-                          Self Pickup
+                          {t.companyOngoingDetail.selfPickup}
                         </Badge>
                       )}
                     </div>
@@ -720,10 +721,10 @@ export default function OngoingRequestDetailPage() {
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border-l-4 border-blue-500">
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="w-5 h-5 text-blue-500" />
-                      <h3 className="font-semibold">Delivery Location</h3>
+                      <h3 className="font-semibold">{t.companyOngoingDetail.deliveryLocation}</h3>
                       {destinationIsSelfDelivery && (
                         <Badge className="ml-auto bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200">
-                          Self Delivery
+                          {t.companyOngoingDetail.selfDelivery}
                         </Badge>
                       )}
                     </div>
@@ -757,8 +758,8 @@ export default function OngoingRequestDetailPage() {
                         }
                         label={
                           mapView === "pickup"
-                            ? `Pickup: ${request.source.city}`
-                            : `Delivery: ${request.destination.city}`
+                            ? `${t.companyOngoingDetail.pickup}: ${request.source.city}`
+                            : `${t.companyOngoingDetail.delivery}: ${request.destination.city}`
                         }
                       />
                     </div>
@@ -770,7 +771,7 @@ export default function OngoingRequestDetailPage() {
                   <div className="h-32 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm">
                     <div className="text-center">
                       <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Map coordinates not available</p>
+                      <p className="text-sm">{t.companyOngoingDetail.mapUnavailable}</p>
                     </div>
                   </div>
                 )}
@@ -782,11 +783,11 @@ export default function OngoingRequestDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Package className="w-5 h-5 text-primary" />
-                  Items ({request.items.length})
+                  {t.companyOngoingDetail.items} ({request.items.length})
                 </h3>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Box className="w-4 h-4" /> {totalQuantity} units
+                    <Box className="w-4 h-4" /> {totalQuantity} {t.company.units}
                   </span>
                   <span className="flex items-center gap-1">
                     <Scale className="w-4 h-4" /> {totalWeight.toFixed(1)} kg
@@ -800,8 +801,8 @@ export default function OngoingRequestDetailPage() {
                       <div>
                         <p className="font-medium">{item.name || item.item || `Item ${index + 1}`}</p>
                         <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
-                          {item.weight && <span>Weight: {item.weight} kg</span>}
-                          {item.quantity && <span>Qty: {item.quantity}</span>}
+                          {item.weight && <span>{t.company.weight}: {item.weight} kg</span>}
+                          {item.quantity && <span>{t.company.qty}: {item.quantity}</span>}
                         </div>
                       </div>
                       {item.category && (
@@ -820,40 +821,45 @@ export default function OngoingRequestDetailPage() {
             <Card className="p-5">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
                 <UserIcon className="w-4 h-4 text-primary" />
-                Client Info
+                {t.companyOngoingDetail.clientInfo}
               </h3>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Name</p>
-                  <p className="font-medium">{request.user?.fullName || "N/A"}</p>
-                </div>
-                {request.user?.email && (
-                  <div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Mail className="w-3 h-3" /> Email
-                    </p>
-                    <p className="text-sm break-all">{request.user.email}</p>
+              {(() => {
+                const userObj = typeof request.user === 'object' ? request.user as { fullName?: string; email?: string; mobile?: string } : null;
+                return (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t.common.name}</p>
+                      <p className="font-medium">{userObj?.fullName || t.company.na}</p>
+                    </div>
+                    {userObj?.email && (
+                      <div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Mail className="w-3 h-3" /> {t.common.email}
+                        </p>
+                        <p className="text-sm break-all">{userObj.email}</p>
+                      </div>
+                    )}
+                    {userObj?.mobile && (
+                      <div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> {t.common.phone}
+                        </p>
+                        <p className="font-medium">{userObj.mobile}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {request.user?.mobile && (
-                  <div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> Phone
-                    </p>
-                    <p className="font-medium">{request.user.mobile}</p>
-                  </div>
-                )}
-              </div>
+                );
+              })()}
             </Card>
 
             {/* Financial Info */}
             <Card className="p-5">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
                 <DollarSign className="w-4 h-4 text-primary" />
-                Financial
+                {t.companyOngoingDetail.financial}
               </h3>
               <div className="text-center py-2">
-                <p className="text-xs text-muted-foreground">Your Offer</p>
+                <p className="text-xs text-muted-foreground">{t.companyOngoingDetail.yourOffer}</p>
                 <p className="text-3xl font-bold text-primary">
                   ${request.selectedCompany?.cost?.toFixed(2) || "0.00"}
                 </p>
@@ -862,16 +868,16 @@ export default function OngoingRequestDetailPage() {
 
             {/* Status Card */}
             <Card className="p-5">
-              <h3 className="text-sm font-semibold mb-4">Status</h3>
+              <h3 className="text-sm font-semibold mb-4">{t.common.status}</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Request</span>
+                  <span className="text-sm text-muted-foreground">{t.company.request}</span>
                   <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
                     {request.requestStatus}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Delivery</span>
+                  <span className="text-sm text-muted-foreground">{t.company.delivery}</span>
                   <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
                     {request.deliveryStatus}
                   </Badge>
@@ -884,11 +890,11 @@ export default function OngoingRequestDetailPage() {
               <Card className="p-5">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-primary" />
-                  Available Days
+                  {t.company.availableDays}
                 </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {request.availableDays.includes("All Week") ? (
-                    <Badge variant="secondary">All Week</Badge>
+                    <Badge variant="secondary">{t.company.allWeek}</Badge>
                   ) : (
                     request.availableDays.map((day) => (
                       <Badge key={day} variant="secondary" className="text-xs">{day}</Badge>
@@ -903,14 +909,14 @@ export default function OngoingRequestDetailPage() {
               <Card className="p-5 flex flex-col">
                 <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
                   <Warehouse className="w-4 h-4 text-primary" />
-                  Warehouse Assignment
+                  {t.companyOngoingDetail.warehouseAssignment}
                 </h3>
                 <div className="space-y-4 flex-1">
                   {/* Source Warehouse */}
                   {sourceIsSelfPickup && (
                     <div className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
                       <p className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-2">
-                        Source Warehouse (Pickup)
+                        {t.companyOngoingDetail.sourceWarehousePickup}
                       </p>
                       {request.sourceWarehouse ? (
                         <div className="bg-white dark:bg-slate-900/40 rounded p-2">
@@ -924,7 +930,7 @@ export default function OngoingRequestDetailPage() {
                             onChange={(e) => setSelectedSourceWarehouseId(e.target.value)}
                             className="w-full px-2 py-1.5 text-sm border border-border rounded bg-background"
                           >
-                            <option value="">Select warehouse...</option>
+                            <option value="">{t.companyOngoingDetail.selectWarehouse}</option>
                             {warehouses.map((wh) => (
                               <option key={wh.id} value={wh.id}>
                                 {wh.name} - {wh.city || wh.address}
@@ -940,7 +946,7 @@ export default function OngoingRequestDetailPage() {
                             {assigningSourceWarehouse ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                              "Assign"
+                              t.company.assign
                             )}
                           </Button>
                         </div>
@@ -952,7 +958,7 @@ export default function OngoingRequestDetailPage() {
                   {destinationIsSelfDelivery && (
                     <div className="bg-purple-50 dark:bg-purple-900/10 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
                       <p className="text-xs font-medium text-purple-800 dark:text-purple-200 mb-2">
-                        Destination Warehouse (Delivery)
+                        {t.companyOngoingDetail.destinationWarehouseDelivery}
                       </p>
                       {request.destinationWarehouse ? (
                         <div className="bg-white dark:bg-slate-900/40 rounded p-2">
@@ -966,7 +972,7 @@ export default function OngoingRequestDetailPage() {
                             onChange={(e) => setSelectedDestinationWarehouseId(e.target.value)}
                             className="w-full px-2 py-1.5 text-sm border border-border rounded bg-background"
                           >
-                            <option value="">Select warehouse...</option>
+                            <option value="">{t.companyOngoingDetail.selectWarehouse}</option>
                             {warehouses.map((wh) => (
                               <option key={wh.id} value={wh.id}>
                                 {wh.name} - {wh.city || wh.address}
@@ -982,7 +988,7 @@ export default function OngoingRequestDetailPage() {
                             {assigningDestinationWarehouse ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                              "Assign"
+                              t.company.assign
                             )}
                           </Button>
                         </div>
@@ -992,10 +998,10 @@ export default function OngoingRequestDetailPage() {
 
                   {warehouses.length === 0 && (
                     <div className="text-center py-2">
-                      <p className="text-xs text-muted-foreground mb-2">No warehouses registered</p>
+                      <p className="text-xs text-muted-foreground mb-2">{t.companyOngoingDetail.noWarehousesRegistered}</p>
                       <Button size="sm" variant="outline" onClick={() => router.push("/company/warehouses")}>
                         <Warehouse className="w-3 h-3 mr-1" />
-                        Add Warehouse
+                        {t.companyOngoingDetail.addWarehouse}
                       </Button>
                     </div>
                   )}

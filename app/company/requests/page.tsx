@@ -27,6 +27,7 @@ import {
 import { Request } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
 import { AuthGuard } from "@/app/components/AuthGuard";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export default function CompanyRequestsPage() {
   const { user, isLoading } = useAuth();
@@ -52,6 +53,7 @@ export default function CompanyRequestsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(9);
 
   const loading = isLoading || requestsLoading;
+  const { t } = useTranslation();
 
   // Show toast notifications for real-time events
   useLiveEvent(
@@ -155,10 +157,10 @@ export default function CompanyRequestsPage() {
         <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">
-              Available Requests
+              {t.company.availableRequests}
             </h1>
             <p className="text-muted-foreground">
-              Browse and submit offers for shipping requests
+              {t.company.browseSubmitOffers}
             </p>
           </div>
 
@@ -168,7 +170,7 @@ export default function CompanyRequestsPage() {
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold text-foreground">
-                  Filters
+                  {t.company.filters}
                 </h2>
               </div>
 
@@ -176,7 +178,7 @@ export default function CompanyRequestsPage() {
                 {/* Search */}
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Search by ID or Customer
+                    {t.company.searchByIdOrCustomer}
                   </label>
                   <input
                     type="text"
@@ -193,7 +195,7 @@ export default function CompanyRequestsPage() {
                 {/* Request Status Filter */}
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Request Status
+                    {t.company.requestStatusFilter}
                   </label>
                   <select
                     value={filterStatus}
@@ -203,9 +205,9 @@ export default function CompanyRequestsPage() {
                     }}
                     className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
                   >
-                    <option value="all">All Status</option>
+                    <option value="all">{t.company.allStatus}</option>
                     <option value="Pending">Pending</option>
-                    <option value="Assigned">Assigned</option>
+                    <option value="Assigned">{t.company.assignedStatus}</option>
                     <option value="Action needed">Action Needed</option>
                     <option value="Completed">Completed</option>
                     <option value="Cancelled">Cancelled</option>
@@ -215,7 +217,7 @@ export default function CompanyRequestsPage() {
                 {/* Delivery Status Filter */}
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Delivery Status
+                    {t.company.deliveryStatusFilter}
                   </label>
                   <select
                     value={filterDeliveryStatus}
@@ -225,7 +227,7 @@ export default function CompanyRequestsPage() {
                     }}
                     className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
                   >
-                    <option value="all">All Status</option>
+                    <option value="all">{t.company.allStatus}</option>
                     <option value="pending">Pending</option>
                     <option value="in-transit">In Transit</option>
                     <option value="delivered">Delivered</option>
@@ -236,7 +238,7 @@ export default function CompanyRequestsPage() {
                 {/* Pickup Mode Filter */}
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Pickup Mode
+                    {t.company.pickupModeFilter}
                   </label>
                   <select
                     value={filterPickupMode}
@@ -246,9 +248,9 @@ export default function CompanyRequestsPage() {
                     }}
                     className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
                   >
-                    <option value="all">All Modes</option>
-                    <option value="Self">Self Pickup</option>
-                    <option value="Delegate">Company Pickup</option>
+                    <option value="all">{t.company.allModes}</option>
+                    <option value="Self">{t.company.selfPickup}</option>
+                    <option value="Delegate">{t.company.companyPickupMode}</option>
                   </select>
                 </div>
 
@@ -266,17 +268,17 @@ export default function CompanyRequestsPage() {
                     size="sm"
                     className="w-full"
                   >
-                    Reset Filters
+                    {t.company.resetFilters}
                   </Button>
                 </div>
               </div>
 
               {/* Results Info */}
               <div className="text-xs text-muted-foreground">
-                Showing{" "}
+                {t.common.showing}{" "}
                 <span className="font-medium">{filteredRequests.length}</span>{" "}
-                of <span className="font-medium">{requests?.length ?? 0}</span>{" "}
-                requests
+                {t.common.of} <span className="font-medium">{requests?.length ?? 0}</span>{" "}
+                {t.company.requestsLabel}
               </div>
             </div>
           </Card>
@@ -287,20 +289,20 @@ export default function CompanyRequestsPage() {
             <Card className="p-12 text-center">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                No available requests at this time
+                {t.company.noAvailableRequests}
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Check back later for new shipping requests
+                {t.company.checkBackLater}
               </p>
             </Card>
           ) : filteredRequests.length === 0 ? (
             <Card className="p-12 text-center">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                No requests match your filters
+                {t.company.noMatchFilters}
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Try adjusting your filter criteria
+                {t.company.tryAdjustFilters}
               </p>
             </Card>
           ) : (
@@ -388,7 +390,7 @@ export default function CompanyRequestsPage() {
                         {request.primaryCost && (
                           <div className="pt-2 border-t border-border/50">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">Estimated Cost</span>
+                              <span className="text-xs text-muted-foreground">{t.admin.estimatedCost}</span>
                               <span className="text-sm font-bold text-primary">
                                 ${parseFloat(request.primaryCost).toFixed(2)}
                               </span>
@@ -436,7 +438,7 @@ export default function CompanyRequestsPage() {
                             className="w-full gap-2 mt-2"
                           >
                             <Eye className="w-4 h-4" />
-                            {myOffer ? "View Details" : "View & Make Offer"}
+                            {myOffer ? t.company.viewDetails : t.company.viewMakeOffer}
                           </Button>
                         </Link>
                       </div>
@@ -450,7 +452,7 @@ export default function CompanyRequestsPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      Items per page:
+                      {t.company.itemsPerPage}
                     </label>
                     <select
                       value={itemsPerPage}
@@ -468,11 +470,11 @@ export default function CompanyRequestsPage() {
                   </div>
 
                   <div className="text-xs text-muted-foreground">
-                    Page{" "}
+                    {t.common.page}{" "}
                     <span className="font-medium">
-                      {currentPage} of {totalPages === 0 ? 1 : totalPages}
+                      {currentPage} {t.common.of} {totalPages === 0 ? 1 : totalPages}
                     </span>{" "}
-                    • Total:{" "}
+                    • {t.common.total}:{" "}
                     <span className="font-medium">
                       {filteredRequests.length}
                     </span>

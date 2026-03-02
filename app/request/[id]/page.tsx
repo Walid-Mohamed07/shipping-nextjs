@@ -40,6 +40,7 @@ import {
 } from "@/types";
 import { getDistanceKm } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 // Dynamically import map components to avoid SSR issues
 const LocationMapPicker = dynamic(
@@ -80,6 +81,7 @@ const statusSteps = [
 const NEARBY_RADIUS_KM = 50;
 
 export default function RequestDetailsPage() {
+  const { t, isRtl, locale } = useTranslation();
   const { user, isLoading: authLoading } = useProtectedRoute();
   const params = useParams();
   const requestId = params.id as string;
@@ -177,7 +179,7 @@ export default function RequestDetailsPage() {
             .sort((a, b) => a.distanceKm - b.distanceKm);
           setNearbyWarehouses(withDistance);
         } catch {
-          const errorMsg = "Failed to load warehouses.";
+          const errorMsg = t.userRequestDetail.warehouseLoadFailed;
           setLocationError(errorMsg);
           toast.error(errorMsg);
         } finally {
@@ -212,14 +214,14 @@ export default function RequestDetailsPage() {
       };
       setRequest(updatedRequest);
       setSelectedOfferId(offerId);
-      toast.success("Offer selected!");
+      toast.success(t.userRequestDetail.offerSelected);
     }
   };
 
   const handleSubmitOffer = async () => {
     const selectedOffer = request?.costOffers?.find((o) => o.selected);
     if (!selectedOffer) {
-      toast.error("Please select an offer first");
+      toast.error(t.userRequestDetail.pleaseSelectOffer);
       return;
     }
 
@@ -248,7 +250,7 @@ export default function RequestDetailsPage() {
 
       const data = await response.json();
 
-      toast.success("Offer submitted successfully!");
+      toast.success(t.userRequestDetail.offerSubmitted);
       setShowConfirmDialog(false);
       setConfirmingOffer(null);
 
@@ -281,8 +283,8 @@ export default function RequestDetailsPage() {
       : String((reqUser as any)?._id || (reqUser as any)?.id || "");
     
     if (!isAdminRole && requestUserId !== String(userId)) {
-      setError("Unauthorized");
-      toast.error("Unauthorized");
+      setError(t.userRequestDetail.unauthorized);
+      toast.error(t.userRequestDetail.unauthorized);
     }
   }, [authLoading, user, request]);
 
@@ -341,6 +343,42 @@ export default function RequestDetailsPage() {
     }
   };
 
+  const getTranslatedDeliveryStatus = (status: string): string => {
+    const statuses = (t.userRequestDetail as any).deliveryStatuses as Record<string, string>;
+    return statuses?.[status] ?? status;
+  };
+
+  const getTranslatedRequestStatus = (status: string): string => {
+    const statuses = (t.userRequestDetail as any).requestStatuses as Record<string, string>;
+    return statuses?.[status] ?? status;
+  };
+
+  // Translates any status value — checks request statuses first, then delivery statuses
+  const getTranslatedAnyStatus = (status: string): string => {
+    const req = (t.userRequestDetail as any).requestStatuses as Record<string, string>;
+    if (req?.[status]) return req[status];
+    const del = (t.userRequestDetail as any).deliveryStatuses as Record<string, string>;
+    return del?.[status] ?? status;
+  };
+
+  const getTranslatedActivityAction = (action: string): string => {
+    const actions = (t.userRequestDetail as any).activityActions as Record<string, string>;
+    return actions?.[action] ?? action.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  };
+
+  const getTranslatedActivityDescription = (activity: any): string => {
+    const descs = (t.userRequestDetail as any).activityDescriptions as Record<string, string>;
+    const template = descs?.[activity.action];
+    if (!template) return activity.description || "";
+    return template
+      .replace("{companyName}", activity.companyName || "")
+      .replace("{cost}", activity.cost != null ? Number(activity.cost).toFixed(2) : "")
+      .replace("{warehouseName}", activity.details?.warehouseName || "")
+      .replace("{type}", activity.details?.type === "source" ? (descs?.warehouse_type_source ?? "source") : (descs?.warehouse_type_destination ?? "destination"))
+      .replace("{oldStatus}", getTranslatedAnyStatus(activity.details?.oldStatus || ""))
+      .replace("{newStatus}", getTranslatedAnyStatus(activity.details?.newStatus || ""));
+  };
+
   if (!user) {
     return null;
   }
@@ -366,15 +404,15 @@ export default function RequestDetailsPage() {
             <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div>
               <h2 className="font-semibold text-red-800 dark:text-red-400 mb-2">
-                Error
+                {t.userRequestDetail.errorTitle}
               </h2>
               <p className="text-red-700 dark:text-red-400">
-                {error || "Request not found"}
+                {error || t.userRequestDetail.requestNotFound}
               </p>
               <Link href="/my-requests" className="mt-4 inline-block">
                 <Button className="cursor-pointer" variant="outline" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Requests
+                  {t.userRequestDetail.backToRequests}
                 </Button>
               </Link>
             </div>
@@ -394,7 +432,7 @@ export default function RequestDetailsPage() {
             className="gap-2 bg-transparent cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Requests
+            {t.userRequestDetail.backToRequests}
           </Button>
         </Link>
 
@@ -411,7 +449,7 @@ export default function RequestDetailsPage() {
                 <span
                   className={`px-4 py-2 w-max rounded-full text-sm font-semibold ${getOrderStatusBadgeColor(request.requestStatus)}`}
                 >
-                  Order: {request.requestStatus}
+                  {t.userRequestDetail.orderStatus} {getTranslatedRequestStatus(request.requestStatus)}
                 </span>
               </div>
             </div>
@@ -442,12 +480,10 @@ export default function RequestDetailsPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground text-lg">
-                      Share your location?
+                      {t.userRequestDetail.shareLocation}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      ShipHub would like to use your location to find warehouses
-                      within {NEARBY_RADIUS_KM} km of you. Your location is
-                      never stored or shared.
+                      {t.userRequestDetail.locationDesc.replace('{km}', String(NEARBY_RADIUS_KM))}
                     </p>
                   </div>
                 </div>
@@ -456,14 +492,14 @@ export default function RequestDetailsPage() {
                     onClick={handleLocationConfirm}
                     className="flex-1 cursor-pointer"
                   >
-                    Allow
+                    {t.userRequestDetail.allow}
                   </Button>
                   <Button
                     onClick={handleLocationDecline}
                     variant="outline"
                     className="flex-1 bg-transparent cursor-pointer"
                   >
-                    Not now
+                    {t.userRequestDetail.notNow}
                   </Button>
                 </div>
               </div>
@@ -473,7 +509,7 @@ export default function RequestDetailsPage() {
           {/* Status Timeline - Redesigned */}
           <div className="bg-card rounded-lg border border-border p-8">
             <h2 className="text-xl font-semibold text-foreground mb-8">
-              Shipment Progress
+              {t.userRequestDetail.shipmentProgress}
             </h2>
 
             {/* Timeline Container */}
@@ -485,9 +521,10 @@ export default function RequestDetailsPage() {
 
                 {/* Progress Bar Fill */}
                 <div
-                  className="absolute top-6 left-0 h-1 bg-primary rounded-full transition-all duration-500"
+                  className="absolute top-6 h-1 bg-primary rounded-full transition-all duration-500"
                   style={{
                     width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`,
+                    ...(isRtl ? { right: 0 } : { left: 0 }),
                   }}
                 />
 
@@ -524,7 +561,7 @@ export default function RequestDetailsPage() {
                                 : "text-muted-foreground"
                           }`}
                         >
-                          {step.name}
+                          {getTranslatedDeliveryStatus(step.name)}
                         </span>
                       </div>
                     );
@@ -575,14 +612,14 @@ export default function RequestDetailsPage() {
                                 : "text-muted-foreground"
                           }`}
                         >
-                          {step.name}
+                          {getTranslatedDeliveryStatus(step.name)}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1">
                           {isCurrent
-                            ? "Current step"
+                            ? t.userRequestDetail.currentStep
                             : isCompleted
-                              ? "Completed"
-                              : "Pending"}
+                              ? t.userRequestDetail.completed
+                              : t.userRequestDetail.pending}
                         </p>
                       </div>
                     </div>
@@ -596,14 +633,14 @@ export default function RequestDetailsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-primary/5 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Current Delivery Status
+                    {t.userRequestDetail.currentDeliveryStatus}
                   </p>
                   <p className="text-sm font-semibold text-foreground">
-                    {request.deliveryStatus}
+                    {getTranslatedDeliveryStatus(request.deliveryStatus)}
                   </p>
                 </div>
                 <div className="bg-primary/5 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Progress</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t.userRequestDetail.progress}</p>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-muted rounded-full h-2">
                       <div
@@ -625,7 +662,7 @@ export default function RequestDetailsPage() {
                 </div>
                 <div className="bg-primary/5 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Steps Remaining
+                    {t.userRequestDetail.stepsRemaining}
                   </p>
                   <p className="text-sm font-semibold text-foreground">
                     {Math.max(
@@ -634,7 +671,7 @@ export default function RequestDetailsPage() {
                         1 -
                         getCurrentStatusIndex(request.deliveryStatus),
                     )}{" "}
-                    of {statusSteps.length - 1}
+                    {t.userRequestDetail.of} {statusSteps.length - 1}
                   </p>
                 </div>
               </div>
@@ -648,10 +685,10 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <div className="mb-4">
                   <h2 className="text-xl font-bold text-foreground mb-1">
-                    Shipping Offers
+                    {t.userRequestDetail.shippingOffers}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Choose your preferred shipping company
+                    {t.userRequestDetail.chooseCompany}
                   </p>
                 </div>
 
@@ -672,7 +709,7 @@ export default function RequestDetailsPage() {
                           <div className="absolute -top-2 -right-2">
                             <div className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-sm">
                               <CheckCircle2 className="w-3 h-3" />
-                              Selected
+                              {t.userRequestDetail.selected}
                             </div>
                           </div>
                         )}
@@ -680,7 +717,7 @@ export default function RequestDetailsPage() {
                         {/* Option Label */}
                         <div className="mb-3">
                           <h3 className="text-base font-bold text-foreground mb-1">
-                            Option {idx + 1}
+                            {t.userRequestDetail.option} {idx + 1}
                           </h3>
                           <div className="flex items-center gap-1">
                             <span className="text-yellow-500 text-sm">★</span>
@@ -712,7 +749,7 @@ export default function RequestDetailsPage() {
                               : "text-muted-foreground"
                           }`}
                         >
-                          {offer.selected ? "✓ Your Choice" : "Click to select"}
+                          {offer.selected ? t.userRequestDetail.yourChoice : t.userRequestDetail.clickToSelect}
                         </div>
                       </div>
                     ))}
@@ -725,7 +762,7 @@ export default function RequestDetailsPage() {
                     onClick={handleSubmitOffer}
                     className="w-full bg-primary text-primary-foreground cursor-pointer"
                   >
-                    Submit Selected Offer
+                    {t.userRequestDetail.submitSelectedOffer}
                   </Button>
                 </div>
               </div>
@@ -741,10 +778,10 @@ export default function RequestDetailsPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground text-lg">
-                      Confirm Selection
+                      {t.userRequestDetail.confirmSelection}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Are you sure you want to select this shipping company?
+                      {t.userRequestDetail.confirmOfferQuestion}
                     </p>
                   </div>
                 </div>
@@ -777,14 +814,14 @@ export default function RequestDetailsPage() {
                     className="flex-1 bg-transparent cursor-pointer"
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t.common.cancel}
                   </Button>
                   <Button
                     onClick={handleConfirmSubmit}
                     className="flex-1 bg-primary text-primary-foreground cursor-pointer"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Submitting..." : "Yes, Confirm"}
+                    {isSubmitting ? t.userRequestDetail.submitting : t.userRequestDetail.yesConfirm}
                   </Button>
                 </div>
               </div>
@@ -797,11 +834,11 @@ export default function RequestDetailsPage() {
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-primary" />
-                Route Details
+                {t.userRequestDetail.routeDetails}
               </h3>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">From</p>
+                  <p className="text-sm text-muted-foreground">{t.userRequestDetail.from}</p>
                   <p className="text-lg font-medium text-foreground">
                     {request.source
                       ? formatLocation(request.source)
@@ -812,7 +849,7 @@ export default function RequestDetailsPage() {
                 </div>
                 <div className="border-l-2 border-primary h-8" />
                 <div>
-                  <p className="text-sm text-muted-foreground">To</p>
+                  <p className="text-sm text-muted-foreground">{t.userRequestDetail.to}</p>
                   <p className="text-lg font-medium text-foreground">
                     {request.destination
                       ? formatLocation(request.destination)
@@ -828,7 +865,7 @@ export default function RequestDetailsPage() {
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-primary" />
-                Shipment Items ({request.items?.length || 0})
+                {t.userRequestDetail.shipmentItems} ({request.items?.length || 0})
               </h3>
 
               <div className="max-h-52 overflow-y-auto pr-2 space-y-4   p-2 rounded-md">
@@ -859,7 +896,7 @@ export default function RequestDetailsPage() {
                       <div className="grid grid-cols-3 gap-3 text-sm">
                         <div>
                           <p className="text-xs text-muted-foreground">
-                            Dimensions
+                            {t.userRequestDetail.dimensions}
                           </p>
                           <p className="font-medium text-foreground">
                             {item.dimensions}
@@ -867,7 +904,7 @@ export default function RequestDetailsPage() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">
-                            Weight
+                            {t.userRequestDetail.weight}
                           </p>
                           <p className="font-medium text-foreground">
                             {item.weight} kg
@@ -875,7 +912,7 @@ export default function RequestDetailsPage() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">
-                            Quantity
+                            {t.userRequestDetail.quantity}
                           </p>
                           <p className="font-medium text-foreground">
                             {item.quantity}
@@ -884,7 +921,7 @@ export default function RequestDetailsPage() {
                       </div>
                       {item.note && (
                         <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground">Note</p>
+                          <p className="text-xs text-muted-foreground">{t.userRequestDetail.note}</p>
                           <p className="text-sm text-foreground italic">
                             {item.note}
                           </p>
@@ -893,7 +930,7 @@ export default function RequestDetailsPage() {
                       {item.media && item.media.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-border">
                           <p className="text-xs text-muted-foreground mb-2">
-                            Media ({item.media.length})
+                            {t.userRequestDetail.media} ({item.media.length})
                           </p>
                           <div className="flex gap-2 flex-wrap">
                             {item.media.map((mediaItem, mIdx) => {
@@ -923,21 +960,21 @@ export default function RequestDetailsPage() {
                           item.services.packaging) && (
                           <div className="mt-3 pt-3 border-t border-border">
                             <p className="text-xs text-muted-foreground mb-2">
-                              Services
+                              {t.userRequestDetail.services}
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {(item.services.canBeAssembledDisassembled ||
                                 item.services.assemblyDisassembly) && (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                   <Wrench className="w-3 h-3" />
-                                  Assembly &amp; Disassembly
+                                  {t.userRequestDetail.assemblyDisassembly}
                                   {item.services.assemblyDisassemblyHandler && (
                                     <span className="ml-1 text-[10px]">
                                       (
                                       {item.services
                                         .assemblyDisassemblyHandler === "self"
-                                        ? "Self"
-                                        : "Company"}
+                                        ? t.userRequestDetail.assemblySelf
+                                        : t.userRequestDetail.assemblyCompany}
                                       )
                                     </span>
                                   )}
@@ -946,7 +983,7 @@ export default function RequestDetailsPage() {
                               {item.services.packaging && (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                                   <BoxSelect className="w-3 h-3" />
-                                  Packaging
+                                  {t.userRequestDetail.packaging}
                                 </span>
                               )}
                             </div>
@@ -955,7 +992,7 @@ export default function RequestDetailsPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted-foreground">No items</p>
+                  <p className="text-muted-foreground">{t.userRequestDetail.noItems}</p>
                 )}
               </div>
             </div>
@@ -967,11 +1004,11 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
-                  Requested Date
+                  {t.userRequestDetail.requestedDate}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {request.createdAt
-                    ? new Date(request.createdAt).toLocaleDateString("en-US", {
+                    ? new Date(request.createdAt).toLocaleDateString(locale, {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -980,7 +1017,7 @@ export default function RequestDetailsPage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {request.createdAt
-                    ? new Date(request.createdAt).toLocaleTimeString("en-US", {
+                    ? new Date(request.createdAt).toLocaleTimeString(locale, {
                         hour: "2-digit",
                         minute: "2-digit",
                       })
@@ -991,12 +1028,12 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
-                  Available Days
+                  {t.userRequestDetail.availableDays}
                 </h3>
                 {request.availableDays && request.availableDays.length > 0 ? (
                   request.availableDays.includes("All Week") ? (
                     <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                      All Week
+                      {t.userRequestDetail.allWeek}
                     </span>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
@@ -1012,7 +1049,7 @@ export default function RequestDetailsPage() {
                   )
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    No specific days set
+                    {t.userRequestDetail.noSpecificDays}
                   </p>
                 )}
               </div>
@@ -1020,16 +1057,16 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Truck className="w-5 h-5 text-primary" />
-                  Delivery Type
+                  {t.userRequestDetail.deliveryType}
                 </h3>
                 <p className="text-base font-medium w-max text-foreground capitalize">
                   {request.deliveryType === "Urgent"
-                    ? "🔥 Urgent Delivery"
-                    : "Normal Delivery"}
+                    ? t.userRequestDetail.urgentDelivery
+                    : t.userRequestDetail.normalDelivery}
                 </p>
                 {request.deliveryType === "Urgent" && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    +25% surcharge applied
+                    {t.userRequestDetail.urgentSurcharge}
                   </p>
                 )}
               </div>
@@ -1037,7 +1074,7 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-primary" />
-                  Cost
+                  {t.userRequestDetail.cost}
                 </h3>
                 {/* Always show primary/estimated cost */}
                 <div className="space-y-2">
@@ -1047,9 +1084,9 @@ export default function RequestDetailsPage() {
                         ? `$${Number(request.primaryCost).toFixed(2)}`
                         : request.cost && Number(request.cost) > 0
                           ? `$${Number(request.cost).toFixed(2)}`
-                          : "Not calculated"}
+                          : t.userRequestDetail.notCalculated}
                     </p>
-                    <span className="text-xs text-muted-foreground">(estimated)</span>
+                    <span className="text-xs text-muted-foreground">{t.userRequestDetail.estimated}</span>
                   </div>
                   {/* Show accepted offer price when available */}
                   {request.selectedCompany && (
@@ -1057,7 +1094,7 @@ export default function RequestDetailsPage() {
                       <p className="text-xl font-bold text-primary">
                         ${Number(request.selectedCompany.cost).toFixed(2)}
                       </p>
-                      <span className="text-xs text-green-600 dark:text-green-400">(accepted offer)</span>
+                      <span className="text-xs text-green-600 dark:text-green-400">{t.userRequestDetail.acceptedOffer}</span>
                     </div>
                   )}
                 </div>
@@ -1067,23 +1104,23 @@ export default function RequestDetailsPage() {
             <div className="bg-card rounded-lg border border-border p-6 h-fit">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-primary" />
-                Activity Log
+                {t.userRequestDetail.activityLog}
               </h3>
 
               {/* Last updated time */}
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                <span>Updated:</span>
+                <span>{t.userRequestDetail.updated}</span>
                 <span className="font-medium text-foreground">
                   {request.updatedAt
                     ? `${new Date(request.updatedAt).toLocaleDateString(
-                        "en-US",
+                        locale,
                         {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
                         },
-                      )} at ${new Date(request.updatedAt).toLocaleTimeString(
-                        "en-US",
+                      )} ${new Date(request.updatedAt).toLocaleTimeString(
+                        locale,
                         {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -1099,7 +1136,7 @@ export default function RequestDetailsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground">
-                        Accepted Offer
+                        {t.userRequestDetail.acceptedOfferLabel}
                       </p>
                       <p className="text-sm font-semibold text-primary">
                         ${Number(request.selectedCompany.cost).toFixed(2)}
@@ -1123,7 +1160,7 @@ export default function RequestDetailsPage() {
                     .map((activity, index) => (
                       <div
                         key={index}
-                        className="flex gap-3 text-sm border-l-2 border-primary pl-3 py-2"
+                        className={`flex gap-3 text-sm border-primary py-2 ${isRtl ? 'border-r-2 pr-3' : 'border-l-2 pl-3'}`}
                       >
                         <div className="flex-shrink-0 mt-0.5">
                           <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
@@ -1132,18 +1169,11 @@ export default function RequestDetailsPage() {
                           {/* Action and timestamp */}
                           <div className="flex items-baseline justify-between gap-2 flex-wrap">
                             <p className="font-medium text-foreground">
-                              {activity.action
-                                .split("_")
-                                .map(
-                                  (word) =>
-                                    word.charAt(0).toUpperCase() +
-                                    word.slice(1),
-                                )
-                                .join(" ")}
+                              {getTranslatedActivityAction(activity.action)}
                             </p>
                             <time className="text-xs text-muted-foreground whitespace-nowrap">
                               {new Date(activity.timestamp).toLocaleDateString(
-                                "en-US",
+                                locale,
                                 {
                                   month: "short",
                                   day: "numeric",
@@ -1155,9 +1185,9 @@ export default function RequestDetailsPage() {
                           </div>
 
                           {/* Description */}
-                          {activity.description && (
+                          {(activity.action || activity.description) && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {activity.description}
+                              {getTranslatedActivityDescription(activity)}
                             </p>
                           )}
 
@@ -1166,7 +1196,7 @@ export default function RequestDetailsPage() {
                             <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                               <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1">
                                 <span>📝</span>
-                                <span>Note:</span>
+                                <span>{t.userRequestDetail.note}:</span>
                               </p>
                               <p className="text-sm text-amber-900 dark:text-amber-200 mt-0.5">
                                 {activity.details.note}
@@ -1179,7 +1209,7 @@ export default function RequestDetailsPage() {
                             {activity.companyName && (
                               <div className="text-xs">
                                 <span className="text-muted-foreground">
-                                  Company:{" "}
+                                  {t.userRequestDetail.company}{" "}
                                 </span>
                                 <span className="text-foreground font-medium">
                                   {activity.companyName}
@@ -1190,7 +1220,7 @@ export default function RequestDetailsPage() {
                               activity.cost !== null && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">
-                                    Cost:{" "}
+                                    {t.userRequestDetail.costLabel}{" "}
                                   </span>
                                   <span className="text-primary font-semibold">
                                     ${Number(activity.cost).toFixed(2)}
@@ -1200,7 +1230,7 @@ export default function RequestDetailsPage() {
                             {activity.companyRate && (
                               <div className="text-xs">
                                 <span className="text-muted-foreground">
-                                  Rate:{" "}
+                                  {t.userRequestDetail.rateLabel}{" "}
                                 </span>
                                 <span className="text-foreground">
                                   {activity.companyRate} ⭐
@@ -1229,7 +1259,7 @@ export default function RequestDetailsPage() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  No activity recorded yet.
+                  {t.userRequestDetail.noActivity}
                 </p>
               )}
             </div>
@@ -1240,7 +1270,7 @@ export default function RequestDetailsPage() {
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Warehouse className="w-5 h-5 text-primary" />
-                Assigned Warehouse Locations
+                {t.userRequestDetail.assignedWarehouses}
               </h3>
 
               {/* Show accordion for warehouses - always use accordion structure */}
@@ -1258,7 +1288,7 @@ export default function RequestDetailsPage() {
                         </div>
                         <div className="text-left">
                           <p className="font-semibold text-foreground">
-                            Source Warehouse (Pickup)
+                            {t.userRequestDetail.sourceWarehouse}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {request.sourceWarehouse.name}
@@ -1273,7 +1303,7 @@ export default function RequestDetailsPage() {
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">
-                            Warehouse Name
+                            {t.userRequestDetail.warehouseName}
                           </p>
                           <p className="text-sm font-medium text-foreground">
                             {request.sourceWarehouse.name}
@@ -1281,7 +1311,7 @@ export default function RequestDetailsPage() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">
-                            Address
+                            {t.userRequestDetail.address}
                           </p>
                           <p className="text-sm font-medium text-foreground">
                             {request.sourceWarehouse.address}
@@ -1301,12 +1331,12 @@ export default function RequestDetailsPage() {
                         {request.sourceWarehouse.assignedAt && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">
-                              Assigned On
+                              {t.userRequestDetail.assignedOn}
                             </p>
                             <p className="text-sm text-foreground">
                               {new Date(
                                 request.sourceWarehouse.assignedAt,
-                              ).toLocaleDateString("en-US", {
+                              ).toLocaleDateString(locale, {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
@@ -1319,7 +1349,7 @@ export default function RequestDetailsPage() {
                         {request.sourceWarehouse.coordinates && (
                           <div className="mt-3">
                             <p className="text-xs text-muted-foreground mb-2">
-                              Location on Map
+                              {t.userRequestDetail.locationOnMap}
                             </p>
                             <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
                               <LocationMapPicker
@@ -1357,7 +1387,7 @@ export default function RequestDetailsPage() {
                         </div>
                         <div className="text-left">
                           <p className="font-semibold text-foreground">
-                            Destination Warehouse (Delivery)
+                            {t.userRequestDetail.destinationWarehouse}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {request.destinationWarehouse.name}
@@ -1372,7 +1402,7 @@ export default function RequestDetailsPage() {
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">
-                            Warehouse Name
+                            {t.userRequestDetail.warehouseName}
                           </p>
                           <p className="text-sm font-medium text-foreground">
                             {request.destinationWarehouse.name}
@@ -1380,7 +1410,7 @@ export default function RequestDetailsPage() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">
-                            Address
+                            {t.userRequestDetail.address}
                           </p>
                           <p className="text-sm font-medium text-foreground">
                             {request.destinationWarehouse.address}
@@ -1400,12 +1430,12 @@ export default function RequestDetailsPage() {
                         {request.destinationWarehouse.assignedAt && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">
-                              Assigned On
+                              {t.userRequestDetail.assignedOn}
                             </p>
                             <p className="text-sm text-foreground">
                               {new Date(
                                 request.destinationWarehouse.assignedAt,
-                              ).toLocaleDateString("en-US", {
+                              ).toLocaleDateString(locale, {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
@@ -1418,7 +1448,7 @@ export default function RequestDetailsPage() {
                         {request.destinationWarehouse.coordinates && (
                           <div className="mt-3">
                             <p className="text-xs text-muted-foreground mb-2">
-                              Location on Map
+                              {t.userRequestDetail.locationOnMap}
                             </p>
                             <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
                               <LocationMapPicker
@@ -1450,12 +1480,12 @@ export default function RequestDetailsPage() {
                 variant="outline"
                 className="w-full bg-transparent cursor-pointer"
               >
-                Back to Requests
+                {t.userRequestDetail.backToRequests}
               </Button>
             </Link>
             <Link href="/new-request" className="flex-1">
               <Button className="w-full cursor-pointer">
-                Create New Request
+                {t.userRequestDetail.createNewRequest}
               </Button>
             </Link>
           </div>
@@ -1489,7 +1519,7 @@ export default function RequestDetailsPage() {
                   <X className="w-6 h-6" />
                 </button>
                 <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
-                  Click outside or press ESC to close
+                  {t.userRequestDetail.clickToClose}
                 </p>
               </div>
             </div>

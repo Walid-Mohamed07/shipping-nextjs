@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface CostOffer {
   cost: number;
@@ -70,6 +71,7 @@ export default function RequestDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedDeliveryStatus, setSelectedDeliveryStatus] = useState("");
   const [selectedRequestStatus, setSelectedRequestStatus] = useState("");
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,7 +105,7 @@ export default function RequestDetailPage() {
 
   const handleAddCostOffer = async () => {
     if (!newOffer.companyId || !newOffer.cost) {
-      alert("Please fill in company and cost");
+      alert(t.admin.fillCompanyAndCost);
       return;
     }
 
@@ -169,7 +171,7 @@ export default function RequestDetailPage() {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-screen">
-          Loading...
+          {t.common.loading}
         </div>
       </div>
     );
@@ -179,7 +181,7 @@ export default function RequestDetailPage() {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-screen">
-          Request not found
+          {t.admin.requestNotFound}
         </div>
       </div>
     );
@@ -198,10 +200,10 @@ export default function RequestDetailPage() {
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            {t.common.back}
           </Button>
           <h1 className="text-3xl font-bold text-foreground">
-            Request Details
+            {t.admin.requestDetails}
           </h1>
         </div>
 
@@ -210,28 +212,28 @@ export default function RequestDetailPage() {
           <div className="col-span-2 space-y-6">
             {/* Client Info */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Client Information</h2>
+              <h2 className="text-lg font-semibold mb-4">{t.admin.clientInfo}</h2>
               <div className="space-y-2">
                 <p>
-                  <span className="font-medium">Name:</span>{" "}
+                  <span className="font-medium">{t.admin.nameLabel}:</span>{" "}
                   {request.user?.fullName}
                 </p>
                 <p>
-                  <span className="font-medium">Email:</span>{" "}
+                  <span className="font-medium">{t.admin.emailLabel}:</span>{" "}
                   {request.user?.email}
                 </p>
                 <p>
-                  <span className="font-medium">Request ID:</span> {request.publicId || request.id}
+                  <span className="font-medium">{t.admin.requestId}:</span> {request.publicId || request.id}
                 </p>
               </div>
             </Card>
 
             {/* Route Information */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Route Information</h2>
+              <h2 className="text-lg font-semibold mb-4">{t.admin.routeInfo}</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="font-medium text-sm mb-2">From</p>
+                  <p className="font-medium text-sm mb-2">{t.common.from}</p>
                   <div className="text-sm space-y-1">
                     <p>{request.source?.fullName}</p>
                     <p>
@@ -244,7 +246,7 @@ export default function RequestDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="font-medium text-sm mb-2">To</p>
+                  <p className="font-medium text-sm mb-2">{t.common.to}</p>
                   <div className="text-sm space-y-1">
                     <p>{request.destination?.fullName}</p>
                     <p>
@@ -264,29 +266,29 @@ export default function RequestDetailPage() {
             {/* Item Details */}
             {firstItem && (
               <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Item Details</h2>
+                <h2 className="text-lg font-semibold mb-4">{t.admin.itemDetails}</h2>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <p>
-                    <span className="font-medium">Item:</span> {firstItem.item}
+                    <span className="font-medium">{t.admin.itemLabel}:</span> {firstItem.item}
                   </p>
                   <p>
-                    <span className="font-medium">Category:</span>{" "}
+                    <span className="font-medium">{t.admin.categoryLabel}:</span>{" "}
                     {firstItem.category}
                   </p>
                   <p>
-                    <span className="font-medium">Dimensions:</span>{" "}
+                    <span className="font-medium">{t.admin.dimensionsLabel}:</span>{" "}
                     {firstItem.dimensions}
                   </p>
                   <p>
-                    <span className="font-medium">Weight:</span>{" "}
+                    <span className="font-medium">{t.admin.weightLabel}:</span>{" "}
                     {firstItem.weight} kg
                   </p>
                   <p>
-                    <span className="font-medium">Quantity:</span>{" "}
+                    <span className="font-medium">{t.admin.quantityLabel}:</span>{" "}
                     {firstItem.quantity}
                   </p>
                   <p>
-                    <span className="font-medium">Type:</span>{" "}
+                    <span className="font-medium">{t.admin.typeLabel}:</span>{" "}
                     {request.deliveryType}
                   </p>
                 </div>
@@ -295,16 +297,16 @@ export default function RequestDetailPage() {
 
             {/* Cost Offers */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Cost Offers</h2>
+              <h2 className="text-lg font-semibold mb-4">{t.admin.costOffersTitle}</h2>
 
               {/* Add New Offer */}
               {request.requestStatus === "Pending" && (
                 <div className="space-y-3 mb-6 p-4 bg-muted rounded">
-                  <h3 className="font-medium">Add New Cost Offer</h3>
+                  <h3 className="font-medium">{t.admin.addCostOffer}</h3>
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium mb-1 block">
-                        Company
+                        {t.admin.companyLabel}
                       </label>
                       <select
                         value={newOffer.companyId}
@@ -316,7 +318,7 @@ export default function RequestDetailPage() {
                         }
                         className="w-full px-3 py-2 border border-input rounded-md"
                       >
-                        <option value="">Select a company</option>
+                        <option value="">{t.admin.selectCompany}</option>
                         {companies.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.rate}%)
@@ -326,7 +328,7 @@ export default function RequestDetailPage() {
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1 block">
-                        Cost
+                        {t.admin.costLabel}
                       </label>
                       <Input
                         type="number"
@@ -334,20 +336,20 @@ export default function RequestDetailPage() {
                         onChange={(e) =>
                           setNewOffer({ ...newOffer, cost: e.target.value })
                         }
-                        placeholder="Enter cost"
+                        placeholder={t.admin.enterCost}
                         step="0.01"
                       />
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1 block">
-                        Comment
+                        {t.common.optional}
                       </label>
                       <Input
                         value={newOffer.comment}
                         onChange={(e) =>
                           setNewOffer({ ...newOffer, comment: e.target.value })
                         }
-                        placeholder="Optional comment"
+                        placeholder={t.admin.optionalComment}
                       />
                     </div>
                     <Button
@@ -355,7 +357,7 @@ export default function RequestDetailPage() {
                       disabled={submitting}
                       className="w-full"
                     >
-                      {submitting ? "Adding..." : "Add Cost Offer"}
+                      {submitting ? t.admin.adding : t.admin.addCostOfferBtn}
                     </Button>
                   </div>
                 </div>
@@ -388,35 +390,35 @@ export default function RequestDetailPage() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No cost offers yet
+                  {t.admin.noCostOffers}
                 </p>
               )}
             </Card>
 
             {/* History */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Status History</h2>
+              <h2 className="text-lg font-semibold mb-4">{t.admin.statusHistory}</h2>
               <div className="space-y-3">
                 <div>
-                  <h3 className="font-medium mb-2">Request Status</h3>
+                  <h3 className="font-medium mb-2">{t.admin.requestStatusLabel}</h3>
                   <div className="space-y-1 text-sm">
                     {request.requestStatusHistory?.map((h, idx) => (
                       <p key={idx} className="text-muted-foreground">
                         <span className="font-medium">{h.status}</span> -{" "}
-                        {new Date(h.changedAt).toLocaleString()} by{" "}
-                        {h.changedBy || "system"}
+                        {new Date(h.changedAt).toLocaleString()} {t.common.by}{" "}
+                        {h.changedBy || t.common.system}
                       </p>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Delivery Status</h3>
+                  <h3 className="font-medium mb-2">{t.admin.deliveryStatusLabel}</h3>
                   <div className="space-y-1 text-sm">
                     {request.deliveryStatusHistory?.map((h, idx) => (
                       <p key={idx} className="text-muted-foreground">
                         <span className="font-medium">{h.status}</span> -{" "}
-                        {new Date(h.changedAt).toLocaleString()} by{" "}
-                        {h.changedBy || "system"}
+                        {new Date(h.changedAt).toLocaleString()} {t.common.by}{" "}
+                        {h.changedBy || t.common.system}
                       </p>
                     ))}
                   </div>
@@ -429,12 +431,12 @@ export default function RequestDetailPage() {
           <div className="space-y-4">
             {/* Status Controls */}
             <Card className="p-4">
-              <h3 className="font-semibold mb-4">Actions</h3>
+              <h3 className="font-semibold mb-4">{t.admin.actionsPanel}</h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Request Status
+                    {t.admin.requestStatusLabel}
                   </label>
                   <select
                     value={selectedRequestStatus}
@@ -454,7 +456,7 @@ export default function RequestDetailPage() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Delivery Status
+                    {t.admin.deliveryStatusLabel}
                   </label>
                   <select
                     value={selectedDeliveryStatus}
@@ -476,22 +478,22 @@ export default function RequestDetailPage() {
 
             {/* Summary Card */}
             <Card className="p-4">
-              <h3 className="font-semibold mb-3">Summary</h3>
+              <h3 className="font-semibold mb-3">{t.admin.summary}</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Created</p>
+                  <p className="text-muted-foreground">{t.admin.createdLabel}</p>
                   <p className="font-medium">
                     {new Date(request.createdAt).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Last Updated</p>
+                  <p className="text-muted-foreground">{t.admin.lastUpdated}</p>
                   <p className="font-medium">
                     {new Date(request.updatedAt).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Estimated Cost</p>
+                  <p className="text-muted-foreground">{t.admin.estimatedCost}</p>
                   <p className="font-medium">${request.estimatedCost}</p>
                 </div>
               </div>
