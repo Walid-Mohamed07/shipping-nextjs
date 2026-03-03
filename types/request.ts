@@ -100,6 +100,8 @@ export interface CostOffer {
   comment?: string;
   selected: boolean;
   status: "pending" | "accepted" | "rejected";
+  pickupDateTime?: string;
+  deliveryDateTime?: string;
   createdAt?: string;
 }
 
@@ -125,7 +127,8 @@ export interface Request {
   items: Item[];
   deliveryType: DeliveryType;
   startTime?: string;
-  availableDays?: DayOfWeek[];
+  collectionAvailableDays?: DayOfWeek[];
+  deliveryAvailableDays?: DayOfWeek[];
   cost?: string;
   primaryCost?: string;
   requestStatus: RequestStatus;
@@ -183,7 +186,8 @@ export interface RequestPayload {
   items: Item[];
   deliveryType: DeliveryType;
   startTime?: string;
-  availableDays?: DayOfWeek[];
+  collectionAvailableDays?: DayOfWeek[];
+  deliveryAvailableDays?: DayOfWeek[];
   primaryCost?: string;
   requestStatus?: RequestStatus;
   deliveryStatus?: DeliveryStatus;

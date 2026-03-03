@@ -70,7 +70,7 @@ const NEARBY_RADIUS_KM = 50;
 export default function NewRequestForm() {
   const { user } = useAuth();
   const toast = useToast();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -126,7 +126,13 @@ export default function NewRequestForm() {
         if (catRes.ok) {
           const catData = await catRes.json();
           const categoryNames = (catData.categories || []).map(
-            (cat: any) => cat.name,
+            (cat: any) => {
+              // Handle multilingual category names
+              if (typeof cat.name === "object" && cat.name !== null) {
+                return cat.name[locale] || cat.name.en || cat.name.ar || "";
+              }
+              return cat.name || "";
+            },
           );
           setDynamicCategories(categoryNames);
         }
@@ -143,7 +149,7 @@ export default function NewRequestForm() {
     };
 
     fetchData();
-  }, []);
+  }, [locale]);
 
   const primaryLocation =
     userLocations.length > 0
@@ -274,7 +280,12 @@ export default function NewRequestForm() {
     "Friday",
     "Saturday",
   ];
-  const [availableDays, setAvailableDays] = useState<DayOfWeek[]>([]);
+  const [collectionAvailableDays, setCollectionAvailableDays] = useState<
+    DayOfWeek[]
+  >([]);
+  const [deliveryAvailableDays, setDeliveryAvailableDays] = useState<
+    DayOfWeek[]
+  >([]);
   // Mobile is now per address location, so default to primary location's mobile or user's mobile
   const [mobile, setMobile] = useState("");
   const [primaryCost, setPrimaryCost] = useState("");
@@ -420,6 +431,18 @@ export default function NewRequestForm() {
     window.addEventListener("keydown", handleEscKey);
     return () => window.removeEventListener("keydown", handleEscKey);
   }, [showImageZoom]);
+
+  // Cleanup: Revoke all blob URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      // Revoke all item preview URLs
+      Object.values(itemMediaPreviewsMap).forEach((urls) => {
+        urls.forEach((url) => URL.revokeObjectURL(url));
+      });
+      // Revoke new item preview URLs
+      newItem.mediaPreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []); // Empty deps - only run on unmount
 
   // ——— Media upload: max 4 images, accept image only; revoke object URLs on cleanup ———
   const MAX_MEDIA_FILES = 4;
@@ -590,10 +613,16 @@ export default function NewRequestForm() {
       toast.error(`${t.newRequest.errAssemblyHandlerForItems} ${itemNames}`);
     }
 
-    // Validate available days (minimum 2 days required)
-    if (availableDays.length < 2) {
-      errors.availableDays = true;
-      toast.error(t.newRequest.errAvailableDays);
+    // Validate collection available days (minimum 2 days required)
+    if (collectionAvailableDays.length < 2) {
+      errors.collectionAvailableDays = true;
+      toast.error(t.newRequest.errCollectionDays);
+    }
+
+    // Validate delivery available days (minimum 2 days required)
+    if (deliveryAvailableDays.length < 2) {
+      errors.deliveryAvailableDays = true;
+      toast.error(t.newRequest.errDeliveryDays);
     }
 
     // Validate mobile
@@ -718,11 +747,17 @@ export default function NewRequestForm() {
         destination,
         items: formattedItems,
         deliveryType,
-        availableDays:
-          availableDays.length === 7 ? ["All Week"] : availableDays,
+        collectionAvailableDays:
+          collectionAvailableDays.length === 7
+            ? ["All Week"]
+            : collectionAvailableDays,
+        deliveryAvailableDays:
+          deliveryAvailableDays.length === 7
+            ? ["All Week"]
+            : deliveryAvailableDays,
         primaryCost: primaryCost,
         cost: primaryCost,
-        requestStatus: "Pending",
+        requestStatus: "Accepted",
         deliveryStatus: "Pending",
         comment: comments || "",
       };
@@ -785,7 +820,8 @@ export default function NewRequestForm() {
         },
       });
       setDeliveryType("Normal");
-      setAvailableDays([]);
+      setCollectionAvailableDays([]);
+      setDeliveryAvailableDays([]);
       setComments("");
       setPrimaryCost("");
       setMobile(primaryLocation.mobile || "");
@@ -1875,10 +1911,8 @@ export default function NewRequestForm() {
 
                           setItems([...items, newItemObj]);
                           toast.create(t.newRequest.itemAddedSuccess);
-                          // Revoke object URLs before reset to avoid memory leaks
-                          newItem.mediaPreviews.forEach((url) =>
-                            URL.revokeObjectURL(url),
-                          );
+                          // Don't revoke blob URLs here - they're needed for preview display
+                          // They will be revoked when item is deleted or form is reset
                           setNewItem({
                             name: "",
                             category: "",
@@ -2082,37 +2116,38 @@ export default function NewRequestForm() {
                       </div>
                     </div>
 
-                    {/* Available Days */}
+                    {/* Collection Available Days */}
                     <div className="sm:col-span-2">
                       <div className="flex items-center justify-between mb-3">
                         <label className="block text-sm font-medium text-gray-900">
-                          {t.newRequest.availableDays}{" "}
+                          {t.newRequest.collectionAvailableDays}{" "}
                           <span className="text-red-500">*</span>
                         </label>
                         <button
                           type="button"
                           onClick={() => {
-                            if (availableDays.length === 7) {
-                              setAvailableDays([]);
+                            if (collectionAvailableDays.length === 7) {
+                              setCollectionAvailableDays([]);
                             } else {
-                              setAvailableDays([...DAYS_OF_WEEK]);
+                              setCollectionAvailableDays([...DAYS_OF_WEEK]);
                             }
                           }}
                           className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
                         >
-                          {availableDays.length === 7
+                          {collectionAvailableDays.length === 7
                             ? t.newRequest.clearAll
                             : t.newRequest.selectAllDays}
                         </button>
                       </div>
                       <p className="text-xs text-gray-600 mb-3">
-                        {t.newRequest.availableDaysRequired}
+                        {t.newRequest.collectionDaysRequired}
                       </p>
                       <div
-                        className={`grid grid-cols-7 gap-2 ${validationErrors.availableDays ? "p-2 border-2 border-red-300 rounded-lg bg-red-50" : ""}`}
+                        className={`grid grid-cols-7 gap-2 ${validationErrors.collectionAvailableDays ? "p-2 border-2 border-red-300 rounded-lg bg-red-50" : ""}`}
                       >
                         {DAYS_OF_WEEK.map((day) => {
-                          const isSelected = availableDays.includes(day);
+                          const isSelected =
+                            collectionAvailableDays.includes(day);
                           const shortDay = day.slice(0, 3);
                           return (
                             <button
@@ -2120,11 +2155,101 @@ export default function NewRequestForm() {
                               type="button"
                               onClick={() => {
                                 if (isSelected) {
-                                  setAvailableDays(
-                                    availableDays.filter((d) => d !== day),
+                                  setCollectionAvailableDays(
+                                    collectionAvailableDays.filter(
+                                      (d) => d !== day,
+                                    ),
                                   );
                                 } else {
-                                  setAvailableDays([...availableDays, day]);
+                                  setCollectionAvailableDays([
+                                    ...collectionAvailableDays,
+                                    day,
+                                  ]);
+                                }
+                              }}
+                              disabled={isLoading}
+                              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                                isSelected
+                                  ? "border-green-600 bg-green-50 text-green-700"
+                                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <span className="text-xs font-bold uppercase">
+                                {shortDay}
+                              </span>
+                              <span className="text-[10px] mt-0.5 opacity-70">
+                                {day}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span
+                          className={`text-xs font-medium ${collectionAvailableDays.length >= 2 ? "text-green-600" : "text-amber-600"}`}
+                        >
+                          {collectionAvailableDays.length}{" "}
+                          {collectionAvailableDays.length !== 1
+                            ? t.newRequest.daysSelectedPlural
+                            : t.newRequest.daysSelected}
+                        </span>
+                        {collectionAvailableDays.length < 2 && (
+                          <span className="text-xs text-red-500">
+                            {t.newRequest.needAtLeast2}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Delivery Available Days */}
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block text-sm font-medium text-gray-900">
+                          {t.newRequest.deliveryAvailableDays}{" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (deliveryAvailableDays.length === 7) {
+                              setDeliveryAvailableDays([]);
+                            } else {
+                              setDeliveryAvailableDays([...DAYS_OF_WEEK]);
+                            }
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                        >
+                          {deliveryAvailableDays.length === 7
+                            ? t.newRequest.clearAll
+                            : t.newRequest.selectAllDays}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-3">
+                        {t.newRequest.deliveryDaysRequired}
+                      </p>
+                      <div
+                        className={`grid grid-cols-7 gap-2 ${validationErrors.deliveryAvailableDays ? "p-2 border-2 border-red-300 rounded-lg bg-red-50" : ""}`}
+                      >
+                        {DAYS_OF_WEEK.map((day) => {
+                          const isSelected =
+                            deliveryAvailableDays.includes(day);
+                          const shortDay = day.slice(0, 3);
+                          return (
+                            <button
+                              key={`delivery-${day}`}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setDeliveryAvailableDays(
+                                    deliveryAvailableDays.filter(
+                                      (d) => d !== day,
+                                    ),
+                                  );
+                                } else {
+                                  setDeliveryAvailableDays([
+                                    ...deliveryAvailableDays,
+                                    day,
+                                  ]);
                                 }
                               }}
                               disabled={isLoading}
@@ -2146,14 +2271,14 @@ export default function NewRequestForm() {
                       </div>
                       <div className="mt-3 flex items-center gap-2">
                         <span
-                          className={`text-xs font-medium ${availableDays.length >= 2 ? "text-green-600" : "text-amber-600"}`}
+                          className={`text-xs font-medium ${deliveryAvailableDays.length >= 2 ? "text-green-600" : "text-amber-600"}`}
                         >
-                          {availableDays.length}{" "}
-                          {availableDays.length !== 1
+                          {deliveryAvailableDays.length}{" "}
+                          {deliveryAvailableDays.length !== 1
                             ? t.newRequest.daysSelectedPlural
                             : t.newRequest.daysSelected}
                         </span>
-                        {availableDays.length < 2 && (
+                        {deliveryAvailableDays.length < 2 && (
                           <span className="text-xs text-red-500">
                             {t.newRequest.needAtLeast2}
                           </span>
@@ -2221,7 +2346,8 @@ export default function NewRequestForm() {
                     sourcePickupMode,
                     destPickupMode,
                     deliveryType,
-                    availableDays,
+                    collectionAvailableDays,
+                    deliveryAvailableDays,
                     mobile,
                     primaryCost,
                     comments,

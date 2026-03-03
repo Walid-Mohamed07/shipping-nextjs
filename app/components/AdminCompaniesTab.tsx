@@ -26,7 +26,9 @@ export function AdminCompaniesTab() {
     email: "",
     phoneNumber: "",
     address: "",
-    rate: "4.50",
+    rate: 4.5,
+    logo: "",
+    logoFile: null as File | null,
   });
 
   useEffect(() => {
@@ -73,19 +75,45 @@ export function AdminCompaniesTab() {
     e.preventDefault();
 
     try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("phoneNumber", formData.phoneNumber);
+      formDataToSend.append("rate", formData.rate.toString());
+      formDataToSend.append("address", formData.address);
+      formDataToSend.append("category", formData.category);
+
+      // Handle logo file
+      if (formData.logoFile) {
+        formDataToSend.append("logo", formData.logoFile);
+      }
+
+      // If updating and logo exists, pass existing path for cleanup
+      if (editingId && formData.logo && !formData.logoFile) {
+        formDataToSend.append("existingLogo", formData.logo);
+      } else if (editingId && formData.logo) {
+        formDataToSend.append("existingLogo", formData.logo);
+      }
+
+      if (editingId) {
+        formDataToSend.append("id", editingId);
+      }
+
       const method = editingId ? "PUT" : "POST";
-      const body = editingId ? { id: editingId, ...formData } : formData;
 
       const res = await fetch("/api/admin/companies", {
         method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: formDataToSend,
       });
 
       if (res.ok) {
         fetchCompanies();
         resetForm();
-        toast.create(editingId ? "Company updated successfully" : "Company created successfully");
+        toast.create(
+          editingId
+            ? "Company updated successfully"
+            : "Company created successfully",
+        );
       } else {
         toast.error("Failed to save company");
       }
@@ -115,6 +143,13 @@ export function AdminCompaniesTab() {
     }
   };
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, logoFile: file });
+    }
+  };
+
   const handleEdit = (company: Company) => {
     setFormData({
       name: company.name,
@@ -123,8 +158,10 @@ export function AdminCompaniesTab() {
       address: company.address,
       rate: company.rate,
       category: company.category || "",
+      logo: company.logo || "",
+      logoFile: null,
     });
-    setEditingId(company.id);
+    setEditingId(company._id);
     setShowForm(true);
   };
 
@@ -135,7 +172,9 @@ export function AdminCompaniesTab() {
       phoneNumber: "",
       address: "",
       category: "",
-      rate: "4.50",
+      rate: 4.5,
+      logo: "",
+      logoFile: null,
     });
     setEditingId(null);
     setShowForm(false);
@@ -167,6 +206,9 @@ export function AdminCompaniesTab() {
 
       {showForm && (
         <Card className="p-6 border-primary/50">
+          <h3 className="text-lg font-semibold mb-4">
+            {editingId ? "Edit Company" : "Create Company"}
+          </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -222,10 +264,43 @@ export function AdminCompaniesTab() {
                   max="5"
                   value={formData.rate}
                   onChange={(e) =>
-                    setFormData({ ...formData, rate: e.target.value })
+                    setFormData({
+                      ...formData,
+                      rate: parseFloat(e.target.value) || 0,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">
+                  Company Logo{" "}
+                  <span className="text-xs text-muted-foreground">
+                    (Optional)
+                  </span>
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                    className="flex-1 px-3 py-2 border border-border rounded bg-background text-foreground text-sm"
+                  />
+                  {(formData.logoFile || formData.logo) && (
+                    <div className="w-12 h-12 rounded border border-border overflow-hidden bg-slate-50 dark:bg-slate-900 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={
+                          formData.logoFile
+                            ? URL.createObjectURL(formData.logoFile)
+                            : formData.logo
+                        }
+                        alt="Logo preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="md:col-span-2">
@@ -300,12 +375,23 @@ export function AdminCompaniesTab() {
           </div>
         ) : (
           paginatedCompanies.map((company) => (
-            <Card key={company.id} className="p-4">
-              <div className="mb-4">
-                <h3 className="font-semibold text-lg">{company.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  ⭐ {company.rate} rating
-                </p>
+            <Card key={company._id} className="p-4">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{company.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    ⭐ {company.rate} rating
+                  </p>
+                </div>
+                {company.logo && (
+                  <div className="w-12 h-12 rounded border border-border overflow-hidden bg-slate-50 dark:bg-slate-900 flex-shrink-0">
+                    <img
+                      src={company.logo}
+                      alt={company.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 text-sm mb-4">
@@ -336,7 +422,7 @@ export function AdminCompaniesTab() {
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleDelete(company.id)}
+                  onClick={() => handleDelete(company._id)}
                   className="flex-1 gap-2"
                 >
                   <Trash2 className="w-4 h-4" />

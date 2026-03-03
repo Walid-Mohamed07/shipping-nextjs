@@ -128,35 +128,42 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (!currentRequest.costOffers) {
+        currentRequest.costOffers = [] as any;
+      }
+
+      // Check if company has reached maximum offers (3)
+      const companyOffers = currentRequest.costOffers.filter(
+        (o: any) => o.company?.id === companyId,
+      );
+      
+      if (companyOffers.length >= 3) {
+        return NextResponse.json(
+          { error: "Maximum of 3 offers per company reached" },
+          { status: 400 },
+        );
+      }
+
       const newOffer = {
         cost: offer.cost,
         comment: offer.comment || "",
         company: {
           id: companyId,
           name: offer.companyName || "Company",
+          rate: offer.companyRate?.toString() || "0",
+          phoneNumber: body.company?.phoneNumber || "",
+          email: body.company?.email || "",
+          address: body.company?.address || "",
         },
         selected: false,
         status: "pending",
+        pickupDateTime: offer.pickupDateTime ? new Date(offer.pickupDateTime) : undefined,
+        deliveryDateTime: offer.deliveryDateTime ? new Date(offer.deliveryDateTime) : undefined,
         createdAt: new Date(),
       };
 
-      if (!currentRequest.costOffers) {
-        currentRequest.costOffers = [];
-      }
-
-      // Check if company already has an offer on this request
-      const existingOfferIndex = currentRequest.costOffers.findIndex(
-        (o: any) => o.company?.id === companyId,
-      );
-
-      const isUpdatingExistingOffer = existingOfferIndex >= 0;
-      if (isUpdatingExistingOffer) {
-        // Update existing offer from this company
-        currentRequest.costOffers[existingOfferIndex] = newOffer;
-      } else {
-        // Push new offer while keeping previous records
-        currentRequest.costOffers.push(newOffer);
-      }
+      // Always add new offer (no updating allowed)
+      currentRequest.costOffers.push(newOffer);
 
       if (currentRequest.requestStatus === "Accepted") {
         currentRequest.requestStatus = "Action needed";
@@ -165,26 +172,18 @@ export async function POST(request: NextRequest) {
       currentRequest.updatedAt = new Date();
       await currentRequest.save();
 
-      // Add activity log for offer submission/update
-      const activity = isUpdatingExistingOffer
-        ? ActivityActions.OFFER_UPDATED(
-            companyId,
-            offer.companyName || "Company",
-            offer.cost,
-            offer.comment,
-          )
-        : ActivityActions.OFFER_SUBMITTED(
-            companyId,
-            offer.companyName || "Company",
-            offer.cost,
-            offer.comment,
-          );
+      // Add activity log for offer submission
+      const activity = ActivityActions.OFFER_SUBMITTED(
+        companyId,
+        offer.companyName || "Company",
+        offer.cost,
+        offer.comment,
+      );
       await addActivityLog(requestId, activity);
 
       // Broadcast real-time event for offer
-      const eventType = isUpdatingExistingOffer ? "OFFER_UPDATED" : "OFFER_SUBMITTED";
-      const requestOwnerId = currentRequest.user?.toString() || currentRequest.user;
-      broadcastEvent(eventType, {
+      const requestOwnerId = String(currentRequest.user?.toString?.() || currentRequest.user || "");
+      broadcastEvent("OFFER_SUBMITTED", {
         requestId,
         companyId,
         companyName: offer.companyName || "Company",
@@ -199,7 +198,7 @@ export async function POST(request: NextRequest) {
       
       // Also notify the client who owns the request
       if (requestOwnerId) {
-        broadcastToUserAndAdmins(requestOwnerId, eventType, {
+        broadcastToUserAndAdmins(requestOwnerId, "OFFER_SUBMITTED", {
           requestId,
           companyId,
           companyName: offer.companyName || "Company",
@@ -210,9 +209,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: true,
-          message: isUpdatingExistingOffer
-            ? "Offer updated successfully"
-            : "Offer submitted successfully",
+          message: "Offer submitted successfully",
         },
         { status: 200 },
       );

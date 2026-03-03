@@ -885,20 +885,42 @@ export default function OngoingRequestDetailPage() {
               </div>
             </Card>
 
-            {/* Available Days */}
-            {request.availableDays && request.availableDays.length > 0 && (
+            {/* Collection & Delivery Days */}
+            {((request.collectionAvailableDays && request.collectionAvailableDays.length > 0) ||
+              (request.deliveryAvailableDays && request.deliveryAvailableDays.length > 0)) && (
               <Card className="p-5">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-primary" />
                   {t.company.availableDays}
                 </h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {request.availableDays.includes("All Week") ? (
-                    <Badge variant="secondary">{t.company.allWeek}</Badge>
-                  ) : (
-                    request.availableDays.map((day) => (
-                      <Badge key={day} variant="secondary" className="text-xs">{day}</Badge>
-                    ))
+                <div className="space-y-3">
+                  {request.collectionAvailableDays && request.collectionAvailableDays.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1.5">{t.company.collectionAvailableDays}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {request.collectionAvailableDays.includes("All Week") ? (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">{t.common.allWeek}</Badge>
+                        ) : (
+                          request.collectionAvailableDays.map((day: string) => (
+                            <Badge key={day} variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">{day}</Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {request.deliveryAvailableDays && request.deliveryAvailableDays.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1.5">{t.company.deliveryAvailableDays}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {request.deliveryAvailableDays.includes("All Week") ? (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">{t.common.allWeek}</Badge>
+                        ) : (
+                          request.deliveryAvailableDays.map((day: string) => (
+                            <Badge key={day} variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">{day}</Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </Card>

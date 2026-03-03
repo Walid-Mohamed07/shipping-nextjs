@@ -153,6 +153,7 @@ export async function POST(
             timestamp: new Date(),
             description: `Client accepted offer from ${companyName} for $${cost}`,
             companyName,
+            companyRate,
             cost,
             details: { offerId, companyId },
           },

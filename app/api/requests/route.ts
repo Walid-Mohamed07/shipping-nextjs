@@ -87,7 +87,8 @@ function normalizeRequest(req: any) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime;
-  const availableDays = req.availableDays || [];
+  const collectionAvailableDays = req.collectionAvailableDays || req.availableDays || [];
+  const deliveryAvailableDays = req.deliveryAvailableDays || [];
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
@@ -100,7 +101,8 @@ function normalizeRequest(req: any) {
     destination,
     deliveryType,
     startTime,
-    availableDays,
+    collectionAvailableDays,
+    deliveryAvailableDays,
     primaryCost,
     cost,
     requestStatus,
@@ -211,7 +213,9 @@ export async function POST(request: NextRequest) {
       items,
       deliveryType,
       startTime,
-      availableDays,
+      collectionAvailableDays,
+      deliveryAvailableDays,
+      availableDays, // backward compatibility
       cost,
       primaryCost,
       estimatedCost,
@@ -224,7 +228,9 @@ export async function POST(request: NextRequest) {
     const sourceAddr = source;
     const destAddr = destination;
     const finalStartTime = startTime;
-    const finalAvailableDays = availableDays || [];
+    // Support both new field names and legacy availableDays
+    const finalCollectionDays = collectionAvailableDays || availableDays || [];
+    const finalDeliveryDays = deliveryAvailableDays || [];
     const finalPrimaryCost = primaryCost ?? estimatedCost;
     const finalCost = cost ?? finalPrimaryCost;
     const finalStatus = requestStatus ?? orderStatus;
@@ -233,13 +239,21 @@ export async function POST(request: NextRequest) {
     if (!normalizedDeliveryType) {
       return handleValidationError("deliveryType is required (normal | fast)");
     }
-    // Validate availableDays (minimum 2 days required, or "All Week")
+    // Validate collectionAvailableDays (minimum 2 days required, or "All Week")
     if (
-      !Array.isArray(finalAvailableDays) ||
-      (finalAvailableDays.length < 2 &&
-        !finalAvailableDays.includes("All Week"))
+      !Array.isArray(finalCollectionDays) ||
+      (finalCollectionDays.length < 2 &&
+        !finalCollectionDays.includes("All Week"))
     ) {
-      return handleValidationError("At least 2 available days are required");
+      return handleValidationError("At least 2 collection available days are required");
+    }
+    // Validate deliveryAvailableDays (minimum 2 days required, or "All Week")
+    if (
+      !Array.isArray(finalDeliveryDays) ||
+      (finalDeliveryDays.length < 2 &&
+        !finalDeliveryDays.includes("All Week"))
+    ) {
+      return handleValidationError("At least 2 delivery available days are required");
     }
     if (!Array.isArray(items) || items.length === 0) {
       return handleValidationError("At least one item is required");
@@ -277,7 +291,8 @@ export async function POST(request: NextRequest) {
       })),
       deliveryType: normalizedDeliveryType,
       startTime: finalStartTime,
-      availableDays: finalAvailableDays,
+      collectionAvailableDays: finalCollectionDays,
+      deliveryAvailableDays: finalDeliveryDays,
       primaryCost: finalPrimaryCost,
       cost: finalCost,
       requestStatus: finalStatus || "Pending",

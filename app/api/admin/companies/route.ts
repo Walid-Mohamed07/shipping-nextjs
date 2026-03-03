@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Company } from "@/lib/models";
+import { uploadCompanyLogo, deleteCompanyLogo } from "@/lib/fileUpload";
 
 /**
  * @swagger
@@ -55,8 +56,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
-    const body = await request.json();
-    const { name, phoneNumber, email, rating } = body;
+    const formData = await request.formData();
+    
+    const name = formData.get("name") as string;
+    const phoneNumber = formData.get("phoneNumber") as string;
+    const email = formData.get("email") as string;
+    const rate = formData.get("rate") as string;
+    const address = formData.get("address") as string;
+    const category = formData.get("category") as string;
+    const logoFile = formData.get("logo") as File | null;
 
     if (!name || !phoneNumber || !email) {
       return NextResponse.json(
@@ -65,11 +73,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let logoPath: string | undefined;
+    if (logoFile && logoFile.size > 0) {
+      logoPath = await uploadCompanyLogo(logoFile);
+    }
+
     const newCompany = new Company({
       name,
       phoneNumber,
       email,
-      rating: rating || 0,
+      rate: parseFloat(rate) || 0,
+      address: address || "",
+      category: category || "",
+      logo: logoPath,
     });
 
     await newCompany.save();
@@ -90,8 +106,17 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
-    const body = await request.json();
-    const { id, name, phoneNumber, email, rating } = body;
+    const formData = await request.formData();
+
+    const id = formData.get("id") as string;
+    const name = formData.get("name") as string;
+    const phoneNumber = formData.get("phoneNumber") as string;
+    const email = formData.get("email") as string;
+    const rate = formData.get("rate") as string;
+    const address = formData.get("address") as string;
+    const category = formData.get("category") as string;
+    const logoFile = formData.get("logo") as File | null;
+    const existingLogo = formData.get("existingLogo") as string | null;
 
     if (!id) {
       return NextResponse.json(
@@ -104,7 +129,19 @@ export async function PUT(request: NextRequest) {
     if (name) updateData.name = name;
     if (phoneNumber) updateData.phoneNumber = phoneNumber;
     if (email) updateData.email = email;
-    if (rating !== undefined) updateData.rating = rating;
+    if (rate !== undefined) updateData.rate = parseFloat(rate);
+    if (address !== undefined) updateData.address = address;
+    if (category !== undefined) updateData.category = category;
+
+    // Handle logo upload/update
+    if (logoFile && logoFile.size > 0) {
+      // Delete old logo if exists
+      if (existingLogo) {
+        await deleteCompanyLogo(existingLogo);
+      }
+      // Upload new logo
+      updateData.logo = await uploadCompanyLogo(logoFile);
+    }
 
     const updatedCompany = await Company.findByIdAndUpdate(
       id,
@@ -146,6 +183,11 @@ export async function DELETE(request: NextRequest) {
 
     if (!deletedCompany) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    }
+
+    // Delete associated logo file
+    if (deletedCompany.logo) {
+      await deleteCompanyLogo(deletedCompany.logo);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

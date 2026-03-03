@@ -517,16 +517,41 @@ export function AdminRequestsTab() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Available Days
+                    Collection Days
                   </p>
-                  {selectedRequest.availableDays && selectedRequest.availableDays.length > 0 ? (
-                    selectedRequest.availableDays.includes("All Week") ? (
+                  {selectedRequest.collectionAvailableDays && selectedRequest.collectionAvailableDays.length > 0 ? (
+                    selectedRequest.collectionAvailableDays.includes("All Week") ? (
+                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+                        All Week
+                      </span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedRequest.collectionAvailableDays.map((day: string) => (
+                          <span
+                            key={day}
+                            className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                          >
+                            {day.slice(0, 3)}
+                          </span>
+                        ))}
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-foreground font-medium">N/A</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Delivery Days
+                  </p>
+                  {selectedRequest.deliveryAvailableDays && selectedRequest.deliveryAvailableDays.length > 0 ? (
+                    selectedRequest.deliveryAvailableDays.includes("All Week") ? (
                       <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         All Week
                       </span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
-                        {selectedRequest.availableDays.map((day: string) => (
+                        {selectedRequest.deliveryAvailableDays.map((day: string) => (
                           <span
                             key={day}
                             className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"

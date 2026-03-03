@@ -11,13 +11,14 @@ export interface CompanyWarehouse {
 }
 
 export interface Company {
-  id: string;
+  _id: string;
   name: string;
   phoneNumber: string;
   email: string;
   address: string;
-  rate: string;
+  rate: number;
   category?: string;
+  logo?: string; // Base64 encoded image or image URL
   createdAt?: string;
   updatedAt?: string;
   // Company warehouses

@@ -60,7 +60,7 @@ interface CompanyInfo {
   email: string;
   phoneNumber?: string;
   address?: string;
-  rate?: string;
+  rate?: number;
 }
 
 export default function CompanyRequestDetailPage() {
@@ -88,6 +88,8 @@ export default function CompanyRequestDetailPage() {
   const [offerCost, setOfferCost] = useState("");
   const [offerComment, setOfferComment] = useState("");
   const [showOfferForm, setShowOfferForm] = useState(false);
+  const [pickupDateTime, setPickupDateTime] = useState("");
+  const [deliveryDateTime, setDeliveryDateTime] = useState("");
 
   // UI state
   const [expandedItems, setExpandedItems] = useState(false);
@@ -186,6 +188,23 @@ export default function CompanyRequestDetailPage() {
       return;
     }
 
+    // Validate required datetime fields based on pickup modes
+    if (request?.sourcePickupMode === "Delegate" && !pickupDateTime) {
+      showError("Please select a pickup date and time");
+      return;
+    }
+
+    if (request?.destinationPickupMode === "Delegate" && !deliveryDateTime) {
+      showError("Please select a delivery date and time");
+      return;
+    }
+
+    // Check if max offers reached
+    if (myOffers.length >= 3) {
+      showError(t.companyRequestDetail.maxOffersReached);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const response = await fetch("/api/company/requests", {
@@ -204,20 +223,19 @@ export default function CompanyRequestDetailPage() {
             cost,
             comment: offerComment || "",
             companyName: companyInfo?.name || user?.fullName || user?.name,
+            companyRate: companyInfo?.rate || 0,
+            pickupDateTime: pickupDateTime || undefined,
+            deliveryDateTime: deliveryDateTime || undefined,
           },
         }),
       });
 
       if (response.ok) {
-        const hasExisting =
-          request?.costOffers?.some((o) => o.company.id === user?.id) ?? false;
-        create(
-          hasExisting
-            ? t.companyRequestDetail.toastOfferUpdated
-            : t.companyRequestDetail.toastOfferSubmitted,
-        );
+        create(t.companyRequestDetail.toastOfferSubmitted);
         setOfferCost("");
         setOfferComment("");
+        setPickupDateTime("");
+        setDeliveryDateTime("");
         setShowOfferForm(false);
         // Refresh will happen automatically via real-time updates
         // But also trigger manual refresh for immediate feedback
@@ -235,9 +253,7 @@ export default function CompanyRequestDetailPage() {
   };
 
   const handleRejectRequest = async () => {
-    if (
-      !confirm(t.companyRequestDetail.confirmReject)
-    ) {
+    if (!confirm(t.companyRequestDetail.confirmReject)) {
       return;
     }
 
@@ -416,9 +432,10 @@ export default function CompanyRequestDetailPage() {
                     <MapPin className="w-5 h-5 text-primary" />
                     {t.companyRequestDetail.shippingRoute}
                   </h3>
-                  
+
                   {/* Map Toggle */}
-                  {(request.source.coordinates || request.destination.coordinates) && (
+                  {(request.source.coordinates ||
+                    request.destination.coordinates) && (
                     <div className="flex items-center gap-1 p-1 bg-muted rounded-lg border border-border">
                       <button
                         onClick={() => setMapView("pickup")}
@@ -459,8 +476,13 @@ export default function CompanyRequestDetailPage() {
                             <h4 className="text-base font-semibold text-green-700 dark:text-green-300">
                               {t.companyRequestDetail.pickupLocation}
                             </h4>
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300">
-                              {request.sourcePickupMode === "Self" ? t.companyRequestDetail.selfPickup : t.companyRequestDetail.companyPickup}
+                            <Badge
+                              variant="outline"
+                              className="bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300"
+                            >
+                              {request.sourcePickupMode === "Self"
+                                ? t.companyRequestDetail.selfPickup
+                                : t.companyRequestDetail.companyPickup}
                             </Badge>
                           </div>
                           <div className="space-y-1.5 text-sm">
@@ -472,8 +494,10 @@ export default function CompanyRequestDetailPage() {
                                 <Building2 className="w-4 h-4 mt-0.5 shrink-0" />
                                 <span>
                                   {request.source.street}
-                                  {request.source.building && `, ${request.source.building}`}
-                                  {request.source.governorate && `, ${request.source.governorate}`}
+                                  {request.source.building &&
+                                    `, ${request.source.building}`}
+                                  {request.source.governorate &&
+                                    `, ${request.source.governorate}`}
                                 </span>
                               </p>
                             )}
@@ -503,21 +527,29 @@ export default function CompanyRequestDetailPage() {
                             <h4 className="text-base font-semibold text-blue-700 dark:text-blue-300">
                               {t.companyRequestDetail.deliveryDestination}
                             </h4>
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300">
-                              {request.destinationPickupMode === "Self" ? t.companyRequestDetail.selfDelivery : t.companyRequestDetail.companyDelivery}
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300"
+                            >
+                              {request.destinationPickupMode === "Self"
+                                ? t.companyRequestDetail.selfDelivery
+                                : t.companyRequestDetail.companyDelivery}
                             </Badge>
                           </div>
                           <div className="space-y-1.5 text-sm">
                             <p className="font-medium text-foreground">
-                              {request.destination.city}, {request.destination.country}
+                              {request.destination.city},{" "}
+                              {request.destination.country}
                             </p>
                             {request.destination.street && (
                               <p className="text-muted-foreground flex items-start gap-2">
                                 <Building2 className="w-4 h-4 mt-0.5 shrink-0" />
                                 <span>
                                   {request.destination.street}
-                                  {request.destination.building && `, ${request.destination.building}`}
-                                  {request.destination.governorate && `, ${request.destination.governorate}`}
+                                  {request.destination.building &&
+                                    `, ${request.destination.building}`}
+                                  {request.destination.governorate &&
+                                    `, ${request.destination.governorate}`}
                                 </span>
                               </p>
                             )}
@@ -534,21 +566,31 @@ export default function CompanyRequestDetailPage() {
                   )}
 
                   {/* Map Display */}
-                  {(request.source.coordinates || request.destination.coordinates) && (
-                    <div className={`rounded-lg overflow-hidden border-2 transition-colors ${
-                      mapView === "pickup" 
-                        ? "border-green-400 dark:border-green-600" 
-                        : "border-blue-400 dark:border-blue-600"
-                    }`}>
-                      {((mapView === "pickup" && request.source.coordinates) ||
-                        (mapView === "delivery" && request.destination.coordinates)) ? (
+                  {(request.source.coordinates ||
+                    request.destination.coordinates) && (
+                    <div
+                      className={`rounded-lg overflow-hidden border-2 transition-colors ${
+                        mapView === "pickup"
+                          ? "border-green-400 dark:border-green-600"
+                          : "border-blue-400 dark:border-blue-600"
+                      }`}
+                    >
+                      {(mapView === "pickup" && request.source.coordinates) ||
+                      (mapView === "delivery" &&
+                        request.destination.coordinates) ? (
                         <div className="h-64">
                           <SimpleLocationMap
                             key={mapView}
                             position={
                               mapView === "pickup"
-                                ? [request.source.coordinates!.latitude, request.source.coordinates!.longitude]
-                                : [request.destination.coordinates!.latitude, request.destination.coordinates!.longitude]
+                                ? [
+                                    request.source.coordinates!.latitude,
+                                    request.source.coordinates!.longitude,
+                                  ]
+                                : [
+                                    request.destination.coordinates!.latitude,
+                                    request.destination.coordinates!.longitude,
+                                  ]
                             }
                             label={
                               mapView === "pickup"
@@ -561,7 +603,9 @@ export default function CompanyRequestDetailPage() {
                         <div className="h-48 bg-muted flex items-center justify-center text-muted-foreground">
                           <div className="text-center">
                             <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">{t.companyRequestDetail.mapUnavailable}</p>
+                            <p className="text-sm">
+                              {t.companyRequestDetail.mapUnavailable}
+                            </p>
                           </div>
                         </div>
                       )}
@@ -579,11 +623,11 @@ export default function CompanyRequestDetailPage() {
                   </h3>
                   <div className="flex items-center gap-4 text-sm">
                     <Badge variant="secondary" className="font-medium">
-                      <Box className="w-3.5 h-3.5 mr-1.5" /> 
+                      <Box className="w-3.5 h-3.5 mr-1.5" />
                       {totalQuantity} {t.company.units}
                     </Badge>
                     <Badge variant="secondary" className="font-medium">
-                      <Scale className="w-3.5 h-3.5 mr-1.5" /> 
+                      <Scale className="w-3.5 h-3.5 mr-1.5" />
                       {totalWeight.toFixed(1)} kg
                     </Badge>
                   </div>
@@ -604,7 +648,10 @@ export default function CompanyRequestDetailPage() {
                                 {item.quantity}x {item.item || item.name}
                               </span>
                               {item.category && (
-                                <Badge variant="outline" className="text-xs font-medium">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs font-medium"
+                                >
                                   <Tag className="w-3 h-3 mr-1" />
                                   {item.category}
                                 </Badge>
@@ -612,13 +659,17 @@ export default function CompanyRequestDetailPage() {
                             </div>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1.5">
-                                <Scale className="w-3.5 h-3.5" /> 
-                                <span className="font-medium">{item.weight} kg</span>
+                                <Scale className="w-3.5 h-3.5" />
+                                <span className="font-medium">
+                                  {item.weight} kg
+                                </span>
                               </span>
                               {item.dimensions && (
                                 <span className="flex items-center gap-1.5">
-                                  <Ruler className="w-3.5 h-3.5" /> 
-                                  <span className="font-medium">{item.dimensions}</span>
+                                  <Ruler className="w-3.5 h-3.5" />
+                                  <span className="font-medium">
+                                    {item.dimensions}
+                                  </span>
                                 </span>
                               )}
                             </div>
@@ -694,7 +745,8 @@ export default function CompanyRequestDetailPage() {
                     ) : (
                       <>
                         <ChevronDown className="w-4 h-4 mr-2" />
-                        {t.companyRequestDetail.showAllItems} ({request.items.length})
+                        {t.companyRequestDetail.showAllItems} (
+                        {request.items.length})
                       </>
                     )}
                   </Button>
@@ -708,49 +760,84 @@ export default function CompanyRequestDetailPage() {
                   {t.companyRequestDetail.deliveryInformation}
                 </h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1.5 flex items-center gap-1">
-                        <Package className="w-3.5 h-3.5" />
-                        {t.companyRequestDetail.deliveryType}
-                      </p>
-                      <p className="text-base font-semibold text-foreground">{request.deliveryType}</p>
-                    </div>
-                    {request.startTime && (
-                      <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 border border-purple-200 dark:border-purple-800">
-                        <p className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-1.5 flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          Preferred Time
-                        </p>
-                        <p className="text-base font-semibold text-foreground">{request.startTime}</p>
-                      </div>
-                    )}
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1.5 flex items-center gap-1">
+                      <Package className="w-3.5 h-3.5" />
+                      {t.companyRequestDetail.deliveryType}
+                    </p>
+                    <p className="text-base font-semibold text-foreground">
+                      {request.deliveryType}
+                    </p>
                   </div>
-                  
-                  {request.availableDays && request.availableDays.length > 0 && (
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 border border-amber-200 dark:border-amber-800">
-                      <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-2.5 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {t.companyRequestDetail.availableDays}
+                  {request.startTime && (
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 border border-purple-200 dark:border-purple-800">
+                      <p className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-1.5 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        Preferred Time
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {request.availableDays.includes("All Week") ? (
-                          <Badge className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100 border-0">
-                            {t.common.allWeek}
-                          </Badge>
-                        ) : (
-                          request.availableDays.map((day) => (
-                            <Badge 
-                              key={day} 
-                              className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100 border-0"
-                            >
-                              {day}
-                            </Badge>
-                          ))
-                        )}
-                      </div>
+                      <p className="text-base font-semibold text-foreground">
+                        {request.startTime}
+                      </p>
                     </div>
                   )}
+
+                  {/* Collection Available Days */}
+                  {request.collectionAvailableDays &&
+                    request.collectionAvailableDays.length > 0 && (
+                      <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border border-green-200 dark:border-green-800">
+                        <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-2.5 flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {t.companyRequestDetail.collectionAvailableDays}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {request.collectionAvailableDays.includes(
+                            "All Week",
+                          ) ? (
+                            <Badge className="bg-green-200 text-green-900 dark:bg-green-800 dark:text-green-100 border-0">
+                              {t.common.allWeek}
+                            </Badge>
+                          ) : (
+                            request.collectionAvailableDays.map((day) => (
+                              <Badge
+                                key={`collection-${day}`}
+                                className="bg-green-200 text-green-900 dark:bg-green-800 dark:text-green-100 border-0"
+                              >
+                                {day}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Delivery Available Days */}
+                  {request.deliveryAvailableDays &&
+                    request.deliveryAvailableDays.length > 0 && (
+                      <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 border border-amber-200 dark:border-amber-800">
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-2.5 flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {t.companyRequestDetail.deliveryAvailableDays}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {request.deliveryAvailableDays.includes(
+                            "All Week",
+                          ) ? (
+                            <Badge className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100 border-0">
+                              {t.common.allWeek}
+                            </Badge>
+                          ) : (
+                            request.deliveryAvailableDays.map((day) => (
+                              <Badge
+                                key={`delivery-${day}`}
+                                className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100 border-0"
+                              >
+                                {day}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                   {request.comment && (
                     <div className="p-4 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-900/20 border border-slate-200 dark:border-slate-700">
@@ -774,7 +861,8 @@ export default function CompanyRequestDetailPage() {
                 <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-blue-300 dark:border-blue-700">
                   <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
-                    {t.companyRequestDetail.yourActiveOffer}{myOffers.length > 1 ? "s" : ""}
+                    {t.companyRequestDetail.yourActiveOffer}
+                    {myOffers.length > 1 ? "s" : ""}
                   </h3>
                   <div className="space-y-3">
                     {myOffers.map((offer, idx) => (
@@ -784,7 +872,9 @@ export default function CompanyRequestDetailPage() {
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">{t.companyRequestDetail.yourBid}</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {t.companyRequestDetail.yourBid}
+                            </p>
                             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                               ${offer.cost.toFixed(2)}
                             </span>
@@ -804,7 +894,8 @@ export default function CompanyRequestDetailPage() {
                             {offer.status === "rejected" && (
                               <XCircle className="w-3 h-3 mr-1" />
                             )}
-                            {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+                            {offer.status.charAt(0).toUpperCase() +
+                              offer.status.slice(1)}
                           </Badge>
                         </div>
                         {offer.comment && (
@@ -814,6 +905,31 @@ export default function CompanyRequestDetailPage() {
                             </p>
                           </div>
                         )}
+                        
+                        {/* Display pickup/delivery datetime */}
+                        {(offer.pickupDateTime || offer.deliveryDateTime) && (
+                          <div className="mt-3 space-y-2">
+                            {offer.pickupDateTime && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                <span className="font-medium">Pickup:</span>
+                                <span>
+                                  {new Date(offer.pickupDateTime).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                            {offer.deliveryDateTime && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                <span className="font-medium">Delivery:</span>
+                                <span>
+                                  {new Date(offer.deliveryDateTime).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
                         {offer.createdAt && (
                           <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -828,11 +944,18 @@ export default function CompanyRequestDetailPage() {
 
               {/* Other Offers */}
               {request.costOffers &&
-                request.costOffers.filter((o) => o.company.id !== user?.id).length > 0 && (
+                request.costOffers.filter((o) => o.company.id !== user?.id)
+                  .length > 0 && (
                   <Card className="p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-900/20 border-slate-200 dark:border-slate-700">
                     <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-primary" />
-                      {t.companyRequestDetail.competingOffers} ({request.costOffers.filter((o) => o.company.id !== user?.id).length})
+                      {t.companyRequestDetail.competingOffers} (
+                      {
+                        request.costOffers.filter(
+                          (o) => o.company.id !== user?.id,
+                        ).length
+                      }
+                      )
                     </h3>
                     <div className="space-y-2.5">
                       {request.costOffers
@@ -861,7 +984,8 @@ export default function CompanyRequestDetailPage() {
                                       : "border-border"
                                 }
                               >
-                                {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+                                {offer.status.charAt(0).toUpperCase() +
+                                  offer.status.slice(1)}
                               </Badge>
                             </div>
                           </div>
@@ -875,7 +999,7 @@ export default function CompanyRequestDetailPage() {
                 <div className="space-y-4">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-primary" />
-                    {myOffers.length > 0 ? t.companyRequestDetail.updateYourOffer : t.companyRequestDetail.submitAnOffer}
+                    {t.companyRequestDetail.submitAnOffer}
                   </h3>
 
                   {/* Estimated Cost Display */}
@@ -883,7 +1007,9 @@ export default function CompanyRequestDetailPage() {
                     <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-0.5">{t.companyRequestDetail.clientEstimatedCost}</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">
+                            {t.companyRequestDetail.clientEstimatedCost}
+                          </p>
                           <p className="text-2xl font-bold text-primary">
                             ${parseFloat(request.primaryCost).toFixed(2)}
                           </p>
@@ -895,14 +1021,29 @@ export default function CompanyRequestDetailPage() {
                     </div>
                   )}
 
-                  {!showOfferForm ? (
+                  {/* Max offers reached message */}
+                  {myOffers.length >= 3 ? (
+                    <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+                      <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                        {t.companyRequestDetail.maxOffersReached}
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        {t.companyRequestDetail.maxOffersDesc}
+                      </p>
+                    </div>
+                  ) : !showOfferForm ? (
                     <div className="space-y-2">
                       <Button
                         onClick={() => setShowOfferForm(true)}
                         className="w-full gap-2"
                       >
                         <DollarSign className="w-4 h-4" />
-                        {myOffers.length > 0 ? t.companyRequestDetail.updateOffer : t.companyRequestDetail.makeAnOffer}
+                        {t.companyRequestDetail.makeAnOffer}
+                        {myOffers.length > 0 && (
+                          <span className="ml-1 text-xs opacity-80">
+                            ({myOffers.length}/3)
+                          </span>
+                        )}
                       </Button>
                       {myOffers.length === 0 && (
                         <Button
@@ -920,7 +1061,8 @@ export default function CompanyRequestDetailPage() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          {t.companyRequestDetail.yourPrice} <span className="text-destructive">*</span>
+                          {t.companyRequestDetail.yourPrice}{" "}
+                          <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -950,12 +1092,48 @@ export default function CompanyRequestDetailPage() {
                         />
                       </div>
 
+                      {/* Conditional Pickup DateTime */}
+                      {request.sourcePickupMode === "Delegate" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Pickup Date & Time{" "}
+                            <span className="text-destructive">*</span>
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={pickupDateTime}
+                            onChange={(e) => setPickupDateTime(e.target.value)}
+                            className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            required
+                          />
+                        </div>
+                      )}
+
+                      {/* Conditional Delivery DateTime */}
+                      {request.destinationPickupMode === "Delegate" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Delivery Date & Time{" "}
+                            <span className="text-destructive">*</span>
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={deliveryDateTime}
+                            onChange={(e) => setDeliveryDateTime(e.target.value)}
+                            className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            required
+                          />
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
                         <Button
                           onClick={() => {
                             setShowOfferForm(false);
                             setOfferCost("");
                             setOfferComment("");
+                            setPickupDateTime("");
+                            setDeliveryDateTime("");
                           }}
                           variant="outline"
                           className="flex-1"
@@ -992,7 +1170,7 @@ export default function CompanyRequestDetailPage() {
         {/* Image Modal */}
         {showImageModal && selectedImage && (
           <div
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1100] p-4"
             onClick={() => setShowImageModal(false)}
           >
             <div className="relative max-w-4xl max-h-[90vh]">

@@ -114,7 +114,12 @@ const requestSchema = new mongoose.Schema(
     primaryCost: String,
     cost: String,
     startTime: Date,
-    availableDays: {
+    collectionAvailableDays: {
+      type: [String],
+      enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "All Week"],
+      default: [],
+    },
+    deliveryAvailableDays: {
       type: [String],
       enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "All Week"],
       default: [],
@@ -214,6 +219,8 @@ const requestSchema = new mongoose.Schema(
           type: String,
           enum: ["pending", "accepted", "rejected"],
         },
+        pickupDateTime: Date,
+        deliveryDateTime: Date,
         createdAt: Date,
         offeredAt: Date,
       },

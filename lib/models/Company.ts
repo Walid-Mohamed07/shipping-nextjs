@@ -14,7 +14,14 @@ const companySchema = new mongoose.Schema(
       unique: true,
     },
     address: String,
-    rate: String,
+    rate: {
+      type: Number,
+      default: 0,
+    },
+    logo: {
+      type: String,
+      default: undefined,
+    },
     warehouses: [
       {
         type: mongoose.Schema.Types.ObjectId,

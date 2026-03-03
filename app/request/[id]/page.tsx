@@ -209,7 +209,7 @@ export default function RequestDetailsPage() {
         ...request,
         costOffers: request.costOffers.map((offer) => ({
           ...offer,
-          selected: offer.company.id === offerId,
+          selected: offer._id === offerId,
         })),
       };
       setRequest(updatedRequest);
@@ -240,7 +240,7 @@ export default function RequestDetailsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          offerId: confirmingOffer.company.id, // Use the company ID from the offer
+          offerId: confirmingOffer._id, // Use the offer ID from the offer
         }),
       });
 
@@ -741,8 +741,8 @@ export default function RequestDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {request.costOffers.map((offer, idx) => (
                       <div
-                        key={offer.company.id}
-                        onClick={() => handleSelectOffer(offer.company.id)}
+                        key={offer._id || idx}
+                        onClick={() => handleSelectOffer(offer._id || offer.company.id || String(idx))}
                         className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
                           offer.selected
                             ? "border-primary bg-primary/5 shadow-md"
@@ -784,6 +784,28 @@ export default function RequestDetailsPage() {
                           <p className="text-sm text-muted-foreground mb-3">
                             {offer.comment}
                           </p>
+                        )}
+
+                        {/* Pickup DateTime */}
+                        {offer.pickupDateTime && (
+                          <div className="mb-2 text-xs text-muted-foreground">
+                            <span className="font-medium">Pickup:</span>{" "}
+                            {new Date(offer.pickupDateTime).toLocaleString(locale, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+                          </div>
+                        )}
+
+                        {/* Delivery DateTime */}
+                        {offer.deliveryDateTime && (
+                          <div className="mb-3 text-xs text-muted-foreground">
+                            <span className="font-medium">Delivery:</span>{" "}
+                            {new Date(offer.deliveryDateTime).toLocaleString(locale, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+                          </div>
                         )}
 
                         {/* Select Indicator */}
@@ -845,9 +867,37 @@ export default function RequestDetailsPage() {
                     ${confirmingOffer.cost.toFixed(2)}
                   </p>
                   {confirmingOffer.comment && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {confirmingOffer.comment}
                     </p>
+                  )}
+                  
+                  {/* Display pickup/delivery datetime if present */}
+                  {confirmingOffer.pickupDateTime && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Pickup:
+                      </p>
+                      <p className="text-sm text-foreground">
+                        {new Date(confirmingOffer.pickupDateTime).toLocaleString(locale, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {confirmingOffer.deliveryDateTime && (
+                    <div className={`${confirmingOffer.pickupDateTime ? "mt-2" : "mt-3 pt-3 border-t border-border"}`}>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Delivery:
+                      </p>
+                      <p className="text-sm text-foreground">
+                        {new Date(confirmingOffer.deliveryDateTime).toLocaleString(locale, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -1085,17 +1135,48 @@ export default function RequestDetailsPage() {
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  {t.userRequestDetail.availableDays}
+                  <Calendar className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  {t.userRequestDetail.collectionAvailableDays}
                 </h3>
-                {request.availableDays && request.availableDays.length > 0 ? (
-                  request.availableDays.includes("All Week") ? (
-                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                      {t.userRequestDetail.allWeek}
+                {request.collectionAvailableDays &&
+                request.collectionAvailableDays.length > 0 ? (
+                  request.collectionAvailableDays.includes("All Week") ? (
+                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+                      {t.common.allWeek}
                     </span>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
-                      {request.availableDays.map((day) => (
+                      {request.collectionAvailableDays.map((day: string) => (
+                        <span
+                          key={day}
+                          className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                        >
+                          {day}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t.userRequestDetail.noSpecificDays}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  {t.userRequestDetail.deliveryAvailableDays}
+                </h3>
+                {request.deliveryAvailableDays &&
+                request.deliveryAvailableDays.length > 0 ? (
+                  request.deliveryAvailableDays.includes("All Week") ? (
+                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      {t.common.allWeek}
+                    </span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {request.deliveryAvailableDays.map((day: string) => (
                         <span
                           key={day}
                           className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"

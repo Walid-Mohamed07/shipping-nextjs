@@ -26,7 +26,8 @@ export interface ReviewData {
   sourcePickupMode: string;
   destPickupMode: string;
   deliveryType: "Normal" | "Urgent";
-  availableDays: DayOfWeek[];
+  collectionAvailableDays: DayOfWeek[];
+  deliveryAvailableDays: DayOfWeek[];
   mobile: string;
   primaryCost: string;
   comments: string;
@@ -237,19 +238,19 @@ export default function ReviewModal({
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Available Days
+                  Collection Days
                 </p>
                 <div className="flex flex-wrap gap-1">
-                  {data.availableDays && data.availableDays.length > 0 ? (
-                    data.availableDays.includes("All Week") || data.availableDays.length === 7 ? (
-                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  {data.collectionAvailableDays && data.collectionAvailableDays.length > 0 ? (
+                    data.collectionAvailableDays.includes("All Week") || data.collectionAvailableDays.length === 7 ? (
+                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
                         All Week
                       </span>
                     ) : (
-                      data.availableDays.map((day) => (
+                      data.collectionAvailableDays.map((day) => (
                         <span
-                          key={day}
-                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                          key={`collection-${day}`}
+                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
                         >
                           {day.slice(0, 3)}
                         </span>
@@ -268,6 +269,31 @@ export default function ReviewModal({
                   <Phone className="w-3 h-3" />
                   {data.mobile || "—"}
                 </p>
+              </div>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/30 p-3 mt-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Delivery Days
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {data.deliveryAvailableDays && data.deliveryAvailableDays.length > 0 ? (
+                  data.deliveryAvailableDays.includes("All Week") || data.deliveryAvailableDays.length === 7 ? (
+                    <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      All Week
+                    </span>
+                  ) : (
+                    data.deliveryAvailableDays.map((day) => (
+                      <span
+                        key={`delivery-${day}`}
+                        className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      >
+                        {day.slice(0, 3)}
+                      </span>
+                    ))
+                  )
+                ) : (
+                  <span className="text-sm text-muted-foreground">—</span>
+                )}
               </div>
             </div>
           </section>
