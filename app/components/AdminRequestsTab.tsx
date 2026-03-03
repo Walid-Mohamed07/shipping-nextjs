@@ -18,6 +18,7 @@ import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 const STATUS_COLORS: Record<
   string,
@@ -58,7 +59,25 @@ const STATUS_COLORS: Record<
 export function AdminRequestsTab() {
   const { user } = useAuth();
   const toastUtils = useToast();
-  
+  const { t } = useTranslation();
+
+  const translateStatus = (status: string): string => {
+    const statuses = t.userRequestDetail.requestStatuses as Record<
+      string,
+      string
+    >;
+    return statuses[status] || status;
+  };
+
+  const translateOfferStatus = (status: string): string => {
+    const map: Record<string, string> = {
+      pending: t.company.offerStatusPending,
+      accepted: t.company.offerStatusAccepted,
+      rejected: t.company.offerStatusRejected,
+    };
+    return map[status?.toLowerCase()] || status;
+  };
+
   // Regular data fetching (not live)
   const [requests, setRequests] = useState<RequestResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +102,7 @@ export function AdminRequestsTab() {
       const requestsData = Array.isArray(data) ? data : data.requests || [];
       setRequests(requestsData);
     } catch (err) {
-      toast.error("Failed to load requests");
+      toast.error(t.adminRequests.failedLoad);
       console.error("Failed to fetch requests:", err);
     } finally {
       setLoading(false);
@@ -157,9 +176,9 @@ export function AdminRequestsTab() {
         // But trigger manual refresh for immediate feedback
         await refresh();
         setSelectedRequest(null);
-        toastUtils.update("Request accepted successfully");
+        toastUtils.update(t.adminRequests.acceptedSuccess);
       } else {
-        toastUtils.error("Failed to accept request");
+        toastUtils.error(t.adminRequests.failedAccept);
       }
     } catch (error) {
       console.error("Failed to accept request:", error);
@@ -188,9 +207,9 @@ export function AdminRequestsTab() {
         // Real-time updates will handle refresh automatically
         await refresh();
         setSelectedRequest(null);
-        toastUtils.delete("Request rejected successfully");
+        toastUtils.delete(t.adminRequests.rejectedSuccess);
       } else {
-        toastUtils.error("Failed to reject request");
+        toastUtils.error(t.adminRequests.failedReject);
       }
     } catch (error) {
       console.error("Failed to reject request:", error);
@@ -216,7 +235,9 @@ export function AdminRequestsTab() {
   if (requests.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">No requests available</p>
+        <p className="text-muted-foreground text-lg">
+          {t.adminRequests.noRequests}
+        </p>
       </div>
     );
   }
@@ -224,10 +245,17 @@ export function AdminRequestsTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-foreground">All Requests</h2>
-        <Button variant="outline" size="sm" onClick={() => refresh()} className="gap-2">
+        <h2 className="text-2xl font-bold text-foreground">
+          {t.adminRequests.title}
+        </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refresh()}
+          className="gap-2"
+        >
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          {t.adminRequests.refresh}
         </Button>
       </div>
 
@@ -238,7 +266,7 @@ export function AdminRequestsTab() {
           onClick={() => setStatusFilter(null)}
           className="gap-2"
         >
-          All ({requests.length})
+          {t.adminRequests.allCount} ({requests.length})
         </Button>
         {statuses.map((status) => {
           const count = requests.filter(
@@ -254,7 +282,7 @@ export function AdminRequestsTab() {
               }}
               className="gap-2"
             >
-              {status} ({count})
+              {translateStatus(status)} ({count})
             </Button>
           );
         })}
@@ -297,7 +325,8 @@ export function AdminRequestsTab() {
                     {request.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Request ID: {request.publicId || request._id}
+                    {t.adminRequests.requestId}{" "}
+                    {request.publicId || request._id}
                   </p>
                 </div>
               </div>
@@ -306,17 +335,21 @@ export function AdminRequestsTab() {
               <div className="space-y-3 mb-4 pb-4 border-b border-border">
                 {/* Status Badge */}
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Status</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {t.adminRequests.status}
+                  </p>
                   <div
                     className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
                   >
-                    {request.requestStatus}
+                    {translateStatus(request.requestStatus)}
                   </div>
                 </div>
 
                 {/* Route */}
                 <div>
-                  <p className="text-xs text-muted-foreground">Route</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.adminRequests.route}
+                  </p>
                   <p className="text-sm font-medium text-foreground">
                     {request.source.country} → {request.destination.country}
                   </p>
@@ -324,7 +357,9 @@ export function AdminRequestsTab() {
 
                 {/* Items */}
                 <div>
-                  <p className="text-xs text-muted-foreground">Items</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.adminRequests.items}
+                  </p>
                   <div className="space-y-1">
                     {request.items.map((item, idx) => (
                       <div key={idx} className="text-sm text-foreground">
@@ -332,7 +367,8 @@ export function AdminRequestsTab() {
                           {item.quantity}x {item.item} ({item.category})
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Weight: {item.weight}kg | Size: {item.dimensions}
+                          {t.adminRequests.weight} {item.weight}kg |{" "}
+                          {t.adminRequests.size} {item.dimensions}
                         </p>
                       </div>
                     ))}
@@ -342,7 +378,8 @@ export function AdminRequestsTab() {
                 {/* Dates */}
                 <div className="text-xs text-muted-foreground">
                   <p>
-                    Created: {new Date(request.createdAt!).toLocaleDateString()}
+                    {t.adminRequests.created}{" "}
+                    {new Date(request.createdAt!).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -356,7 +393,7 @@ export function AdminRequestsTab() {
                   disabled={processingId === request._id}
                 >
                   <Eye className="w-4 h-4" />
-                  Details
+                  {t.adminRequests.details}
                 </Button>
                 {isPending ? (
                   <>
@@ -366,7 +403,7 @@ export function AdminRequestsTab() {
                       className="flex-1 gap-2"
                     >
                       <Check className="w-4 h-4" />
-                      Accept
+                      {t.adminRequests.accept}
                     </Button>
                     <Button
                       onClick={() => handleReject(request._id)}
@@ -375,13 +412,13 @@ export function AdminRequestsTab() {
                       className="flex-1 gap-2"
                     >
                       <X className="w-4 h-4" />
-                      Reject
+                      {t.adminRequests.reject}
                     </Button>
                   </>
                 ) : (
                   <div className="flex-1 text-center">
                     <span className="text-sm text-muted-foreground">
-                      No actions available
+                      {t.adminRequests.noActions}
                     </span>
                   </div>
                 )}
@@ -401,7 +438,7 @@ export function AdminRequestsTab() {
             className="gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
-            Previous
+            {t.common.previous}
           </Button>
           <div className="flex items-center gap-2">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -421,7 +458,7 @@ export function AdminRequestsTab() {
             disabled={currentPage === totalPages}
             className="gap-2"
           >
-            Next
+            {t.common.next}
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -441,7 +478,7 @@ export function AdminRequestsTab() {
 
             {/* Modal Header */}
             <h2 className="text-2xl font-bold text-foreground mb-6">
-              Request Details
+              {t.adminRequests.requestDetails}
             </h2>
 
             {/* Client Info */}
@@ -471,7 +508,10 @@ export function AdminRequestsTab() {
                     {selectedRequest.user?.email || "No email"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Phone: {selectedRequest.source?.mobile || selectedRequest.user?.mobile || "N/A"}
+                    {t.adminRequests.phone}{" "}
+                    {selectedRequest.source?.mobile ||
+                      selectedRequest.user?.mobile ||
+                      "N/A"}
                   </p>
                 </div>
               </div>
@@ -482,22 +522,22 @@ export function AdminRequestsTab() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Request Status
+                    {t.adminRequests.requestStatus}
                   </p>
                   <div
                     className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.requestStatus).bg} ${getStatusColors(selectedRequest.requestStatus).text} ${getStatusColors(selectedRequest.requestStatus).border}`}
                   >
-                    {selectedRequest.requestStatus}
+                    {translateStatus(selectedRequest.requestStatus)}
                   </div>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Delivery Status
+                    {t.adminRequests.deliveryStatus}
                   </p>
                   <div
                     className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.deliveryStatus).bg} ${getStatusColors(selectedRequest.deliveryStatus).text} ${getStatusColors(selectedRequest.deliveryStatus).border}`}
                   >
-                    {selectedRequest.deliveryStatus}
+                    {translateStatus(selectedRequest.deliveryStatus)}
                   </div>
                 </div>
               </div>
@@ -506,11 +546,13 @@ export function AdminRequestsTab() {
             {/* Delivery Details */}
             <div className="mb-6 pb-6 border-b border-border">
               <h3 className="font-semibold text-foreground mb-4">
-                Delivery Details
+                {t.adminRequests.deliveryDetails}
               </h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Type</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {t.adminRequests.type}
+                  </p>
                   <p className="text-foreground font-medium">
                     {selectedRequest.deliveryType}
                   </p>
@@ -519,21 +561,26 @@ export function AdminRequestsTab() {
                   <p className="text-xs text-muted-foreground mb-1">
                     Collection Days
                   </p>
-                  {selectedRequest.collectionAvailableDays && selectedRequest.collectionAvailableDays.length > 0 ? (
-                    selectedRequest.collectionAvailableDays.includes("All Week") ? (
+                  {selectedRequest.collectionAvailableDays &&
+                  selectedRequest.collectionAvailableDays.length > 0 ? (
+                    selectedRequest.collectionAvailableDays.includes(
+                      "All Week",
+                    ) ? (
                       <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
                         All Week
                       </span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
-                        {selectedRequest.collectionAvailableDays.map((day: string) => (
-                          <span
-                            key={day}
-                            className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
-                          >
-                            {day.slice(0, 3)}
-                          </span>
-                        ))}
+                        {selectedRequest.collectionAvailableDays.map(
+                          (day: string) => (
+                            <span
+                              key={day}
+                              className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                            >
+                              {day.slice(0, 3)}
+                            </span>
+                          ),
+                        )}
                       </div>
                     )
                   ) : (
@@ -544,21 +591,26 @@ export function AdminRequestsTab() {
                   <p className="text-xs text-muted-foreground mb-1">
                     Delivery Days
                   </p>
-                  {selectedRequest.deliveryAvailableDays && selectedRequest.deliveryAvailableDays.length > 0 ? (
-                    selectedRequest.deliveryAvailableDays.includes("All Week") ? (
+                  {selectedRequest.deliveryAvailableDays &&
+                  selectedRequest.deliveryAvailableDays.length > 0 ? (
+                    selectedRequest.deliveryAvailableDays.includes(
+                      "All Week",
+                    ) ? (
                       <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         All Week
                       </span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
-                        {selectedRequest.deliveryAvailableDays.map((day: string) => (
-                          <span
-                            key={day}
-                            className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                          >
-                            {day.slice(0, 3)}
-                          </span>
-                        ))}
+                        {selectedRequest.deliveryAvailableDays.map(
+                          (day: string) => (
+                            <span
+                              key={day}
+                              className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                            >
+                              {day.slice(0, 3)}
+                            </span>
+                          ),
+                        )}
                       </div>
                     )
                   ) : (
@@ -567,7 +619,7 @@ export function AdminRequestsTab() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Primary Cost
+                    {t.adminRequests.primaryCost}
                   </p>
                   <p className="text-foreground font-medium">
                     ${selectedRequest.primaryCost || "N/A"}
@@ -575,7 +627,7 @@ export function AdminRequestsTab() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Actual Cost
+                    {t.adminRequests.actualCost}
                   </p>
                   <p className="text-foreground font-medium">
                     ${selectedRequest.cost || "Pending"}
@@ -586,7 +638,9 @@ export function AdminRequestsTab() {
 
             {/* Route Information */}
             <div className="mb-6 pb-6 border-b border-border">
-              <h3 className="font-semibold text-foreground mb-4">Route</h3>
+              <h3 className="font-semibold text-foreground mb-4">
+                {t.adminRequests.route}
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">From</p>
@@ -603,7 +657,9 @@ export function AdminRequestsTab() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">To</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {t.adminRequests.to}
+                  </p>
                   <div className="text-sm">
                     <p className="font-medium text-foreground">
                       {selectedRequest.destination.country}
@@ -621,7 +677,9 @@ export function AdminRequestsTab() {
 
             {/* Items */}
             <div className="mb-6 pb-6 border-b border-border">
-              <h3 className="font-semibold text-foreground mb-4">Items</h3>
+              <h3 className="font-semibold text-foreground mb-4">
+                {t.adminRequests.items}
+              </h3>
               <div className="space-y-3">
                 {selectedRequest.items.map((item, idx) => (
                   <div
@@ -654,21 +712,21 @@ export function AdminRequestsTab() {
                             {item.item}
                           </span>
                           <span className="text-sm text-muted-foreground content-center">
-                            Qty: {item.quantity}
+                            {t.adminRequests.qty} {item.quantity}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-1">
-                          Category: {item.category}
+                          {t.adminRequests.category} {item.category}
                         </p>
                         <p className="text-sm text-muted-foreground mb-1">
-                          Weight: {item.weight} kg
+                          {t.adminRequests.weight} {item.weight} kg
                         </p>
                         <p className="text-sm text-muted-foreground mb-1">
-                          Dimensions: {item.dimensions}
+                          {t.adminRequests.dimensions} {item.dimensions}
                         </p>
                         {item.note && (
                           <p className="text-sm text-muted-foreground italic">
-                            Note: {item.note}
+                            {t.adminRequests.note} {item.note}
                           </p>
                         )}
                       </div>
@@ -680,16 +738,18 @@ export function AdminRequestsTab() {
 
             {/* Dates */}
             <div className="mb-6 pb-6 border-b border-border">
-              <h3 className="font-semibold text-foreground mb-3">Timeline</h3>
+              <h3 className="font-semibold text-foreground mb-3">
+                {t.adminRequests.timeline}
+              </h3>
               <div className="space-y-2 text-sm">
                 <p className="text-muted-foreground">
-                  Created:{" "}
+                  {t.adminRequests.created}{" "}
                   <span className="text-foreground font-medium">
                     {new Date(selectedRequest.createdAt!).toLocaleString()}
                   </span>
                 </p>
                 <p className="text-muted-foreground">
-                  Updated:{" "}
+                  {t.adminRequests.updated}{" "}
                   <span className="text-foreground font-medium">
                     {new Date(selectedRequest.updatedAt!).toLocaleString()}
                   </span>
@@ -702,7 +762,8 @@ export function AdminRequestsTab() {
               selectedRequest.costOffers?.length > 0 ? (
                 <div className="mb-6 pb-6 border-b border-border">
                   <h3 className="font-semibold text-foreground mb-3">
-                    Cost Offers ({selectedRequest.costOffers.length})
+                    {t.adminRequests.costOffers} (
+                    {selectedRequest.costOffers.length})
                   </h3>
                   <div className="space-y-2 text-sm">
                     {selectedRequest.costOffers.map((offer, idx) => (
@@ -714,7 +775,9 @@ export function AdminRequestsTab() {
                           {offer.company.name || `Offer ${idx + 1}`}
                         </p>
                         {offer.cost && (
-                          <p className="text-foreground">Cost: ${offer.cost}</p>
+                          <p className="text-foreground">
+                            {t.adminRequests.cost} ${offer.cost}
+                          </p>
                         )}
                         {offer.comment && (
                           <p className="text-xs text-muted-foreground mt-1 italic">
@@ -722,8 +785,10 @@ export function AdminRequestsTab() {
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          Status:{" "}
-                          <span className="font-medium">{offer.status}</span>
+                          {t.adminRequests.status}{" "}
+                          <span className="font-medium">
+                            {translateOfferStatus(offer.status)}
+                          </span>
                         </p>
                       </div>
                     ))}
@@ -738,7 +803,7 @@ export function AdminRequestsTab() {
                 <div className="mb-6 pb-6 border-b border-border">
                   <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <span className="text-primary">📋</span>
-                    Activity Log
+                    {t.adminRequests.activityLog}
                   </h3>
                   <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                     {selectedRequest.activityHistory
@@ -766,15 +831,14 @@ export function AdminRequestsTab() {
                                   .join(" ")}
                               </p>
                               <time className="text-xs text-muted-foreground whitespace-nowrap">
-                                {new Date(activity.timestamp).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  },
-                                )}
+                                {new Date(
+                                  activity.timestamp,
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
                               </time>
                             </div>
 
@@ -790,7 +854,7 @@ export function AdminRequestsTab() {
                               <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                                 <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1">
                                   <span>📝</span>
-                                  <span>Note:</span>
+                                  <span>{t.adminRequests.note}</span>
                                 </p>
                                 <p className="text-sm text-amber-900 dark:text-amber-200 mt-0.5">
                                   {activity.details.note}
@@ -803,7 +867,7 @@ export function AdminRequestsTab() {
                               {activity.companyName && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">
-                                    Company:{" "}
+                                    {t.adminRequests.company}{" "}
                                   </span>
                                   <span className="text-foreground font-medium">
                                     {activity.companyName}
@@ -814,7 +878,7 @@ export function AdminRequestsTab() {
                                 activity.cost !== null && (
                                   <div className="text-xs">
                                     <span className="text-muted-foreground">
-                                      Cost:{" "}
+                                      {t.adminRequests.cost}{" "}
                                     </span>
                                     <span className="text-primary font-semibold">
                                       ${Number(activity.cost).toFixed(2)}
@@ -824,7 +888,7 @@ export function AdminRequestsTab() {
                               {activity.companyRate && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">
-                                    Rate:{" "}
+                                    {t.adminRequests.rate}{" "}
                                   </span>
                                   <span className="text-foreground">
                                     {activity.companyRate} ⭐
@@ -843,17 +907,19 @@ export function AdminRequestsTab() {
             {selectedRequest.selectedCompany && (
               <div className="mb-6 pb-6 border-b border-border">
                 <h3 className="font-semibold text-foreground mb-3">
-                  Selected Company
+                  {t.adminRequests.selectedCompany}
                 </h3>
                 <div className="p-4 bg-muted/50 rounded-lg border border-border">
                   <p className="font-medium text-foreground">
                     {selectedRequest.selectedCompany.name}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Rate: {selectedRequest.selectedCompany.rate}
+                    {t.adminRequests.rate}{" "}
+                    {selectedRequest.selectedCompany.rate}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Cost: ${selectedRequest.selectedCompany.cost}
+                    {t.adminRequests.cost} $
+                    {selectedRequest.selectedCompany.cost}
                   </p>
                 </div>
               </div>
@@ -864,13 +930,13 @@ export function AdminRequestsTab() {
               selectedRequest.destinationWarehouse) && (
               <div className="mb-6 pb-6 border-b border-border">
                 <h3 className="font-semibold text-foreground mb-3">
-                  Warehouse Assignments
+                  {t.adminRequests.warehouseAssignments}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedRequest.sourceWarehouse && (
                     <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm">
                       <p className="font-medium text-foreground mb-1">
-                        Source Warehouse
+                        {t.adminRequests.sourceWarehouse}
                       </p>
                       <p className="text-muted-foreground">
                         {selectedRequest.sourceWarehouse.name}
@@ -884,7 +950,7 @@ export function AdminRequestsTab() {
                       </p>
                       {selectedRequest.sourceWarehouse.assignedAt && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Assigned:{" "}
+                          {t.adminRequests.assigned}{" "}
                           {new Date(
                             selectedRequest.sourceWarehouse.assignedAt,
                           ).toLocaleString()}
@@ -895,7 +961,7 @@ export function AdminRequestsTab() {
                   {selectedRequest.destinationWarehouse && (
                     <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm">
                       <p className="font-medium text-foreground mb-1">
-                        Destination Warehouse
+                        {t.adminRequests.destinationWarehouse}
                       </p>
                       <p className="text-muted-foreground">
                         {selectedRequest.destinationWarehouse.name}
@@ -909,7 +975,7 @@ export function AdminRequestsTab() {
                       </p>
                       {selectedRequest.destinationWarehouse.assignedAt && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Assigned:{" "}
+                          {t.adminRequests.assigned}{" "}
                           {new Date(
                             selectedRequest.destinationWarehouse.assignedAt,
                           ).toLocaleString()}
@@ -926,12 +992,14 @@ export function AdminRequestsTab() {
               selectedRequest.destinationPickupMode) && (
               <div className="mb-6 pb-6 border-b border-border">
                 <h3 className="font-semibold text-foreground mb-3">
-                  Pickup Modes
+                  {t.adminRequests.pickupModes}
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {selectedRequest.sourcePickupMode && (
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">From</p>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {t.adminRequests.from}
+                      </p>
                       <p className="font-medium text-foreground">
                         {selectedRequest.sourcePickupMode}
                       </p>
@@ -939,7 +1007,9 @@ export function AdminRequestsTab() {
                   )}
                   {selectedRequest.destinationPickupMode && (
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">To</p>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {t.adminRequests.to}
+                      </p>
                       <p className="font-medium text-foreground">
                         {selectedRequest.destinationPickupMode}
                       </p>
@@ -952,7 +1022,9 @@ export function AdminRequestsTab() {
             {/* Comment */}
             {selectedRequest.comment && (
               <div className="mb-6 pb-6 border-b border-border">
-                <h3 className="font-semibold text-foreground mb-2">Comment</h3>
+                <h3 className="font-semibold text-foreground mb-2">
+                  {t.adminRequests.comment}
+                </h3>
                 <p className="text-sm text-muted-foreground italic bg-muted/50 p-3 rounded-lg border border-border">
                   {selectedRequest.comment}
                 </p>
@@ -981,7 +1053,7 @@ export function AdminRequestsTab() {
 
             {/* Close Button */}
             <Button onClick={() => setSelectedRequest(null)} className="w-full">
-              Close
+              {t.adminRequests.close}
             </Button>
           </Card>
         </div>
@@ -1016,7 +1088,7 @@ export function AdminRequestsTab() {
               <X className="w-6 h-6" />
             </button>
             <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
-              Click outside or press ESC to close
+              {t.adminRequests.clickToClose}
             </p>
           </div>
         </div>

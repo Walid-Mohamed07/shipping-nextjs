@@ -125,25 +125,15 @@ export default function ReviewModal({
                       </p>
                     )}
                     {item.services &&
-                      (item.services.canBeAssembledDisassembled ||
-                        item.services.assemblyDisassembly ||
+                      (item.services.assemblyDisassemblyHandler ===
+                        "company" ||
                         item.services.packaging) && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                          {(item.services.canBeAssembledDisassembled ||
-                            item.services.assemblyDisassembly) && (
+                          {item.services.assemblyDisassemblyHandler ===
+                            "company" && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                               <Wrench className="w-2.5 h-2.5" />
-                              Assembly
-                              {item.services.assemblyDisassemblyHandler && (
-                                <span className="ml-0.5">
-                                  (
-                                  {item.services.assemblyDisassemblyHandler ===
-                                  "self"
-                                    ? "Self"
-                                    : "Company"}
-                                  )
-                                </span>
-                              )}
+                              Assembly (Company)
                             </span>
                           )}
                           {item.services.packaging && (

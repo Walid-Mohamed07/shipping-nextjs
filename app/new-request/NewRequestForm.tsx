@@ -115,7 +115,9 @@ export default function NewRequestForm() {
   }, [user?.id]);
 
   // Fetch categories and cost criteria
-  const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
+  const [dynamicCategories, setDynamicCategories] = useState<
+    { value: string; label: string }[]
+  >([]);
   const [costCriteria, setCostCriteria] = useState<any>(null);
 
   useEffect(() => {
@@ -125,16 +127,24 @@ export default function NewRequestForm() {
         const catRes = await fetch("/api/admin/categories");
         if (catRes.ok) {
           const catData = await catRes.json();
-          const categoryNames = (catData.categories || []).map(
-            (cat: any) => {
-              // Handle multilingual category names
-              if (typeof cat.name === "object" && cat.name !== null) {
-                return cat.name[locale] || cat.name.en || cat.name.ar || "";
+          const cats = (catData.categories || [])
+            .map((cat: any) => {
+              // Support bilingual name object
+              if (cat.name && typeof cat.name === "object") {
+                const label =
+                  locale === "ar"
+                    ? cat.name.ar || cat.name.en
+                    : cat.name.en || cat.name.ar;
+                // Use English name as value for consistent storage
+                return {
+                  value: cat.name.en || cat.name.ar || "",
+                  label: label || "",
+                };
               }
-              return cat.name || "";
-            },
-          );
-          setDynamicCategories(categoryNames);
+              return { value: cat.name, label: cat.name };
+            })
+            .filter((c: any) => c.value);
+          setDynamicCategories(cats);
         }
 
         // Fetch cost criteria
@@ -261,8 +271,7 @@ export default function NewRequestForm() {
     mediaFiles: [] as File[],
     mediaPreviews: [] as string[],
     services: {
-      canBeAssembledDisassembled: false,
-      assemblyDisassemblyHandler: undefined as "self" | "company" | undefined,
+      assemblyDisassemblyHandler: undefined as "company" | undefined,
       packaging: false,
     },
   });
@@ -363,6 +372,24 @@ export default function NewRequestForm() {
     return deliveryType === "Urgent" ? baseCost * surcharge : baseCost;
   };
 
+  // Apply service fees: Assembly (+20%), Packaging (+10%)
+  const applyServiceFees = (baseCost: number) => {
+    let cost = baseCost;
+    const hasAssembly = items.some(
+      (item) => item.services?.assemblyDisassemblyHandler === "company",
+    );
+    const hasPackaging = items.some((item) => item.services?.packaging);
+
+    if (hasAssembly) {
+      cost *= 1.2; // +20% for assembly service
+    }
+    if (hasPackaging) {
+      cost *= 1.1; // +10% for packaging service
+    }
+
+    return cost;
+  };
+
   // Primary cost = base cost × delivery surcharge (Fast +25%); recalc when addresses, items, or deliveryType change
   React.useEffect(() => {
     if (debounceTimeout.current) {
@@ -399,7 +426,9 @@ export default function NewRequestForm() {
         }
 
         if (hasValidItems) {
-          const primaryCostValue = applyDeliverySurcharge(totalBaseCost);
+          let primaryCostValue = applyDeliverySurcharge(totalBaseCost);
+          // Add service fees
+          primaryCostValue = applyServiceFees(primaryCostValue);
           setPrimaryCost(primaryCostValue.toFixed(2));
         } else {
           setPrimaryCost("");
@@ -494,13 +523,14 @@ export default function NewRequestForm() {
   );
   const categoryOptions = useMemo(
     () =>
-      (dynamicCategories.length > 0 ? dynamicCategories : categories).map(
-        (cat) => (
-          <SelectItem key={cat} value={cat}>
-            {cat}
-          </SelectItem>
-        ),
-      ),
+      (dynamicCategories.length > 0
+        ? dynamicCategories
+        : categories.map((c) => ({ value: c, label: c }))
+      ).map((cat) => (
+        <SelectItem key={cat.value} value={cat.value}>
+          {cat.label}
+        </SelectItem>
+      )),
     [dynamicCategories],
   );
 
@@ -601,16 +631,20 @@ export default function NewRequestForm() {
       toast.error(t.newRequest.errAddItem);
     }
 
-    // Validate items with assembly/disassembly checked but no handler selected
+    // Validation for assembly handler removed - now it's a simple checkbox
     const itemsWithMissingHandler = items.filter(
       (item) =>
         item.services?.canBeAssembledDisassembled &&
         !item.services?.assemblyDisassemblyHandler,
     );
     if (itemsWithMissingHandler.length > 0) {
-      errors.assemblyHandler = true;
-      const itemNames = itemsWithMissingHandler.map((i) => i.name).join(", ");
-      toast.error(`${t.newRequest.errAssemblyHandlerForItems} ${itemNames}`);
+      errors.itemsWithMissingHandler = true;
+      toast.error(t.newRequest.errMissingHandler);
+    }
+    // Validate collection available days (minimum 2 days required)
+    if (collectionAvailableDays.length < 2) {
+      errors.collectionAvailableDays = true;
+      toast.error(t.newRequest.errCollectionDays);
     }
 
     // Validate collection available days (minimum 2 days required)
@@ -1458,19 +1492,18 @@ export default function NewRequestForm() {
                               <span className="mx-1.5">·</span>
                               {t.newRequest.qtyInItem} {itm.quantity}
                             </p>
-                            {(itm.services?.canBeAssembledDisassembled ||
+                            {(itm.services?.assemblyDisassemblyHandler ===
+                              "company" ||
                               itm.services?.packaging) && (
                               <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {itm.services?.canBeAssembledDisassembled && (
+                                {itm.services?.assemblyDisassemblyHandler ===
+                                  "company" && (
                                   <Badge
                                     variant="outline"
                                     className="text-xs border-amber-300 bg-amber-50 text-amber-700"
                                   >
                                     <Wrench className="w-3 h-3 mr-1" />
-                                    {itm.services
-                                      ?.assemblyDisassemblyHandler === "company"
-                                      ? t.newRequest.assemblyCompanyBadge
-                                      : t.newRequest.assemblySelfBadge}
+                                    {t.newRequest.assemblyCompanyBadge}
                                   </Badge>
                                 )}
                                 {itm.services?.packaging && (
@@ -1679,125 +1712,41 @@ export default function NewRequestForm() {
                             {t.newRequest.additionalServicesOptional}
                           </label>
                           <div className="space-y-3">
-                            {/* Assembly & Disassembly - Primary Question */}
-                            <div className="rounded-lg border border-gray-300 p-3 bg-white hover:bg-gray-50">
-                              <label className="flex items-start gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={
-                                    newItem.services.canBeAssembledDisassembled
-                                  }
-                                  onChange={(e) => {
-                                    const checked = e.target.checked;
-                                    setNewItem((prev) => ({
-                                      ...prev,
-                                      services: {
-                                        ...prev.services,
-                                        canBeAssembledDisassembled: checked,
-                                        // Reset handler when unchecked
-                                        assemblyDisassemblyHandler: checked
-                                          ? prev.services
-                                              .assemblyDisassemblyHandler
-                                          : undefined,
-                                      },
-                                    }));
-                                  }}
-                                  disabled={isLoading}
-                                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-gray-900 cursor-pointer"
-                                />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <Wrench className="w-4 h-4 text-gray-700" />
-                                    <span className="font-medium text-gray-900 text-sm">
-                                      {t.newRequest.assemblyCanItem}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-gray-600 mt-1">
-                                    {t.newRequest.assemblyDesc}
-                                  </p>
+                            {/* Assembly & Disassembly - Single Checkbox */}
+                            <label className="flex items-start gap-2 rounded-lg border border-gray-300 p-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 bg-white">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  newItem.services
+                                    .assemblyDisassemblyHandler === "company"
+                                }
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setNewItem((prev) => ({
+                                    ...prev,
+                                    services: {
+                                      ...prev.services,
+                                      assemblyDisassemblyHandler: checked
+                                        ? "company"
+                                        : undefined,
+                                    },
+                                  }));
+                                }}
+                                disabled={isLoading}
+                                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-gray-900 cursor-pointer"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <Wrench className="w-4 h-4 text-gray-700" />
+                                  <span className="font-medium text-gray-900 text-sm">
+                                    {t.newRequest.assemblyCompany}
+                                  </span>
                                 </div>
-                              </label>
-
-                              {/* Conditional Assembly & Disassembly Options */}
-                              {newItem.services.canBeAssembledDisassembled && (
-                                <div className="mt-3 pl-6 space-y-2 border-l-2 border-gray-400">
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900 mb-1">
-                                      {t.newRequest.assemblyOptions}
-                                    </p>
-                                    <p className="text-xs text-gray-600 mb-2">
-                                      {t.newRequest.assemblyWhoHandles}
-                                    </p>
-                                  </div>
-
-                                  {/* Radio Option 1: Self */}
-                                  <label className="flex items-start gap-2 rounded-lg border border-gray-300 p-2.5 cursor-pointer hover:border-gray-400 hover:bg-gray-50 bg-white">
-                                    <input
-                                      type="radio"
-                                      name="assemblyHandler"
-                                      value="self"
-                                      checked={
-                                        newItem.services
-                                          .assemblyDisassemblyHandler === "self"
-                                      }
-                                      onChange={(e) =>
-                                        setNewItem((prev) => ({
-                                          ...prev,
-                                          services: {
-                                            ...prev.services,
-                                            assemblyDisassemblyHandler: "self",
-                                          },
-                                        }))
-                                      }
-                                      disabled={isLoading}
-                                      className="mt-0.5 h-4 w-4 shrink-0 text-gray-900 cursor-pointer"
-                                    />
-                                    <div className="flex-1">
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {t.newRequest.assemblySelf}
-                                      </span>
-                                      <p className="text-xs text-gray-600 mt-0.5">
-                                        {t.newRequest.assemblySelfDesc}
-                                      </p>
-                                    </div>
-                                  </label>
-
-                                  {/* Radio Option 2: Company */}
-                                  <label className="flex items-start gap-2 rounded-lg border border-gray-300 p-2.5 cursor-pointer hover:border-gray-400 hover:bg-gray-50 bg-white">
-                                    <input
-                                      type="radio"
-                                      name="assemblyHandler"
-                                      value="company"
-                                      checked={
-                                        newItem.services
-                                          .assemblyDisassemblyHandler ===
-                                        "company"
-                                      }
-                                      onChange={(e) =>
-                                        setNewItem((prev) => ({
-                                          ...prev,
-                                          services: {
-                                            ...prev.services,
-                                            assemblyDisassemblyHandler:
-                                              "company",
-                                          },
-                                        }))
-                                      }
-                                      disabled={isLoading}
-                                      className="mt-0.5 h-4 w-4 shrink-0 text-gray-900 cursor-pointer"
-                                    />
-                                    <div className="flex-1">
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {t.newRequest.assemblyCompany}
-                                      </span>
-                                      <p className="text-xs text-amber-600 mt-0.5 font-medium">
-                                        {t.newRequest.assemblyCompanyDesc}
-                                      </p>
-                                    </div>
-                                  </label>
-                                </div>
-                              )}
-                            </div>
+                                <p className="text-xs text-amber-600 mt-1 font-medium">
+                                  {t.newRequest.assemblyCompanyDesc}
+                                </p>
+                              </div>
+                            </label>
 
                             {/* Packaging toggle */}
                             <label className="flex items-start gap-2 rounded-lg border border-gray-300 p-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 bg-white">
@@ -1823,7 +1772,7 @@ export default function NewRequestForm() {
                                     {t.newRequest.packagingLabel}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-600 mt-1">
+                                <p className="text-xs text-amber-600 mt-1 font-medium">
                                   {t.newRequest.packagingDesc}
                                 </p>
                               </div>
@@ -1860,14 +1809,7 @@ export default function NewRequestForm() {
                             toast.error(t.newRequest.errItemQuantity);
                           }
 
-                          // Validate assembly/disassembly handler if checkbox is checked
-                          if (
-                            newItem.services.canBeAssembledDisassembled &&
-                            !newItem.services.assemblyDisassemblyHandler
-                          ) {
-                            errors.assemblyHandler = true;
-                            toast.error(t.newRequest.errAssemblyHandler);
-                          }
+                          // Assembly validation removed - now it's optional
 
                           if (Object.keys(errors).length > 0) {
                             setItemValidationErrors(errors);
@@ -1885,12 +1827,8 @@ export default function NewRequestForm() {
                             note: newItem.note.trim() || undefined,
                             media: [], // Will be populated after file upload
                             services: {
-                              canBeAssembledDisassembled:
-                                newItem.services.canBeAssembledDisassembled,
-                              assemblyDisassemblyHandler: newItem.services
-                                .canBeAssembledDisassembled
-                                ? newItem.services.assemblyDisassemblyHandler
-                                : undefined,
+                              assemblyDisassemblyHandler:
+                                newItem.services.assemblyDisassemblyHandler,
                               packaging: newItem.services.packaging,
                             },
                           };
@@ -1923,7 +1861,6 @@ export default function NewRequestForm() {
                             mediaFiles: [],
                             mediaPreviews: [],
                             services: {
-                              canBeAssembledDisassembled: false,
                               assemblyDisassemblyHandler: undefined,
                               packaging: false,
                             },

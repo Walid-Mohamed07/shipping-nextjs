@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
-import { Request, User } from "@/lib/models";
+import { Request, User, Settings } from "@/lib/models";
 import { handleValidationError } from "@/lib/apiHelpers";
 import { getCurrentUser, isUserAuthorizedForRequest } from "@/lib/auth-helpers";
 
@@ -153,9 +153,33 @@ export async function GET(
       );
     }
 
+    // Fetch headover percentage from settings
+    let headoverPercentage = 0;
+    try {
+      const settings = await Settings.findOne({ key: "global" }).lean().exec();
+      if (settings && typeof settings.headoverPercentage === "number") {
+        headoverPercentage = settings.headoverPercentage;
+      }
+    } catch (settingsError) {
+      console.error("[GET Request] Failed to fetch headover settings:", settingsError);
+      // Continue with 0% headover if settings fetch fails
+    }
+
     const normalized = normalizeRequest(foundRequest);
 
-    return NextResponse.json({ request: normalized }, { status: 200 });
+    // Add finalPrice (with headover) to each cost offer for client display
+    if (normalized.costOffers && Array.isArray(normalized.costOffers)) {
+      normalized.costOffers = normalized.costOffers.map((offer: any) => ({
+        ...offer,
+        finalPrice: offer.cost * (1 + headoverPercentage / 100),
+        headoverPercentage: headoverPercentage,
+      }));
+    }
+
+    return NextResponse.json({ 
+      request: normalized,
+      headoverPercentage: headoverPercentage,
+    }, { status: 200 });
   } catch (error) {
     return handleError(error);
   }

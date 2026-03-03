@@ -89,6 +89,8 @@ export interface CostOffer {
   _id?: string;
   id?: string;
   cost: number;
+  finalPrice?: number; // Cost with headover markup applied
+  headoverPercentage?: number; // The headover percentage applied
   company: {
     id: string;
     name: string;
@@ -142,6 +144,8 @@ export interface Request {
     name: string;
     rate: string;
     cost: number;
+    finalPrice?: number; // Cost with headover markup applied
+    headoverPercentage?: number; // The headover percentage applied
   };
   // Company assignment fields
   assignedCompanyId?: string;

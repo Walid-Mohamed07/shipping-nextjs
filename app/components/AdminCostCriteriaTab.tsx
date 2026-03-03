@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Plus, Save, X, AlertCircle, History } from "lucide-react";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface CategoryRate {
   category: string;
@@ -28,6 +29,7 @@ interface CostCriteria {
 
 export function AdminCostCriteriaTab() {
   const toast = useToast();
+  const { t } = useTranslation();
   const [costCriteria, setCostCriteria] = useState<CostCriteria | null>(null);
   const [formData, setFormData] = useState<CostCriteria>({
     categoryRates: [],
@@ -89,23 +91,23 @@ export function AdminCostCriteriaTab() {
     const newErrors: { [key: string]: string } = {};
 
     if (formData.categoryRates.length === 0) {
-      newErrors.categoryRates = "At least one category rate is required";
+      newErrors.categoryRates = t.adminCostCriteria.categoryRatesRequired;
     }
 
     if (formData.weightMultiplier <= 0) {
-      newErrors.weightMultiplier = "Must be greater than 0";
+      newErrors.weightMultiplier = t.adminCostCriteria.mustBeGreaterThan0;
     }
 
     if (formData.quantityMultiplier <= 0) {
-      newErrors.quantityMultiplier = "Must be greater than 0";
+      newErrors.quantityMultiplier = t.adminCostCriteria.mustBeGreaterThan0;
     }
 
     if (formData.minPrice < 0) {
-      newErrors.minPrice = "Must be 0 or greater";
+      newErrors.minPrice = t.adminCostCriteria.mustBe0OrGreater;
     }
 
     if (formData.maxPrice && formData.maxPrice < formData.minPrice) {
-      newErrors.maxPrice = "Must be greater than min price";
+      newErrors.maxPrice = t.adminCostCriteria.mustBeGreaterThanMin;
     }
 
     setErrors(newErrors);
@@ -114,19 +116,19 @@ export function AdminCostCriteriaTab() {
 
   const handleAddCategoryRate = () => {
     if (!newCategoryRate.category.trim() || !newCategoryRate.baseRate) {
-      toast.error("Please fill in category and base rate");
+      toast.error(t.adminCostCriteria.fillCategoryAndRate);
       return;
     }
 
     const rate = parseFloat(newCategoryRate.baseRate);
     if (isNaN(rate) || rate < 0) {
-      toast.error("Base rate must be a valid number");
+      toast.error(t.adminCostCriteria.baseRateMustBeValid);
       return;
     }
 
     // Check if category already exists
     if (formData.categoryRates.some((r) => r.category === newCategoryRate.category)) {
-      toast.error("This category already has a rate defined");
+      toast.error(t.adminCostCriteria.categoryAlreadyHasRate);
       return;
     }
 
@@ -176,7 +178,7 @@ export function AdminCostCriteriaTab() {
       const data = await response.json();
       setCostCriteria(data.costCriteria);
       setIsEditing(false);
-      toast.create("Cost criteria updated successfully");
+      toast.create(t.adminCostCriteria.costCriteriaUpdated);
       fetchHistory();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -201,16 +203,16 @@ export function AdminCostCriteriaTab() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading cost criteria...</div>;
+    return <div className="text-center py-8">{t.adminCostCriteria.loading}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Cost Criteria</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t.adminCostCriteria.title}</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Define cost calculation rules and rates for different categories
+            {t.adminCostCriteria.subtitle}
           </p>
         </div>
         <div className="flex gap-2">
@@ -220,12 +222,12 @@ export function AdminCostCriteriaTab() {
             className="gap-2"
           >
             <History className="w-4 h-4" />
-            History (v{costCriteria?.version || 1})
+            {t.adminCostCriteria.history}
           </Button>
           {!isEditing && (
             <Button onClick={() => setIsEditing(true)} className="gap-2">
               <Plus className="w-4 h-4" />
-              Edit Criteria
+              {t.adminCostCriteria.editCriteria}
             </Button>
           )}
         </div>
@@ -235,7 +237,7 @@ export function AdminCostCriteriaTab() {
       {showHistory && (
         <Card className="p-6 bg-blue-50 border-2 border-blue-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Version History</h3>
+            <h3 className="text-lg font-semibold">{t.adminCostCriteria.versionHistory}</h3>
             <button
               onClick={() => setShowHistory(false)}
               className="text-gray-500 hover:text-gray-700"
@@ -245,7 +247,7 @@ export function AdminCostCriteriaTab() {
           </div>
 
           {history.length === 0 ? (
-            <p className="text-gray-600">No history available</p>
+            <p className="text-gray-600">{t.adminCostCriteria.noHistory}</p>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {history.map((version) => (
@@ -254,7 +256,7 @@ export function AdminCostCriteriaTab() {
                   className="p-3 bg-white rounded border border-blue-200"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Version {version.version}</span>
+                    <span className="font-medium">{t.adminCostCriteria.version} {version.version}</span>
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
                         version.isActive
@@ -262,14 +264,14 @@ export function AdminCostCriteriaTab() {
                           : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {version.isActive ? "Active" : "Inactive"}
+                      {version.isActive ? t.adminCostCriteria.activeVersion : t.adminCostCriteria.inactiveVersion}
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 mt-1">
                     {new Date(version.createdAt || "").toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
-                    Categories: {version.categoryRates.length}
+                    {t.adminCostCriteria.categoriesCount.replace('{count}', String(version.categoryRates.length))}
                   </p>
                 </div>
               ))}
@@ -280,7 +282,7 @@ export function AdminCostCriteriaTab() {
 
       {/* Category Rates Section */}
       <Card className={`p-6 ${isEditing ? "border-2 border-blue-200 bg-blue-50" : ""}`}>
-        <h3 className="text-lg font-semibold mb-4">Category Rates</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.adminCostCriteria.categoryRates}</h3>
 
         {errors.categoryRates && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded flex gap-2 text-red-700 text-sm">
@@ -342,7 +344,7 @@ export function AdminCostCriteriaTab() {
               onChange={(e) =>
                 setNewCategoryRate({ ...newCategoryRate, category: e.target.value })
               }
-              placeholder="Category name"
+              placeholder={t.adminCostCriteria.categoryName}
               className="flex-1 px-3 py-2 border border-gray-300 rounded"
             />
             <input
@@ -351,7 +353,7 @@ export function AdminCostCriteriaTab() {
               onChange={(e) =>
                 setNewCategoryRate({ ...newCategoryRate, baseRate: e.target.value })
               }
-              placeholder="Base rate"
+              placeholder={t.adminCostCriteria.baseRate}
               className="w-24 px-3 py-2 border border-gray-300 rounded"
             />
             <Button onClick={handleAddCategoryRate} variant="outline">
@@ -363,12 +365,12 @@ export function AdminCostCriteriaTab() {
 
       {/* Multipliers Section */}
       <Card className={`p-6 ${isEditing ? "border-2 border-blue-200 bg-blue-50" : ""}`}>
-        <h3 className="text-lg font-semibold mb-4">Multipliers & Surcharges</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.adminCostCriteria.multipliersTitle}</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Weight Multiplier
+              {t.adminCostCriteria.weightMultiplier}
             </label>
             {isEditing ? (
               <input
@@ -397,7 +399,7 @@ export function AdminCostCriteriaTab() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity Multiplier
+              {t.adminCostCriteria.quantityMultiplier}
             </label>
             {isEditing ? (
               <input
@@ -426,7 +428,7 @@ export function AdminCostCriteriaTab() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Same Location Multiplier
+              {t.adminCostCriteria.sameLocationMultiplier}
             </label>
             {isEditing ? (
               <input
@@ -450,7 +452,7 @@ export function AdminCostCriteriaTab() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Different Location Multiplier
+              {t.adminCostCriteria.differentLocationMultiplier}
             </label>
             {isEditing ? (
               <input
@@ -474,7 +476,7 @@ export function AdminCostCriteriaTab() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Urgent Delivery Surcharge
+              {t.adminCostCriteria.urgentDeliverySurcharge}
             </label>
             {isEditing ? (
               <input
@@ -491,14 +493,14 @@ export function AdminCostCriteriaTab() {
               />
             ) : (
               <div className="text-lg font-semibold text-gray-900">
-                {(formData.urgentDeliverySurcharge * 100).toFixed(0)}% extra
+                {(formData.urgentDeliverySurcharge * 100).toFixed(0)}% {t.adminCostCriteria.extra}
               </div>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Minimum Price
+              {t.adminCostCriteria.minimumPrice}
             </label>
             {isEditing ? (
               <input
@@ -527,7 +529,7 @@ export function AdminCostCriteriaTab() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Maximum Price (Optional)
+              {t.adminCostCriteria.maximumPrice}
             </label>
             {isEditing ? (
               <input
@@ -543,11 +545,11 @@ export function AdminCostCriteriaTab() {
                 className={`w-full px-3 py-2 border rounded ${
                   errors.maxPrice ? "border-red-500" : "border-gray-300"
                 }`}
-                placeholder="Leave empty for unlimited"
+                placeholder={t.adminCostCriteria.leaveEmptyUnlimited}
               />
             ) : (
               <div className="text-lg font-semibold text-gray-900">
-                {formData.maxPrice ? `$${formData.maxPrice.toFixed(2)}` : "Unlimited"}
+                {formData.maxPrice ? `$${formData.maxPrice.toFixed(2)}` : t.adminCostCriteria.unlimited}
               </div>
             )}
             {errors.maxPrice && (
@@ -562,10 +564,10 @@ export function AdminCostCriteriaTab() {
         <div className="flex gap-2">
           <Button onClick={handleSave} className="gap-2 flex-1">
             <Save className="w-4 h-4" />
-            Save Changes
+            {t.adminCostCriteria.saveChanges}
           </Button>
           <Button onClick={handleCancel} variant="outline" className="flex-1">
-            Cancel
+            {t.common.cancel}
           </Button>
         </div>
       )}

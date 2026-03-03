@@ -15,8 +15,10 @@ import {
   Warehouse,
 } from "lucide-react";
 import { Warehouse as WarehouseType } from "@/types";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export function WarehouseManagementTab() {
+  const { t } = useTranslation();
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -113,7 +115,7 @@ export function WarehouseManagementTab() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading warehouses...</div>;
+    return <div className="text-center py-8">{t.common.loading}</div>;
   }
 
   return (
@@ -127,7 +129,7 @@ export function WarehouseManagementTab() {
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-foreground">
-          Warehouse Management
+          {t.adminWarehouses.title}
         </h2>
         <Button
           onClick={() => {
@@ -138,19 +140,19 @@ export function WarehouseManagementTab() {
           className="gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add Warehouse
+          {t.adminWarehouses.addWarehouse}
         </Button>
       </div>
 
       {showForm && (
         <Card className="p-6 bg-primary/5 border-primary/20">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            {editingId ? "Edit Warehouse" : "New Warehouse"}
+          {editingId ? t.adminWarehouses.title : t.adminWarehouses.addWarehouse}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <input
               type="text"
-              placeholder="Warehouse Name"
+              placeholder={t.adminWarehouses.warehouseName}
               value={formData.name || ""}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
@@ -159,7 +161,7 @@ export function WarehouseManagementTab() {
             />
             <input
               type="text"
-              placeholder="Code"
+              placeholder={t.adminWarehouses.code}
               value={formData.code || ""}
               onChange={(e) =>
                 setFormData({ ...formData, code: e.target.value })
@@ -168,7 +170,7 @@ export function WarehouseManagementTab() {
             />
             <input
               type="text"
-              placeholder="Country"
+              placeholder={t.adminWarehouses.country}
               value={formData.country || ""}
               onChange={(e) =>
                 setFormData({ ...formData, country: e.target.value })
@@ -177,7 +179,7 @@ export function WarehouseManagementTab() {
             />
             <input
               type="text"
-              placeholder="State"
+              placeholder={t.adminWarehouses.state}
               value={formData.state || ""}
               onChange={(e) =>
                 setFormData({ ...formData, state: e.target.value })
@@ -186,7 +188,7 @@ export function WarehouseManagementTab() {
             />
             <input
               type="text"
-              placeholder="Location (address)"
+              placeholder={t.adminWarehouses.locationAddress}
               value={formData.location || ""}
               onChange={(e) =>
                 setFormData({ ...formData, location: e.target.value })
@@ -197,7 +199,7 @@ export function WarehouseManagementTab() {
               <input
                 type="number"
                 step="any"
-                placeholder="Latitude (for distance)"
+                placeholder={t.adminWarehouses.latitude}
                 value={formData.latitude ?? ""}
                 onChange={(e) =>
                   setFormData({
@@ -210,7 +212,7 @@ export function WarehouseManagementTab() {
               <input
                 type="number"
                 step="any"
-                placeholder="Longitude (for distance)"
+                placeholder={t.adminWarehouses.longitude}
                 value={formData.longitude ?? ""}
                 onChange={(e) =>
                   setFormData({
@@ -243,12 +245,12 @@ export function WarehouseManagementTab() {
                 className="gap-1 bg-transparent shrink-0"
               >
                 <MapPin className="w-4 h-4" />
-                Use my location
+                {t.adminWarehouses.useMyLocation}
               </Button>
             </div>
             <input
               type="number"
-              placeholder="Capacity"
+              placeholder={t.adminWarehouses.capacity}
               value={formData.capacity || ""}
               onChange={(e) =>
                 setFormData({ ...formData, capacity: Number(e.target.value) })
@@ -257,7 +259,7 @@ export function WarehouseManagementTab() {
             />
             <input
               type="number"
-              placeholder="Current Stock"
+              placeholder={t.adminWarehouses.currentStock}
               value={formData.currentStock || ""}
               onChange={(e) =>
                 setFormData({
@@ -269,7 +271,7 @@ export function WarehouseManagementTab() {
             />
             <input
               type="text"
-              placeholder="Manager Name"
+              placeholder={t.adminWarehouses.managerName}
               value={formData.manager || ""}
               onChange={(e) =>
                 setFormData({ ...formData, manager: e.target.value })
@@ -278,7 +280,7 @@ export function WarehouseManagementTab() {
             />
             <input
               type="tel"
-              placeholder="Contact"
+              placeholder={t.adminWarehouses.contact}
               value={formData.contact || ""}
               onChange={(e) =>
                 setFormData({ ...formData, contact: e.target.value })
@@ -292,14 +294,14 @@ export function WarehouseManagementTab() {
               }
               className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
             >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="maintenance">Maintenance</option>
+              <option value="active">{t.adminWarehouses.statusActive}</option>
+              <option value="inactive">{t.adminWarehouses.statusInactive}</option>
+              <option value="maintenance">{t.adminWarehouses.statusMaintenance}</option>
             </select>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSave} className="flex-1">
-              {editingId ? "Update" : "Create"}
+              {editingId ? t.adminWarehouses.update : t.adminWarehouses.create}
             </Button>
             <Button
               onClick={() => {
@@ -310,7 +312,7 @@ export function WarehouseManagementTab() {
               variant="outline"
               className="flex-1 bg-transparent"
             >
-              Cancel
+              {t.common.cancel}
             </Button>
           </div>
         </Card>
@@ -393,7 +395,7 @@ export function WarehouseManagementTab() {
                   className="flex-1 gap-2 bg-transparent"
                 >
                   <Edit2 className="w-4 h-4" />
-                  Edit
+                  {t.common.edit}
                 </Button>
                 <Button
                   size="sm"
@@ -402,7 +404,7 @@ export function WarehouseManagementTab() {
                   className="flex-1 gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t.common.delete}
                 </Button>
               </div>
             </Card>

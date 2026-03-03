@@ -285,6 +285,33 @@ export default function CompanyRequestDetailPage() {
     }
   };
 
+  const getOfferStatusLabel = (status: string): string => {
+    switch (status) {
+      case "accepted":
+        return t.company.offerStatusAccepted;
+      case "rejected":
+        return t.company.offerStatusRejected;
+      case "pending":
+        return t.company.offerStatusPending;
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
+  const getRequestStatusLabel = (status: string): string => {
+    const statuses = t.userRequestDetail?.requestStatuses as
+      | Record<string, string>
+      | undefined;
+    return statuses?.[status] ?? status;
+  };
+
+  const getDeliveryStatusLabel = (status: string): string => {
+    const statuses = t.userRequestDetail?.deliveryStatuses as
+      | Record<string, string>
+      | undefined;
+    return statuses?.[status] ?? status;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Pending":
@@ -404,12 +431,12 @@ export default function CompanyRequestDetailPage() {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={getStatusColor(request.requestStatus)}>
-                    {request.requestStatus}
+                    {getRequestStatusLabel(request.requestStatus)}
                   </Badge>
                   <Badge
                     className={getDeliveryStatusColor(request.deliveryStatus)}
                   >
-                    {request.deliveryStatus}
+                    {getDeliveryStatusLabel(request.deliveryStatus)}
                   </Badge>
                 </div>
               </div>
@@ -766,7 +793,11 @@ export default function CompanyRequestDetailPage() {
                       {t.companyRequestDetail.deliveryType}
                     </p>
                     <p className="text-base font-semibold text-foreground">
-                      {request.deliveryType}
+                      {request.deliveryType === "Urgent"
+                        ? t.newRequest.urgent
+                        : request.deliveryType === "Normal"
+                          ? t.newRequest.normal
+                          : request.deliveryType}
                     </p>
                   </div>
                   {request.startTime && (
@@ -905,7 +936,7 @@ export default function CompanyRequestDetailPage() {
                             </p>
                           </div>
                         )}
-                        
+
                         {/* Display pickup/delivery datetime */}
                         {(offer.pickupDateTime || offer.deliveryDateTime) && (
                           <div className="mt-3 space-y-2">
@@ -914,7 +945,9 @@ export default function CompanyRequestDetailPage() {
                                 <Calendar className="w-3 h-3" />
                                 <span className="font-medium">Pickup:</span>
                                 <span>
-                                  {new Date(offer.pickupDateTime).toLocaleString()}
+                                  {new Date(
+                                    offer.pickupDateTime,
+                                  ).toLocaleString()}
                                 </span>
                               </div>
                             )}
@@ -923,13 +956,15 @@ export default function CompanyRequestDetailPage() {
                                 <Calendar className="w-3 h-3" />
                                 <span className="font-medium">Delivery:</span>
                                 <span>
-                                  {new Date(offer.deliveryDateTime).toLocaleString()}
+                                  {new Date(
+                                    offer.deliveryDateTime,
+                                  ).toLocaleString()}
                                 </span>
                               </div>
                             )}
                           </div>
                         )}
-                        
+
                         {offer.createdAt && (
                           <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -1119,7 +1154,9 @@ export default function CompanyRequestDetailPage() {
                           <input
                             type="datetime-local"
                             value={deliveryDateTime}
-                            onChange={(e) => setDeliveryDateTime(e.target.value)}
+                            onChange={(e) =>
+                              setDeliveryDateTime(e.target.value)
+                            }
                             className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             required
                           />

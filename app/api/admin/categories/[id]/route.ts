@@ -58,7 +58,7 @@ import { Types } from "mongoose";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectDB();
@@ -72,7 +72,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -81,10 +81,27 @@ export async function PUT(
       );
     }
 
-    const { name, description, isActive } = await request.json();
+    const { name, nameEn, nameAr, description, isActive } = await request.json();
 
     const updates: any = {};
-    if (name) updates.name = name.trim();
+
+    // Support bilingual name object or legacy string
+    if (nameEn !== undefined || nameAr !== undefined) {
+      if (!nameEn?.trim() || !nameAr?.trim()) {
+        return NextResponse.json(
+          { error: "Both English and Arabic category names are required" },
+          { status: 400 },
+        );
+      }
+      updates.name = { en: nameEn.trim(), ar: nameAr.trim() };
+    } else if (name !== undefined) {
+      if (typeof name === "object" && name !== null) {
+        updates.name = { en: name.en?.trim() || "", ar: name.ar?.trim() || "" };
+      } else if (typeof name === "string" && name.trim()) {
+        updates.name = name.trim();
+      }
+    }
+
     if (description !== undefined) updates.description = description;
     if (isActive !== undefined) updates.isActive = isActive;
 
@@ -99,8 +116,15 @@ export async function PUT(
       );
     }
 
+    // Convert to plain object and ensure _id is string
+    const categoryObj = category.toObject();
+    const categoryWithStringId = {
+      ...categoryObj,
+      _id: categoryObj._id.toString()
+    };
+
     return NextResponse.json(
-      { category, message: "Category updated successfully" },
+      { category: categoryWithStringId, message: "Category updated successfully" },
       { status: 200 },
     );
   } catch (error) {
@@ -110,7 +134,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectDB();
@@ -124,7 +148,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json(

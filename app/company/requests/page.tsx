@@ -55,6 +55,20 @@ export default function CompanyRequestsPage() {
   const loading = isLoading || requestsLoading;
   const { t } = useTranslation();
 
+  const translateStatus = (status: string): string => {
+    const statuses = t.userRequestDetail.requestStatuses as Record<string, string>;
+    return statuses[status] || status;
+  };
+
+  const translateOfferStatus = (status: string): string => {
+    const map: Record<string, string> = {
+      pending: t.company.offerStatusPending,
+      accepted: t.company.offerStatusAccepted,
+      rejected: t.company.offerStatusRejected,
+    };
+    return map[status?.toLowerCase()] || status;
+  };
+
   // Show toast notifications for real-time events
   useLiveEvent(
     ["REQUEST_CREATED", "OFFER_ACCEPTED", "OFFER_REJECTED", "STATUS_CHANGED"],
@@ -341,7 +355,7 @@ export default function CompanyRequestsPage() {
                                     : "bg-green-100 text-green-800 dark:bg-green-900/40"
                               }`}
                             >
-                              {request.requestStatus}
+                              {translateStatus(request.requestStatus)}
                             </Badge>
                           </div>
                         </div>
@@ -375,14 +389,14 @@ export default function CompanyRequestsPage() {
                         <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
                           <span className="flex items-center gap-1">
                             <Package className="w-3.5 h-3.5" />
-                            {totalItems} items
+                            {totalItems} {t.common.items}
                           </span>
                           <span className="flex items-center gap-1">
                             <Scale className="w-3.5 h-3.5" />
                             {totalWeight.toFixed(1)} kg
                           </span>
                           <Badge variant="outline" className="text-xs">
-                            {request.deliveryType}
+                            {request.deliveryType === 'Urgent' ? t.newRequest.urgent : request.deliveryType === 'Normal' ? t.newRequest.normal : request.deliveryType}
                           </Badge>
                         </div>
 
@@ -411,7 +425,7 @@ export default function CompanyRequestsPage() {
                           >
                             <span className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
-                              Your offer: ${myOffer.cost.toFixed(2)}
+                              {t.company.yourOfferLabel}: ${myOffer.cost.toFixed(2)}
                             </span>
                             <Badge
                               className={`text-xs ${
@@ -422,7 +436,7 @@ export default function CompanyRequestsPage() {
                                     : "bg-blue-100 text-blue-800"
                               }`}
                             >
-                              {myOffer.status}
+                              {translateOfferStatus(myOffer.status)}
                             </Badge>
                           </div>
                         )}

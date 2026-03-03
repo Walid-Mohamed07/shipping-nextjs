@@ -2,15 +2,18 @@
 
 import { useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
+import { AdminDashboardNav, getNavItemsByRole } from "@/app/components/AdminDashboardNav";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/app/components/loaders";
 import { useTranslation } from "@/app/context/LocaleContext";
+import Link from "next/link";
+import { Card } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
 
   useEffect(() => {
     if (
@@ -48,6 +51,33 @@ export default function AdminDashboard() {
     return null;
   }
 
+  const navItems = getNavItemsByRole(user.role);
+
+  const navLabels: Record<string, string> = {
+    requests: t.admin.requests,
+    users: t.admin.users,
+    drivers: t.admin.drivers,
+    companies: t.admin.companies,
+    costOffers: t.admin.costOffers,
+    override: t.admin.override,
+    metrics: t.admin.metrics,
+    audit: t.admin.audit,
+    categories: t.admin.categories,
+    costCriteria: t.admin.costCriteria,
+  };
+
+  const navDescriptions: Record<string, string> = {
+    requests: t.homeAdmin.cardRequestsDesc,
+    users: t.homeAdmin.cardUsersDesc,
+    drivers: t.homeAdmin.cardDriversDesc,
+    companies: t.homeAdmin.cardCompaniesDesc,
+    override: t.homeAdmin.cardOverrideDesc,
+    metrics: t.homeAdmin.cardMetricsDesc,
+    audit: t.homeAdmin.cardAuditDesc,
+    categories: t.homeAdmin.cardCategoriesDesc,
+    costCriteria: t.homeAdmin.cardCostCriteriaDesc,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
@@ -61,20 +91,43 @@ export default function AdminDashboard() {
               {t.admin.dashboard}
             </h1>
             <p className="text-muted-foreground">
-              {t.admin.selectSection}
+              {t.admin.manageSystem}
             </p>
           </div>
 
-          <div className="bg-muted/50 border border-border rounded-lg p-8 text-center">
-            <p className="text-muted-foreground mb-4">
-              {t.admin.welcomeToDashboard}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {t.admin.useNavigationRight}
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const label = navLabels[item.labelKey] ?? item.labelKey;
+              const description = navDescriptions[item.labelKey] ?? "";
+
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Card className="p-6 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer group h-full">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <ArrowRight
+                        className={`w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors ${
+                          isRtl ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-1 text-lg">
+                      {label}
+                    </h3>
+                    {description && (
+                      <p className="text-sm text-muted-foreground">{description}</p>
+                    )}
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         </main>
       </div>
     </div>
   );
 }
+

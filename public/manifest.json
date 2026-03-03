@@ -1,0 +1,74 @@
+{
+  "name": "ShipHub - Global Shipping Platform",
+  "short_name": "ShipHub",
+  "description": "Fast, secure, and reliable global shipping solutions. Manage logistics, track shipments in real time, and optimize warehouse operations.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0066ff",
+  "background_color": "#ffffff",
+  "categories": ["productivity", "business"],
+  "screenshots": [
+    {
+      "src": "/ShipHub logo icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/ShipHub logo icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/ShipHub logo icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ShipHub logo icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ShipHub logo icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Shipping Request",
+      "short_name": "New Request",
+      "description": "Create a new shipping request",
+      "url": "/new-request",
+      "icons": [
+        {
+          "src": "/ShipHub logo icon.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "View Requests",
+      "short_name": "My Requests",
+      "description": "View all your shipping requests",
+      "url": "/my-requests",
+      "icons": [
+        {
+          "src": "/ShipHub logo icon.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
