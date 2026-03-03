@@ -60,6 +60,20 @@ export function AdminRequestsTab() {
   const { user } = useAuth();
   const toastUtils = useToast();
   const { t } = useTranslation();
+
+  const translateStatus = (status: string): string => {
+    const statuses = t.userRequestDetail.requestStatuses as Record<string, string>;
+    return statuses[status] || status;
+  };
+
+  const translateOfferStatus = (status: string): string => {
+    const map: Record<string, string> = {
+      pending: t.company.offerStatusPending,
+      accepted: t.company.offerStatusAccepted,
+      rejected: t.company.offerStatusRejected,
+    };
+    return map[status?.toLowerCase()] || status;
+  };
   
   // Regular data fetching (not live)
   const [requests, setRequests] = useState<RequestResponse[]>([]);
@@ -256,7 +270,7 @@ export function AdminRequestsTab() {
               }}
               className="gap-2"
             >
-              {status} ({count})
+              {translateStatus(status)} ({count})
             </Button>
           );
         })}
@@ -312,7 +326,7 @@ export function AdminRequestsTab() {
                   <div
                     className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
                   >
-                    {request.requestStatus}
+                    {translateStatus(request.requestStatus)}
                   </div>
                 </div>
 
@@ -489,7 +503,7 @@ export function AdminRequestsTab() {
                   <div
                     className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.requestStatus).bg} ${getStatusColors(selectedRequest.requestStatus).text} ${getStatusColors(selectedRequest.requestStatus).border}`}
                   >
-                    {selectedRequest.requestStatus}
+                    {translateStatus(selectedRequest.requestStatus)}
                   </div>
                 </div>
                 <div>
@@ -499,7 +513,7 @@ export function AdminRequestsTab() {
                   <div
                     className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColors(selectedRequest.deliveryStatus).bg} ${getStatusColors(selectedRequest.deliveryStatus).text} ${getStatusColors(selectedRequest.deliveryStatus).border}`}
                   >
-                    {selectedRequest.deliveryStatus}
+                    {translateStatus(selectedRequest.deliveryStatus)}
                   </div>
                 </div>
               </div>
@@ -700,7 +714,7 @@ export function AdminRequestsTab() {
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {t.adminRequests.status}{" "}
-                          <span className="font-medium">{offer.status}</span>
+                          <span className="font-medium">{translateOfferStatus(offer.status)}</span>
                         </p>
                       </div>
                     ))}

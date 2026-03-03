@@ -262,12 +262,12 @@ export default function CompanyOngoingRequestsPage() {
                         </span>
                         {(sourceIsSelfPickup || destinationIsSelfDelivery) && (
                           <span className="text-xs text-orange-600 dark:text-orange-400">
-                            <Truck className="w-3 h-3 inline" /> Self{" "}
-                            {sourceIsSelfPickup && "Pickup"}
+                            <Truck className="w-3 h-3 inline" />{" "}
+                            {sourceIsSelfPickup && t.company.selfPickup}
                             {sourceIsSelfPickup &&
                               destinationIsSelfDelivery &&
                               "/"}
-                            {destinationIsSelfDelivery && "Delivery"}
+                            {destinationIsSelfDelivery && t.company.selfDelivery}
                           </span>
                         )}
                       </div>

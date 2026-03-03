@@ -3,10 +3,9 @@ import mongoose from 'mongoose';
 const categorySchema = new mongoose.Schema(
   {
     name: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       required: true,
-      unique: true,
-      trim: true,
+      // Supports both legacy string and bilingual object { en: string, ar: string }
     },
     description: String,
     isActive: {

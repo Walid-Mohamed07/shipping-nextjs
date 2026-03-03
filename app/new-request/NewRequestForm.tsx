@@ -70,7 +70,7 @@ const NEARBY_RADIUS_KM = 50;
 export default function NewRequestForm() {
   const { user } = useAuth();
   const toast = useToast();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -115,7 +115,7 @@ export default function NewRequestForm() {
   }, [user?.id]);
 
   // Fetch categories and cost criteria
-  const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
+  const [dynamicCategories, setDynamicCategories] = useState<{ value: string; label: string }[]>([]);
   const [costCriteria, setCostCriteria] = useState<any>(null);
 
   useEffect(() => {
@@ -125,10 +125,16 @@ export default function NewRequestForm() {
         const catRes = await fetch("/api/admin/categories");
         if (catRes.ok) {
           const catData = await catRes.json();
-          const categoryNames = (catData.categories || []).map(
-            (cat: any) => cat.name,
-          );
-          setDynamicCategories(categoryNames);
+          const cats = (catData.categories || []).map((cat: any) => {
+            // Support bilingual name object
+            if (cat.name && typeof cat.name === "object") {
+              const label = locale === "ar" ? (cat.name.ar || cat.name.en) : (cat.name.en || cat.name.ar);
+              // Use English name as value for consistent storage
+              return { value: cat.name.en || cat.name.ar || "", label: label || "" };
+            }
+            return { value: cat.name, label: cat.name };
+          }).filter((c: any) => c.value);
+          setDynamicCategories(cats);
         }
 
         // Fetch cost criteria
@@ -143,7 +149,7 @@ export default function NewRequestForm() {
     };
 
     fetchData();
-  }, []);
+  }, [locale]);
 
   const primaryLocation =
     userLocations.length > 0
@@ -471,13 +477,14 @@ export default function NewRequestForm() {
   );
   const categoryOptions = useMemo(
     () =>
-      (dynamicCategories.length > 0 ? dynamicCategories : categories).map(
-        (cat) => (
-          <SelectItem key={cat} value={cat}>
-            {cat}
-          </SelectItem>
-        ),
-      ),
+      (dynamicCategories.length > 0
+        ? dynamicCategories
+        : categories.map((c) => ({ value: c, label: c }))
+      ).map((cat) => (
+        <SelectItem key={cat.value} value={cat.value}>
+          {cat.label}
+        </SelectItem>
+      )),
     [dynamicCategories],
   );
 

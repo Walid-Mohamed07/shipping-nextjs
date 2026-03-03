@@ -97,7 +97,7 @@ export function AdminPerformanceMetricsTab() {
           className="gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
+          {t.common.refresh}
         </Button>
       </div>
 
@@ -241,7 +241,7 @@ export function AdminPerformanceMetricsTab() {
                   {t.adminMetrics.onTimeRate}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                  Status
+                  {t.adminMetrics.statusLabel}
                 </th>
               </tr>
             </thead>

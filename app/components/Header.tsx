@@ -109,14 +109,6 @@ export function Header() {
                   {t.header.myRequests}
                 </Link>
               )}
-              {user.role === "admin" && (
-                <Link
-                  href="/admin/dashboard"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
-                  {t.header.dashboard}
-                </Link>
-              )}
               {user.role === "driver" && (
                 <Link
                   href="/driver/orders"

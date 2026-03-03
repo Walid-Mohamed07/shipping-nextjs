@@ -25,6 +25,26 @@ import { useTranslation } from "@/app/context/LocaleContext";
 export function AdminUsersTab() {
   const toast = useToast();
   const { t } = useTranslation();
+
+  const getRoleLabel = (role: string): string => {
+    const labels: Record<string, string> = {
+      client: t.adminUsers.clientRole,
+      admin: t.adminUsers.adminRole,
+      operator: t.adminUsers.operatorRole,
+      company: t.adminUsers.companyRole,
+      driver: t.adminUsers.driverRole,
+    };
+    return labels[role] || role.charAt(0).toUpperCase() + role.slice(1);
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      active: t.common.active,
+      inactive: t.common.inactive,
+      suspended: t.common.suspended,
+    };
+    return labels[status] || status.charAt(0).toUpperCase() + status.slice(1);
+  };
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -696,9 +716,9 @@ export function AdminUsersTab() {
                     }
                     className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="active">{t.common.active}</option>
+                    <option value="inactive">{t.common.inactive}</option>
+                    <option value="suspended">{t.common.suspended}</option>
                   </select>
                 </div>
               </div>
@@ -708,7 +728,7 @@ export function AdminUsersTab() {
             {formData.role === "company" && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="text-lg font-semibold text-foreground">
-                  Company Assignment
+                  {t.adminUsers.companyAssignment}
                 </h3>
                 {loadingCompanies ? (
                   <div className="flex items-center justify-center py-8 border border-border rounded-md bg-muted">
@@ -770,7 +790,7 @@ export function AdminUsersTab() {
               <div className="space-y-4 border-t pt-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-foreground">
-                    Password Management
+                    {t.adminUsers.passwordManagement}
                   </h3>
                   {!changePasswordMode && (
                     <Button
@@ -903,7 +923,7 @@ export function AdminUsersTab() {
                 disabled={isSubmitting}
                 className="flex-1 bg-transparent cursor-pointer"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </form>
@@ -937,7 +957,7 @@ export function AdminUsersTab() {
                 <option value="">{t.adminUsers.allStatuses}</option>
                 {statuses.map((s) => (
                   <option key={s} value={s}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                    {getStatusLabel(s)}
                   </option>
                 ))}
               </select>
@@ -955,7 +975,7 @@ export function AdminUsersTab() {
                 <option value="">{t.adminUsers.allRoles}</option>
                 {roles.map((r) => (
                   <option key={r} value={r}>
-                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                    {getRoleLabel(r)}
                   </option>
                 ))}
               </select>
@@ -1022,10 +1042,10 @@ export function AdminUsersTab() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{user.fullName}</p>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                          {user.role}
+                          {getRoleLabel(user.role)}
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
-                          {user.status}
+                          {getStatusLabel(user.status)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">

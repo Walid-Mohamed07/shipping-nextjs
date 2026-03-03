@@ -303,25 +303,25 @@ export function AdminOverrideAssignmentsTab() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <p className="text-muted-foreground">Order</p>
+                        <p className="text-muted-foreground">{t.adminOverride.orderLabel}</p>
                           <p className="font-medium text-foreground">
                             {assignment.requestId}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Driver</p>
+                          <p className="text-muted-foreground">{t.adminOverride.driverLabel}</p>
                           <p className="font-medium text-foreground">
                             {assignment.driverName}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Vehicle</p>
+                          <p className="text-muted-foreground">{t.adminOverride.vehicleLabel}</p>
                           <p className="font-medium text-foreground">
                             {assignment.vehicleName}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Assigned At</p>
+                          <p className="text-muted-foreground">{t.adminOverride.assignedAtLabel}</p>
                           <p className="font-medium text-foreground">
                             {new Date(
                               assignment.assignedAt,
@@ -337,7 +337,7 @@ export function AdminOverrideAssignmentsTab() {
                       className="gap-2 bg-transparent text-orange-600 hover:text-orange-700 border-orange-200"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      Override
+                      {t.adminOverride.overrideBtn}
                     </Button>
                   </div>
                 )}
@@ -353,7 +353,7 @@ export function AdminOverrideAssignmentsTab() {
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
-                Previous
+                {t.common.previous}
               </Button>
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -382,7 +382,7 @@ export function AdminOverrideAssignmentsTab() {
                 }
                 disabled={currentPage === totalPages}
               >
-                Next
+                {t.common.next}
               </Button>
             </div>
           )}

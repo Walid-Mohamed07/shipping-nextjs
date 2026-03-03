@@ -44,11 +44,17 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
     const categories = await Category.find({ isActive: true })
-      .select("-_id -__v")
+      .select("-__v")
       .sort({ createdAt: 1 })
       .lean();
 
-    return NextResponse.json({ categories }, { status: 200 });
+    // Convert _id to string for proper serialization
+    const categoriesWithStringId = categories.map(cat => ({
+      ...cat,
+      _id: cat._id.toString()
+    }));
+
+    return NextResponse.json({ categories: categoriesWithStringId }, { status: 200 });
   } catch (error) {
     return handleError(error);
   }
@@ -67,36 +73,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description } = await request.json();
+    const { name, nameEn, nameAr, description } = await request.json();
 
-    if (!name || name.trim() === "") {
+    // Support both bilingual object and legacy string
+    let categoryName: any;
+    if (nameEn || nameAr) {
+      if (!nameEn?.trim() || !nameAr?.trim()) {
+        return NextResponse.json(
+          { error: "Both English and Arabic category names are required" },
+          { status: 400 },
+        );
+      }
+      categoryName = { en: nameEn.trim(), ar: nameAr.trim() };
+    } else if (name) {
+      if (typeof name === "object") {
+        if (!name.en?.trim() || !name.ar?.trim()) {
+          return NextResponse.json(
+            { error: "Both English and Arabic category names are required" },
+            { status: 400 },
+          );
+        }
+        categoryName = { en: name.en.trim(), ar: name.ar.trim() };
+      } else {
+        if (!name.trim()) {
+          return NextResponse.json(
+            { error: "Category name is required" },
+            { status: 400 },
+          );
+        }
+        categoryName = { en: name.trim(), ar: name.trim() };
+      }
+    } else {
       return NextResponse.json(
         { error: "Category name is required" },
         { status: 400 },
       );
     }
 
-    // Check if category already exists
-    const existingCategory = await Category.findOne({
-      name: { $regex: `^${name}$`, $options: "i" },
-    });
-
-    if (existingCategory) {
-      return NextResponse.json(
-        { error: "Category already exists" },
-        { status: 400 },
-      );
-    }
-
     const category = new Category({
-      name: name.trim(),
+      name: categoryName,
       description: description || "",
     });
 
     await category.save();
 
+    // Convert to plain object and ensure _id is string
+    const categoryObj = category.toObject();
+    const categoryWithStringId = {
+      ...categoryObj,
+      _id: categoryObj._id.toString()
+    };
+
     return NextResponse.json(
-      { category, message: "Category created successfully" },
+      { category: categoryWithStringId, message: "Category created successfully" },
       { status: 201 },
     );
   } catch (error) {

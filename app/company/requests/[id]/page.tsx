@@ -269,6 +269,25 @@ export default function CompanyRequestDetailPage() {
     }
   };
 
+  const getOfferStatusLabel = (status: string): string => {
+    switch (status) {
+      case "accepted": return t.company.offerStatusAccepted;
+      case "rejected": return t.company.offerStatusRejected;
+      case "pending": return t.company.offerStatusPending;
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
+  const getRequestStatusLabel = (status: string): string => {
+    const statuses = t.userRequestDetail?.requestStatuses as Record<string, string> | undefined;
+    return statuses?.[status] ?? status;
+  };
+
+  const getDeliveryStatusLabel = (status: string): string => {
+    const statuses = t.userRequestDetail?.deliveryStatuses as Record<string, string> | undefined;
+    return statuses?.[status] ?? status;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Pending":
@@ -388,12 +407,12 @@ export default function CompanyRequestDetailPage() {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={getStatusColor(request.requestStatus)}>
-                    {request.requestStatus}
+                    {getRequestStatusLabel(request.requestStatus)}
                   </Badge>
                   <Badge
                     className={getDeliveryStatusColor(request.deliveryStatus)}
                   >
-                    {request.deliveryStatus}
+                    {getDeliveryStatusLabel(request.deliveryStatus)}
                   </Badge>
                 </div>
               </div>
@@ -714,7 +733,7 @@ export default function CompanyRequestDetailPage() {
                         <Package className="w-3.5 h-3.5" />
                         {t.companyRequestDetail.deliveryType}
                       </p>
-                      <p className="text-base font-semibold text-foreground">{request.deliveryType}</p>
+                      <p className="text-base font-semibold text-foreground">{request.deliveryType === 'Urgent' ? t.newRequest.urgent : request.deliveryType === 'Normal' ? t.newRequest.normal : request.deliveryType}</p>
                     </div>
                     {request.startTime && (
                       <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 border border-purple-200 dark:border-purple-800">
@@ -804,7 +823,7 @@ export default function CompanyRequestDetailPage() {
                             {offer.status === "rejected" && (
                               <XCircle className="w-3 h-3 mr-1" />
                             )}
-                            {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+                            {getOfferStatusLabel(offer.status)}
                           </Badge>
                         </div>
                         {offer.comment && (
@@ -861,7 +880,7 @@ export default function CompanyRequestDetailPage() {
                                       : "border-border"
                                 }
                               >
-                                {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+                                {getOfferStatusLabel(offer.status)}
                               </Badge>
                             </div>
                           </div>

@@ -106,7 +106,7 @@ export function AdminDashboardNav({
   showBackButton = false,
   isSticky = false,
 }: AdminDashboardNavProps) {
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
   const navItems = getNavItemsByRole(userRole);
 
   const navLabels: Record<string, string> = {
@@ -118,6 +118,8 @@ export function AdminDashboardNav({
     override: t.admin.override,
     metrics: t.admin.metrics,
     audit: t.admin.audit,
+    categories: t.admin.categories,
+    costCriteria: t.admin.costCriteria,
   };
 
   return (
@@ -125,14 +127,14 @@ export function AdminDashboardNav({
       className={`w-64 bg-white dark:bg-slate-950 border-e border-border min-h-[calc(100vh-64px)] p-6 ${
         isSticky ? "sticky top-16 h-[calc(100vh-64px)] overflow-y-auto" : ""
       }`}
-      dir="rtl"
+      dir={isRtl ? "rtl" : "ltr"}
     >
       {showBackButton && (
         <Link
           href="/admin/dashboard"
           className="flex items-center gap-2 mb-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4 rtl:rotate-180" />
           {t.admin.backToDashboard}
         </Link>
       )}

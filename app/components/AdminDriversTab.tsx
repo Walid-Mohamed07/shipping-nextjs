@@ -367,7 +367,7 @@ export function AdminDriversTab() {
       <div className="space-y-2">
         {paginatedDrivers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No drivers found matching your criteria
+            {t.adminDrivers.noDriversMatch}
           </div>
         ) : (
           paginatedDrivers.map((driver) => {

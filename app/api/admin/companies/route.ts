@@ -46,7 +46,13 @@ export async function GET(request: NextRequest) {
     await connectDB();
     const companies = await Company.find({}).populate("warehouses").lean();
 
-    return NextResponse.json(companies, { status: 200 });
+    // Transform _id to id for consistency
+    const transformedCompanies = companies.map((company: any) => ({
+      ...company,
+      id: company._id.toString(),
+    }));
+
+    return NextResponse.json(transformedCompanies, { status: 200 });
   } catch (error) {
     return handleError(error);
   }

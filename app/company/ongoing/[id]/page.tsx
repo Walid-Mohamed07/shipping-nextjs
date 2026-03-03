@@ -335,6 +335,45 @@ export default function OngoingRequestDetailPage() {
     return DELIVERY_STATUSES.findIndex((s) => s.key === status);
   };
 
+  const getRequestStatusLabel = (status: string) => {
+    const statuses = t.userRequestDetail?.requestStatuses as Record<string, string> | undefined;
+    return statuses?.[status] ?? status;
+  };
+
+  const getRequestStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200";
+      case "Accepted":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200";
+      case "Action needed":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200";
+      case "Assigned to Company":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
+      case "Completed":
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200";
+      case "Cancelled":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200";
+    }
+  };
+
+  const getDeliveryBadgeColor = (status: string) => {
+    switch (status) {
+      case "Delivered":
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200";
+      case "In Transit":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
+      case "Shipment Deliver":
+        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-200";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200";
+      default:
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200";
+    }
+  };
+
   const handleUpdateDeliveryStatus = async (newStatus: string) => {
     if (!request || !user?.id) return;
 
@@ -745,10 +784,10 @@ export default function OngoingRequestDetailPage() {
                   (mapView === "delivery" && request.destination.coordinates)) && (
                   <div className={`rounded-lg overflow-hidden border-2 transition-colors ${
                     mapView === "pickup" 
-                      ? "border-green-400 dark:border-green-600" 
-                      : "border-blue-400 dark:border-blue-600"
+                      ? "border-green-400 dark:border-green-600 " 
+                      : "border-blue-400 dark:border-blue-600 "
                   }`}>
-                    <div className="h-64">
+                    <div className="h-64 ">
                       <SimpleLocationMap
                         key={mapView}
                         position={
@@ -872,14 +911,14 @@ export default function OngoingRequestDetailPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">{t.company.request}</span>
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
-                    {request.requestStatus}
+                  <Badge className={getRequestStatusColor(request.requestStatus)}>
+                    {getRequestStatusLabel(request.requestStatus)}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">{t.company.delivery}</span>
-                  <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
-                    {request.deliveryStatus}
+                  <Badge className={getDeliveryBadgeColor(request.deliveryStatus || "Pending")}>
+                    {DELIVERY_STATUSES.find((s) => s.key === (request.deliveryStatus || "Pending"))?.label || request.deliveryStatus}
                   </Badge>
                 </div>
               </div>

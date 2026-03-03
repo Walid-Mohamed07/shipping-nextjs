@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
@@ -12,40 +12,38 @@ import { Header } from "./components/Header";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
-const ibmPlexArabic = IBM_Plex_Sans_Arabic({ 
-  weight: ["400", "500", "600", "700"],
-  subsets: ["arabic"],
-  variable: "--font-arabic"
-});
 
 export const metadata: Metadata = {
-  title: "شيب هب - الشحن العالمي بسهولة",
+  title: "ShipHub – Global Shipping Made Easy",
   description:
-    "خدمات شحن سريعة وموثوقة حول العالم. بسّط عملياتك اللوجستية مع نظامنا الذكي للتعيين والتتبع.",
-  keywords: "شحن, لوجستيات, توصيل, تتبع, إدارة المستودعات, shipping, logistics, delivery, tracking, warehouse management",
+    "Fast and reliable shipping services worldwide. Simplify your logistics operations with our smart assignment and tracking system.",
+  keywords:
+    "shipping, logistics, delivery, tracking, warehouse management, freight, global shipping, supply chain",
   authors: [{ name: "ShipHub" }],
   creator: "ShipHub",
   publisher: "ShipHub",
   openGraph: {
     type: "website",
-    locale: "ar_SA",
+    locale: "en_US",
     url: "https://shiphub.app",
-    siteName: "شيب هب",
-    title: "شيب هب - الشحن العالمي بسهولة",
-    description: "خدمات شحن سريعة وموثوقة حول العالم",
+    siteName: "ShipHub",
+    title: "ShipHub – Global Shipping Made Easy",
+    description:
+      "Fast and reliable shipping services worldwide.",
     images: [
       {
         url: "/ShipHub logo icon.png",
         width: 1200,
         height: 630,
-        alt: "شعار شيب هب",
+        alt: "ShipHub Logo",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "شيب هب - الشحن العالمي بسهولة",
-    description: "خدمات شحن سريعة وموثوقة حول العالم",
+    title: "ShipHub – Global Shipping Made Easy",
+    description:
+      "Fast and reliable shipping services worldwide.",
     images: ["/ShipHub logo icon.png"],
   },
   icons: {
@@ -60,8 +58,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable} ${ibmPlexArabic.variable}`}>
-      <body className={`font-sans antialiased flex flex-col min-h-screen`}>
+    <html
+      lang="ar"
+      dir="rtl"
+      suppressHydrationWarning
+      className={`${geist.variable} ${geistMono.variable}`}
+    >
+      <body className="font-sans antialiased flex flex-col min-h-screen">
         <LocaleProvider>
           <AuthProvider>
             <RealTimeProvider>
@@ -71,7 +74,7 @@ export default function RootLayout({
             </RealTimeProvider>
           </AuthProvider>
         </LocaleProvider>
-        <Toaster position="top-left" richColors />
+        <Toaster position="top-right" richColors />
         <Analytics />
       </body>
     </html>

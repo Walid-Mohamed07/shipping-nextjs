@@ -222,7 +222,7 @@ export function AdminCostCriteriaTab() {
             className="gap-2"
           >
             <History className="w-4 h-4" />
-            History (v{costCriteria?.version || 1})
+            {t.adminCostCriteria.history}
           </Button>
           {!isEditing && (
             <Button onClick={() => setIsEditing(true)} className="gap-2">
