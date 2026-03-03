@@ -299,9 +299,9 @@
     "assemblySelf": "سأتولى التجميع والتفكيك بنفسي",
     "assemblySelfDesc": "لا توجد تكلفة إضافية",
     "assemblyCompany": "ستتولى الشركة التجميع والتفكيك بدلاً عني",
-    "assemblyCompanyDesc": "قد تشمل تكلفة إضافية",
+    "assemblyCompanyDesc": "تكلفة إضافية 20٪+",
     "packagingLabel": "التغليف",
-    "packagingDesc": "تغليف احترافي للحماية أثناء الشحن",
+    "packagingDesc": "تغليف احترافي للحماية أثناء الشحن (تكلفة إضافية 10٪+)",
     "itemsAdded": "عنصر مضاف",
     "itemsAddedPlural": "عناصر مضافة",
     "addAtLeastOne": "أضف عنصراً واحداً على الأقل للمتابعة",
@@ -438,8 +438,10 @@
     "fillCompanyAndCost": "يرجى تعبئة الشركة والتكلفة",
     "sectionCategories": "إدارة الثوابت - الفئات",
     "sectionCostCriteria": "إدارة الثوابت - معايير التكلفة",
+    "sectionSettings": "إعدادات النظام",
     "categories": "الفئات",
-    "costCriteria": "معايير التكلفة"
+    "costCriteria": "معايير التكلفة",
+    "settings": "الإعدادات"
   },
   "homeAdmin": {
     "title": "لوحة تحكم المسؤول",
@@ -1117,6 +1119,24 @@
     "costCriteriaUpdated": "تم تحديث معايير التكلفة بنجاح",
     "loading": "جارٍ تحميل معايير التكلفة...",
     "saveChanges": "حفظ التغييرات"
+  },
+  "adminSettings": {
+    "title": "إعدادات النظام",
+    "description": "تكوين إعدادات النظام للمنصة",
+    "headoverTitle": "نسبة الهامش (العلاوة)",
+    "headoverDescription": "تُضاف هذه النسبة إلى عروض الشركات عند عرضها للعملاء. مثلاً، إذا عرضت الشركة $60 والهامش 5%، سيرى العميل $63.",
+    "headoverLabel": "نسبة الهامش",
+    "headoverHint": "أدخل قيمة بين 0 و 100",
+    "previewLabel": "معاينة السعر",
+    "previewHint": "مثال للحساب",
+    "companyOffer": "عرض الشركة:",
+    "headoverAmount": "الهامش",
+    "clientSees": "يرى العميل:",
+    "lastUpdated": "آخر تحديث بواسطة",
+    "on": "في",
+    "savedSuccessfully": "تم حفظ الإعدادات بنجاح",
+    "invalidPercentage": "يرجى إدخال نسبة صحيحة",
+    "percentageRange": "النسبة يجب أن تكون بين 0 و 100"
   },
   "adminDrivers": {
     "title": "إدارة السائقين",

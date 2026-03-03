@@ -299,9 +299,9 @@
     "assemblySelf": "I will handle the assembly and disassembly myself",
     "assemblySelfDesc": "No additional cost",
     "assemblyCompany": "The company will handle the assembly and disassembly for me",
-    "assemblyCompanyDesc": "May include additional cost",
+    "assemblyCompanyDesc": "+20% additional cost",
     "packagingLabel": "Packaging",
-    "packagingDesc": "Professional packaging to protect during shipping",
+    "packagingDesc": "Professional packaging to protect during shipping (+10% additional cost)",
     "itemsAdded": "item added",
     "itemsAddedPlural": "items added",
     "addAtLeastOne": "Add at least one item to continue",
@@ -438,8 +438,10 @@
     "fillCompanyAndCost": "Please fill in company and cost",
     "sectionCategories": "Constants Management - Categories",
     "sectionCostCriteria": "Constants Management - Cost Criteria",
+    "sectionSettings": "System Settings",
     "categories": "Categories",
-    "costCriteria": "Cost Criteria"
+    "costCriteria": "Cost Criteria",
+    "settings": "Settings"
   },
   "homeAdmin": {
     "title": "Admin Dashboard",
@@ -1119,6 +1121,24 @@
     "costCriteriaUpdated": "Cost criteria updated successfully",
     "loading": "Loading cost criteria...",
     "saveChanges": "Save Changes"
+  },
+  "adminSettings": {
+    "title": "System Settings",
+    "description": "Configure system-wide settings for the platform",
+    "headoverTitle": "Headover Percentage (Markup)",
+    "headoverDescription": "This percentage is added to company offers when displayed to clients. For example, if a company offers $60 and headover is 5%, the client will see $63.",
+    "headoverLabel": "Headover Percentage",
+    "headoverHint": "Enter a value between 0 and 100",
+    "previewLabel": "Price Preview",
+    "previewHint": "Example calculation",
+    "companyOffer": "Company Offer:",
+    "headoverAmount": "Headover",
+    "clientSees": "Client Sees:",
+    "lastUpdated": "Last updated by",
+    "on": "on",
+    "savedSuccessfully": "Settings saved successfully",
+    "invalidPercentage": "Please enter a valid percentage",
+    "percentageRange": "Percentage must be between 0 and 100"
   },
   "adminDrivers": {
     "title": "Driver Management",

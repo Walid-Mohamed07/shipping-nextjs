@@ -775,7 +775,7 @@ export default function RequestDetailsPage() {
                         {/* Cost */}
                         <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
                           <p className="text-2xl font-bold text-foreground">
-                            ${offer.cost.toFixed(2)}
+                            ${(offer.finalPrice ?? offer.cost).toFixed(2)}
                           </p>
                         </div>
 
@@ -842,7 +842,7 @@ export default function RequestDetailsPage() {
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-primary mb-2">
-                    ${confirmingOffer.cost.toFixed(2)}
+                    ${(confirmingOffer.finalPrice ?? confirmingOffer.cost).toFixed(2)}
                   </p>
                   {confirmingOffer.comment && (
                     <p className="text-sm text-muted-foreground">

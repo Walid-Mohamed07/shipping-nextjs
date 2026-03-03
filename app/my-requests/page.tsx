@@ -243,7 +243,7 @@ export default function MyRequestsPage() {
                         {request.selectedCompany ? (
                           <>
                             <span className="font-semibold text-primary">
-                              ${Number(request.selectedCompany.cost).toFixed(2)}
+                              ${Number(request.selectedCompany.finalPrice ?? request.selectedCompany.cost).toFixed(2)}
                             </span>
                             <span className="text-xs text-green-600 dark:text-green-400">({t.myRequests.accepted})</span>
                           </>

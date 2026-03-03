@@ -16,6 +16,7 @@ import { AdminDriversTab } from "@/app/components/AdminDriversTab";
 import { OperatorCostOffersTab } from "@/app/components/OperatorCostOffersTab";
 import { AdminCategoriesTab } from "@/app/components/AdminCategoriesTab";
 import { AdminCostCriteriaTab } from "@/app/components/AdminCostCriteriaTab";
+import { AdminSettingsTab } from "@/app/components/AdminSettingsTab";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
@@ -46,6 +47,7 @@ export default function DashboardSection({
     audit: t.admin.sectionAudit,
     categories: t.admin.sectionCategories,
     "cost-criteria": t.admin.sectionCostCriteria,
+    settings: t.admin.sectionSettings || "Settings",
   };
 
   if (isLoading) {
@@ -91,6 +93,8 @@ export default function DashboardSection({
         return <AdminCategoriesTab />;
       case "cost-criteria":
         return <AdminCostCriteriaTab />;
+      case "settings":
+        return <AdminSettingsTab />;
       default:
         return (
           <div className="text-center py-8">{t.common.requestedSection}</div>

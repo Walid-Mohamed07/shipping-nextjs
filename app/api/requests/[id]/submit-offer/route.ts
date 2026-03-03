@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
-import { Request } from "@/lib/models";
+import { Request, Settings } from "@/lib/models";
 import { ActivityActions } from "@/lib/activityLogger";
 import {
   broadcastEvent,
@@ -118,10 +118,30 @@ export async function POST(
     const companyRate = selectedOffer?.company?.rate || "";
     const cost = selectedOffer?.cost;
 
+    // Fetch headover percentage from settings for final price calculation
+    let headoverPercentage = 0;
+    try {
+      const settings = await Settings.findOne({ key: "global" }).lean().exec();
+      if (settings && typeof settings.headoverPercentage === "number") {
+        headoverPercentage = settings.headoverPercentage;
+      }
+    } catch (settingsError) {
+      console.error("[Submit-offer] Failed to fetch headover settings:", settingsError);
+      // Continue with 0% headover if settings fetch fails
+    }
+
+    const finalPrice = cost * (1 + headoverPercentage / 100);
+
     console.log(
       "[Submit-offer] Setting assignedCompany to:",
       companyId,
       "from offer company.id",
+      "baseCost:",
+      cost,
+      "headoverPercentage:",
+      headoverPercentage,
+      "finalPrice:",
+      finalPrice,
     );
 
     if (!companyId) {
@@ -132,7 +152,7 @@ export async function POST(
     }
 
     // Mark the accepted offer and update request status
-    // Also set selectedCompany with full details including cost for UI display
+    // Also set selectedCompany with full details including cost and finalPrice for UI display
     const updatedRequest = await Request.findByIdAndUpdate(
       currentRequest._id,
       {
@@ -144,6 +164,8 @@ export async function POST(
             name: companyName,
             rate: companyRate,
             cost: cost,
+            finalPrice: finalPrice,
+            headoverPercentage: headoverPercentage,
           },
           "costOffers.$[elem].selected": true,
         },
@@ -151,10 +173,10 @@ export async function POST(
           activityHistory: {
             action: "offer_accepted",
             timestamp: new Date(),
-            description: `Client accepted offer from ${companyName} for $${cost}`,
+            description: `Client accepted offer from ${companyName} for $${finalPrice.toFixed(2)}`,
             companyName,
-            cost,
-            details: { offerId, companyId },
+            cost: finalPrice,
+            details: { offerId, companyId, baseCost: cost, headoverPercentage },
           },
         },
       },

@@ -86,6 +86,12 @@ const allNavItems: NavItem[] = [
     icon: DollarSign,
     roles: ["admin"],
   },
+  {
+    labelKey: "settings",
+    href: "/admin/dashboard/settings",
+    icon: Settings,
+    roles: ["admin"],
+  },
 ];
 
 // Helper function to get nav items based on user role
@@ -120,6 +126,7 @@ export function AdminDashboardNav({
     audit: t.admin.audit,
     categories: t.admin.categories,
     costCriteria: t.admin.costCriteria,
+    settings: t.admin.settings || "Settings",
   };
 
   return (
