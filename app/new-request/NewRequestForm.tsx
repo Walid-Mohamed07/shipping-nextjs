@@ -1198,7 +1198,7 @@ export default function NewRequestForm() {
                                 className="mt-1 shrink-0 h-4 w-4 text-blue-600"
                               />
                               <div className="flex-1 min-w-0">
-                                {/* Always visible content */}
+                                {/* Always visible content 2 */}
                                 <div className="font-semibold text-gray-900 truncate">
                                   {loc.fullName}
                                 </div>
