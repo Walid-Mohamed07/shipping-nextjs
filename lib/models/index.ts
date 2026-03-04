@@ -11,3 +11,5 @@ export { AuditLog } from './AuditLog';
 export { Category } from './Category';
 export { CostCriteria } from './CostCriteria';
 export { Settings } from './Settings';
+export { Wallet, Transaction } from './Wallet';
+export { Payment } from './Payment';

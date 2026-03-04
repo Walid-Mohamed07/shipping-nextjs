@@ -25,6 +25,7 @@ import {
   BoxSelect,
   ChevronDown,
   X,
+  CreditCard,
 } from "lucide-react";
 import {
   Accordion,
@@ -493,6 +494,53 @@ export default function RequestDetailsPage() {
                 </span>
               </div>
             </div>
+
+            {/* Proceed to Checkout - Show when Assigned to Company with accepted offer and not paid */}
+            {request.requestStatus === "Assigned to Company" &&
+              request.selectedCompany &&
+              request.paymentStatus !== "paid" && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6">
+                    <div className="text-center sm:text-left">
+                      <h3 className="font-semibold text-lg text-foreground mb-1">
+                        {t.userRequestDetail?.readyForPayment || "Ready for Payment"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {t.userRequestDetail?.payToStartDesc || "Complete your payment to start your shipment"}
+                      </p>
+                      <p className="text-2xl font-bold text-primary mt-2">
+                        ${(request.selectedCompany.finalPrice || request.selectedCompany.cost).toFixed(2)}
+                      </p>
+                    </div>
+                    <Link href={`/checkout?requestId=${requestId}`}>
+                      <Button size="lg" className="cursor-pointer gap-2 px-8">
+                        <CreditCard className="w-5 h-5" />
+                        {t.userRequestDetail?.proceedToCheckout || "Proceed to Checkout"}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+            {/* Payment Status Badge - Show when payment is completed */}
+            {request.paymentStatus === "paid" && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-green-800 dark:text-green-400">
+                      {t.userRequestDetail?.paymentCompleted || "Payment Completed"}
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-500">
+                      {t.userRequestDetail?.paidAmount || "Paid"}: ${request.paidAmount?.toFixed(2) || request.selectedCompany?.cost.toFixed(2)}
+                      {request.paidAt && ` • ${new Date(request.paidAt).toLocaleDateString(locale)}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Live Tracking Map - Only show when In Transit or later */}

@@ -180,6 +180,11 @@ export interface Request {
   destinationPickupMode?: "Delegate" | "Self";
   // Company rejection tracking
   rejectedByCompanies?: string[];
+  // Payment fields
+  paymentStatus?: "unpaid" | "pending" | "paid" | "refunded" | "failed";
+  paymentId?: string;
+  paidAmount?: number;
+  paidAt?: string;
 }
 
 // Request payload for POST/PUT operations

@@ -240,6 +240,18 @@ const requestSchema = new mongoose.Schema(
     orderFlow: [String],
     orderCompletedStatuses: [String],
     rejectedByCompanies: [String],
+    // Payment related fields
+    paymentStatus: {
+      type: String,
+      enum: ["unpaid", "pending", "paid", "refunded", "failed"],
+      default: "unpaid",
+    },
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+    },
+    paidAmount: Number,
+    paidAt: Date,
   },
   { timestamps: true },
 );
