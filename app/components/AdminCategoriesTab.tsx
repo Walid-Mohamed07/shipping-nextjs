@@ -254,10 +254,10 @@ export function AdminCategoriesTab() {
                     </h3>
                     {typeof category.name === "object" && category.name !== null && (
                       <div className="flex gap-3 mt-1 flex-wrap">
-                        {nameObj.en && nameObj.en !== getCategoryDisplayName(category.name, locale) && (
+                        {nameObj.en && (
                           <span className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">EN: {nameObj.en}</span>
                         )}
-                        {nameObj.ar && nameObj.ar !== getCategoryDisplayName(category.name, locale) && (
+                        {nameObj.ar && (
                           <span className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5" dir="rtl">AR: {nameObj.ar}</span>
                         )}
                       </div>

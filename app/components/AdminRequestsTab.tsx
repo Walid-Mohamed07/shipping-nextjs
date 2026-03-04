@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { useToast, getErrorMessage } from "@/lib/useToast";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
 const STATUS_COLORS: Record<
   string,
@@ -60,6 +61,7 @@ export function AdminRequestsTab() {
   const { user } = useAuth();
   const toastUtils = useToast();
   const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
 
   const translateStatus = (status: string): string => {
     const statuses = t.userRequestDetail.requestStatuses as Record<
@@ -364,7 +366,7 @@ export function AdminRequestsTab() {
                     {request.items.map((item, idx) => (
                       <div key={idx} className="text-sm text-foreground">
                         <p>
-                          {item.quantity}x {item.item} ({item.category})
+                          {item.quantity}x {item.item} ({getCategoryLabel(item.category)})
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {t.adminRequests.weight} {item.weight}kg |{" "}
@@ -471,7 +473,7 @@ export function AdminRequestsTab() {
             {/* Close Button */}
             <button
               onClick={() => setSelectedRequest(null)}
-              className="absolute top-4 right-4 p-1 hover:bg-muted rounded-lg transition-colors"
+              className="absolute top-4 end-4 p-1 hover:bg-muted rounded-lg transition-colors"
             >
               <XIcon className="w-5 h-5 text-muted-foreground" />
             </button>
@@ -716,7 +718,7 @@ export function AdminRequestsTab() {
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-1">
-                          {t.adminRequests.category} {item.category}
+                          {t.adminRequests.category} {getCategoryLabel(item.category)}
                         </p>
                         <p className="text-sm text-muted-foreground mb-1">
                           {t.adminRequests.weight} {item.weight} kg
@@ -758,44 +760,140 @@ export function AdminRequestsTab() {
             </div>
 
             {/* Cost Offers */}
-            {selectedRequest.costOffers ? (
-              selectedRequest.costOffers?.length > 0 ? (
+            {selectedRequest.costOffers && selectedRequest.costOffers.length > 0 && (() => {
+              const avgCompanyOffer =
+                selectedRequest.costOffers!.reduce(
+                  (sum, o) => sum + Number(o.cost),
+                  0,
+                ) / selectedRequest.costOffers!.length;
+              return (
                 <div className="mb-6 pb-6 border-b border-border">
-                  <h3 className="font-semibold text-foreground mb-3">
-                    {t.adminRequests.costOffers} (
-                    {selectedRequest.costOffers.length})
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    {selectedRequest.costOffers.map((offer, idx) => (
+                  {/* Section header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                      {t.adminRequests.costOffers}
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
+                        {selectedRequest.costOffers!.length}
+                      </span>
+                    </h3>
+                  </div>
+
+                  {/* Avg company offer summary */}
+                  <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-900/20">
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      {t.adminRequests.avgCompanyOffer}
+                    </span>
+                    <span
+                      className="text-base font-bold text-blue-700 dark:text-blue-300"
+                      dir="ltr"
+                    >
+                      ${avgCompanyOffer.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Scrollable offer cards */}
+                  <div
+                    className="space-y-3 overflow-y-auto pe-1"
+                    style={{ maxHeight: "22rem" }}
+                  >
+                    {selectedRequest.costOffers!.map((offer, idx) => (
                       <div
                         key={idx}
-                        className="p-3 bg-muted/50 rounded-lg border border-border"
+                        className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
                       >
-                        <p className="font-medium text-foreground">
-                          {offer.company.name || `Offer ${idx + 1}`}
-                        </p>
-                        {offer.cost && (
-                          <p className="text-foreground">
-                            {t.adminRequests.cost} ${offer.cost}
-                          </p>
-                        )}
-                        {offer.comment && (
-                          <p className="text-xs text-muted-foreground mt-1 italic">
-                            {offer.comment}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t.adminRequests.status}{" "}
-                          <span className="font-medium">
+                        {/* Card header: index + name + status */}
+                        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/60 px-4 py-2.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                              {idx + 1}
+                            </span>
+                            <span className="truncate text-sm font-semibold text-foreground">
+                              {offer.company.name ||
+                                `${t.adminRequests.offerLabel} ${idx + 1}`}
+                            </span>
+                          </div>
+                          <span
+                            className={
+                              "shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium " +
+                              (offer.status === "accepted"
+                                ? "border-green-300 bg-green-100 text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                : offer.status === "rejected"
+                                  ? "border-red-300 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                  : "border-yellow-300 bg-yellow-100 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300")
+                            }
+                          >
                             {translateOfferStatus(offer.status)}
                           </span>
-                        </p>
+                        </div>
+
+                        {/* Price breakdown */}
+                        <div className="space-y-2 px-4 py-3 text-sm">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-muted-foreground">
+                              {t.adminRequests.cost}
+                            </span>
+                            <span className="font-semibold" dir="ltr">
+                              ${Number(offer.cost).toFixed(2)}
+                            </span>
+                          </div>
+
+                          {offer.headoverPercentage != null &&
+                            offer.headoverAmount != null && (
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  {t.adminRequests.headoverAmount}{" "}
+                                  <span dir="ltr" className="inline">
+                                    ({offer.headoverPercentage}%)
+                                  </span>
+                                </span>
+                                <span
+                                  className="font-medium text-orange-600 dark:text-orange-400"
+                                  dir="ltr"
+                                >
+                                  +${Number(offer.headoverAmount).toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+
+                          {offer.finalPrice != null && (
+                            <div className="flex items-center justify-between gap-4 border-t border-border pt-2">
+                              <span className="font-semibold text-foreground">
+                                {t.adminRequests.finalPrice}
+                              </span>
+                              <span
+                                className="text-base font-bold text-primary"
+                                dir="ltr"
+                              >
+                                ${Number(offer.finalPrice).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Comment + date footer */}
+                        {(offer.comment || offer.createdAt) && (
+                          <div className="flex flex-wrap items-start justify-between gap-2 border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+                            {offer.comment && (
+                              <p className="flex-1 italic">{offer.comment}</p>
+                            )}
+                            {offer.createdAt && (
+                              <time
+                                className="ms-auto shrink-0 whitespace-nowrap"
+                                dir="ltr"
+                              >
+                                {new Date(
+                                  offer.createdAt,
+                                ).toLocaleDateString()}
+                              </time>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
-              ) : null
-            ) : null}
+              );
+            })()}
 
             {/* Activity Log */}
             {selectedRequest.activityHistory &&
@@ -814,7 +912,7 @@ export function AdminRequestsTab() {
                           key={idx}
                           className="flex gap-3 text-sm border-l-2 border-primary pl-3 py-2"
                         >
-                          <div className="flex-shrink-0 mt-0.5">
+                          <div className="shrink-0 mt-0.5">
                             <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
                           </div>
                           <div className="flex-1 min-w-0">

@@ -18,6 +18,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import type { Item, Address, DayOfWeek } from "@/types";
+import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
 export interface ReviewData {
   items: Item[];
@@ -41,8 +43,8 @@ interface ReviewModalProps {
   isLoading: boolean;
 }
 
-const formatAddress = (addr: Address | null) => {
-  if (!addr) return "Not selected";
+const formatAddress = (addr: Address | null, notSelected: string) => {
+  if (!addr) return notSelected;
   const parts = [
     addr.street,
     addr.building,
@@ -51,7 +53,7 @@ const formatAddress = (addr: Address | null) => {
     addr.governorate,
     addr.country,
   ].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Not selected";
+  return parts.length > 0 ? parts.join(", ") : notSelected;
 };
 
 export default function ReviewModal({
@@ -61,6 +63,9 @@ export default function ReviewModal({
   data,
   isLoading,
 }: ReviewModalProps) {
+  const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
+
   if (!open) return null;
 
   return (
@@ -74,17 +79,17 @@ export default function ReviewModal({
             </div>
             <div>
               <h2 className="text-xl font-bold text-foreground">
-                Review Your Order
+                {t.newRequest.reviewOrder}
               </h2>
               <p className="text-sm text-muted-foreground">
-                Please confirm all details before submitting
+                {t.newRequest.confirmDetails}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-            aria-label="Close"
+            aria-label={t.common.close}
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -96,7 +101,7 @@ export default function ReviewModal({
           <section>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
               <Package className="w-4 h-4 text-primary" />
-              Shipment Items ({data.items.length})
+              {t.newRequest.shipmentItems} ({data.items.length})
             </h3>
             <div className="space-y-2">
               {data.items.map((item, idx) => (
@@ -113,7 +118,7 @@ export default function ReviewModal({
                         {item.name}
                       </span>
                       <Badge variant="secondary" className="text-[11px]">
-                        {item.category}
+                        {getCategoryLabel(item.category)}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -121,7 +126,7 @@ export default function ReviewModal({
                     </p>
                     {item.note && (
                       <p className="text-xs text-muted-foreground italic mt-0.5">
-                        Note: {item.note}
+                        {t.newRequest.noteLabel} {item.note}
                       </p>
                     )}
                     {item.services &&
@@ -133,13 +138,13 @@ export default function ReviewModal({
                             "company" && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                               <Wrench className="w-2.5 h-2.5" />
-                              Assembly (Company)
+                              {t.newRequest.assemblyCompanyBadge}
                             </span>
                           )}
                           {item.services.packaging && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                               <BoxSelect className="w-2.5 h-2.5" />
-                              Packaging
+                              {t.newRequest.packagingBadge}
                             </span>
                           )}
                         </div>
@@ -154,15 +159,15 @@ export default function ReviewModal({
           <section>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
               <MapPin className="w-4 h-4 text-primary" />
-              Addresses
+              {t.newRequest.addresses}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Pickup (Source)
+                  {t.newRequest.pickupSource}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {formatAddress(data.sourceAddress)}
+                  {formatAddress(data.sourceAddress, t.newRequest.notSelected)}
                 </p>
                 {data.sourceAddress?.fullName && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -175,15 +180,15 @@ export default function ReviewModal({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mode: {data.sourcePickupMode}
+                  {t.newRequest.mode}: {data.sourcePickupMode}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Delivery (Destination)
+                  {t.newRequest.deliveryDestination}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {formatAddress(data.destinationAddress)}
+                  {formatAddress(data.destinationAddress, t.newRequest.notSelected)}
                 </p>
                 {data.destinationAddress?.fullName && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -196,7 +201,7 @@ export default function ReviewModal({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mode: {data.destPickupMode}
+                  {t.newRequest.mode}: {data.destPickupMode}
                 </p>
               </div>
             </div>
@@ -206,20 +211,20 @@ export default function ReviewModal({
           <section>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
               <Truck className="w-4 h-4 text-primary" />
-              Delivery &amp; Cost
+              {t.newRequest.deliveryCost}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Delivery Type
+                  {t.newRequest.deliveryType}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {data.deliveryType === "Urgent" ? "🔥 Urgent" : "Normal"}
+                  {data.deliveryType === "Urgent" ? `🔥 ${t.newRequest.urgent}` : t.newRequest.normal}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Cost
+                  {t.newRequest.reviewCost}
                 </p>
                 <p className="text-sm font-bold text-primary flex items-center gap-1">
                   <DollarSign className="w-3 h-3" />
@@ -228,13 +233,13 @@ export default function ReviewModal({
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Collection Days
+                  {t.newRequest.reviewCollectionDays}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {data.collectionAvailableDays && data.collectionAvailableDays.length > 0 ? (
                     data.collectionAvailableDays.includes("All Week") || data.collectionAvailableDays.length === 7 ? (
                       <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
-                        All Week
+                        {t.common.allWeek}
                       </span>
                     ) : (
                       data.collectionAvailableDays.map((day) => (
@@ -253,7 +258,7 @@ export default function ReviewModal({
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Contact
+                  {t.newRequest.contact}
                 </p>
                 <p className="text-sm font-medium text-foreground flex items-center gap-1">
                   <Phone className="w-3 h-3" />
@@ -263,13 +268,13 @@ export default function ReviewModal({
             </div>
             <div className="rounded-lg border border-border bg-muted/30 p-3 mt-3">
               <p className="text-xs font-medium text-muted-foreground mb-1">
-                Delivery Days
+                {t.newRequest.reviewDeliveryDays}
               </p>
               <div className="flex flex-wrap gap-1">
                 {data.deliveryAvailableDays && data.deliveryAvailableDays.length > 0 ? (
                   data.deliveryAvailableDays.includes("All Week") || data.deliveryAvailableDays.length === 7 ? (
                     <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                      All Week
+                      {t.common.allWeek}
                     </span>
                   ) : (
                     data.deliveryAvailableDays.map((day) => (
@@ -293,7 +298,7 @@ export default function ReviewModal({
             <section>
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
                 <MessageSquare className="w-4 h-4 text-primary" />
-                Additional Notes
+                {t.newRequest.additionalNotes}
               </h3>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-sm text-foreground whitespace-pre-wrap">
@@ -314,7 +319,7 @@ export default function ReviewModal({
             className="flex-1 cursor-pointer gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Go Back &amp; Edit
+            {t.newRequest.reviewGoBack}
           </Button>
           <Button
             type="button"
@@ -325,12 +330,12 @@ export default function ReviewModal({
             {isLoading ? (
               <>
                 <span className="animate-spin">⏳</span>
-                Submitting...
+                {t.newRequest.submitting}
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                Confirm &amp; Submit
+                {t.newRequest.reviewConfirmSubmit}
               </>
             )}
           </Button>

@@ -131,11 +131,9 @@ export function AdminSettingsTab() {
           </div>
           <div>
             <h3 className="text-lg font-semibold text-foreground">
-              {t.adminSettings?.headoverTitle || "Headover Percentage (Markup)"}
+              {t.adminSettings?.headoverTitle || "Headover Percentage"}
             </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t.adminSettings?.headoverDescription || "This percentage is added to company offers when displayed to clients. For example, if a company offers $60 and headover is 5%, the client will see $63."}
-            </p>
+           
           </div>
         </div>
 

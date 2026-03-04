@@ -49,7 +49,7 @@ export function AdminCompaniesTab() {
       if (sortBy === "name") {
         return a.name.localeCompare(b.name);
       } else if (sortBy === "rating") {
-        return parseFloat(b.rate) - parseFloat(a.rate);
+        return b.rate - a.rate;
       } else if (sortBy === "date") {
         return 0;
       }

@@ -89,8 +89,9 @@ export interface CostOffer {
   _id?: string;
   id?: string;
   cost: number;
-  finalPrice?: number; // Cost with headover markup applied
   headoverPercentage?: number; // The headover percentage applied
+  headoverAmount?: number; // Computed headover in dollars
+  finalPrice?: number; // Cost with headover markup applied
   company: {
     id: string;
     name: string;

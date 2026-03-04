@@ -9,6 +9,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useLiveRequest, useLiveEvent } from "@/app/hooks/useLiveData";
 import { useRealTime } from "@/app/context/RealTimeContext";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 import { toast } from "sonner";
 import {
   MapPin,
@@ -67,6 +68,7 @@ export default function OngoingRequestDetailPage() {
   const requestId = params?.id as string;
   const { isConnected } = useRealTime();
   const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
 
   // Use live data hook for real-time request updates
   const {
@@ -845,7 +847,7 @@ export default function OngoingRequestDetailPage() {
                         </div>
                       </div>
                       {item.category && (
-                        <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                        <Badge variant="outline" className="text-xs">{getCategoryLabel(item.category)}</Badge>
                       )}
                     </div>
                   </div>

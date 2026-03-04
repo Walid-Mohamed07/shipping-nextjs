@@ -41,6 +41,7 @@ import { Request, CostOffer } from "@/types";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
 // Dynamically import map component
 const SimpleLocationMap = dynamic(
@@ -97,6 +98,7 @@ export default function CompanyRequestDetailPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [mapView, setMapView] = useState<"pickup" | "delivery">("pickup");
   const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
 
   const loading = authLoading || requestLoading;
 
@@ -680,7 +682,7 @@ export default function CompanyRequestDetailPage() {
                                   className="text-xs font-medium"
                                 >
                                   <Tag className="w-3 h-3 mr-1" />
-                                  {item.category}
+                                  {getCategoryLabel(item.category)}
                                 </Badge>
                               )}
                             </div>

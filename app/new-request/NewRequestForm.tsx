@@ -848,7 +848,6 @@ export default function NewRequestForm() {
         mediaFiles: [],
         mediaPreviews: [],
         services: {
-          canBeAssembledDisassembled: false,
           assemblyDisassemblyHandler: undefined,
           packaging: false,
         },

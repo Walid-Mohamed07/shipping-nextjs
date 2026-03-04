@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
-import { Request } from "@/lib/models";
+import { Request, Settings } from "@/lib/models";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
 import { broadcastEvent, broadcastToUserAndAdmins } from "@/lib/eventBroadcaster";
 
@@ -144,8 +144,28 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Fetch headover settings
+      let headoverPercentage = 0;
+      try {
+        const settings = await Settings.findOne({ key: "global" });
+        if (settings?.headoverPercentage != null) {
+          headoverPercentage = settings.headoverPercentage;
+        }
+      } catch {
+        // If settings unavailable, fallback to 0%
+      }
+
+      const companyCost = offer.cost;
+      const headoverAmount = parseFloat(
+        (companyCost * (headoverPercentage / 100)).toFixed(2),
+      );
+      const finalPrice = parseFloat((companyCost + headoverAmount).toFixed(2));
+
       const newOffer = {
-        cost: offer.cost,
+        cost: companyCost,
+        headoverPercentage,
+        headoverAmount,
+        finalPrice,
         comment: offer.comment || "",
         company: {
           id: companyId,

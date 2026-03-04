@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
 interface CostOffer {
   cost: number;
@@ -72,6 +73,7 @@ export default function RequestDetailPage() {
   const [selectedDeliveryStatus, setSelectedDeliveryStatus] = useState("");
   const [selectedRequestStatus, setSelectedRequestStatus] = useState("");
   const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -273,7 +275,7 @@ export default function RequestDetailPage() {
                   </p>
                   <p>
                     <span className="font-medium">{t.admin.categoryLabel}:</span>{" "}
-                    {firstItem.category}
+                    {getCategoryLabel(firstItem.category)}
                   </p>
                   <p>
                     <span className="font-medium">{t.admin.dimensionsLabel}:</span>{" "}
