@@ -42,6 +42,7 @@ import {
 import { getDistanceKm } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
 // Dynamically import map components to avoid SSR issues
 const LocationMapPicker = dynamic(
@@ -83,6 +84,7 @@ const NEARBY_RADIUS_KM = 50;
 
 export default function RequestDetailsPage() {
   const { t, isRtl, locale } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
   const { user, isLoading: authLoading } = useProtectedRoute();
   const params = useParams();
   const requestId = params.id as string;
@@ -108,6 +110,9 @@ export default function RequestDetailsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [headoverPercentage, setHeadoverPercentage] = useState(0);
+
+  const isClientRole = !['admin', 'operator', 'company', 'driver'].includes(user?.role || '');
 
   const isLoading = authLoading || requestLoading;
 
@@ -123,6 +128,9 @@ export default function RequestDetailsPage() {
       }
       const data = await response.json();
       setRequest(data.request || data);
+      if (typeof data.headoverPercentage === 'number') {
+        setHeadoverPercentage(data.headoverPercentage);
+      }
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load request");
@@ -837,7 +845,7 @@ export default function RequestDetailsPage() {
                         {/* Pickup DateTime */}
                         {offer.pickupDateTime && (
                           <div className="mb-2 text-xs text-muted-foreground">
-                            <span className="font-medium">Pickup:</span>{" "}
+                            <span className="font-medium">{t.userRequestDetail.pickup}</span>{" "}
                             {new Date(offer.pickupDateTime).toLocaleString(locale, {
                               dateStyle: "medium",
                               timeStyle: "short",
@@ -848,7 +856,7 @@ export default function RequestDetailsPage() {
                         {/* Delivery DateTime */}
                         {offer.deliveryDateTime && (
                           <div className="mb-3 text-xs text-muted-foreground">
-                            <span className="font-medium">Delivery:</span>{" "}
+                            <span className="font-medium">{t.userRequestDetail.delivery}</span>{" "}
                             {new Date(offer.deliveryDateTime).toLocaleString(locale, {
                               dateStyle: "medium",
                               timeStyle: "short",
@@ -924,7 +932,7 @@ export default function RequestDetailsPage() {
                   {confirmingOffer.pickupDateTime && (
                     <div className="mt-3 pt-3 border-t border-border">
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        Pickup:
+                        {t.userRequestDetail.pickup}
                       </p>
                       <p className="text-sm text-foreground">
                         {new Date(confirmingOffer.pickupDateTime).toLocaleString(locale, {
@@ -937,7 +945,7 @@ export default function RequestDetailsPage() {
                   {confirmingOffer.deliveryDateTime && (
                     <div className={`${confirmingOffer.pickupDateTime ? "mt-2" : "mt-3 pt-3 border-t border-border"}`}>
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        Delivery:
+                        {t.userRequestDetail.delivery}
                       </p>
                       <p className="text-sm text-foreground">
                         {new Date(confirmingOffer.deliveryDateTime).toLocaleString(locale, {
@@ -1036,7 +1044,7 @@ export default function RequestDetailsPage() {
                             {item.name || item.item}
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {item.category}
+                            {getCategoryLabel(item.category)}
                           </p>
                         </div>
                         {item.quantity > 1 && (
@@ -1283,7 +1291,7 @@ export default function RequestDetailsPage() {
                   {request.selectedCompany && (
                     <div className="flex items-center gap-2">
                       <p className="text-xl font-bold text-primary">
-                        ${Number(request.selectedCompany.cost).toFixed(2)}
+                        ${Number(request.selectedCompany.finalPrice ?? request.selectedCompany.cost).toFixed(2)}
                       </p>
                       <span className="text-xs text-green-600 dark:text-green-400">
                         {t.userRequestDetail.acceptedOffer}
@@ -1332,7 +1340,7 @@ export default function RequestDetailsPage() {
                         {t.userRequestDetail.acceptedOfferLabel}
                       </p>
                       <p className="text-sm font-semibold text-primary">
-                        ${Number(request.selectedCompany.cost).toFixed(2)}
+                        ${Number(request.selectedCompany.finalPrice ?? request.selectedCompany.cost).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
@@ -1380,7 +1388,18 @@ export default function RequestDetailsPage() {
                           {/* Description */}
                           {(activity.action || activity.description) && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {getTranslatedActivityDescription(activity)}
+                              {getTranslatedActivityDescription(
+                                isClientRole && activity.action === 'offer_submitted'
+                                  ? {
+                                      ...activity,
+                                      companyName: 'A company',
+                                      cost:
+                                        activity.cost != null
+                                          ? activity.cost * (1 + headoverPercentage / 100)
+                                          : activity.cost,
+                                    }
+                                  : activity,
+                              )}
                             </p>
                           )}
 
@@ -1399,7 +1418,7 @@ export default function RequestDetailsPage() {
 
                           {/* Company info and cost */}
                           <div className="flex flex-wrap gap-3 mt-2">
-                            {activity.companyName && (
+                            {activity.companyName && !(isClientRole && activity.action === 'offer_submitted') && (
                               <div className="text-xs">
                                 <span className="text-muted-foreground">
                                   {t.userRequestDetail.company}{" "}
@@ -1416,11 +1435,15 @@ export default function RequestDetailsPage() {
                                     {t.userRequestDetail.costLabel}{" "}
                                   </span>
                                   <span className="text-primary font-semibold">
-                                    ${Number(activity.cost).toFixed(2)}
+                                    ${Number(
+                                      isClientRole && activity.action === 'offer_submitted'
+                                        ? activity.cost * (1 + headoverPercentage / 100)
+                                        : activity.cost
+                                    ).toFixed(2)}
                                   </span>
                                 </div>
                               )}
-                            {activity.companyRate && (
+                            {activity.companyRate && !(isClientRole && activity.action === 'offer_submitted') && (
                               <div className="text-xs">
                                 <span className="text-muted-foreground">
                                   {t.userRequestDetail.rateLabel}{" "}

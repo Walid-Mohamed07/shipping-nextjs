@@ -35,7 +35,7 @@ interface UserStats {
 }
 
 interface UserAddress {
-  _id: string;
+  id: string;
   fullName: string;
   mobile: string;
   street: string;
@@ -441,7 +441,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {addresses.map((address) => (
                     <div
-                      key={address._id}
+                      key={address.id}
                       className="bg-card rounded-lg border border-border p-6"
                     >
                       <div className="flex items-start justify-between mb-4">

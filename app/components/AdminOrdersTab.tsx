@@ -9,6 +9,7 @@ import { useLiveData, useLiveEvent } from "@/app/hooks/useLiveData";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
 interface Order extends Request {
   user?: User;
@@ -22,6 +23,7 @@ interface AdminOrdersTabProps {
 
 export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
   const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
   // Use live data hook for real-time updates
   const { 
     data: liveOrders, 
@@ -148,7 +150,7 @@ export function AdminOrdersTab({ onOrderAccepted }: AdminOrdersTabProps) {
             const itemName = firstItem
               ? (firstItem.item ?? firstItem.name ?? "-")
               : "-";
-            const category = firstItem ? firstItem.category : "-";
+            const category = firstItem ? getCategoryLabel(firstItem.category) : "-";
             const weight = firstItem ? firstItem.weight : null;
             const quantity = firstItem ? firstItem.quantity : null;
 
