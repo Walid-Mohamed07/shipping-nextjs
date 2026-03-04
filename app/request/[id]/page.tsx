@@ -240,7 +240,7 @@ export default function RequestDetailsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          offerId: confirmingOffer._id, // Use the offer ID from the offer
+          offerId: confirmingOffer.company.id, // Use the company ID to match the backend
         }),
       });
 
@@ -742,7 +742,7 @@ export default function RequestDetailsPage() {
                     {request.costOffers.map((offer, idx) => (
                       <div
                         key={offer._id || idx}
-                        onClick={() => handleSelectOffer(offer._id || offer.company.id || String(idx))}
+                        onClick={() => handleSelectOffer(offer._id)}
                         className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
                           offer.selected
                             ? "border-primary bg-primary/5 shadow-md"
