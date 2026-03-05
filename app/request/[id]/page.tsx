@@ -312,6 +312,8 @@ export default function RequestDetailsPage() {
     return () => window.removeEventListener("keydown", handleEscKey);
   }, [showImageZoom]);
 
+  // test
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case RequestDeliveryStatus.PENDING:
