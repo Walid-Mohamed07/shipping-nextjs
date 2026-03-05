@@ -112,7 +112,9 @@ export default function RequestDetailsPage() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [headoverPercentage, setHeadoverPercentage] = useState(0);
 
-  const isClientRole = !['admin', 'operator', 'company', 'driver'].includes(user?.role || '');
+  const isClientRole = !["admin", "operator", "company", "driver"].includes(
+    user?.role || "",
+  );
 
   const isLoading = authLoading || requestLoading;
 
@@ -128,7 +130,7 @@ export default function RequestDetailsPage() {
       }
       const data = await response.json();
       setRequest(data.request || data);
-      if (typeof data.headoverPercentage === 'number') {
+      if (typeof data.headoverPercentage === "number") {
         setHeadoverPercentage(data.headoverPercentage);
       }
       setError("");
@@ -504,34 +506,41 @@ export default function RequestDetailsPage() {
             </div>
 
             {/* Proceed to Checkout - Show when Assigned to Company with accepted offer and not paid */}
-            {request.requestStatus === "Assigned to Company" &&
+            {/* {request.requestStatus === "Assigned to Company" &&
               request.selectedCompany &&
               request.paymentStatus !== "paid" && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6">
                     <div className="text-center sm:text-left">
                       <h3 className="font-semibold text-lg text-foreground mb-1">
-                        {t.userRequestDetail?.readyForPayment || "Ready for Payment"}
+                        {t.userRequestDetail?.readyForPayment ||
+                          "Ready for Payment"}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {t.userRequestDetail?.payToStartDesc || "Complete your payment to start your shipment"}
+                        {t.userRequestDetail?.payToStartDesc ||
+                          "Complete your payment to start your shipment"}
                       </p>
                       <p className="text-2xl font-bold text-primary mt-2">
-                        ${(request.selectedCompany.finalPrice || request.selectedCompany.cost).toFixed(2)}
+                        $
+                        {(
+                          request.selectedCompany.finalPrice ||
+                          request.selectedCompany.cost
+                        ).toFixed(2)}
                       </p>
                     </div>
                     <Link href={`/checkout?requestId=${requestId}`}>
                       <Button size="lg" className="cursor-pointer gap-2 px-8">
                         <CreditCard className="w-5 h-5" />
-                        {t.userRequestDetail?.proceedToCheckout || "Proceed to Checkout"}
+                        {t.userRequestDetail?.proceedToCheckout ||
+                          "Proceed to Checkout"}
                       </Button>
                     </Link>
                   </div>
                 </div>
-              )}
+              )} */}
 
             {/* Payment Status Badge - Show when payment is completed */}
-            {request.paymentStatus === "paid" && (
+            {/* {request.paymentStatus === "paid" && (
               <div className="mt-6 pt-6 border-t border-border">
                 <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                   <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -539,16 +548,20 @@ export default function RequestDetailsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-green-800 dark:text-green-400">
-                      {t.userRequestDetail?.paymentCompleted || "Payment Completed"}
+                      {t.userRequestDetail?.paymentCompleted ||
+                        "Payment Completed"}
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-500">
-                      {t.userRequestDetail?.paidAmount || "Paid"}: ${request.paidAmount?.toFixed(2) || request.selectedCompany?.cost.toFixed(2)}
-                      {request.paidAt && ` • ${new Date(request.paidAt).toLocaleDateString(locale)}`}
+                      {t.userRequestDetail?.paidAmount || "Paid"}: $
+                      {request.paidAmount?.toFixed(2) ||
+                        request.selectedCompany?.cost.toFixed(2)}
+                      {request.paidAt &&
+                        ` • ${new Date(request.paidAt).toLocaleDateString(locale)}`}
                     </p>
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Live Tracking Map - Only show when In Transit or later */}
@@ -845,22 +858,32 @@ export default function RequestDetailsPage() {
                         {/* Pickup DateTime */}
                         {offer.pickupDateTime && (
                           <div className="mb-2 text-xs text-muted-foreground">
-                            <span className="font-medium">{t.userRequestDetail.pickup}</span>{" "}
-                            {new Date(offer.pickupDateTime).toLocaleString(locale, {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            })}
+                            <span className="font-medium">
+                              {t.userRequestDetail.pickup}
+                            </span>{" "}
+                            {new Date(offer.pickupDateTime).toLocaleString(
+                              locale,
+                              {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              },
+                            )}
                           </div>
                         )}
 
                         {/* Delivery DateTime */}
                         {offer.deliveryDateTime && (
                           <div className="mb-3 text-xs text-muted-foreground">
-                            <span className="font-medium">{t.userRequestDetail.delivery}</span>{" "}
-                            {new Date(offer.deliveryDateTime).toLocaleString(locale, {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            })}
+                            <span className="font-medium">
+                              {t.userRequestDetail.delivery}
+                            </span>{" "}
+                            {new Date(offer.deliveryDateTime).toLocaleString(
+                              locale,
+                              {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              },
+                            )}
                           </div>
                         )}
 
@@ -920,14 +943,17 @@ export default function RequestDetailsPage() {
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-primary mb-2">
-                    ${(confirmingOffer.finalPrice ?? confirmingOffer.cost).toFixed(2)}
+                    $
+                    {(
+                      confirmingOffer.finalPrice ?? confirmingOffer.cost
+                    ).toFixed(2)}
                   </p>
                   {confirmingOffer.comment && (
                     <p className="text-sm text-muted-foreground mb-2">
                       {confirmingOffer.comment}
                     </p>
                   )}
-                  
+
                   {/* Display pickup/delivery datetime if present */}
                   {confirmingOffer.pickupDateTime && (
                     <div className="mt-3 pt-3 border-t border-border">
@@ -935,7 +961,9 @@ export default function RequestDetailsPage() {
                         {t.userRequestDetail.pickup}
                       </p>
                       <p className="text-sm text-foreground">
-                        {new Date(confirmingOffer.pickupDateTime).toLocaleString(locale, {
+                        {new Date(
+                          confirmingOffer.pickupDateTime,
+                        ).toLocaleString(locale, {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
@@ -943,12 +971,16 @@ export default function RequestDetailsPage() {
                     </div>
                   )}
                   {confirmingOffer.deliveryDateTime && (
-                    <div className={`${confirmingOffer.pickupDateTime ? "mt-2" : "mt-3 pt-3 border-t border-border"}`}>
+                    <div
+                      className={`${confirmingOffer.pickupDateTime ? "mt-2" : "mt-3 pt-3 border-t border-border"}`}
+                    >
                       <p className="text-xs font-medium text-muted-foreground mb-1">
                         {t.userRequestDetail.delivery}
                       </p>
                       <p className="text-sm text-foreground">
-                        {new Date(confirmingOffer.deliveryDateTime).toLocaleString(locale, {
+                        {new Date(
+                          confirmingOffer.deliveryDateTime,
+                        ).toLocaleString(locale, {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
@@ -1291,7 +1323,11 @@ export default function RequestDetailsPage() {
                   {request.selectedCompany && (
                     <div className="flex items-center gap-2">
                       <p className="text-xl font-bold text-primary">
-                        ${Number(request.selectedCompany.finalPrice ?? request.selectedCompany.cost).toFixed(2)}
+                        $
+                        {Number(
+                          request.selectedCompany.finalPrice ??
+                            request.selectedCompany.cost,
+                        ).toFixed(2)}
                       </p>
                       <span className="text-xs text-green-600 dark:text-green-400">
                         {t.userRequestDetail.acceptedOffer}
@@ -1340,7 +1376,11 @@ export default function RequestDetailsPage() {
                         {t.userRequestDetail.acceptedOfferLabel}
                       </p>
                       <p className="text-sm font-semibold text-primary">
-                        ${Number(request.selectedCompany.finalPrice ?? request.selectedCompany.cost).toFixed(2)}
+                        $
+                        {Number(
+                          request.selectedCompany.finalPrice ??
+                            request.selectedCompany.cost,
+                        ).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
@@ -1389,13 +1429,15 @@ export default function RequestDetailsPage() {
                           {(activity.action || activity.description) && (
                             <p className="text-sm text-muted-foreground mt-1">
                               {getTranslatedActivityDescription(
-                                isClientRole && activity.action === 'offer_submitted'
+                                isClientRole &&
+                                  activity.action === "offer_submitted"
                                   ? {
                                       ...activity,
-                                      companyName: 'A company',
+                                      companyName: "A company",
                                       cost:
                                         activity.cost != null
-                                          ? activity.cost * (1 + headoverPercentage / 100)
+                                          ? activity.cost *
+                                            (1 + headoverPercentage / 100)
                                           : activity.cost,
                                     }
                                   : activity,
@@ -1418,16 +1460,20 @@ export default function RequestDetailsPage() {
 
                           {/* Company info and cost */}
                           <div className="flex flex-wrap gap-3 mt-2">
-                            {activity.companyName && !(isClientRole && activity.action === 'offer_submitted') && (
-                              <div className="text-xs">
-                                <span className="text-muted-foreground">
-                                  {t.userRequestDetail.company}{" "}
-                                </span>
-                                <span className="text-foreground font-medium">
-                                  {activity.companyName}
-                                </span>
-                              </div>
-                            )}
+                            {activity.companyName &&
+                              !(
+                                isClientRole &&
+                                activity.action === "offer_submitted"
+                              ) && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">
+                                    {t.userRequestDetail.company}{" "}
+                                  </span>
+                                  <span className="text-foreground font-medium">
+                                    {activity.companyName}
+                                  </span>
+                                </div>
+                              )}
                             {activity.cost !== undefined &&
                               activity.cost !== null && (
                                 <div className="text-xs">
@@ -1435,24 +1481,31 @@ export default function RequestDetailsPage() {
                                     {t.userRequestDetail.costLabel}{" "}
                                   </span>
                                   <span className="text-primary font-semibold">
-                                    ${Number(
-                                      isClientRole && activity.action === 'offer_submitted'
-                                        ? activity.cost * (1 + headoverPercentage / 100)
-                                        : activity.cost
+                                    $
+                                    {Number(
+                                      isClientRole &&
+                                        activity.action === "offer_submitted"
+                                        ? activity.cost *
+                                            (1 + headoverPercentage / 100)
+                                        : activity.cost,
                                     ).toFixed(2)}
                                   </span>
                                 </div>
                               )}
-                            {activity.companyRate && !(isClientRole && activity.action === 'offer_submitted') && (
-                              <div className="text-xs">
-                                <span className="text-muted-foreground">
-                                  {t.userRequestDetail.rateLabel}{" "}
-                                </span>
-                                <span className="text-foreground">
-                                  {activity.companyRate} ⭐
-                                </span>
-                              </div>
-                            )}
+                            {activity.companyRate &&
+                              !(
+                                isClientRole &&
+                                activity.action === "offer_submitted"
+                              ) && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">
+                                    {t.userRequestDetail.rateLabel}{" "}
+                                  </span>
+                                  <span className="text-foreground">
+                                    {activity.companyRate} ⭐
+                                  </span>
+                                </div>
+                              )}
                           </div>
 
                           {/* Additional details if present */}

@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       user: user.id,
       request: request._id,
       amount: totalAmount,
-      currency: "EGP",
+      currency: "USD",
       status: cardAmount > 0 ? "pending" : "processing",
       paymentMethod: cardAmount > 0 ? "card" : "wallet",
       kashierOrderId: orderId,
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         user: user.id,
         type: "payment",
         amount: actualWalletAmount,
-        currency: "EGP",
+        currency: "USD",
         description: `Payment for shipping request ${request.publicId || requestId}`,
         reference: orderId,
         request: request._id,
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Kashier payment session for card payment
-    const currency = "EGP";
+    const currency = "USD";
     const hash = generateKashierHash(orderId, cardAmount, currency);
 
     const kashierPayload = {
@@ -197,6 +197,7 @@ export async function POST(req: NextRequest) {
       amount: cardAmount,
       currency,
       mode: process.env.KASHIER_MODE,
+      authHeader: "Using SECRET_KEY (first 30 chars): " + process.env.KASHIER_SECRET_KEY?.substring(0, 30) + "...",
       payload: kashierPayload,
     });
 
@@ -206,8 +207,8 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "authorization": process.env.KASHIER_API_KEY!,
-          "authmerchantid": process.env.KASHIER_MERCHANT_ID!,
+          authorization: process.env.KASHIER_SECRET_KEY!,
+          authMerchantId: process.env.KASHIER_MERCHANT_ID!,
         },
         body: JSON.stringify(kashierPayload),
       },
@@ -252,13 +253,18 @@ export async function POST(req: NextRequest) {
     if (!response.ok || data.error) {
       payment.status = "failed";
       payment.failureReason =
-        data.error?.message || data.message || "Failed to create payment session";
+        data.error?.message ||
+        data.message ||
+        "Failed to create payment session";
       await payment.save();
 
       return NextResponse.json(
-        { 
-          error: data.error?.message || data.message || "Failed to create payment session",
-          details: process.env.NODE_ENV === "development" ? data : undefined
+        {
+          error:
+            data.error?.message ||
+            data.message ||
+            "Failed to create payment session",
+          details: process.env.NODE_ENV === "development" ? data : undefined,
         },
         { status: 400 },
       );
