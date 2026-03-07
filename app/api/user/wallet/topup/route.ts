@@ -85,31 +85,29 @@ export async function POST(req: NextRequest) {
     const hash = generateKashierHash(orderId, amount, currency);
 
     const kashierPayload = {
-      merchantId: process.env.KASHIER_MERCHANT_ID,
-      orderId: orderId,
-      amount: amount,
+      merchant_id: process.env.KASHIER_MERCHANT_ID,
+      order_id: orderId,
+      amount: amount.toString(),
       currency: currency,
       hash: hash,
       mode: process.env.KASHIER_MODE || "test",
-      metaData: {
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/wallet?topup=success`,
+      failure_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/wallet?topup=failed`,
+      metadata: {
         userId: user.id,
         transactionId: String(transaction._id),
         type: "wallet_topup",
       },
-      customerReference: user.id,
-      display: {
-        redirectionUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/wallet?topup=success`,
-        failureUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/wallet?topup=failed`,
-      },
     };
 
     const response = await fetch(
-      `${process.env.KASHIER_BASE_URL || "https://checkout.kashier.io"}/api/v3/payments/checkout`,
+      `${process.env.KASHIER_BASE_URL || "https://test-api.kashier.io"}/v3/payment/sessions`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: process.env.KASHIER_API_KEY!,
+          authorization: process.env.KASHIER_SECRET_KEY!,
+          authMerchantId: process.env.KASHIER_MERCHANT_ID!,
         },
         body: JSON.stringify(kashierPayload),
       }
