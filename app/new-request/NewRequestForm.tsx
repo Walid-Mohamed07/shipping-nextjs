@@ -106,7 +106,13 @@ export default function NewRequestForm() {
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data.addresses)) {
-            setUserLocations(data.addresses);
+            // Sort addresses with primary first
+            const sortedAddresses = data.addresses.sort((a: any, b: any) => {
+              if (a.primary) return -1;
+              if (b.primary) return 1;
+              return 0;
+            });
+            setUserLocations(sortedAddresses);
           }
         })
         .catch((err) => console.error("Failed to fetch addresses:", err));
@@ -571,26 +577,26 @@ export default function NewRequestForm() {
       if (!res.ok) throw new Error("Failed to delete");
       const data = await res.json();
       if (Array.isArray(data.addresses)) {
-        const newLocs = data.addresses;
-        setUserLocations(newLocs);
+        // Sort addresses with primary first
+        const sortedAddresses = data.addresses.sort((a: any, b: any) => {
+          if (a.primary) return -1;
+          if (b.primary) return 1;
+          return 0;
+        });
+        setUserLocations(sortedAddresses);
         if (context === "source") {
-          let newFromIdx = fromAddressIdx;
-          if (deletedIdx === fromAddressIdx) newFromIdx = 0;
-          else if (deletedIdx < fromAddressIdx) newFromIdx = fromAddressIdx - 1;
-          setFromAddressIdx(Math.max(0, newFromIdx));
-          const sel = newLocs[Math.max(0, newFromIdx)];
+          // Use the first address after deletion/sorting
+          setFromAddressIdx(0);
+          const sel = sortedAddresses[0];
           setFrom(sel?.country || "");
           setFromAddress(sel?.street || "");
           setFromPostalCode(sel?.postalCode || "");
         } else {
-          let newToIdx = toAddressIdx;
-          if (deletedIdx === toAddressIdx) newToIdx = -1;
-          else if (deletedIdx < toAddressIdx) newToIdx = toAddressIdx - 1;
-          setToAddressIdx(newToIdx);
-          const sel = newToIdx >= 0 ? newLocs[newToIdx] : null;
-          setTo(sel?.country || "");
-          setToAddress(sel?.street || "");
-          setToPostalCode(sel?.postalCode || "");
+          // Reset destination selection after deletion
+          setToAddressIdx(-1);
+          setTo("");
+          setToAddress("");
+          setToPostalCode("");
         }
       }
     } catch (err) {
@@ -2318,10 +2324,16 @@ export default function NewRequestForm() {
                       const data = await res.json();
 
                       if (Array.isArray(data.addresses)) {
-                        setUserLocations(data.addresses);
+                        // Sort addresses with primary first
+                        const sortedAddresses = data.addresses.sort((a: any, b: any) => {
+                          if (a.primary) return -1;
+                          if (b.primary) return 1;
+                          return 0;
+                        });
+                        setUserLocations(sortedAddresses);
 
                         // Find the newly added address
-                        const newAddressIdx = data.addresses.findIndex(
+                        const newAddressIdx = sortedAddresses.findIndex(
                           (loc: { street?: string; postalCode?: string }) =>
                             loc.street === address.street &&
                             loc.postalCode === address.postalCode,
@@ -2329,7 +2341,7 @@ export default function NewRequestForm() {
                         const finalNewIdx =
                           newAddressIdx !== -1
                             ? newAddressIdx
-                            : data.addresses.length - 1;
+                            : sortedAddresses.length - 1;
 
                         if (addAddressType === "source") {
                           // Set the new source address
@@ -2341,7 +2353,7 @@ export default function NewRequestForm() {
 
                           // Preserve destination if it was already set and still exists
                           if (currentDestData && toAddressIdx >= 0) {
-                            const destStillExists = data.addresses.findIndex(
+                            const destStillExists = sortedAddresses.findIndex(
                               (loc: { street?: string; postalCode?: string }) =>
                                 loc.street === currentDestData.street &&
                                 loc.postalCode === currentDestData.postalCode,
@@ -2360,7 +2372,7 @@ export default function NewRequestForm() {
 
                           // Preserve source if it was already set and still exists
                           if (currentSourceData) {
-                            const sourceStillExists = data.addresses.findIndex(
+                            const sourceStillExists = sortedAddresses.findIndex(
                               (loc: { street?: string; postalCode?: string }) =>
                                 loc.street === currentSourceData.street &&
                                 loc.postalCode === currentSourceData.postalCode,

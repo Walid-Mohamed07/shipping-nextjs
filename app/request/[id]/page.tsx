@@ -798,7 +798,7 @@ export default function RequestDetailsPage() {
                     {request.costOffers.map((offer, idx) => (
                       <div
                         key={offer._id || idx}
-                        onClick={() => handleSelectOffer(offer._id)}
+                        onClick={() => offer._id && handleSelectOffer(offer._id)}
                         className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
                           offer.selected
                             ? "border-primary bg-primary/5 shadow-md"
