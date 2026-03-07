@@ -30,7 +30,7 @@ const formatLocation = (loc: Address) => {
 export default function MyRequestsPage() {
   const { user, isLoading: authLoading } = useProtectedRoute();
   const { t } = useTranslation();
-  
+
   // Regular data fetching (not live)
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,10 +43,10 @@ export default function MyRequestsPage() {
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(`/api/requests?userId=${user.id}`);
       if (!response.ok) {
@@ -114,12 +114,14 @@ export default function MyRequestsPage() {
             <h1 className="text-4xl font-bold text-foreground mb-2">
               {t.myRequests.title}
             </h1>
-            <p className="text-muted-foreground">
-              {t.myRequests.subtitle}
-            </p>
+            <p className="text-muted-foreground">{t.myRequests.subtitle}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => refresh()} className="gap-2 cursor-pointer">
+            <Button
+              variant="outline"
+              onClick={() => refresh()}
+              className="gap-2 cursor-pointer"
+            >
               {t.common.refresh}
             </Button>
             <Link href="/new-request">
@@ -243,20 +245,28 @@ export default function MyRequestsPage() {
                         {request.selectedCompany ? (
                           <>
                             <span className="font-semibold text-primary">
-                              ${Number(request.selectedCompany.finalPrice ?? request.selectedCompany.cost).toFixed(2)}
+                              $
+                              {Number(
+                                request.selectedCompany.finalPrice ??
+                                  request.selectedCompany.cost,
+                              ).toFixed(2)}
                             </span>
-                            <span className="text-xs text-green-600 dark:text-green-400">({t.myRequests.accepted})</span>
+                            <span className="text-xs text-green-600 dark:text-green-400">
+                              ({t.myRequests.accepted})
+                            </span>
                           </>
                         ) : (
                           <>
                             <span className="font-medium text-foreground">
-                              {request.primaryCost && Number(request.primaryCost) > 0
+                              {/* TEMPORARILY HIDDEN - primaryCost */}
+                              {/* request.primaryCost && Number(request.primaryCost) > 0
                                 ? `$${Number(request.primaryCost).toFixed(2)}`
-                                : request.cost && Number(request.cost) > 0
-                                  ? `$${Number(request.cost).toFixed(2)}`
-                                  : "N/A"}
+                                : */}
+                              {request.cost && Number(request.cost) > 0
+                                ? `$${Number(request.cost).toFixed(2)}`
+                                : "N/A"}
                             </span>
-                            <span className="text-xs">({t.myRequests.estimated})</span>
+                            {/* <span className="text-xs">({t.myRequests.estimated})</span> */}
                           </>
                         )}
                       </div>

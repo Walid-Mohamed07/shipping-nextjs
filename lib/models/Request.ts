@@ -111,7 +111,7 @@ const requestSchema = new mongoose.Schema(
         },
       },
     ],
-    primaryCost: String,
+    // primaryCost: String, // TEMPORARILY HIDDEN - primaryCost
     cost: String,
     startTime: Date,
     collectionAvailableDays: {

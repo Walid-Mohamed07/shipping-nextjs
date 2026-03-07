@@ -31,8 +31,9 @@ export interface ReviewData {
   collectionAvailableDays: DayOfWeek[];
   deliveryAvailableDays: DayOfWeek[];
   mobile: string;
-  primaryCost: string;
+  primaryCost?: string; // TEMPORARILY HIDDEN - primaryCost (optional now)
   comments: string;
+  itemMediaPreviewsMap?: Record<number, string[]>; // Preview URLs from uploaded files
 }
 
 interface ReviewModalProps {
@@ -112,6 +113,19 @@ export default function ReviewModal({
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                     {idx + 1}
                   </span>
+                  {/* {item.media && item.media.length > 0 && ( */}
+                  <div className="h-20 w-20 shrink-0 rounded-md overflow-hidden border border-border bg-muted/30">
+                    <img
+                      src={
+                        data.itemMediaPreviewsMap?.[idx]?.[0] ||
+                        item.media?.[0]?.url ||
+                        "/assets/images/items/ShipHub_logo.png"
+                      }
+                      alt={item.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  {/* )} */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-foreground truncate">
@@ -130,8 +144,7 @@ export default function ReviewModal({
                       </p>
                     )}
                     {item.services &&
-                      (item.services.assemblyDisassemblyHandler ===
-                        "company" ||
+                      (item.services.assemblyDisassemblyHandler === "company" ||
                         item.services.packaging) && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {item.services.assemblyDisassemblyHandler ===
@@ -188,7 +201,10 @@ export default function ReviewModal({
                   {t.newRequest.deliveryDestination}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {formatAddress(data.destinationAddress, t.newRequest.notSelected)}
+                  {formatAddress(
+                    data.destinationAddress,
+                    t.newRequest.notSelected,
+                  )}
                 </p>
                 {data.destinationAddress?.fullName && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -219,9 +235,12 @@ export default function ReviewModal({
                   {t.newRequest.deliveryType}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {data.deliveryType === "Urgent" ? `🔥 ${t.newRequest.urgent}` : t.newRequest.normal}
+                  {data.deliveryType === "Urgent"
+                    ? `🔥 ${t.newRequest.urgent}`
+                    : t.newRequest.normal}
                 </p>
               </div>
+              {/* TEMPORARILY HIDDEN - primaryCost
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
                   {t.newRequest.reviewCost}
@@ -231,13 +250,16 @@ export default function ReviewModal({
                   {data.primaryCost ? data.primaryCost : "—"}
                 </p>
               </div>
+              */}
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
                   {t.newRequest.reviewCollectionDays}
                 </p>
                 <div className="flex flex-wrap gap-1">
-                  {data.collectionAvailableDays && data.collectionAvailableDays.length > 0 ? (
-                    data.collectionAvailableDays.includes("All Week") || data.collectionAvailableDays.length === 7 ? (
+                  {data.collectionAvailableDays &&
+                  data.collectionAvailableDays.length > 0 ? (
+                    data.collectionAvailableDays.includes("All Week") ||
+                    data.collectionAvailableDays.length === 7 ? (
                       <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
                         {t.common.allWeek}
                       </span>
@@ -258,37 +280,39 @@ export default function ReviewModal({
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
+                  {t.newRequest.reviewDeliveryDays}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {data.deliveryAvailableDays &&
+                  data.deliveryAvailableDays.length > 0 ? (
+                    data.deliveryAvailableDays.includes("All Week") ||
+                    data.deliveryAvailableDays.length === 7 ? (
+                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        {t.common.allWeek}
+                      </span>
+                    ) : (
+                      data.deliveryAvailableDays.map((day) => (
+                        <span
+                          key={`delivery-${day}`}
+                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                        >
+                          {day.slice(0, 3)}
+                        </span>
+                      ))
+                    )
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-1">
                   {t.newRequest.contact}
                 </p>
                 <p className="text-sm font-medium text-foreground flex items-center gap-1">
                   <Phone className="w-3 h-3" />
                   {data.mobile || "—"}
                 </p>
-              </div>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/30 p-3 mt-3">
-              <p className="text-xs font-medium text-muted-foreground mb-1">
-                {t.newRequest.reviewDeliveryDays}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {data.deliveryAvailableDays && data.deliveryAvailableDays.length > 0 ? (
-                  data.deliveryAvailableDays.includes("All Week") || data.deliveryAvailableDays.length === 7 ? (
-                    <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                      {t.common.allWeek}
-                    </span>
-                  ) : (
-                    data.deliveryAvailableDays.map((day) => (
-                      <span
-                        key={`delivery-${day}`}
-                        className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                      >
-                        {day.slice(0, 3)}
-                      </span>
-                    ))
-                  )
-                ) : (
-                  <span className="text-sm text-muted-foreground">—</span>
-                )}
               </div>
             </div>
           </section>

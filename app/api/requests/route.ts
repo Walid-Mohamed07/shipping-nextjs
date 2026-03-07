@@ -103,7 +103,7 @@ function normalizeRequest(req: any) {
     startTime,
     collectionAvailableDays,
     deliveryAvailableDays,
-    primaryCost,
+    // primaryCost, // TEMPORARILY HIDDEN - primaryCost
     cost,
     requestStatus,
     orderStatus: requestStatus,
@@ -217,8 +217,8 @@ export async function POST(request: NextRequest) {
       deliveryAvailableDays,
       availableDays, // backward compatibility
       cost,
-      primaryCost,
-      estimatedCost,
+      // primaryCost, // TEMPORARILY HIDDEN - primaryCost
+      // estimatedCost, // TEMPORARILY HIDDEN - primaryCost
       orderStatus,
       requestStatus,
       deliveryStatus,
@@ -231,8 +231,9 @@ export async function POST(request: NextRequest) {
     // Support both new field names and legacy availableDays
     const finalCollectionDays = collectionAvailableDays || availableDays || [];
     const finalDeliveryDays = deliveryAvailableDays || [];
-    const finalPrimaryCost = primaryCost ?? estimatedCost;
-    const finalCost = cost ?? finalPrimaryCost;
+    // TEMPORARILY HIDDEN - primaryCost: Don't accept primaryCost from frontend
+    // const finalPrimaryCost = primaryCost ?? estimatedCost;
+    const finalCost = cost; // TEMPORARILY HIDDEN - primaryCost
     const finalStatus = requestStatus ?? orderStatus;
 
     const normalizedDeliveryType = normalizeDeliveryType(deliveryType);
@@ -293,7 +294,7 @@ export async function POST(request: NextRequest) {
       startTime: finalStartTime,
       collectionAvailableDays: finalCollectionDays,
       deliveryAvailableDays: finalDeliveryDays,
-      primaryCost: finalPrimaryCost,
+      // primaryCost: finalPrimaryCost, // TEMPORARILY HIDDEN - primaryCost
       cost: finalCost,
       requestStatus: finalStatus || "Pending",
       deliveryStatus: deliveryStatus || "Pending",

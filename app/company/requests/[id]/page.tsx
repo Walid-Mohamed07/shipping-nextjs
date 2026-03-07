@@ -1040,6 +1040,7 @@ export default function CompanyRequestDetailPage() {
                   </h3>
 
                   {/* Estimated Cost Display */}
+                  {/* TEMPORARILY HIDDEN - primaryCost
                   {request.primaryCost && (
                     <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-3">
                       <div className="flex items-center justify-between">
@@ -1057,6 +1058,7 @@ export default function CompanyRequestDetailPage() {
                       </div>
                     </div>
                   )}
+                  */}
 
                   {/* Max offers reached message */}
                   {myOffers.length >= 3 ? (

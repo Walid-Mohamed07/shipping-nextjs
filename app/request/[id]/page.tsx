@@ -1225,7 +1225,7 @@ export default function RequestDetailsPage() {
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <Calendar className="w-5 h-5 text-green-600 dark:text-green-400 min-w-min" />
                   {t.userRequestDetail.collectionAvailableDays}
                 </h3>
                 {request.collectionAvailableDays &&
@@ -1255,7 +1255,7 @@ export default function RequestDetailsPage() {
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 min-w-min" />
                   {t.userRequestDetail.deliveryAvailableDays}
                 </h3>
                 {request.deliveryAvailableDays &&
@@ -1285,7 +1285,7 @@ export default function RequestDetailsPage() {
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-primary" />
+                  <Truck className="w-5 h-5 text-primary min-w-min" />
                   {t.userRequestDetail.deliveryType}
                 </h3>
                 <p className="text-base font-medium w-max text-foreground capitalize">
@@ -1302,7 +1302,7 @@ export default function RequestDetailsPage() {
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Banknote className="w-5 h-5 text-primary" />
+                  <Banknote className="w-5 h-5 text-primary min-w-min" />
                   {t.userRequestDetail.cost}
                 </h3>
                 {/* Always show primary/estimated cost */}
@@ -1311,15 +1311,17 @@ export default function RequestDetailsPage() {
                     <p
                       className={`text-base font-medium ${request.selectedCompany ? "line-through text-muted-foreground" : "text-foreground"}`}
                     >
-                      {request.primaryCost && Number(request.primaryCost) > 0
+                      {/* TEMPORARILY HIDDEN - primaryCost */}
+                      {/* request.primaryCost && Number(request.primaryCost) > 0
                         ? `$${Number(request.primaryCost).toFixed(2)}`
-                        : request.cost && Number(request.cost) > 0
-                          ? `$${Number(request.cost).toFixed(2)}`
-                          : t.userRequestDetail.notCalculated}
+                        : */}
+                      {request.cost && Number(request.cost) > 0
+                        ? `$${Number(request.cost).toFixed(2)}`
+                        : t.userRequestDetail.notCalculated}
                     </p>
-                    <span className="text-xs text-muted-foreground">
+                    {/* <span className="text-xs text-muted-foreground">
                       {t.userRequestDetail.estimated}
-                    </span>
+                    </span> */}
                   </div>
                   {/* Show accepted offer price when available */}
                   {request.selectedCompany && (
@@ -1342,7 +1344,7 @@ export default function RequestDetailsPage() {
 
             <div className="bg-card rounded-lg border border-border p-6 h-fit">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
+                <Clock className="w-5 h-5 text-primary min-w-min" />
                 {t.userRequestDetail.activityLog}
               </h3>
 

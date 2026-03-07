@@ -226,7 +226,7 @@ const options = {
               items: { $ref: "#/components/schemas/Item" },
             },
             estimatedCost: { type: "string" },
-            primaryCost: { type: "string" },
+            // primaryCost: { type: "string" }, // TEMPORARILY HIDDEN - primaryCost
             cost: { type: "string" },
             startTime: { type: "string", format: "date-time" },
             requestStatus: {

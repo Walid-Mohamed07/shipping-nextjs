@@ -401,6 +401,7 @@ export default function CompanyRequestsPage() {
                         </div>
 
                         {/* Estimated Cost */}
+                        {/* TEMPORARILY HIDDEN - primaryCost
                         {request.primaryCost && (
                           <div className="pt-2 border-t border-border/50">
                             <div className="flex items-center justify-between">
@@ -411,6 +412,7 @@ export default function CompanyRequestsPage() {
                             </div>
                           </div>
                         )}
+                        */}
 
                         {/* Offer Status Indicator */}
                         {myOffer && (

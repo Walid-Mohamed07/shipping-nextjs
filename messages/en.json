@@ -948,7 +948,7 @@
     "urgentSurcharge": "+25% surcharge applied",
     "cost": "Cost",
     "estimated": "(estimated)",
-    "notCalculated": "Not calculated",
+    "notCalculated": "Not calculated yet",
     "acceptedOffer": "(accepted offer)",
     "activityLog": "Activity Log",
     "updated": "Updated:",

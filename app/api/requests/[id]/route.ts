@@ -70,7 +70,7 @@ function normalizeRequest(req: LegacyRequest) {
     startTime,
     collectionAvailableDays,
     deliveryAvailableDays,
-    primaryCost,
+    // primaryCost, // TEMPORARILY HIDDEN - primaryCost
     cost,
     requestStatus,
     orderStatus: requestStatus,

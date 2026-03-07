@@ -297,7 +297,7 @@ export default function NewRequestForm() {
   >([]);
   // Mobile is now per address location, so default to primary location's mobile or user's mobile
   const [mobile, setMobile] = useState("");
-  const [primaryCost, setPrimaryCost] = useState("");
+  // const [primaryCost, setPrimaryCost] = useState(""); // TEMPORARILY HIDDEN - primaryCost
   // Comments
   const [comments, setComments] = useState("");
   // Review modal
@@ -426,15 +426,16 @@ export default function NewRequestForm() {
         }
 
         if (hasValidItems) {
-          let primaryCostValue = applyDeliverySurcharge(totalBaseCost);
-          // Add service fees
-          primaryCostValue = applyServiceFees(primaryCostValue);
-          setPrimaryCost(primaryCostValue.toFixed(2));
+          // TEMPORARILY HIDDEN - primaryCost calculation
+          // let primaryCostValue = applyDeliverySurcharge(totalBaseCost);
+          // // Add service fees
+          // primaryCostValue = applyServiceFees(primaryCostValue);
+          // setPrimaryCost(primaryCostValue.toFixed(2));
         } else {
-          setPrimaryCost("");
+          // setPrimaryCost("");
         }
       } else {
-        setPrimaryCost("");
+        // setPrimaryCost("");
       }
     }, 250);
     return () => {
@@ -789,8 +790,8 @@ export default function NewRequestForm() {
           deliveryAvailableDays.length === 7
             ? ["All Week"]
             : deliveryAvailableDays,
-        primaryCost: primaryCost,
-        cost: primaryCost,
+        // primaryCost: primaryCost, // TEMPORARILY HIDDEN - primaryCost
+        cost: "", // cost will be calculated on backend
         requestStatus: "Accepted",
         deliveryStatus: "Pending",
         comment: comments || "",
@@ -856,7 +857,7 @@ export default function NewRequestForm() {
       setCollectionAvailableDays([]);
       setDeliveryAvailableDays([]);
       setComments("");
-      setPrimaryCost("");
+      // setPrimaryCost(""); // TEMPORARILY HIDDEN - primaryCost
       setMobile(primaryLocation.mobile || "");
 
       // Reset address selections to primary location
@@ -1885,7 +1886,7 @@ export default function NewRequestForm() {
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
                             {idx + 1}
                           </div>
-                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-50 flex items-center justify-center">
+                          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md bg-gray-50 flex items-center justify-center">
                             <img
                               src={
                                 itemMediaPreviewsMap[idx]?.[0] ||
@@ -1893,7 +1894,7 @@ export default function NewRequestForm() {
                                 "/assets/images/items/ShipHub_logo.png"
                               }
                               alt={itm.name}
-                              className="h-12 w-12 object-cover rounded-md"
+                              className="h-24 w-24 object-cover rounded-md"
                             />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -2031,6 +2032,7 @@ export default function NewRequestForm() {
                     </div>
 
                     {/* Primary Cost Display */}
+                    {/* TEMPORARILY HIDDEN - primaryCost
                     <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                       <label className="block text-sm font-semibold text-gray-900 mb-3">
                         {t.newRequest.estimatedPrimaryCost}
@@ -2051,6 +2053,7 @@ export default function NewRequestForm() {
                         </div>
                       </div>
                     </div>
+                    */}
 
                     {/* Collection Available Days */}
                     <div className="sm:col-span-2">
@@ -2285,8 +2288,9 @@ export default function NewRequestForm() {
                     collectionAvailableDays,
                     deliveryAvailableDays,
                     mobile,
-                    primaryCost,
+                    // primaryCost, // TEMPORARILY HIDDEN - primaryCost
                     comments,
+                    itemMediaPreviewsMap, // Pass preview URLs from uploaded files
                   }}
                 />
 

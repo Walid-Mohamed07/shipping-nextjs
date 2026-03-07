@@ -133,7 +133,7 @@ export interface Request {
   collectionAvailableDays?: DayOfWeek[];
   deliveryAvailableDays?: DayOfWeek[];
   cost?: string;
-  primaryCost?: string;
+  // primaryCost?: string; // TEMPORARILY HIDDEN - primaryCost
   requestStatus: RequestStatus;
   deliveryStatus: DeliveryStatus;
   comment?: string;
@@ -198,7 +198,7 @@ export interface RequestPayload {
   startTime?: string;
   collectionAvailableDays?: DayOfWeek[];
   deliveryAvailableDays?: DayOfWeek[];
-  primaryCost?: string;
+  // primaryCost?: string; // TEMPORARILY HIDDEN - primaryCost
   requestStatus?: RequestStatus;
   deliveryStatus?: DeliveryStatus;
   comment?: string;

@@ -377,6 +377,7 @@ export function AdminAssignmentTab({
               </div>
 
               {/* Primary Cost Field */}
+              {/* TEMPORARILY HIDDEN - primaryCost
               <div>
                 <label className="block text-sm font-medium mb-2">
                   {t.adminAssignment.primaryCost}
@@ -392,6 +393,7 @@ export function AdminAssignmentTab({
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
                 />
               </div>
+              */}
 
               {/* Estimated Time Field */}
               <div>

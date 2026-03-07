@@ -619,6 +619,7 @@ export function AdminRequestsTab() {
                     <p className="text-foreground font-medium">N/A</p>
                   )}
                 </div>
+                {/* TEMPORARILY HIDDEN - primaryCost
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
                     {t.adminRequests.primaryCost}
@@ -627,6 +628,7 @@ export function AdminRequestsTab() {
                     ${selectedRequest.primaryCost || "N/A"}
                   </p>
                 </div>
+                */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
                     {t.adminRequests.actualCost}
