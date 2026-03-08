@@ -430,6 +430,26 @@ export default function CheckoutPage() {
                       ${cardAmount.toFixed(2)}
                     </span>
                   </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    You&apos;ll be redirected to Kashier&apos;s secure payment page to enter your card details.
+                  </p>
+                  
+                  {/* Test Card Info - Only shown in development */}
+                  {process.env.NODE_ENV === "development" && (
+                    <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                      <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-300 mb-2">
+                        🧪 Test Mode - Use these test cards:
+                      </p>
+                      <div className="space-y-1 text-xs text-yellow-700 dark:text-yellow-400">
+                        <p><strong>MasterCard:</strong> 5123 4500 0000 1118</p>
+                        <p><strong>Visa:</strong> 4508 7500 0000 0026</p>
+                        <p><strong>With 3DS:</strong> 5123 4500 0000 0008</p>
+                        <p className="mt-2"><strong>Name:</strong> John Doe</p>
+                        <p><strong>Expiry:</strong> 06/25 (approved)</p>
+                        <p><strong>CVV:</strong> 100 (match)</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

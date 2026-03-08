@@ -87,7 +87,10 @@
     "showLess": "عرض أقل",
     "showMore": "عرض المزيد",
     "goHome": "العودة للرئيسية",
-    "allWeek": "كل الأسبوع"
+    "allWeek": "كل الأسبوع",
+    "verified": "موثق",
+    "notVerified": "غير موثق",
+    "continue": "متابعة"
   },
   "header": {
     "myRequests": "طلباتي",
@@ -145,7 +148,20 @@
     "fillMandatoryFields": "يرجى ملء جميع الحقول المطلوبة",
     "profilePictureRequired": "صورة الملف الشخصي مطلوبة",
     "signUpSuccess": "تم إنشاء الحساب بنجاح!",
-    "signUpFailed": "فشل في إنشاء الحساب"
+    "signUpFailed": "فشل في إنشاء الحساب",
+    "verification": "التحقق",
+    "verifyIdentity": "تحقق من هويتك",
+    "verifyDescription": "يرجى التحقق من بريدك الإلكتروني ورقم جوالك للمتابعة",
+    "emailVerification": "التحقق من البريد الإلكتروني",
+    "mobileVerification": "التحقق من الجوال",
+    "sendOTP": "إرسال رمز التحقق",
+    "sendingOTP": "جاري الإرسال...",
+    "enterOTP": "أدخل الرمز المكون من 6 أرقام",
+    "verify": "تحقق",
+    "didntReceiveCode": "لم تستلم الرمز؟",
+    "resendOTP": "إعادة الإرسال",
+    "resendIn": "إعادة الإرسال بعد",
+    "addressOptional": "هذه الخطوة اختيارية. يمكنك إضافة عنوان لاحقاً."
   },
   "profile": {
     "backToRequests": "العودة إلى الطلبات",
@@ -348,7 +364,10 @@
     "reviewDeliveryDays": "أيام التسليم",
     "additionalNotes": "ملاحظات إضافية",
     "reviewGoBack": "رجوع وتعديل",
-    "reviewConfirmSubmit": "تأكيد وإرسال"
+    "reviewConfirmSubmit": "تأكيد وإرسال",
+    "verificationRequired": "التحقق مطلوب",
+    "verificationRequiredDesc": "يرجى التحقق من بريدك الإلكتروني ورقم جوالك قبل إنشاء طلب شحن. هذا يساعدنا في ضمان خدمة آمنة وموثوقة.",
+    "goToProfile": "الذهاب إلى الملف الشخصي للتحقق"
   },
   "admin": {
     "welcomeBack": "مرحباً بعودتك",

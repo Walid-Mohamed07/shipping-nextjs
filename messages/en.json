@@ -87,7 +87,10 @@
     "showLess": "Show Less",
     "showMore": "Show More",
     "goHome": "Go Home",
-    "allWeek": "All Week"
+    "allWeek": "All Week",
+    "verified": "Verified",
+    "notVerified": "Not Verified",
+    "continue": "Continue"
   },
   "header": {
     "myRequests": "My Requests",
@@ -145,7 +148,20 @@
     "fillMandatoryFields": "Please fill in all mandatory fields",
     "profilePictureRequired": "Profile picture is required",
     "signUpSuccess": "Account created successfully!",
-    "signUpFailed": "Failed to create account"
+    "signUpFailed": "Failed to create account",
+    "verification": "Verification",
+    "verifyIdentity": "Verify Your Identity",
+    "verifyDescription": "Please verify your email and mobile number to continue",
+    "emailVerification": "Email Verification",
+    "mobileVerification": "Mobile Verification",
+    "sendOTP": "Send Verification Code",
+    "sendingOTP": "Sending...",
+    "enterOTP": "Enter 6-digit code",
+    "verify": "Verify",
+    "didntReceiveCode": "Didn't receive the code?",
+    "resendOTP": "Resend",
+    "resendIn": "Resend in",
+    "addressOptional": "This step is optional. You can add an address later."
   },
   "profile": {
     "backToRequests": "Back to Requests",
@@ -348,7 +364,10 @@
     "reviewDeliveryDays": "Delivery Days",
     "additionalNotes": "Additional Notes",
     "reviewGoBack": "Go Back & Edit",
-    "reviewConfirmSubmit": "Confirm & Submit"
+    "reviewConfirmSubmit": "Confirm & Submit",
+    "verificationRequired": "Verification Required",
+    "verificationRequiredDesc": "Please verify your email and mobile number before creating a shipping request. This helps us ensure secure and reliable service.",
+    "goToProfile": "Go to Profile to Verify"
   },
   "admin": {
     "welcomeBack": "Welcome back",

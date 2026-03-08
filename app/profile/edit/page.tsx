@@ -10,7 +10,7 @@ import { ArrowLeft, Upload, Loader, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 export default function EditProfilePage() {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const router = useRouter();
   const { isLoading: authLoading } = useProtectedRoute();
   const [isLoading, setIsLoading] = useState(false);
@@ -58,21 +58,39 @@ export default function EditProfilePage() {
     }));
   };
 
-  const validatePassword = (password: string): { valid: boolean; message: string } => {
+  const validatePassword = (
+    password: string,
+  ): { valid: boolean; message: string } => {
     if (password.length < 8) {
-      return { valid: false, message: "Password must be at least 8 characters long" };
+      return {
+        valid: false,
+        message: "Password must be at least 8 characters long",
+      };
     }
     if (!/[A-Z]/.test(password)) {
-      return { valid: false, message: "Password must contain at least one uppercase letter" };
+      return {
+        valid: false,
+        message: "Password must contain at least one uppercase letter",
+      };
     }
     if (!/[a-z]/.test(password)) {
-      return { valid: false, message: "Password must contain at least one lowercase letter" };
+      return {
+        valid: false,
+        message: "Password must contain at least one lowercase letter",
+      };
     }
     if (!/[0-9]/.test(password)) {
-      return { valid: false, message: "Password must contain at least one number" };
+      return {
+        valid: false,
+        message: "Password must contain at least one number",
+      };
     }
     if (!/[!@#$%^&*]/.test(password)) {
-      return { valid: false, message: "Password must contain at least one special character (!@#$%^&*)" };
+      return {
+        valid: false,
+        message:
+          "Password must contain at least one special character (!@#$%^&*)",
+      };
     }
     return { valid: true, message: "" };
   };
@@ -142,7 +160,9 @@ export default function EditProfilePage() {
     setIsLoading(true);
 
     try {
-      if (!user?._id) {
+      console.log("user: ", user);
+
+      if (!user?._id && !user?.id) {
         throw new Error("User ID not found");
       }
 
@@ -169,7 +189,7 @@ export default function EditProfilePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: user._id,
+          userId: user._id || user.id,
           ...formData,
           ...(changePasswordMode && {
             currentPassword,
@@ -185,9 +205,9 @@ export default function EditProfilePage() {
 
       const data = await response.json();
 
-      // Update auth context with new user data
+      // Update auth context with new user data (also persists to localStorage)
       if (data.user) {
-        setUser(data.user);
+        updateUser(data.user);
       }
 
       setTimeout(() => {
@@ -247,210 +267,160 @@ export default function EditProfilePage() {
               Edit Profile
             </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Profile Picture Section */}
-            <div className="flex flex-col items-center gap-6">
-              <div className="relative">
-                {previewImage ? (
-                  <img
-                    src={previewImage}
-                    alt="Profile Preview"
-                    className="w-32 h-32 rounded-full object-cover border-2 border-primary"
-                  />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary border-dashed">
-                    <Upload className="w-8 h-8 text-primary opacity-50" />
-                  </div>
-                )}
-                <label
-                  htmlFor="profilePicture"
-                  className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 cursor-pointer hover:bg-primary/90 transition"
-                >
-                  <Upload className="w-4 h-4" />
-                  <input
-                    type="file"
-                    id="profilePicture"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    disabled={isUploadingImage}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">
-                  Click the camera icon to upload a new profile picture
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Supported formats: JPG, PNG (Max 5MB)
-                </p>
-              </div>
-            </div>
-
-            {/* Form Fields */}
-            <div className="space-y-6">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Enter your full name"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Enter your email"
-                />
-              </div>
-
-              {/* Mobile */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Mobile Number
-                </label>
-                <input
-                  type="tel"
-                  name="mobile"
-                  value={formData.mobile}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Enter your mobile number"
-                />
-              </div>
-
-              {/* Birth Date */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Date of Birth
-                </label>
-                <input
-                  type="date"
-                  name="birthDate"
-                  value={formData.birthDate}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            </div>
-
-            {/* Password Management Section */}
-            <div className="border-t border-border pt-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-foreground">
-                  Password Management
-                </h2>
-                {!changePasswordMode && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setChangePasswordMode(true)}
-                    className="cursor-pointer"
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Profile Picture Section */}
+              <div className="flex flex-col items-center gap-6">
+                <div className="relative">
+                  {previewImage ? (
+                    <img
+                      src={previewImage}
+                      alt="Profile Preview"
+                      className="w-32 h-32 rounded-full object-cover border-2 border-primary"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary border-dashed">
+                      <Upload className="w-8 h-8 text-primary opacity-50" />
+                    </div>
+                  )}
+                  <label
+                    htmlFor="profilePicture"
+                    className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 cursor-pointer hover:bg-primary/90 transition"
                   >
-                    Change Password
-                  </Button>
-                )}
+                    <Upload className="w-4 h-4" />
+                    <input
+                      type="file"
+                      id="profilePicture"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      disabled={isUploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Click the camera icon to upload a new profile picture
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Supported formats: JPG, PNG (Max 5MB)
+                  </p>
+                </div>
               </div>
 
-              {changePasswordMode && (
-                <div className="space-y-6 p-4 bg-muted/30 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Enter your current password and the new password you'd like to use.
-                  </p>
+              {/* Form Fields */}
+              <div className="space-y-6">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter your full name"
+                  />
+                </div>
 
-                  {/* Current Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Current Password *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showCurrentPassword ? "text" : "password"}
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full px-4 py-2 pr-10 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Enter your current password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showCurrentPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                {/* Email - Read Only */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Email Address
+                    <span className="ml-2 text-xs text-muted-foreground font-normal">
+                      (cannot be changed)
+                    </span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    disabled
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground cursor-not-allowed"
+                    placeholder="Enter your email"
+                  />
+                </div>
 
-                  {/* New Password & Confirm New Password */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Mobile */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Mobile Number
+                    <span className="ml-2 text-xs text-amber-500 font-normal">
+                      (changing will require re-verification)
+                    </span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="mobile"
+                    value={formData.mobile}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter your mobile number"
+                  />
+                </div>
+
+                {/* Birth Date */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    name="birthDate"
+                    value={formData.birthDate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Password Management Section */}
+              <div className="border-t border-border pt-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Password Management
+                  </h2>
+                  {!changePasswordMode && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setChangePasswordMode(true)}
+                      className="cursor-pointer"
+                    >
+                      Change Password
+                    </Button>
+                  )}
+                </div>
+
+                {changePasswordMode && (
+                  <div className="space-y-6 p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Enter your current password and the new password you'd
+                      like to use.
+                    </p>
+
+                    {/* Current Password */}
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        New Password *
+                        Current Password *
                       </label>
                       <div className="relative">
                         <input
-                          type={showNewPassword ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
+                          type={showCurrentPassword ? "text" : "password"}
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
                           className="w-full px-4 py-2 pr-10 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="Enter new password"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showNewPassword ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char (!@#$%^&*)
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Confirm New Password *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showConfirmNewPassword ? "text" : "password"}
-                          value={confirmNewPassword}
-                          onChange={(e) => setConfirmNewPassword(e.target.value)}
-                          className="w-full px-4 py-2 pr-10 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="Confirm new password"
+                          placeholder="Enter your current password"
                         />
                         <button
                           type="button"
                           onClick={() =>
-                            setShowConfirmNewPassword(!showConfirmNewPassword)
+                            setShowCurrentPassword(!showCurrentPassword)
                           }
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
-                          {showConfirmNewPassword ? (
+                          {showCurrentPassword ? (
                             <EyeOff className="w-4 h-4" />
                           ) : (
                             <Eye className="w-4 h-4" />
@@ -458,54 +428,116 @@ export default function EditProfilePage() {
                         </button>
                       </div>
                     </div>
+
+                    {/* New Password & Confirm New Password */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          New Password *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full px-4 py-2 pr-10 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            placeholder="Enter new password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1
+                          special char (!@#$%^&*)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Confirm New Password *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmNewPassword ? "text" : "password"}
+                            value={confirmNewPassword}
+                            onChange={(e) =>
+                              setConfirmNewPassword(e.target.value)
+                            }
+                            className="w-full px-4 py-2 pr-10 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            placeholder="Confirm new password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmNewPassword(!showConfirmNewPassword)
+                            }
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showConfirmNewPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChangePasswordMode(false);
+                        setCurrentPassword("");
+                        setNewPassword("");
+                        setConfirmNewPassword("");
+                        setShowCurrentPassword(false);
+                        setShowNewPassword(false);
+                        setShowConfirmNewPassword(false);
+                      }}
+                      className="text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      Cancel Password Change
+                    </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setChangePasswordMode(false);
-                      setCurrentPassword("");
-                      setNewPassword("");
-                      setConfirmNewPassword("");
-                      setShowCurrentPassword(false);
-                      setShowNewPassword(false);
-                      setShowConfirmNewPassword(false);
-                    }}
-                    className="text-sm text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    Cancel Password Change
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-6 border-t border-border">
-              <Link href="/profile" className="flex-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full bg-transparent cursor-pointer"
-                >
-                  Cancel
-                </Button>
-              </Link>
-              <button
-                type="submit"
-                disabled={isLoading || isUploadingImage}
-                className="flex-1 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
                 )}
-              </button>
-            </div>
-          </form>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-6 border-t border-border">
+                <Link href="/profile" className="flex-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full bg-transparent cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                </Link>
+                <button
+                  type="submit"
+                  disabled={isLoading || isUploadingImage}
+                  className="flex-1 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </div>

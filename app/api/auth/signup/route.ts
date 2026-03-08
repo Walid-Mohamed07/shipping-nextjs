@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
       profilePicture,
       birthDate,
       address,
+      emailVerified,
+      mobileVerified,
     } = body;
 
     if (!email || !password || !fullName || !mobile || !profilePicture) {
@@ -95,6 +97,8 @@ export async function POST(request: NextRequest) {
       role: "client",
       status: "active",
       locations: [],
+      emailVerified: emailVerified || false,
+      mobileVerified: mobileVerified || false,
     });
 
     // If address is provided, create address document(s)
@@ -134,6 +138,8 @@ export async function POST(request: NextRequest) {
         company: newUser.company || null,
         role: newUser.role,
         status: newUser.status,
+        emailVerified: newUser.emailVerified,
+        mobileVerified: newUser.mobileVerified,
       },
       JWT_SECRET,
       { expiresIn: "7d" },
@@ -154,6 +160,8 @@ export async function POST(request: NextRequest) {
           company: newUser.company || null,
           role: newUser.role,
           status: newUser.status,
+          emailVerified: newUser.emailVerified,
+          mobileVerified: newUser.mobileVerified,
         },
         address: createdAddress,
         token,

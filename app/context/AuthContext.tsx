@@ -72,9 +72,12 @@ interface AuthContextType {
     profilePicture: string,
     birthDate: string,
     address: any,
+    emailVerified?: boolean,
+    mobileVerified?: boolean,
   ) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -175,6 +178,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profilePicture: string,
     birthDate: string,
     address: any,
+    emailVerified: boolean = false,
+    mobileVerified: boolean = false,
   ) => {
     console.log("AuthContext: Signup attempt for user:", email);
 
@@ -190,6 +195,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profilePicture,
         birthDate,
         address,
+        emailVerified,
+        mobileVerified,
       }),
       credentials: "include", // Important: include cookies
     });
@@ -229,9 +236,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => console.error("AuthContext: Logout error:", err));
   };
 
+  // Update user and persist to localStorage (for profile updates)
+  const updateUser = (userData: User) => {
+    console.log("AuthContext: Updating user with new data:", userData);
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, signup, logout, setUser }}
+      value={{ user, isLoading, login, signup, logout, setUser, updateUser }}
     >
       {children}
     </AuthContext.Provider>

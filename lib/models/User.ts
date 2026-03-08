@@ -54,6 +54,23 @@ const userSchema = new mongoose.Schema(
       ref: "Company",
       default: null,
     },
+    // OTP Verification fields
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    mobileVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailOTP: {
+      code: String,
+      expiresAt: Date,
+    },
+    mobileOTP: {
+      code: String,
+      expiresAt: Date,
+    },
   },
   { timestamps: true },
 );

@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       user: user.id,
       request: request._id,
       amount: totalAmount,
-      currency: "USD",
+      currency: "EGP",
       status: cardAmount > 0 ? "pending" : "processing",
       paymentMethod: cardAmount > 0 ? "card" : "wallet",
       kashierOrderId: orderId,
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         user: user.id,
         type: "payment",
         amount: actualWalletAmount,
-        currency: "USD",
+        currency: "EGP",
         description: `Payment for shipping request ${request.publicId || requestId}`,
         reference: orderId,
         request: request._id,
@@ -170,19 +170,33 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Kashier payment session for card payment
-    const currency = "USD";
-    const hash = generateKashierHash(orderId, cardAmount, currency);
+    const currency = "EGP"; // Kashier primarily uses EGP
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const isTestMode = (process.env.KASHIER_MODE || "test") === "test";
+    
+    // Set expiration to 1 hour from now
+    const expireAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
+    // Kashier API payload based on official documentation
+    // https://developers.kashier.io/payment/payment-sessions
     const kashierPayload = {
-      merchant_id: process.env.KASHIER_MERCHANT_ID,
-      order_id: orderId,
-      amount: cardAmount.toString(),
+      merchantId: process.env.KASHIER_MERCHANT_ID,
+      expireAt: expireAt,
+      maxFailureAttempts: 3,
+      paymentType: "credit",
+      amount: String(cardAmount.toFixed(2)),
       currency: currency,
-      hash: hash,
-      mode: process.env.KASHIER_MODE || "test",
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment-result`,
-      failure_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment-result?status=failed`,
-      metadata: {
+      order: orderId,
+      merchantRedirect: encodeURI(`${baseUrl}/payment-result?orderId=${orderId}`),
+      serverWebhook: `${baseUrl}/api/pay/webhook`,
+      display: "en",
+      type: "one-time",
+      allowedMethods: "card",
+      customer: {
+        email: user.email || `user${user.id}@placeholder.com`,
+        reference: user.id,
+      },
+      metaData: {
         userId: user.id,
         requestId: requestId,
         paymentId: String(payment._id),
@@ -190,29 +204,40 @@ export async function POST(req: NextRequest) {
       },
     };
 
+    // Kashier API URLs per documentation:
+    // TEST: https://test-api.kashier.io/v3/payment/sessions
+    // LIVE: https://api.kashier.io/v3/payment/sessions
+    const apiUrl = isTestMode
+      ? "https://test-api.kashier.io/v3/payment/sessions"
+      : "https://api.kashier.io/v3/payment/sessions";
+    
     console.log("Kashier API Request:", {
-      url: `${process.env.KASHIER_BASE_URL || "https://test-api.kashier.io"}/v3/payment/sessions`,
+      url: apiUrl,
       merchantId: process.env.KASHIER_MERCHANT_ID,
       orderId,
-      amount: cardAmount,
+      amount: kashierPayload.amount,
       currency,
-      mode: process.env.KASHIER_MODE,
-      authHeader: "Using SECRET_KEY (first 30 chars): " + process.env.KASHIER_SECRET_KEY?.substring(0, 30) + "...",
-      payload: kashierPayload,
+      mode: kashierPayload.mode,
+      expireAt: expireAt,
     });
+    console.log("Kashier Headers:", {
+      "Authorization": `${process.env.KASHIER_SECRET_KEY?.substring(0, 20)}...`,
+      "api-key": `${process.env.KASHIER_API_KEY?.substring(0, 20)}...`,
+    });
+    console.log("Kashier Payload:", JSON.stringify(kashierPayload, null, 2));
 
-    const response = await fetch(
-      `${process.env.KASHIER_BASE_URL || "https://test-api.kashier.io"}/v3/payment/sessions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: process.env.KASHIER_SECRET_KEY!,
-          authMerchantId: process.env.KASHIER_MERCHANT_ID!,
-        },
-        body: JSON.stringify(kashierPayload),
+    // Headers per Kashier documentation:
+    // Authorization: secret_key
+    // api-key: api_key
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": process.env.KASHIER_SECRET_KEY!,
+        "api-key": process.env.KASHIER_API_KEY!,
       },
-    );
+      body: JSON.stringify(kashierPayload),
+    });
 
     // Log response for debugging
     console.log("Kashier API Response Status:", response.status);
@@ -270,8 +295,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update payment with Kashier response
-    payment.kashierPaymentUrl = data.response?.checkoutUrl || data.checkoutUrl;
+    // Extract sessionUrl from Kashier response
+    // Per Kashier docs: sessionUrl is the URL for the payment page
+    // Can be used as: <iframe src="sessionUrl">
+    // Or redirect user directly to it
+    const sessionId = data._id;
+    const sessionUrl = data.sessionUrl;
+    const paymentUrl = sessionUrl || `https://payments.kashier.io/session/${sessionId}?mode=${isTestMode ? 'test' : 'live'}`;
+    
+    console.log("Kashier Session Created:", {
+      sessionId,
+      sessionUrl,
+      paymentUrl,
+      status: data.status,
+    });
+
+    payment.kashierPaymentUrl = paymentUrl;
+    payment.kashierSessionId = sessionId;
     payment.kashierResponse = data;
     await payment.save();
 
@@ -282,7 +322,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      paymentUrl: data.response?.checkoutUrl || data.checkoutUrl,
+      paymentUrl: paymentUrl,
       payment: {
         id: payment._id,
         orderId: orderId,

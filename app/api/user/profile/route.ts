@@ -23,8 +23,18 @@ export async function PUT(req: NextRequest) {
     // Build update object with only provided fields
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
-    if (mobile !== undefined) updateData.mobile = mobile;
+    // Email cannot be changed - skip email updates
+    // if (email !== undefined) updateData.email = email;
+    
+    // If mobile number changed, reset mobileVerified to false
+    if (mobile !== undefined && mobile !== user.mobile) {
+      updateData.mobile = mobile;
+      updateData.mobileVerified = false;
+      updateData.mobileOTP = { code: null, expiresAt: null };
+    } else if (mobile !== undefined) {
+      updateData.mobile = mobile;
+    }
+    
     if (birthDate !== undefined) updateData.birthDate = birthDate;
     if (profilePicture !== undefined)
       updateData.profilePicture = profilePicture;
@@ -68,6 +78,8 @@ export async function PUT(req: NextRequest) {
         profilePicture: updatedUser.profilePicture,
         company: updatedUser.company || null,
         role: updatedUser.role,
+        emailVerified: updatedUser.emailVerified,
+        mobileVerified: updatedUser.mobileVerified,
       },
       JWT_SECRET,
       { expiresIn: "7d" },
@@ -87,6 +99,8 @@ export async function PUT(req: NextRequest) {
         company: updatedUser.company || null,
         role: updatedUser.role,
         status: updatedUser.status,
+        emailVerified: updatedUser.emailVerified,
+        mobileVerified: updatedUser.mobileVerified,
       },
     });
 

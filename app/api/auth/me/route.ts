@@ -60,6 +60,8 @@ export async function GET(request: NextRequest) {
           profilePicture: decoded.profilePicture,
           company: decoded.company,
           role: decoded.role,
+          emailVerified: decoded.emailVerified || false,
+          mobileVerified: decoded.mobileVerified || false,
         },
       },
       { status: 200 },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { toast } from "sonner";
@@ -19,6 +20,12 @@ import {
   Edit2,
   MapPin,
   Trash2,
+  Mail,
+  Phone,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -50,21 +57,56 @@ interface UserAddress {
 }
 
 export default function ProfilePage() {
-  const { user, isLoading: authLoading } = useProtectedRoute();
+  const { user, isLoading: authLoading, setUser } = useProtectedRoute();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [error, setError] = useState("");
 
+  // OTP Verification states
+  const [emailOTP, setEmailOTP] = useState("");
+  const [mobileOTP, setMobileOTP] = useState("");
+  const [sendingEmailOTP, setSendingEmailOTP] = useState(false);
+  const [sendingMobileOTP, setSendingMobileOTP] = useState(false);
+  const [verifyingEmailOTP, setVerifyingEmailOTP] = useState(false);
+  const [verifyingMobileOTP, setVerifyingMobileOTP] = useState(false);
+  const [emailOTPSent, setEmailOTPSent] = useState(false);
+  const [mobileOTPSent, setMobileOTPSent] = useState(false);
+  const [emailCountdown, setEmailCountdown] = useState(0);
+  const [mobileCountdown, setMobileCountdown] = useState(0);
+
+  // Countdown timer for resend OTP
+  useEffect(() => {
+    if (emailCountdown > 0) {
+      const timer = setTimeout(
+        () => setEmailCountdown(emailCountdown - 1),
+        1000,
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [emailCountdown]);
+
+  useEffect(() => {
+    if (mobileCountdown > 0) {
+      const timer = setTimeout(
+        () => setMobileCountdown(mobileCountdown - 1),
+        1000,
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [mobileCountdown]);
+
   // Fetch stats when user._id is available
   useEffect(() => {
-    if (!user?._id) return;
+    if (!user?._id && !user?.id) return;
 
     const fetchStats = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/requests?userId=${user._id}`);
+        const response = await fetch(
+          `/api/requests?userId=${user._id || user.id}`,
+        );
         if (!response.ok) throw new Error("Failed to fetch requests");
         const data = await response.json();
         const requests = data.requests || [];
@@ -137,16 +179,18 @@ export default function ProfilePage() {
     };
 
     fetchStats();
-  }, [user?._id]);
+  }, [user?._id, user?.id]);
 
   // Fetch user addresses
   useEffect(() => {
-    if (!user?._id) return;
+    if (!user?._id && !user?.id) return;
 
     const fetchAddresses = async () => {
       setIsLoadingAddresses(true);
       try {
-        const response = await fetch(`/api/user/addresses?userId=${user._id}`);
+        const response = await fetch(
+          `/api/user/addresses?userId=${user._id || user.id}`,
+        );
         if (!response.ok) throw new Error("Failed to fetch addresses");
         const data = await response.json();
         setAddresses(data.addresses || []);
@@ -158,7 +202,140 @@ export default function ProfilePage() {
     };
 
     fetchAddresses();
-  }, [user?._id]);
+  }, [user?._id, user?.id]);
+
+  // OTP Verification functions
+  const sendEmailOTP = async () => {
+    if (!user?._id && !user?.id) return;
+    setSendingEmailOTP(true);
+    try {
+      const response = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "email",
+          value: user.email,
+          userId: user._id || user.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send email OTP");
+      }
+
+      setEmailOTPSent(true);
+      setEmailCountdown(60);
+      toast.success("Verification code sent to your email");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to send email OTP",
+      );
+    } finally {
+      setSendingEmailOTP(false);
+    }
+  };
+
+  const sendMobileOTP = async () => {
+    if (!user?._id && !user?.id) return;
+    setSendingMobileOTP(true);
+    try {
+      const response = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "mobile",
+          value: user.mobile,
+          userId: user._id || user.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send mobile OTP");
+      }
+
+      setMobileOTPSent(true);
+      setMobileCountdown(60);
+      toast.success("Verification code sent to your mobile");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to send mobile OTP",
+      );
+    } finally {
+      setSendingMobileOTP(false);
+    }
+  };
+
+  const verifyEmailOTP = async () => {
+    if (!user?._id && !user?.id) return;
+    setVerifyingEmailOTP(true);
+    try {
+      const response = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "email",
+          otp: emailOTP,
+          userId: user._id || user.id,
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to verify email");
+      }
+
+      // Update user in context
+      setUser(data.user);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setEmailOTP("");
+      setEmailOTPSent(false);
+      toast.success("Email verified successfully!");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to verify email",
+      );
+    } finally {
+      setVerifyingEmailOTP(false);
+    }
+  };
+
+  const verifyMobileOTP = async () => {
+    if (!user?._id && !user?.id) return;
+    setVerifyingMobileOTP(true);
+    try {
+      const response = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "mobile",
+          otp: mobileOTP,
+          userId: user._id || user.id,
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to verify mobile");
+      }
+
+      // Update user in context
+      setUser(data.user);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setMobileOTP("");
+      setMobileOTPSent(false);
+      toast.success("Mobile verified successfully!");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to verify mobile",
+      );
+    } finally {
+      setVerifyingMobileOTP(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,8 +423,245 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Verification Status Section */}
+        {!authLoading && user && (
+          <div className="bg-card rounded-lg border border-border p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">
+                Account Verification
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Email Verification */}
+              <div
+                className={`p-4 rounded-lg border ${user.emailVerified ? "border-green-500 bg-green-50 dark:bg-green-900/10" : "border-amber-500 bg-amber-50 dark:bg-amber-900/10"}`}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${user.emailVerified ? "bg-green-500" : "bg-amber-500"}`}
+                  >
+                    {user.emailVerified ? (
+                      <CheckCircle className="w-5 h-5 text-white" />
+                    ) : (
+                      <Mail className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-foreground">Email</h3>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                  {user.emailVerified ? (
+                    <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 text-sm font-medium flex items-center gap-1">
+                      <XCircle className="w-4 h-4" />
+                      Not Verified
+                    </span>
+                  )}
+                </div>
+
+                {!user.emailVerified && (
+                  <div className="space-y-2">
+                    {!emailOTPSent ? (
+                      <Button
+                        type="button"
+                        onClick={sendEmailOTP}
+                        disabled={sendingEmailOTP}
+                        size="sm"
+                        className="w-full cursor-pointer"
+                      >
+                        {sendingEmailOTP ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Verification Code"
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Enter 6-digit code"
+                            value={emailOTP}
+                            onChange={(e) =>
+                              setEmailOTP(
+                                e.target.value.replace(/\D/g, "").slice(0, 6),
+                              )
+                            }
+                            className="flex-1 text-center tracking-widest"
+                            maxLength={6}
+                          />
+                          <Button
+                            type="button"
+                            onClick={verifyEmailOTP}
+                            disabled={
+                              verifyingEmailOTP || emailOTP.length !== 6
+                            }
+                            size="sm"
+                            className="cursor-pointer"
+                          >
+                            {verifyingEmailOTP ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Verify"
+                            )}
+                          </Button>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">
+                            Didn't receive the code?
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={sendEmailOTP}
+                            disabled={emailCountdown > 0 || sendingEmailOTP}
+                            className="cursor-pointer h-auto py-1 px-2 text-xs"
+                          >
+                            {emailCountdown > 0
+                              ? `Resend in ${emailCountdown}s`
+                              : "Resend"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Verification */}
+              <div
+                className={`p-4 rounded-lg border ${user.mobileVerified ? "border-green-500 bg-green-50 dark:bg-green-900/10" : "border-amber-500 bg-amber-50 dark:bg-amber-900/10"}`}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${user.mobileVerified ? "bg-green-500" : "bg-amber-500"}`}
+                  >
+                    {user.mobileVerified ? (
+                      <CheckCircle className="w-5 h-5 text-white" />
+                    ) : (
+                      <Phone className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-foreground">Mobile</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {user.mobile || "Not set"}
+                    </p>
+                  </div>
+                  {user.mobileVerified ? (
+                    <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 text-sm font-medium flex items-center gap-1">
+                      <XCircle className="w-4 h-4" />
+                      Not Verified
+                    </span>
+                  )}
+                </div>
+
+                {!user.mobileVerified && user.mobile && (
+                  <div className="space-y-2">
+                    {!mobileOTPSent ? (
+                      <Button
+                        type="button"
+                        onClick={sendMobileOTP}
+                        disabled={sendingMobileOTP}
+                        size="sm"
+                        className="w-full cursor-pointer"
+                      >
+                        {sendingMobileOTP ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Verification Code"
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Enter 6-digit code"
+                            value={mobileOTP}
+                            onChange={(e) =>
+                              setMobileOTP(
+                                e.target.value.replace(/\D/g, "").slice(0, 6),
+                              )
+                            }
+                            className="flex-1 text-center tracking-widest"
+                            maxLength={6}
+                          />
+                          <Button
+                            type="button"
+                            onClick={verifyMobileOTP}
+                            disabled={
+                              verifyingMobileOTP || mobileOTP.length !== 6
+                            }
+                            size="sm"
+                            className="cursor-pointer"
+                          >
+                            {verifyingMobileOTP ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Verify"
+                            )}
+                          </Button>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">
+                            Didn't receive the code?
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={sendMobileOTP}
+                            disabled={mobileCountdown > 0 || sendingMobileOTP}
+                            className="cursor-pointer h-auto py-1 px-2 text-xs"
+                          >
+                            {mobileCountdown > 0
+                              ? `Resend in ${mobileCountdown}s`
+                              : "Resend"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Verification Notice */}
+            {(!user.emailVerified || !user.mobileVerified) && (
+              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  Please verify your email and mobile to create shipping
+                  requests.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Statistics Grid */}
-        {authLoading ? (
+        {authLoading || isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />

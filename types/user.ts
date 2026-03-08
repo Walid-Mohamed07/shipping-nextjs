@@ -27,6 +27,9 @@ export interface User {
   role: UserRole;
   locations?: Address[];
   company?: string | { _id: string; name: string; email: string; phoneNumber: string; address?: string; rate?: string } | null;
+  // OTP Verification fields
+  emailVerified?: boolean;
+  mobileVerified?: boolean;
   createdAt: string;
   updatedAt?: string;
 }

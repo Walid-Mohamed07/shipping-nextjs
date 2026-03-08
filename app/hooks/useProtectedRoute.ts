@@ -8,7 +8,7 @@ import { useAuth } from "@/app/context/AuthContext";
  * Prevents premature redirects while token is being verified
  */
 export function useProtectedRoute(redirectTo: string = "/login") {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, setUser } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -19,5 +19,5 @@ export function useProtectedRoute(redirectTo: string = "/login") {
   }, [user, isLoading, router, redirectTo]);
 
   // Return loading state so pages can show a loading indicator if needed
-  return { user, isLoading };
+  return { user, isLoading, setUser };
 }

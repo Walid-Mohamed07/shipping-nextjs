@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     // Generate unique order ID for topup
     const orderId = `TOPUP-${user.id.slice(-6).toUpperCase()}-${Date.now()}`;
-    const currency = "USD";
+    const currency = "EGP"; // Kashier primarily uses EGP
 
     // Create pending transaction
     const transaction = await Transaction.create({
@@ -75,45 +75,79 @@ export async function POST(req: NextRequest) {
       type: "topup",
       amount: amount,
       currency: currency,
-      description: `Wallet topup: $${amount}`,
+      description: `Wallet topup: ${amount} ${currency}`,
       reference: orderId,
       status: "pending",
       balanceBefore: wallet.balance,
     });
 
     // Create Kashier payment session
-    const hash = generateKashierHash(orderId, amount, currency);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const isTestMode = (process.env.KASHIER_MODE || "test") === "test";
+    
+    // Set expiration to 1 hour from now
+    const expireAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
+    // Kashier API payload per official documentation
+    // https://developers.kashier.io/payment/payment-sessions
     const kashierPayload = {
-      merchant_id: process.env.KASHIER_MERCHANT_ID,
-      order_id: orderId,
-      amount: amount.toString(),
+      merchantId: process.env.KASHIER_MERCHANT_ID,
+      expireAt: expireAt,
+      maxFailureAttempts: 3,
+      paymentType: "credit",
+      amount: String(amount.toFixed(2)),
       currency: currency,
-      hash: hash,
-      mode: process.env.KASHIER_MODE || "test",
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/wallet?topup=success`,
-      failure_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/wallet?topup=failed`,
-      metadata: {
+      order: orderId,
+      merchantRedirect: encodeURI(`${baseUrl}/wallet?topup=success&orderId=${orderId}`),
+      serverWebhook: `${baseUrl}/api/user/wallet/webhook`,
+      display: "en",
+      type: "one-time",
+      allowedMethods: "card",
+      customer: {
+        email: user.email || `user${user.id}@placeholder.com`,
+        reference: user.id,
+      },
+      metaData: {
         userId: user.id,
         transactionId: String(transaction._id),
         type: "wallet_topup",
       },
     };
 
-    const response = await fetch(
-      `${process.env.KASHIER_BASE_URL || "https://test-api.kashier.io"}/v3/payment/sessions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: process.env.KASHIER_SECRET_KEY!,
-          authMerchantId: process.env.KASHIER_MERCHANT_ID!,
-        },
-        body: JSON.stringify(kashierPayload),
-      }
-    );
+    // Kashier API URLs per documentation
+    const apiUrl = isTestMode
+      ? "https://test-api.kashier.io/v3/payment/sessions"
+      : "https://api.kashier.io/v3/payment/sessions";
+    
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": process.env.KASHIER_SECRET_KEY!,
+        "api-key": process.env.KASHIER_API_KEY!,
+      },
+      body: JSON.stringify(kashierPayload),
+    });
 
-    const data = await response.json();
+    // Handle non-JSON responses
+    let data;
+    const contentType = response.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      console.log("Kashier Topup API returned non-JSON:", text.substring(0, 500));
+      
+      transaction.status = "failed";
+      await transaction.save();
+
+      return NextResponse.json(
+        { error: "Payment gateway configuration error" },
+        { status: 500 }
+      );
+    }
+    
+    console.log("Kashier Topup Response:", { status: response.status, data });
 
     if (!response.ok || data.error) {
       // Mark transaction as failed
@@ -121,15 +155,20 @@ export async function POST(req: NextRequest) {
       await transaction.save();
 
       return NextResponse.json(
-        { error: data.error?.message || "Failed to create payment session" },
+        { error: data.error?.message || data.message || "Failed to create payment session" },
         { status: 400 }
       );
     }
 
+    // Extract sessionUrl from Kashier response
+    const sessionId = data._id;
+    const sessionUrl = data.sessionUrl;
+    const paymentUrl = sessionUrl || `https://payments.kashier.io/session/${sessionId}?mode=${isTestMode ? 'test' : 'live'}`;
+
     // Update transaction with payment gateway info
     transaction.paymentGateway = {
       provider: "kashier",
-      transactionId: "",
+      transactionId: sessionId || "",
       orderId: orderId,
       status: "pending",
     };
@@ -137,7 +176,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      paymentUrl: data.response?.checkoutUrl || data.checkoutUrl,
+      paymentUrl: paymentUrl,
       transaction: {
         id: transaction._id,
         orderId: orderId,

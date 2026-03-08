@@ -508,7 +508,7 @@ export default function RequestDetailsPage() {
             </div>
 
             {/* Proceed to Checkout - Show when Assigned to Company with accepted offer and not paid */}
-            {/* {request.requestStatus === "Assigned to Company" &&
+            {request.requestStatus === "Assigned to Company" &&
               request.selectedCompany &&
               request.paymentStatus !== "paid" && (
                 <div className="mt-6 pt-6 border-t border-border">
@@ -539,10 +539,10 @@ export default function RequestDetailsPage() {
                     </Link>
                   </div>
                 </div>
-              )} */}
+              )}
 
             {/* Payment Status Badge - Show when payment is completed */}
-            {/* {request.paymentStatus === "paid" && (
+            {request.paymentStatus === "paid" && (
               <div className="mt-6 pt-6 border-t border-border">
                 <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                   <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -563,7 +563,7 @@ export default function RequestDetailsPage() {
                   </div>
                 </div>
               </div>
-            )} */}
+            )}
           </div>
 
           {/* Live Tracking Map - Only show when In Transit or later */}
