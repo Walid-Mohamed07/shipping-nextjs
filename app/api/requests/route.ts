@@ -119,6 +119,11 @@ function normalizeRequest(req: any) {
     destinationWarehouse: req.destinationWarehouse,
     sourcePickupMode: req.sourcePickupMode,
     destinationPickupMode: req.destinationPickupMode,
+    // Payment fields
+    paymentStatus: req.paymentStatus,
+    paymentId: req.paymentId,
+    paidAmount: req.paidAmount,
+    paidAt: req.paidAt,
   };
 }
 

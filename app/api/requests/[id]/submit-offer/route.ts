@@ -93,8 +93,8 @@ export async function POST(
     }
 
     // Find the selected offer to get company name, id, and cost
-    // The offerId is the company.id from the frontend
-    console.log("[Submit-offer] Looking for offer with company.id:", offerId);
+    // The offerId is the offer's _id from the frontend
+    console.log("[Submit-offer] Looking for offer with _id:", offerId);
     console.log(
       "[Submit-offer] Available offers:",
       currentRequest.costOffers?.map((o: any) => ({
@@ -105,12 +105,12 @@ export async function POST(
     );
 
     const selectedOffer = currentRequest.costOffers?.find((offer: any) => {
-      // Match against company.id since that's what the frontend sends
-      const companyIdMatch = offer.company?.id === offerId;
+      // Match against offer's _id to get the specific offer the user selected
+      const offerIdMatch = offer._id?.toString() === offerId || String(offer._id) === offerId;
       console.log(
-        `[Submit-offer] Comparing ${offer.company?.id} === ${offerId}: ${companyIdMatch}`,
+        `[Submit-offer] Comparing ${offer._id?.toString()} === ${offerId}: ${offerIdMatch}`,
       );
-      return companyIdMatch;
+      return offerIdMatch;
     });
 
     if (!selectedOffer) {
@@ -119,9 +119,23 @@ export async function POST(
     }
 
     const companyName = selectedOffer?.company?.name || "Unknown Company";
-    const companyId = selectedOffer?.company?.id; // Use the offerId directly as it's the company ID
+    const companyId = selectedOffer?.company?.id;
     const companyRate = selectedOffer?.company?.rate || "";
     const cost = selectedOffer?.cost;
+
+    if (!cost || cost <= 0) {
+      return NextResponse.json(
+        { error: "Invalid offer cost" },
+        { status: 400 },
+      );
+    }
+
+    if (!companyId) {
+      return NextResponse.json(
+        { error: "Company ID not found in offer" },
+        { status: 400 },
+      );
+    }
 
     // Fetch headover percentage from settings for final price calculation
     let headoverPercentage = 0;
@@ -152,20 +166,21 @@ export async function POST(
       finalPrice,
     );
 
-    if (!companyId) {
-      return NextResponse.json(
-        { error: "Company ID not found in offer" },
-        { status: 400 },
-      );
-    }
-
-    // Mark the accepted offer and update request status
-    // Also set selectedCompany with full details including cost and finalPrice for UI display
+    // Mark the accepted offer but keep status as "Action needed" until payment is completed
+    // Set selectedCompany with full details including cost and finalPrice for UI display
+    // Status will change to "Assigned to Company" only after successful payment
+    
+    // First, unset all offers' selected field, then set only the chosen one
+    await Request.updateOne(
+      { _id: currentRequest._id },
+      { $set: { "costOffers.$[].selected": false } }
+    );
+    
     const updatedRequest = await Request.findByIdAndUpdate(
       currentRequest._id,
       {
         $set: {
-          requestStatus: "Assigned to Company",
+          // Keep requestStatus as "Action needed" - will change to "Assigned to Company" after payment
           assignedCompany: companyId,
           selectedCompany: {
             id: companyId,
@@ -179,9 +194,9 @@ export async function POST(
         },
         $push: {
           activityHistory: {
-            action: "offer_accepted",
+            action: "offer_selected",
             timestamp: new Date(),
-            description: `Client accepted offer from ${companyName} for $${finalPrice.toFixed(2)}`,
+            description: `Client selected offer from ${companyName} for $${finalPrice.toFixed(2)} - awaiting payment`,
             companyName,
             companyRate,
             cost: finalPrice,
@@ -191,7 +206,7 @@ export async function POST(
       },
       {
         returnDocument: "after",
-        arrayFilters: [{ "elem.company.id": companyId }],
+        arrayFilters: [{ "elem._id": offerId }],
       },
     );
 
@@ -236,7 +251,7 @@ export async function POST(
       {
         success: true,
         message:
-          "Offer accepted successfully! The request has been assigned to the company.",
+          "Offer selected successfully! Please proceed to checkout to complete your payment.",
         request: updatedRequest,
       },
       { status: 200 },

@@ -88,6 +88,11 @@ function normalizeRequest(req: LegacyRequest) {
     assignedWarehouse: req.assignedWarehouse,
     sourcePickupMode: req.sourcePickupMode,
     destinationPickupMode: req.destinationPickupMode,
+    // Payment fields
+    paymentStatus: req.paymentStatus,
+    paymentId: req.paymentId,
+    paidAmount: req.paidAmount,
+    paidAt: req.paidAt,
   };
 }
 

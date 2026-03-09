@@ -21,46 +21,75 @@ function PaymentResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "success" | "failed" | "pending"
+  >("loading");
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
+  const [verifiedRequestId, setVerifiedRequestId] = useState<string | null>(
+    null,
+  );
 
   // Get params from URL (Kashier callback)
-  const orderId = searchParams.get("orderId") || searchParams.get("merchantOrderId");
+  const orderId =
+    searchParams.get("orderId") || searchParams.get("merchantOrderId");
   const transactionId = searchParams.get("transactionId");
-  const paymentStatus = searchParams.get("paymentStatus") || searchParams.get("status");
+  const paymentStatus =
+    searchParams.get("paymentStatus") || searchParams.get("status");
   const requestId = searchParams.get("requestId");
 
   useEffect(() => {
     const checkPaymentStatus = async () => {
-      // If we have explicit status from Kashier
-      if (paymentStatus) {
-        const normalizedStatus = paymentStatus.toLowerCase();
-        if (normalizedStatus === "success" || normalizedStatus === "captured") {
-          setStatus("success");
-        } else if (normalizedStatus === "failed" || normalizedStatus === "error" || normalizedStatus === "declined") {
-          setStatus("failed");
-        } else {
-          setStatus("pending");
-        }
+      if (!orderId) {
+        console.log("[Payment Result] No order ID provided");
+        setStatus("pending");
         return;
       }
 
-      // Try to get payment info from our API
-      if (orderId) {
-        try {
-          const response = await fetch(`/api/pay?orderId=${orderId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setPaymentInfo(data.payment);
-            setStatus(data.payment.status === "completed" ? "success" : 
-                      data.payment.status === "failed" ? "failed" : "pending");
-          } else {
-            setStatus("pending");
-          }
-        } catch {
+      console.log(
+        "[Payment Result] Verifying payment with Kashier for order:",
+        orderId,
+      );
+
+      try {
+        // Call our backend to verify payment status with Kashier
+        // Also pass the URL paymentStatus as a fallback
+        const response = await fetch("/api/pay/verify-redirect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            paymentStatus, // From URL params (Kashier redirect includes this)
+          }),
+        });
+
+        const data = await response.json();
+        console.log("[Payment Result] Verification response:", data);
+
+        if (response.ok && data.success) {
+          setStatus("success");
+          setVerifiedRequestId(data.requestId);
+          setPaymentInfo({
+            amount: data.amount,
+            paymentStatus: data.paymentStatus,
+            requestStatus: data.requestStatus,
+          });
+
+          // Auto-redirect to request page after 3 seconds
+          setTimeout(() => {
+            if (data.requestId) {
+              router.push(`/request/${data.requestId}`);
+            } else {
+              router.push("/my-requests");
+            }
+          }, 3000);
+        } else if (data.paymentStatus === "failed") {
+          setStatus("failed");
+          setVerifiedRequestId(data.requestId);
+        } else {
           setStatus("pending");
         }
-      } else {
+      } catch (error) {
+        console.error("[Payment Result] Error verifying payment:", error);
         setStatus("pending");
       }
     };
@@ -68,17 +97,20 @@ function PaymentResultContent() {
     if (!authLoading) {
       checkPaymentStatus();
     }
-  }, [authLoading, paymentStatus, orderId]);
+  }, [authLoading, orderId, router]);
 
   // Translations
   const translations = {
     paymentResult: t.paymentResult || {
       success: "Payment Successful!",
-      successDesc: "Your payment has been processed successfully. Your shipment request is now being processed.",
+      successDesc:
+        "Your payment has been processed successfully. Your shipment request is now being processed.",
       failed: "Payment Failed",
-      failedDesc: "We couldn't process your payment. Please try again or use a different payment method.",
+      failedDesc:
+        "We couldn't process your payment. Please try again or use a different payment method.",
       pending: "Payment Processing",
-      pendingDesc: "Your payment is being processed. You'll receive a confirmation once it's complete.",
+      pendingDesc:
+        "Your payment is being processed. You'll receive a confirmation once it's complete.",
       viewRequest: "View Request",
       tryAgain: "Try Again",
       goHome: "Go to Home",
@@ -96,7 +128,12 @@ function PaymentResultContent() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Verifying payment...</p>
+          <p className="text-muted-foreground font-semibold">
+            Verifying payment with Kashier...
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please wait a moment
+          </p>
         </div>
       </div>
     );
@@ -126,21 +163,29 @@ function PaymentResultContent() {
           </div>
 
           {/* Status Title */}
-          <h1 className={`text-2xl font-bold mb-2 ${
-            status === "success" ? "text-green-600 dark:text-green-400" :
-            status === "failed" ? "text-red-600 dark:text-red-400" :
-            "text-yellow-600 dark:text-yellow-400"
-          }`}>
-            {status === "success" ? pt.success :
-             status === "failed" ? pt.failed :
-             pt.pending}
+          <h1
+            className={`text-2xl font-bold mb-2 ${
+              status === "success"
+                ? "text-green-600 dark:text-green-400"
+                : status === "failed"
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-yellow-600 dark:text-yellow-400"
+            }`}
+          >
+            {status === "success"
+              ? pt.success
+              : status === "failed"
+                ? pt.failed
+                : pt.pending}
           </h1>
 
           {/* Status Description */}
           <p className="text-muted-foreground mb-6">
-            {status === "success" ? pt.successDesc :
-             status === "failed" ? pt.failedDesc :
-             pt.pendingDesc}
+            {status === "success"
+              ? pt.successDesc
+              : status === "failed"
+                ? pt.failedDesc
+                : pt.pendingDesc}
           </p>
 
           {/* Transaction Details */}
@@ -154,14 +199,20 @@ function PaymentResultContent() {
               )}
               {transactionId && (
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">{pt.transactionId}:</span>
-                  <span className="font-mono text-foreground">{transactionId.slice(0, 16)}...</span>
+                  <span className="text-muted-foreground">
+                    {pt.transactionId}:
+                  </span>
+                  <span className="font-mono text-foreground">
+                    {transactionId.slice(0, 16)}...
+                  </span>
                 </div>
               )}
               {paymentInfo?.amount && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{pt.amount}:</span>
-                  <span className="font-semibold text-foreground">${paymentInfo.amount.toFixed(2)}</span>
+                  <span className="font-semibold text-foreground">
+                    ${paymentInfo.amount.toFixed(2)}
+                  </span>
                 </div>
               )}
             </div>
@@ -169,8 +220,8 @@ function PaymentResultContent() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {status === "success" && requestId && (
-              <Link href={`/request/${requestId}`} className="block">
+            {status === "success" && verifiedRequestId && (
+              <Link href={`/request/${verifiedRequestId}`} className="block">
                 <Button className="w-full cursor-pointer" size="lg">
                   <Package className="w-4 h-4 mr-2" />
                   {pt.viewRequest}
@@ -178,8 +229,11 @@ function PaymentResultContent() {
               </Link>
             )}
 
-            {status === "failed" && requestId && (
-              <Link href={`/checkout?requestId=${requestId}`} className="block">
+            {status === "failed" && (verifiedRequestId || requestId) && (
+              <Link
+                href={`/checkout?requestId=${verifiedRequestId || requestId}`}
+                className="block"
+              >
                 <Button className="w-full cursor-pointer" size="lg">
                   {pt.tryAgain}
                 </Button>
@@ -187,14 +241,22 @@ function PaymentResultContent() {
             )}
 
             <Link href="/my-requests" className="block">
-              <Button variant="outline" className="w-full bg-transparent cursor-pointer" size="lg">
+              <Button
+                variant="outline"
+                className="w-full bg-transparent cursor-pointer"
+                size="lg"
+              >
                 <Package className="w-4 h-4 mr-2" />
                 {pt.myRequests}
               </Button>
             </Link>
 
             <Link href="/" className="block">
-              <Button variant="ghost" className="w-full cursor-pointer" size="lg">
+              <Button
+                variant="ghost"
+                className="w-full cursor-pointer"
+                size="lg"
+              >
                 <Home className="w-4 h-4 mr-2" />
                 {pt.goHome}
               </Button>
@@ -208,11 +270,13 @@ function PaymentResultContent() {
 
 export default function PaymentResultPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        </div>
+      }
+    >
       <PaymentResultContent />
     </Suspense>
   );

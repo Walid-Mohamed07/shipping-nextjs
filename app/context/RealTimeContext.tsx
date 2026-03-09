@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { useAuth } from "./AuthContext";
 
 // Event types for different actions in the system
@@ -24,6 +31,8 @@ export type RealTimeEventType =
   | "WAREHOUSE_UPDATED"
   | "DELIVERY_STATUS_CHANGED"
   | "TRACKING_UPDATED"
+  | "PAYMENT_COMPLETED"
+  | "PAYMENT_FAILED"
   | "NOTIFICATION";
 
 export interface RealTimeEvent<T = any> {
@@ -39,13 +48,21 @@ export interface RealTimeEvent<T = any> {
 interface RealTimeContextType {
   isConnected: boolean;
   lastEvent: RealTimeEvent | null;
-  subscribe: (eventType: RealTimeEventType | RealTimeEventType[], callback: (event: RealTimeEvent) => void) => () => void;
-  subscribeToRequest: (requestId: string, callback: (event: RealTimeEvent) => void) => () => void;
+  subscribe: (
+    eventType: RealTimeEventType | RealTimeEventType[],
+    callback: (event: RealTimeEvent) => void,
+  ) => () => void;
+  subscribeToRequest: (
+    requestId: string,
+    callback: (event: RealTimeEvent) => void,
+  ) => () => void;
   triggerRefresh: (eventType: RealTimeEventType, requestId?: string) => void;
   connectionStatus: "connecting" | "connected" | "disconnected" | "error";
 }
 
-const RealTimeContext = createContext<RealTimeContextType | undefined>(undefined);
+const RealTimeContext = createContext<RealTimeContextType | undefined>(
+  undefined,
+);
 
 // Store for subscribers
 type SubscriberCallback = (event: RealTimeEvent) => void;
@@ -60,8 +77,10 @@ export function RealTimeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<RealTimeEvent | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("disconnected");
-  
+  const [connectionStatus, setConnectionStatus] = useState<
+    "connecting" | "connected" | "disconnected" | "error"
+  >("disconnected");
+
   const eventSourceRef = useRef<EventSource | null>(null);
   const subscribersRef = useRef<Subscribers>({
     byEventType: new Map(),
@@ -72,60 +91,63 @@ export function RealTimeProvider({ children }: { children: React.ReactNode }) {
   const reconnectAttemptsRef = useRef(0);
 
   // Notify subscribers when an event is received
-  const notifySubscribers = useCallback((event: RealTimeEvent) => {
-    const subscribers = subscribersRef.current;
+  const notifySubscribers = useCallback(
+    (event: RealTimeEvent) => {
+      const subscribers = subscribersRef.current;
 
-    // Check if this event is targeted at the current user
-    if (event.targetUsers && event.targetUsers.length > 0) {
-      if (!user?.id || !event.targetUsers.includes(user.id)) {
-        return; // Skip if user is not in target list
-      }
-    }
-
-    // Check if this event is targeted at the current user's role
-    if (event.targetRoles && event.targetRoles.length > 0) {
-      if (!user?.role || !event.targetRoles.includes(user.role)) {
-        return; // Skip if user's role is not in target list
-      }
-    }
-
-    // Notify event type subscribers
-    const typeSubscribers = subscribers.byEventType.get(event.type);
-    if (typeSubscribers) {
-      typeSubscribers.forEach((callback) => {
-        try {
-          callback(event);
-        } catch (err) {
-          console.error("Error in event subscriber:", err);
+      // Check if this event is targeted at the current user
+      if (event.targetUsers && event.targetUsers.length > 0) {
+        if (!user?.id || !event.targetUsers.includes(user.id)) {
+          return; // Skip if user is not in target list
         }
-      });
-    }
+      }
 
-    // Notify request-specific subscribers
-    if (event.requestId) {
-      const requestSubscribers = subscribers.byRequestId.get(event.requestId);
-      if (requestSubscribers) {
-        requestSubscribers.forEach((callback) => {
+      // Check if this event is targeted at the current user's role
+      if (event.targetRoles && event.targetRoles.length > 0) {
+        if (!user?.role || !event.targetRoles.includes(user.role)) {
+          return; // Skip if user's role is not in target list
+        }
+      }
+
+      // Notify event type subscribers
+      const typeSubscribers = subscribers.byEventType.get(event.type);
+      if (typeSubscribers) {
+        typeSubscribers.forEach((callback) => {
           try {
             callback(event);
           } catch (err) {
-            console.error("Error in request subscriber:", err);
+            console.error("Error in event subscriber:", err);
           }
         });
       }
-    }
 
-    // Notify global subscribers
-    subscribers.global.forEach((callback) => {
-      try {
-        callback(event);
-      } catch (err) {
-        console.error("Error in global subscriber:", err);
+      // Notify request-specific subscribers
+      if (event.requestId) {
+        const requestSubscribers = subscribers.byRequestId.get(event.requestId);
+        if (requestSubscribers) {
+          requestSubscribers.forEach((callback) => {
+            try {
+              callback(event);
+            } catch (err) {
+              console.error("Error in request subscriber:", err);
+            }
+          });
+        }
       }
-    });
 
-    setLastEvent(event);
-  }, [user?.id, user?.role]);
+      // Notify global subscribers
+      subscribers.global.forEach((callback) => {
+        try {
+          callback(event);
+        } catch (err) {
+          console.error("Error in global subscriber:", err);
+        }
+      });
+
+      setLastEvent(event);
+    },
+    [user?.id, user?.role],
+  );
 
   // Connect to SSE endpoint
   const connect = useCallback(() => {
@@ -171,11 +193,16 @@ export function RealTimeProvider({ children }: { children: React.ReactNode }) {
       // Reconnect with exponential backoff
       const maxAttempts = 10;
       if (reconnectAttemptsRef.current < maxAttempts) {
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
+        const delay = Math.min(
+          1000 * Math.pow(2, reconnectAttemptsRef.current),
+          30000,
+        );
         reconnectAttemptsRef.current++;
-        
+
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log(`[RealTime] Attempting to reconnect (attempt ${reconnectAttemptsRef.current})...`);
+          console.log(
+            `[RealTime] Attempting to reconnect (attempt ${reconnectAttemptsRef.current})...`,
+          );
           connect();
         }, delay);
       } else {
@@ -214,53 +241,65 @@ export function RealTimeProvider({ children }: { children: React.ReactNode }) {
   }, [user?.id, connect]);
 
   // Subscribe to specific event types
-  const subscribe = useCallback((eventType: RealTimeEventType | RealTimeEventType[], callback: SubscriberCallback) => {
-    const types = Array.isArray(eventType) ? eventType : [eventType];
-    const subscribers = subscribersRef.current;
+  const subscribe = useCallback(
+    (
+      eventType: RealTimeEventType | RealTimeEventType[],
+      callback: SubscriberCallback,
+    ) => {
+      const types = Array.isArray(eventType) ? eventType : [eventType];
+      const subscribers = subscribersRef.current;
 
-    types.forEach((type) => {
-      if (!subscribers.byEventType.has(type)) {
-        subscribers.byEventType.set(type, new Set());
-      }
-      subscribers.byEventType.get(type)!.add(callback);
-    });
-
-    // Return unsubscribe function
-    return () => {
       types.forEach((type) => {
-        subscribers.byEventType.get(type)?.delete(callback);
+        if (!subscribers.byEventType.has(type)) {
+          subscribers.byEventType.set(type, new Set());
+        }
+        subscribers.byEventType.get(type)!.add(callback);
       });
-    };
-  }, []);
+
+      // Return unsubscribe function
+      return () => {
+        types.forEach((type) => {
+          subscribers.byEventType.get(type)?.delete(callback);
+        });
+      };
+    },
+    [],
+  );
 
   // Subscribe to events for a specific request
-  const subscribeToRequest = useCallback((requestId: string, callback: SubscriberCallback) => {
-    const subscribers = subscribersRef.current;
+  const subscribeToRequest = useCallback(
+    (requestId: string, callback: SubscriberCallback) => {
+      const subscribers = subscribersRef.current;
 
-    if (!subscribers.byRequestId.has(requestId)) {
-      subscribers.byRequestId.set(requestId, new Set());
-    }
-    subscribers.byRequestId.get(requestId)!.add(callback);
-
-    // Return unsubscribe function
-    return () => {
-      subscribers.byRequestId.get(requestId)?.delete(callback);
-      if (subscribers.byRequestId.get(requestId)?.size === 0) {
-        subscribers.byRequestId.delete(requestId);
+      if (!subscribers.byRequestId.has(requestId)) {
+        subscribers.byRequestId.set(requestId, new Set());
       }
-    };
-  }, []);
+      subscribers.byRequestId.get(requestId)!.add(callback);
+
+      // Return unsubscribe function
+      return () => {
+        subscribers.byRequestId.get(requestId)?.delete(callback);
+        if (subscribers.byRequestId.get(requestId)?.size === 0) {
+          subscribers.byRequestId.delete(requestId);
+        }
+      };
+    },
+    [],
+  );
 
   // Manually trigger a refresh (useful when you know data has changed)
-  const triggerRefresh = useCallback((eventType: RealTimeEventType, requestId?: string) => {
-    const event: RealTimeEvent = {
-      type: eventType,
-      payload: { manual: true },
-      timestamp: Date.now(),
-      requestId,
-    };
-    notifySubscribers(event);
-  }, [notifySubscribers]);
+  const triggerRefresh = useCallback(
+    (eventType: RealTimeEventType, requestId?: string) => {
+      const event: RealTimeEvent = {
+        type: eventType,
+        payload: { manual: true },
+        timestamp: Date.now(),
+        requestId,
+      };
+      notifySubscribers(event);
+    },
+    [notifySubscribers],
+  );
 
   const value: RealTimeContextType = {
     isConnected,

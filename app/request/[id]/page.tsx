@@ -26,6 +26,9 @@ import {
   ChevronDown,
   X,
   CreditCard,
+  Loader2,
+  XCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   Accordion,
@@ -43,6 +46,7 @@ import { getDistanceKm } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useTranslation } from "@/app/context/LocaleContext";
 import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
+import { useRealTime } from "@/app/context/RealTimeContext";
 
 // Dynamically import map components to avoid SSR issues
 const LocationMapPicker = dynamic(
@@ -86,6 +90,7 @@ export default function RequestDetailsPage() {
   const { t, isRtl, locale } = useTranslation();
   const { getCategoryLabel } = useCategoryLabel();
   const { user, isLoading: authLoading } = useProtectedRoute();
+  const { subscribe, subscribeToRequest } = useRealTime();
   const params = useParams();
   const requestId = params.id as string;
 
@@ -111,6 +116,23 @@ export default function RequestDetailsPage() {
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [headoverPercentage, setHeadoverPercentage] = useState(0);
+  const [hasShownPaymentNotification, setHasShownPaymentNotification] =
+    useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<{
+    id: string;
+    status: string;
+    amount: number;
+    paymentMethod: string;
+    breakdown?: {
+      walletDeduction?: number;
+      cardAmount?: number;
+    };
+    paidAt?: string;
+    createdAt?: string;
+  } | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [lastPaymentCheck, setLastPaymentCheck] = useState<Date | null>(null);
 
   const isClientRole = !["admin", "operator", "company", "driver"].includes(
     user?.role || "",
@@ -149,6 +171,226 @@ export default function RequestDetailsPage() {
   const refreshRequest = useCallback(() => {
     fetchRequest();
   }, [fetchRequest]);
+
+  // Fetch payment info for the request
+  const fetchPaymentInfo = useCallback(async () => {
+    if (!requestId) return;
+
+    setPaymentLoading(true);
+    try {
+      const response = await fetch(`/api/pay?requestId=${requestId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentInfo(data.payment);
+      } else if (response.status !== 404) {
+        console.error("Failed to fetch payment info");
+      }
+    } catch (err) {
+      console.error("Error fetching payment:", err);
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, [requestId]);
+
+  // Fetch payment info when request has payment data
+  useEffect(() => {
+    if (request?.paymentStatus && request.paymentStatus !== "unpaid") {
+      fetchPaymentInfo();
+    }
+  }, [request?.paymentStatus, fetchPaymentInfo]);
+
+  // Auto-check payment status by querying Kashier directly
+  const checkPaymentStatus = useCallback(async () => {
+    if (!paymentInfo?.id) return;
+
+    // Only check if payment is pending or processing
+    if (
+      paymentInfo.status !== "pending" &&
+      paymentInfo.status !== "processing"
+    ) {
+      return;
+    }
+
+    console.log(
+      "[Auto-Check] Querying Kashier for real-time payment status...",
+    );
+    setIsCheckingPayment(true);
+    setLastPaymentCheck(new Date());
+
+    try {
+      const response = await fetch(`/api/pay/status/${paymentInfo.id}`);
+
+      if (response.ok) {
+        const data = await response.json();
+
+        console.log(
+          "[Auto-Check] Kashier status:",
+          data.kashierStatus,
+          "Updated:",
+          data.updated,
+        );
+
+        if (data.updated) {
+          // Status was updated! Refresh UI
+          toast.success(
+            data.status === "completed"
+              ? "Payment confirmed! Your request has been submitted."
+              : `Payment status updated: ${data.status}`,
+          );
+
+          // Refresh request and payment data
+          await Promise.all([fetchRequest(), fetchPaymentInfo()]);
+        }
+      } else {
+        console.error("[Auto-Check] Failed to check payment status");
+      }
+    } catch (err) {
+      console.error("[Auto-Check] Error:", err);
+    } finally {
+      setIsCheckingPayment(false);
+    }
+  }, [paymentInfo?.id, paymentInfo?.status, fetchRequest, fetchPaymentInfo]);
+
+  // Auto-check payment on mount and poll every 5 seconds if payment is pending
+  // REPLACED WITH WEBHOOK: Listen for real-time payment status updates from webhook
+  useEffect(() => {
+    if (!requestId) return;
+
+    console.log(
+      "[Real-Time] Subscribing to payment events for request:",
+      requestId,
+    );
+
+    // Subscribe to payment completion events
+    const unsubscribeCompleted = subscribe("PAYMENT_COMPLETED", (event) => {
+      console.log("[Real-Time] Received PAYMENT_COMPLETED event:", event);
+
+      if (event.payload.requestId === requestId) {
+        toast.success("Payment confirmed! Your request has been submitted.");
+
+        // Refresh request and payment data
+        fetchRequest();
+        fetchPaymentInfo();
+      }
+    });
+
+    // Subscribe to payment failure events
+    const unsubscribeFailed = subscribe("PAYMENT_FAILED", (event) => {
+      console.log("[Real-Time] Received PAYMENT_FAILED event:", event);
+
+      if (event.payload.requestId === requestId) {
+        toast.error(
+          event.payload.message || "Payment failed. Please try again.",
+        );
+
+        // Refresh request and payment data
+        fetchRequest();
+        fetchPaymentInfo();
+      }
+    });
+
+    // Also subscribe to specific request updates
+    const unsubscribeRequest = subscribeToRequest(requestId, (event) => {
+      console.log("[Real-Time] Received request event:", event.type);
+
+      if (
+        event.type === "PAYMENT_COMPLETED" ||
+        event.type === "PAYMENT_FAILED"
+      ) {
+        // Already handled above
+        return;
+      }
+
+      // Handle other request updates
+      if (event.type === "REQUEST_UPDATED" || event.type === "STATUS_CHANGED") {
+        fetchRequest();
+      }
+    });
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      console.log("[Real-Time] Unsubscribing from payment events");
+      unsubscribeCompleted();
+      unsubscribeFailed();
+      unsubscribeRequest();
+    };
+  }, [
+    requestId,
+    subscribe,
+    subscribeToRequest,
+    fetchRequest,
+    fetchPaymentInfo,
+  ]);
+
+  // Handle manual payment verification (when webhook fails)
+  const handleVerifyPayment = async () => {
+    if (!paymentInfo?.id && !requestId) return;
+
+    setPaymentLoading(true);
+    try {
+      const response = await fetch("/api/pay/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId: paymentInfo?.id,
+          requestId: requestId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || "Payment verification checked");
+
+        // If Kashier dashboard shows PAID, offer to mark as paid
+        if (data.kashierDashboardUrl) {
+          const confirmMark = window.confirm(
+            "Check Kashier dashboard to confirm payment. If payment shows as PAID, click OK to mark it as completed in our system.",
+          );
+
+          if (confirmMark) {
+            await handleMarkAsPaid();
+          }
+        }
+      } else {
+        toast.error(data.error || "Failed to verify payment");
+      }
+    } catch (err) {
+      toast.error("Failed to verify payment");
+      console.error("Verify payment error:", err);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  // Mark payment as paid manually (after verification)
+  const handleMarkAsPaid = async () => {
+    if (!paymentInfo?.id) return;
+
+    try {
+      const response = await fetch("/api/pay/verify", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId: paymentInfo.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Payment marked as completed!");
+        // Refresh request and payment info
+        fetchRequest();
+        fetchPaymentInfo();
+      } else {
+        toast.error(data.error || "Failed to mark payment as paid");
+      }
+    } catch (err) {
+      toast.error("Failed to mark payment as paid");
+      console.error("Mark as paid error:", err);
+    }
+  };
 
   const findNearbyWarehouses = () => {
     setShowLocationPrompt(true);
@@ -236,12 +478,16 @@ export default function RequestDetailsPage() {
       return;
     }
 
+    console.log("selected Offer: ", selectedOffer);
+
     setConfirmingOffer(selectedOffer);
     setShowConfirmDialog(true);
   };
 
   const handleConfirmSubmit = async () => {
     if (!confirmingOffer || !request) return;
+
+    console.log("confirming Offer: ", confirmingOffer);
 
     setIsSubmitting(true);
     try {
@@ -251,7 +497,7 @@ export default function RequestDetailsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          offerId: confirmingOffer.company.id, // Use the company ID to match the backend
+          offerId: confirmingOffer._id, // Use the offer's _id to match the specific offer
         }),
       });
 
@@ -311,6 +557,29 @@ export default function RequestDetailsPage() {
     window.addEventListener("keydown", handleEscKey);
     return () => window.removeEventListener("keydown", handleEscKey);
   }, [showImageZoom]);
+
+  // Show payment success notification when payment is completed
+  useEffect(() => {
+    if (
+      request?.paymentStatus === "paid" &&
+      !hasShownPaymentNotification &&
+      request?.requestStatus === "Assigned to Company"
+    ) {
+      toast.success(
+        t.userRequestDetail?.paymentSuccessNotification ||
+          "Payment completed successfully! Your shipment is now being processed.",
+        {
+          duration: 6000,
+        },
+      );
+      setHasShownPaymentNotification(true);
+    }
+  }, [
+    request?.paymentStatus,
+    request?.requestStatus,
+    hasShownPaymentNotification,
+    t,
+  ]);
 
   // test
 
@@ -507,12 +776,12 @@ export default function RequestDetailsPage() {
               </div>
             </div>
 
-            {/* Proceed to Checkout - Show when Assigned to Company with accepted offer and not paid */}
-            {request.requestStatus === "Assigned to Company" &&
+            {/* Proceed to Checkout - Show when offer confirmed (Action needed status) and not paid/pending */}
+            {request.requestStatus === "Action needed" &&
               request.selectedCompany &&
-              request.paymentStatus !== "paid" && (
+              request.paymentStatus === "unpaid" && (
                 <div className="mt-6 pt-6 border-t border-border">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-linear-to-r from-primary/10 to-primary/5 rounded-lg p-6">
                     <div className="text-center sm:text-left">
                       <h3 className="font-semibold text-lg text-foreground mb-1">
                         {t.userRequestDetail?.readyForPayment ||
@@ -541,26 +810,209 @@ export default function RequestDetailsPage() {
                 </div>
               )}
 
-            {/* Payment Status Badge - Show when payment is completed */}
+            {/* Payment Status Section - Webhook-based updates */}
+            {/* Payment Pending - Waiting for webhook */}
+            {request.paymentStatus === "pending" && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                      {isCheckingPayment ? (
+                        <Loader2 className="w-5 h-5 text-yellow-600 dark:text-yellow-400 animate-spin" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-yellow-800 dark:text-yellow-400">
+                        {t.userRequestDetail?.paymentPending ||
+                          "Payment Pending"}
+                      </p>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-500">
+                        {isCheckingPayment
+                          ? "Checking payment status with Kashier..."
+                          : "Waiting for payment confirmation from Kashier..."}
+                      </p>
+                      <p className="text-xs text-yellow-600 dark:text-yellow-600 mt-1">
+                        Status will update automatically when payment is
+                        confirmed
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Manual check button (fallback if webhook fails) */}
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-yellow-200 dark:border-yellow-800">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        checkPaymentStatus();
+                      }}
+                      disabled={isCheckingPayment}
+                      className="cursor-pointer"
+                    >
+                      <RefreshCw
+                        className={`w-4 h-4 mr-2 ${isCheckingPayment ? "animate-spin" : ""}`}
+                      />
+                      {t.userRequestDetail?.refresh || "Check Status Manually"}
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-3">
+                    💡 If payment status doesn&apos;t update automatically after
+                    completing payment, click &quot;Check Status Manually&quot;
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Processing */}
+            {(paymentInfo?.status === "processing" ||
+              paymentInfo?.status === "pending") &&
+              request.paymentStatus !== "paid" &&
+              request.paymentStatus !== "failed" && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-800 dark:text-blue-400">
+                        {t.userRequestDetail?.paymentProcessing ||
+                          "Processing Payment"}
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-500">
+                        {t.userRequestDetail?.paymentProcessingDesc ||
+                          "We are verifying your payment with the payment provider."}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        fetchRequest();
+                        fetchPaymentInfo();
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+            {/* Payment Failed */}
+            {request.paymentStatus === "failed" && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-800 dark:text-red-400">
+                      {t.userRequestDetail?.paymentFailed || "Payment Failed"}
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-500">
+                      {t.userRequestDetail?.paymentFailedDesc ||
+                        "Your payment could not be processed. Please try again."}
+                    </p>
+                  </div>
+                  <Link href={`/checkout?requestId=${requestId}`}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="cursor-pointer gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      {t.userRequestDetail?.retryPayment || "Retry Payment"}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Completed - Enhanced with details */}
             {request.paymentStatus === "paid" && (
               <div className="mt-6 pt-6 border-t border-border">
-                <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-green-800 dark:text-green-400">
+                        {t.userRequestDetail?.paymentCompleted ||
+                          "Payment Completed"}
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-500">
+                        {t.userRequestDetail?.paidAmount || "Paid"}: $
+                        {request.paidAmount?.toFixed(2) ||
+                          request.selectedCompany?.cost.toFixed(2)}
+                        {request.paidAt &&
+                          ` • ${new Date(request.paidAt).toLocaleDateString(locale)}`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-green-800 dark:text-green-400">
-                      {t.userRequestDetail?.paymentCompleted ||
-                        "Payment Completed"}
-                    </p>
-                    <p className="text-sm text-green-700 dark:text-green-500">
-                      {t.userRequestDetail?.paidAmount || "Paid"}: $
-                      {request.paidAmount?.toFixed(2) ||
-                        request.selectedCompany?.cost.toFixed(2)}
-                      {request.paidAt &&
-                        ` • ${new Date(request.paidAt).toLocaleDateString(locale)}`}
-                    </p>
-                  </div>
+
+                  {/* Payment Details */}
+                  {paymentInfo && (
+                    <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 grid grid-cols-2 gap-3 text-sm">
+                      {paymentInfo.paymentMethod && (
+                        <div>
+                          <p className="text-green-600 dark:text-green-500 text-xs">
+                            {t.userRequestDetail?.paymentMethod ||
+                              "Payment Method"}
+                          </p>
+                          <p className="font-medium text-green-800 dark:text-green-400">
+                            {paymentInfo.paymentMethod === "card"
+                              ? t.userRequestDetail?.cardPayment ||
+                                "Card Payment"
+                              : paymentInfo.paymentMethod === "wallet"
+                                ? t.userRequestDetail?.walletPayment ||
+                                  "Wallet Payment"
+                                : t.userRequestDetail?.mixedPayment ||
+                                  "Card + Wallet"}
+                          </p>
+                        </div>
+                      )}
+                      {paymentInfo.breakdown?.walletDeduction &&
+                        paymentInfo.breakdown.walletDeduction > 0 && (
+                          <div>
+                            <p className="text-green-600 dark:text-green-500 text-xs">
+                              {t.userRequestDetail?.walletPayment ||
+                                "Wallet Payment"}
+                            </p>
+                            <p className="font-medium text-green-800 dark:text-green-400">
+                              $
+                              {paymentInfo.breakdown.walletDeduction.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                      {paymentInfo.breakdown?.cardAmount &&
+                        paymentInfo.breakdown.cardAmount > 0 && (
+                          <div>
+                            <p className="text-green-600 dark:text-green-500 text-xs">
+                              {t.userRequestDetail?.cardPayment ||
+                                "Card Payment"}
+                            </p>
+                            <p className="font-medium text-green-800 dark:text-green-400">
+                              ${paymentInfo.breakdown.cardAmount.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                      {paymentInfo.id && (
+                        <div className="col-span-2">
+                          <p className="text-green-600 dark:text-green-500 text-xs">
+                            {t.userRequestDetail?.transactionId ||
+                              "Transaction ID"}
+                          </p>
+                          <p className="font-medium text-green-800 dark:text-green-400 font-mono text-xs">
+                            {paymentInfo.id}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -813,7 +1265,9 @@ export default function RequestDetailsPage() {
                     {request.costOffers.map((offer, idx) => (
                       <div
                         key={offer._id || idx}
-                        onClick={() => handleSelectOffer(offer._id)}
+                        onClick={() =>
+                          offer._id && handleSelectOffer(offer._id)
+                        }
                         className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
                           offer.selected
                             ? "border-primary bg-primary/5 shadow-md"

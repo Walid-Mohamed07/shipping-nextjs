@@ -101,10 +101,13 @@ export default function CheckoutPage() {
       setRequest(reqObj);
 
       // Validate request is ready for payment
-      if (
-        reqObj.requestStatus !== "Assigned to Company" ||
-        !reqObj.selectedCompany
-      ) {
+      // Allow checkout when status is "Action Needed" with selected offer, or "Assigned to Company"
+      const canCheckout =
+        (reqObj.requestStatus === "Action needed" ||
+          reqObj.requestStatus === "Assigned to Company") &&
+        reqObj.selectedCompany;
+
+      if (!canCheckout) {
         setError(ct.notReadyForPayment);
         setLoading(false);
         return;

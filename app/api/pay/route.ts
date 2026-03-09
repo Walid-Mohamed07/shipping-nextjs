@@ -60,12 +60,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if request is in correct status for payment
-    if (
-      request.requestStatus !== "Assigned to Company" ||
-      !request.selectedCompany
-    ) {
+    // Allow payment when status is "Action needed" and an offer has been selected
+    const canPay =
+      (request.requestStatus === "Action needed" ||
+        request.requestStatus === "Assigned to Company") &&
+      request.selectedCompany;
+
+    if (!canPay) {
       return NextResponse.json(
-        { error: "Request is not ready for payment" },
+        { error: "Request is not ready for payment. Please select an offer first." },
         { status: 400 },
       );
     }
@@ -154,7 +157,8 @@ export async function POST(req: NextRequest) {
       request.paymentId = payment._id;
       request.paidAmount = totalAmount;
       request.paidAt = new Date();
-      request.requestStatus = "In Progress";
+      // Change status to "Assigned to Company" after successful payment
+      request.requestStatus = "Assigned to Company";
       await request.save();
 
       return NextResponse.json({
@@ -217,7 +221,6 @@ export async function POST(req: NextRequest) {
       orderId,
       amount: kashierPayload.amount,
       currency,
-      mode: kashierPayload.mode,
       expireAt: expireAt,
     });
     console.log("Kashier Headers:", {
