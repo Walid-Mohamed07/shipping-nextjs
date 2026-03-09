@@ -8,7 +8,18 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { userId, name, email, mobile, birthDate, profilePicture, currentPassword, newPassword } = body;
+    const {
+      userId,
+      name,
+      email,
+      mobile,
+      birthDate,
+      profilePicture,
+      currentPassword,
+      newPassword,
+      country,
+      preferredCurrency,
+    } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
@@ -25,7 +36,7 @@ export async function PUT(req: NextRequest) {
     if (name !== undefined) updateData.name = name;
     // Email cannot be changed - skip email updates
     // if (email !== undefined) updateData.email = email;
-    
+
     // If mobile number changed, reset mobileVerified to false
     if (mobile !== undefined && mobile !== user.mobile) {
       updateData.mobile = mobile;
@@ -34,15 +45,21 @@ export async function PUT(req: NextRequest) {
     } else if (mobile !== undefined) {
       updateData.mobile = mobile;
     }
-    
+
     if (birthDate !== undefined) updateData.birthDate = birthDate;
     if (profilePicture !== undefined)
       updateData.profilePicture = profilePicture;
+    if (country !== undefined) updateData.country = country;
+    if (preferredCurrency !== undefined)
+      updateData.preferredCurrency = preferredCurrency;
 
     // Handle password change if provided
     if (currentPassword && newPassword) {
       // Verify current password
-      const isPasswordValid = await bcryptjs.compare(currentPassword, user.password);
+      const isPasswordValid = await bcryptjs.compare(
+        currentPassword,
+        user.password,
+      );
       if (!isPasswordValid) {
         return NextResponse.json(
           { error: "Current password is incorrect" },
@@ -101,6 +118,8 @@ export async function PUT(req: NextRequest) {
         status: updatedUser.status,
         emailVerified: updatedUser.emailVerified,
         mobileVerified: updatedUser.mobileVerified,
+        country: updatedUser.country,
+        preferredCurrency: updatedUser.preferredCurrency,
       },
     });
 

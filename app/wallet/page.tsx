@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -52,6 +53,7 @@ interface Transaction {
 function WalletContent() {
   const { t, isRtl, locale } = useTranslation();
   const { user, isLoading: authLoading } = useProtectedRoute();
+  const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
 
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -118,11 +120,11 @@ function WalletContent() {
   // Handle topup
   const handleTopup = async () => {
     if (topupAmount < 1) {
-      toast.error("Minimum topup amount is $1");
+      toast.error(`Minimum topup amount is ${formatPrice(1, "USD")}`);
       return;
     }
     if (topupAmount > 10000) {
-      toast.error("Maximum topup amount is $10,000");
+      toast.error(`Maximum topup amount is ${formatPrice(10000, "USD")}`);
       return;
     }
 
@@ -240,7 +242,7 @@ function WalletContent() {
                   </div>
                   <div>
                     <p className="text-white/80 text-sm">{wt.balance}</p>
-                    <p className="text-4xl font-bold">${wallet?.balance.toFixed(2) || "0.00"}</p>
+                    <p className="text-4xl font-bold">{formatPrice(wallet?.balance || 0, wallet?.currency || "USD")}</p>
                   </div>
                 </div>
 
@@ -269,7 +271,7 @@ function WalletContent() {
                   <div>
                     <p className="text-xs text-muted-foreground">{wt.totalCredits}</p>
                     <p className="text-lg font-semibold text-foreground">
-                      ${wallet?.totalCredits.toFixed(2) || "0.00"}
+                      {formatPrice(wallet?.totalCredits || 0, wallet?.currency || "USD")}
                     </p>
                   </div>
                 </div>
@@ -282,7 +284,7 @@ function WalletContent() {
                   <div>
                     <p className="text-xs text-muted-foreground">{wt.totalDebits}</p>
                     <p className="text-lg font-semibold text-foreground">
-                      ${wallet?.totalDebits.toFixed(2) || "0.00"}
+                      {formatPrice(wallet?.totalDebits || 0, wallet?.currency || "USD")}
                     </p>
                   </div>
                 </div>
@@ -369,8 +371,8 @@ function WalletContent() {
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {tx.type === "credit" || tx.type === "topup" || tx.type === "refund" ? "+" : "-"}$
-                        {tx.amount.toFixed(2)}
+                        {tx.type === "credit" || tx.type === "topup" || tx.type === "refund" ? "+" : "-"}
+                        {formatPrice(tx.amount, tx.currency || "USD")}
                       </p>
                       {getStatusBadge(tx.status)}
                     </div>
@@ -427,7 +429,7 @@ function WalletContent() {
                           : "bg-background border-border text-foreground hover:bg-muted"
                       }`}
                     >
-                      ${amount}
+                      {formatPrice(amount, "USD")}
                     </button>
                   ))}
                 </div>
@@ -437,7 +439,7 @@ function WalletContent() {
               <div className="mb-6">
                 <p className="text-sm font-medium text-foreground mb-2">{wt.customAmount}</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold">$</span>
+                  <span className="text-lg font-semibold">USD</span>
                   <input
                     type="number"
                     min={1}

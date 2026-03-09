@@ -42,6 +42,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useTranslation } from "@/app/context/LocaleContext";
 import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
+import { PriceDisplay } from "@/app/components/PriceDisplay";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 // Dynamically import map component
 const SimpleLocationMap = dynamic(
@@ -69,6 +71,7 @@ export default function CompanyRequestDetailPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { create, error: showError } = useToast();
+  const { currency, convert } = useCurrency();
 
   const requestId = params.id as string;
 
@@ -223,6 +226,7 @@ export default function CompanyRequestDetailPage() {
           },
           offer: {
             cost,
+            currency,
             comment: offerComment || "",
             companyName: companyInfo?.name || user?.fullName || user?.name,
             companyRate: companyInfo?.rate || 0,
@@ -908,9 +912,12 @@ export default function CompanyRequestDetailPage() {
                             <p className="text-xs text-muted-foreground mb-1">
                               {t.companyRequestDetail.yourBid}
                             </p>
-                            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                              ${offer.cost.toFixed(2)}
-                            </span>
+                            <PriceDisplay
+                              amount={offer.cost}
+                              currency={(offer as any).currency}
+                              size="lg"
+                              className="text-2xl font-bold text-blue-600 dark:text-blue-400"
+                            />
                           </div>
                           <Badge
                             className={
@@ -1008,7 +1015,7 @@ export default function CompanyRequestDetailPage() {
                                   {offer.company.name}
                                 </p>
                                 <p className="text-xl font-bold text-primary">
-                                  ${offer.cost.toFixed(2)}
+                                  {convert(offer.cost, (offer as any).currency || "USD").formatted}
                                 </p>
                               </div>
                               <Badge
@@ -1049,7 +1056,7 @@ export default function CompanyRequestDetailPage() {
                             {t.companyRequestDetail.clientEstimatedCost}
                           </p>
                           <p className="text-2xl font-bold text-primary">
-                            ${parseFloat(request.primaryCost).toFixed(2)}
+                            {convert(parseFloat(request.primaryCost), "USD").formatted}
                           </p>
                         </div>
                         <div className="text-xs text-muted-foreground text-right">
@@ -1104,13 +1111,13 @@ export default function CompanyRequestDetailPage() {
                           <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs font-bold text-muted-foreground">{currency}</span>
                           <input
                             type="number"
                             placeholder="0.00"
                             value={offerCost}
                             onChange={(e) => setOfferCost(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2.5 text-lg font-semibold border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            className="w-full pl-12 pr-4 py-2.5 text-lg font-semibold border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             min="0"
                             step="0.01"
                             autoFocus

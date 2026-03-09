@@ -26,8 +26,11 @@ import {
   XCircle,
   Loader2,
   Shield,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
+import { CurrencySelector, PriceDisplay } from "@/app/components/PriceDisplay";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 interface UserStats {
   totalRequests: number;
@@ -58,6 +61,7 @@ interface UserAddress {
 
 export default function ProfilePage() {
   const { user, isLoading: authLoading, setUser } = useProtectedRoute();
+  const { currency } = useCurrency();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -374,52 +378,315 @@ export default function ProfilePage() {
             </div>
           </div>
         ) : (
-          <div className="bg-card rounded-lg border border-border p-8 mb-6">
-            <div className="flex items-start gap-6">
-              {user?.profilePicture ? (
-                <img
-                  src={user.profilePicture}
-                  alt={user?.fullName || "Profile"}
-                  className="w-24 h-24 rounded-full object-cover border-2 border-primary"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary">
-                  <Package className="w-12 h-12 text-primary" />
-                </div>
-              )}
-              <div className="flex-1">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h1 className="text-3xl font-bold text-foreground mb-2">
-                      {user?.fullName || "User"}
-                    </h1>
-                    <p className="text-muted-foreground mb-2">{user?.email}</p>
-                    <div className="flex gap-4 flex-wrap">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                        <span className="w-2 h-2 bg-primary rounded-full" />
-                        {user?.role}
-                      </span>
-                      {user?.mobile && (
-                        <span className="text-sm text-muted-foreground">
-                          {user.mobile}
-                        </span>
-                      )}
-                      {user?.birthDate && (
-                        <span className="text-sm text-muted-foreground">
-                          Born: {new Date(user.birthDate).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
+          <>
+            <div className="bg-card rounded-lg border border-border p-8 mb-6">
+              <div className="flex items-start gap-6">
+                {user?.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt={user?.fullName || "Profile"}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary">
+                    <Package className="w-12 h-12 text-primary" />
                   </div>
-                  <Link href="/profile/edit">
-                    <Button className="gap-2 cursor-pointer whitespace-nowrap">
-                      <Edit2 className="w-4 h-4" />
-                      Edit Profile
-                    </Button>
-                  </Link>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-bold text-foreground mb-2">
+                        {user?.fullName || "User"}
+                      </h1>
+                      <p className="text-muted-foreground mb-2">
+                        {user?.email}
+                      </p>
+                      <div className="flex gap-4 flex-wrap">
+                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                          <span className="w-2 h-2 bg-primary rounded-full" />
+                          {user?.role}
+                        </span>
+                        {user?.mobile && (
+                          <span className="text-sm text-muted-foreground">
+                            {user.mobile}
+                          </span>
+                        )}
+                        {user?.birthDate && (
+                          <span className="text-sm text-muted-foreground">
+                            Born:{" "}
+                            {new Date(user.birthDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Link href="/profile/edit">
+                      <Button className="gap-2 cursor-pointer whitespace-nowrap">
+                        <Edit2 className="w-4 h-4" />
+                        Edit Profile
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Preferences Section */}
+            <div className="bg-card rounded-lg border border-border p-6 mb-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-primary" />
+                Preferences
+              </h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Preferred Currency
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    All prices will be displayed in this currency
+                  </p>
+                </div>
+                <CurrencySelector showLabel={false} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Verification Status Section */}
+        {!authLoading && user && (
+          <div className="bg-card rounded-lg border border-border p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">
+                Account Verification
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Email Verification */}
+              <div
+                className={`p-4 rounded-lg border ${user.emailVerified ? "border-green-500 bg-green-50 dark:bg-green-900/10" : "border-amber-500 bg-amber-50 dark:bg-amber-900/10"}`}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${user.emailVerified ? "bg-green-500" : "bg-amber-500"}`}
+                  >
+                    {user.emailVerified ? (
+                      <CheckCircle className="w-5 h-5 text-white" />
+                    ) : (
+                      <Mail className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-foreground">Email</h3>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                  {user.emailVerified ? (
+                    <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 text-sm font-medium flex items-center gap-1">
+                      <XCircle className="w-4 h-4" />
+                      Not Verified
+                    </span>
+                  )}
+                </div>
+
+                {!user.emailVerified && (
+                  <div className="space-y-2">
+                    {!emailOTPSent ? (
+                      <Button
+                        type="button"
+                        onClick={sendEmailOTP}
+                        disabled={sendingEmailOTP}
+                        size="sm"
+                        className="w-full cursor-pointer"
+                      >
+                        {sendingEmailOTP ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Verification Code"
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Enter 6-digit code"
+                            value={emailOTP}
+                            onChange={(e) =>
+                              setEmailOTP(
+                                e.target.value.replace(/\D/g, "").slice(0, 6),
+                              )
+                            }
+                            className="flex-1 text-center tracking-widest"
+                            maxLength={6}
+                          />
+                          <Button
+                            type="button"
+                            onClick={verifyEmailOTP}
+                            disabled={
+                              verifyingEmailOTP || emailOTP.length !== 6
+                            }
+                            size="sm"
+                            className="cursor-pointer"
+                          >
+                            {verifyingEmailOTP ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Verify"
+                            )}
+                          </Button>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">
+                            Didn't receive the code?
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={sendEmailOTP}
+                            disabled={emailCountdown > 0 || sendingEmailOTP}
+                            className="cursor-pointer h-auto py-1 px-2 text-xs"
+                          >
+                            {emailCountdown > 0
+                              ? `Resend in ${emailCountdown}s`
+                              : "Resend"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Verification */}
+              <div
+                className={`p-4 rounded-lg border ${user.mobileVerified ? "border-green-500 bg-green-50 dark:bg-green-900/10" : "border-amber-500 bg-amber-50 dark:bg-amber-900/10"}`}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${user.mobileVerified ? "bg-green-500" : "bg-amber-500"}`}
+                  >
+                    {user.mobileVerified ? (
+                      <CheckCircle className="w-5 h-5 text-white" />
+                    ) : (
+                      <Phone className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-foreground">Mobile</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {user.mobile || "Not set"}
+                    </p>
+                  </div>
+                  {user.mobileVerified ? (
+                    <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 text-sm font-medium flex items-center gap-1">
+                      <XCircle className="w-4 h-4" />
+                      Not Verified
+                    </span>
+                  )}
+                </div>
+
+                {!user.mobileVerified && user.mobile && (
+                  <div className="space-y-2">
+                    {!mobileOTPSent ? (
+                      <Button
+                        type="button"
+                        onClick={sendMobileOTP}
+                        disabled={sendingMobileOTP}
+                        size="sm"
+                        className="w-full cursor-pointer"
+                      >
+                        {sendingMobileOTP ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Verification Code"
+                        )}
+                      </Button>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              type="text"
+                              placeholder="Enter 6-digit code"
+                              value={mobileOTP}
+                              onChange={(e) =>
+                                setMobileOTP(
+                                  e.target.value.replace(/\D/g, "").slice(0, 6),
+                                )
+                              }
+                              className="flex-1 text-center tracking-widest"
+                              maxLength={6}
+                            />
+                            <Button
+                              type="button"
+                              onClick={verifyMobileOTP}
+                              disabled={
+                                verifyingMobileOTP || mobileOTP.length !== 6
+                              }
+                              size="sm"
+                              className="cursor-pointer"
+                            >
+                              {verifyingMobileOTP ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                "Verify"
+                              )}
+                            </Button>
+                          </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">
+                              Didn't receive the code?
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={sendMobileOTP}
+                              disabled={mobileCountdown > 0 || sendingMobileOTP}
+                              className="cursor-pointer h-auto py-1 px-2 text-xs"
+                            >
+                              {mobileCountdown > 0
+                                ? `Resend in ${mobileCountdown}s`
+                                : "Resend"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Verification Notice */}
+            {(!user.emailVerified || !user.mobileVerified) && (
+              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  Please verify your email and mobile to create shipping
+                  requests.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -741,17 +1008,21 @@ export default function ProfilePage() {
                     <p className="text-sm text-muted-foreground mb-2">
                       Total Spent
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      ${stats.totalSpent.toFixed(2)}
-                    </p>
+                    <PriceDisplay
+                      amount={stats.totalSpent}
+                      size="lg"
+                      className="text-2xl font-bold text-foreground"
+                    />
                   </div>
                   <div className="pt-4 border-t border-border">
                     <p className="text-sm text-muted-foreground mb-2">
                       Average Cost Per Request
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      ${stats.averageCost.toFixed(2)}
-                    </p>
+                    <PriceDisplay
+                      amount={stats.averageCost}
+                      size="lg"
+                      className="text-2xl font-bold text-foreground"
+                    />
                   </div>
                 </div>
               </div>

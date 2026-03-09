@@ -17,6 +17,10 @@ import {
 import { Request, Address, Item } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
 import { useTranslation } from "@/app/context/LocaleContext";
+import {
+  LockedPriceDisplay,
+  PriceDisplay,
+} from "@/app/components/PriceDisplay";
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -244,29 +248,38 @@ export default function MyRequestsPage() {
                         <Banknote className="w-4 h-4 shrink-0" />
                         {request.selectedCompany ? (
                           <>
-                            <span className="font-semibold text-primary">
-                              $
-                              {Number(
+                            <LockedPriceDisplay
+                              pricing={(request as any).pricing}
+                              fallbackAmount={Number(
                                 request.selectedCompany.finalPrice ??
                                   request.selectedCompany.cost,
-                              ).toFixed(2)}
-                            </span>
+                              )}
+                              className="font-semibold text-primary"
+                              size="sm"
+                            />
                             <span className="text-xs text-green-600 dark:text-green-400">
                               ({t.myRequests.accepted})
                             </span>
                           </>
                         ) : (
                           <>
-                            <span className="font-medium text-foreground">
-                              {/* TEMPORARILY HIDDEN - primaryCost */}
-                              {/* request.primaryCost && Number(request.primaryCost) > 0
-                                ? `$${Number(request.primaryCost).toFixed(2)}`
-                                : */}
-                              {request.cost && Number(request.cost) > 0
-                                ? `$${Number(request.cost).toFixed(2)}`
-                                : "N/A"}
+                            {
+                              // (request.primaryCost && Number(request.primaryCost) > 0) ||
+                              request.cost && Number(request.cost) > 0 ? (
+                                <PriceDisplay
+                                  amount={Number(request.cost)}
+                                  className="font-medium text-foreground"
+                                  size="sm"
+                                />
+                              ) : (
+                                <span className="font-medium text-foreground">
+                                  N/A
+                                </span>
+                              )
+                            }
+                            <span className="text-xs">
+                              ({t.myRequests.estimated})
                             </span>
-                            {/* <span className="text-xs">({t.myRequests.estimated})</span> */}
                           </>
                         )}
                       </div>

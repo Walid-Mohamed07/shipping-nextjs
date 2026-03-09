@@ -89,6 +89,7 @@ export interface CostOffer {
   _id?: string;
   id?: string;
   cost: number;
+  currency?: string; // Currency of the offer (default: USD)
   headoverPercentage?: number; // The headover percentage applied
   headoverAmount?: number; // Computed headover in dollars
   finalPrice?: number; // Cost with headover markup applied
@@ -115,6 +116,7 @@ export interface ActivityHistory {
   companyName?: string;
   companyRate?: string;
   cost?: number;
+  currency?: string;
   details?: Record<string, any>;
 }
 
@@ -142,11 +144,23 @@ export interface Request {
   costOffers?: CostOffer[];
   activityHistory?: ActivityHistory[];
   selectedCompany?: {
+    id?: string;
     name: string;
     rate: string;
     cost: number;
     finalPrice?: number; // Cost with headover markup applied
     headoverPercentage?: number; // The headover percentage applied
+    currency?: string; // Currency of the offer
+  };
+  // Currency pricing - locked when offer is accepted
+  pricing?: {
+    basePrice: number;
+    baseCurrency: string;
+    clientCurrency: string;
+    exchangeRateAtAcceptance: number;
+    lockedPrice: number;
+    lockedAt?: string;
+    finalLockedPrice?: number;
   };
   // Company assignment fields
   assignedCompanyId?: string;

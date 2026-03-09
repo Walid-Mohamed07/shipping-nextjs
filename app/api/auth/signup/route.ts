@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 import bcryptjs from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import { User, Address } from "@/lib/models";
+import {
+  getCurrencyFromCountry,
+  getCurrencyFromCountryCode,
+} from "@/constants/currencies";
 
 /**
  * @swagger
@@ -84,6 +88,14 @@ export async function POST(request: NextRequest) {
     // Hash the password
     const hashedPassword = await bcryptjs.hash(password, 10);
 
+    // Determine preferred currency from address country
+    let preferredCurrency = "USD"; // default
+    if (address?.countryCode) {
+      preferredCurrency = getCurrencyFromCountryCode(address.countryCode);
+    } else if (address?.country) {
+      preferredCurrency = getCurrencyFromCountry(address.country);
+    }
+
     // Create user
     const newUser = await User.create({
       email,
@@ -99,6 +111,8 @@ export async function POST(request: NextRequest) {
       locations: [],
       emailVerified: emailVerified || false,
       mobileVerified: mobileVerified || false,
+      country: address?.country || null,
+      preferredCurrency,
     });
 
     // If address is provided, create address document(s)
@@ -162,6 +176,8 @@ export async function POST(request: NextRequest) {
           status: newUser.status,
           emailVerified: newUser.emailVerified,
           mobileVerified: newUser.mobileVerified,
+          country: newUser.country || null,
+          preferredCurrency: newUser.preferredCurrency || "USD",
         },
         address: createdAddress,
         token,
@@ -183,32 +199,32 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Signup error:", error);
-    
+
     // Handle specific error types
     if (error instanceof Error) {
       // Handle MongoDB duplicate key error
-      if (error.message.includes("duplicate") || error.message.includes("E11000")) {
+      if (
+        error.message.includes("duplicate") ||
+        error.message.includes("E11000")
+      ) {
         return NextResponse.json(
           { error: "Email or username already exists" },
           { status: 400 },
         );
       }
-      
+
       // Handle validation errors
       if (error.message.includes("validation")) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: error.message }, { status: 400 });
       }
-      
+
       // Return specific error message if available
       return NextResponse.json(
         { error: error.message || "Signup failed" },
         { status: 500 },
       );
     }
-    
+
     return NextResponse.json(
       { error: "An unexpected error occurred during signup" },
       { status: 500 },

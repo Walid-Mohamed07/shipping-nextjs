@@ -95,6 +95,8 @@ export async function POST(request: NextRequest) {
           status: user.status,
           emailVerified: user.emailVerified || false,
           mobileVerified: user.mobileVerified || false,
+          country: user.country || null,
+          preferredCurrency: user.preferredCurrency || "USD",
         },
         token,
       },

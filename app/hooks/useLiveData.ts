@@ -98,8 +98,29 @@ export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDat
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(endpoint);
-      
+      // Attach token from localStorage as a fallback when the HTTP-only
+      // cookie is missing (e.g. expired while user object remains in ls)
+      const lsToken =
+        typeof window !== "undefined"
+          ? localStorage.getItem("auth_token_ls")
+          : null;
+      const headers: Record<string, string> = {};
+      if (lsToken) headers["Authorization"] = `Bearer ${lsToken}`;
+
+      const response = await fetch(endpoint, {
+        credentials: "include", // send the auth_token HTTP-only cookie
+        headers,
+      });
+
+      // 401/403 = unauthenticated / session expired — not a hard error
+      if (response.status === 401 || response.status === 403) {
+        if (isMountedRef.current) {
+          setData(null);
+          setError(null); // don't surface auth errors to UI noise
+        }
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status}`);
       }

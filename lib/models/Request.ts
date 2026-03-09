@@ -10,6 +10,7 @@ const activityHistorySchema = new mongoose.Schema(
     companyName: String,
     companyRate: String,
     cost: Number,
+    currency: String,
     details: mongoose.Schema.Types.Mixed,
   },
   { _id: false },
@@ -205,6 +206,7 @@ const requestSchema = new mongoose.Schema(
     costOffers: [
       {
         cost: Number,
+        currency: { type: String, default: "USD" }, // Currency of the offer
         company: {
           id: String,
           name: String,
@@ -235,6 +237,26 @@ const requestSchema = new mongoose.Schema(
       name: String,
       rate: String,
       cost: Number,
+      finalPrice: Number,
+      headoverPercentage: Number,
+      // Currency fields
+      currency: { type: String, default: "USD" },
+    },
+    // Currency locking fields - populated when client accepts offer
+    pricing: {
+      // Base price in the offer's original currency
+      basePrice: Number,
+      baseCurrency: { type: String, default: "USD" },
+      // Client's preferred currency
+      clientCurrency: String,
+      // Exchange rate at the moment of acceptance
+      exchangeRateAtAcceptance: Number,
+      // Locked price in client's currency (basePrice * exchangeRateAtAcceptance)
+      lockedPrice: Number,
+      // When the price was locked
+      lockedAt: Date,
+      // Final amount to pay (lockedPrice with any additional fees)
+      finalLockedPrice: Number,
     },
     assignedWarehouseId: String,
     assignedWarehouse: mongoose.Schema.Types.Mixed,

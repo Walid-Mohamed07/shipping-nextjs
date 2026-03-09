@@ -162,8 +162,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     console.log("AuthContext: Login successful for user:", email);
     
-    // Store full user data in localStorage
+    // Store full user data + token in localStorage
     localStorage.setItem("user", JSON.stringify(data.user));
+    if (data.token) localStorage.setItem("auth_token_ls", data.token);
     setUser(data.user);
     
     // Token is already set as HTTP-only cookie by the server
@@ -215,8 +216,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     console.log("AuthContext: Signup successful for user:", email);
     
-    // Store full user data in localStorage
+    // Store full user data + token in localStorage
     localStorage.setItem("user", JSON.stringify(data.user));
+    if (data.token) localStorage.setItem("auth_token_ls", data.token);
     setUser(data.user);
     
     // Token is already set as HTTP-only cookie by the server
@@ -226,6 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("AuthContext: User logout initiated");
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("auth_token_ls");
     removeCookie("user_token");
     // The HTTP-only cookie will be cleared by the server logout endpoint
     fetch("/api/auth/logout", {

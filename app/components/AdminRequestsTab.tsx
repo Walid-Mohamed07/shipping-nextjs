@@ -20,6 +20,7 @@ import Image from "next/image";
 import { useToast, getErrorMessage } from "@/lib/useToast";
 import { useTranslation } from "@/app/context/LocaleContext";
 import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
+import { PriceDisplay } from "@/app/components/PriceDisplay";
 
 const STATUS_COLORS: Record<
   string,
@@ -625,7 +626,9 @@ export function AdminRequestsTab() {
                     {t.adminRequests.primaryCost}
                   </p>
                   <p className="text-foreground font-medium">
-                    ${selectedRequest.primaryCost || "N/A"}
+                    {selectedRequest.primaryCost
+                      ? <PriceDisplay amount={Number(selectedRequest.primaryCost)} size="sm" />
+                      : "N/A"}
                   </p>
                 </div>
                 */}
@@ -634,7 +637,9 @@ export function AdminRequestsTab() {
                     {t.adminRequests.actualCost}
                   </p>
                   <p className="text-foreground font-medium">
-                    ${selectedRequest.cost || "Pending"}
+                    {selectedRequest.cost
+                      ? <PriceDisplay amount={Number(selectedRequest.cost)} size="sm" />
+                      : "Pending"}
                   </p>
                 </div>
               </div>
@@ -834,9 +839,12 @@ export function AdminRequestsTab() {
                             <span className="text-muted-foreground">
                               {t.adminRequests.cost}
                             </span>
-                            <span className="font-semibold" dir="ltr">
-                              ${Number(offer.cost).toFixed(2)}
-                            </span>
+                            <PriceDisplay
+                              amount={Number(offer.cost)}
+                              currency={(offer as any).currency}
+                              size="sm"
+                              className="font-semibold"
+                            />
                           </div>
 
                           {offer.headoverPercentage != null &&
@@ -862,12 +870,12 @@ export function AdminRequestsTab() {
                               <span className="font-semibold text-foreground">
                                 {t.adminRequests.finalPrice}
                               </span>
-                              <span
+                              <PriceDisplay
+                                amount={Number(offer.finalPrice)}
+                                currency={(offer as any).currency}
+                                size="md"
                                 className="text-base font-bold text-primary"
-                                dir="ltr"
-                              >
-                                ${Number(offer.finalPrice).toFixed(2)}
-                              </span>
+                              />
                             </div>
                           )}
                         </div>

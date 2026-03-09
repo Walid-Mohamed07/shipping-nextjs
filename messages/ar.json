@@ -1011,9 +1011,9 @@
     "activityDescriptions": {
       "request_created": "تم إنشاء الطلب بواسطة المستخدم",
       "request_updated": "تم تحديث تفاصيل الطلب",
-      "offer_submitted": "قدّمت {companyName} عرضاً بقيمة ${cost}",
-      "offer_updated": "قامت {companyName} بتحديث عرضها إلى ${cost}",
-      "offer_accepted": "قبل العميل عرضاً من {companyName} بقيمة ${cost}",
+      "offer_submitted": "قدّمت {companyName} عرضاً بقيمة {cost} {currency}",
+      "offer_updated": "قامت {companyName} بتحديث عرضها إلى {cost} {currency}",
+      "offer_accepted": "قبل العميل عرضاً من {companyName} بقيمة {cost} {currency}",
       "offer_rejected": "رفض العميل عرضاً من {companyName}",
       "request_rejected_by_company": "رفضت {companyName} هذا الطلب",
       "warehouse_assigned": "تم تخصيص المستودع \"{warehouseName}\" كموقع {type}",

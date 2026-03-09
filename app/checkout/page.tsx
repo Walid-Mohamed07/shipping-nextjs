@@ -139,13 +139,44 @@ export default function CheckoutPage() {
     }
   }, [authLoading, user, fetchData]);
 
-  // Calculate amounts
-  const totalAmount =
-    request?.selectedCompany?.finalPrice || request?.selectedCompany?.cost || 0;
+  // Calculate amounts - Use locked price if available
+  // Priority: request.pricing.finalLockedPrice > request.pricing.lockedPrice > selectedCompany.finalPrice > selectedCompany.cost
+  const getPaymentAmount = () => {
+    if (request?.pricing?.finalLockedPrice || request?.pricing?.lockedPrice) {
+      return {
+        amount: request.pricing.finalLockedPrice || request.pricing.lockedPrice || 0,
+        currency: request.pricing.clientCurrency || "USD",
+        isLocked: true,
+      };
+    }
+    return {
+      amount: request?.selectedCompany?.finalPrice || request?.selectedCompany?.cost || 0,
+      currency: (request?.selectedCompany as any)?.currency || "USD",
+      isLocked: false,
+    };
+  };
+  
+  const paymentInfo = getPaymentAmount();
+  const totalAmount = paymentInfo.amount;
+  const paymentCurrency = paymentInfo.currency;
+  const isLockedPrice = paymentInfo.isLocked;
+  
   const maxWalletUsage = Math.min(wallet?.balance || 0, totalAmount);
   const cardAmount = useWallet
     ? Math.max(0, totalAmount - walletAmount)
     : totalAmount;
+    
+  // Format currency helper
+  const formatCurrencyAmount = (amount: number, currency: string = paymentCurrency) => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency,
+      }).format(amount);
+    } catch {
+      return `${currency} ${amount.toFixed(2)}`;
+    }
+  };
 
   // Handle wallet amount change
   const handleWalletAmountChange = (value: number) => {
@@ -335,9 +366,26 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                   </div>
-                  <p className="text-lg font-bold text-primary">
-                    ${totalAmount.toFixed(2)}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-primary">
+                      {formatCurrencyAmount(totalAmount)}
+                    </p>
+                    {isLockedPrice && (
+                      <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Price Locked
+                      </span>
+                    )}
+                  </div>
+                  {request.pricing && isLockedPrice && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Original: {formatCurrencyAmount(request.pricing.basePrice, request.pricing.baseCurrency)} 
+                      {' '}(Rate: {request.pricing.exchangeRateAtAcceptance?.toFixed(4)})
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -430,7 +478,7 @@ export default function CheckoutPage() {
                   <p className="text-sm text-muted-foreground">
                     {useWallet ? ct.remainingAmount : ct.totalAmount}:
                     <span className="font-bold text-foreground ml-2">
-                      ${cardAmount.toFixed(2)}
+                      {formatCurrencyAmount(cardAmount)}
                     </span>
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
@@ -469,6 +517,11 @@ export default function CheckoutPage() {
             <div className="bg-card rounded-lg border border-border p-6 sticky top-6">
               <h3 className="font-semibold text-foreground mb-4">
                 Payment Summary
+                {isLockedPrice && (
+                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">
+                    (Price Locked)
+                  </span>
+                )}
               </h3>
 
               <div className="space-y-3 mb-6">
@@ -476,13 +529,13 @@ export default function CheckoutPage() {
                   <span className="text-muted-foreground">
                     {ct.shippingCost}
                   </span>
-                  <span className="font-medium">${totalAmount.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrencyAmount(totalAmount)}</span>
                 </div>
 
                 {useWallet && walletAmount > 0 && (
                   <div className="flex justify-between text-sm text-purple-600 dark:text-purple-400">
                     <span>Wallet Payment</span>
-                    <span>-${walletAmount.toFixed(2)}</span>
+                    <span>-{formatCurrencyAmount(walletAmount)}</span>
                   </div>
                 )}
 
@@ -492,7 +545,7 @@ export default function CheckoutPage() {
                       {cardAmount > 0 ? "Card Payment" : "Total"}
                     </span>
                     <span className="font-bold text-xl text-primary">
-                      ${cardAmount.toFixed(2)}
+                      {formatCurrencyAmount(cardAmount)}
                     </span>
                   </div>
                 </div>

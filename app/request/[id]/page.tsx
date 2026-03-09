@@ -47,6 +47,8 @@ import dynamic from "next/dynamic";
 import { useTranslation } from "@/app/context/LocaleContext";
 import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 import { useRealTime } from "@/app/context/RealTimeContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { OfferPrice, LockedPriceDisplay } from "@/app/components/PriceDisplay";
 
 // Dynamically import map components to avoid SSR issues
 const LocationMapPicker = dynamic(
@@ -89,6 +91,7 @@ const NEARBY_RADIUS_KM = 50;
 export default function RequestDetailsPage() {
   const { t, isRtl, locale } = useTranslation();
   const { getCategoryLabel } = useCategoryLabel();
+  const { formatPrice, convert } = useCurrency();
   const { user, isLoading: authLoading } = useProtectedRoute();
   const { subscribe, subscribeToRequest } = useRealTime();
   const params = useParams();
@@ -683,6 +686,7 @@ export default function RequestDetailsPage() {
         "{cost}",
         activity.cost != null ? Number(activity.cost).toFixed(2) : "",
       )
+      .replace("{currency}", activity.currency || "USD")
       .replace("{warehouseName}", activity.details?.warehouseName || "")
       .replace(
         "{type}",
@@ -1196,6 +1200,34 @@ export default function RequestDetailsPage() {
 
             {/* Status Summary Card */}
             <div className="mt-8 pt-6 border-t border-border">
+              {/* Accepted offer price banner */}
+              {request.selectedCompany &&
+                request.requestStatus === "Assigned to Company" && (
+                  <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 mb-4">
+                    <div>
+                      <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                        {t.userRequestDetail.acceptedOffer}
+                      </p>
+                      <p className="text-xl font-bold text-green-800 dark:text-green-200">
+                        {
+                          convert(
+                            Number(
+                              request.selectedCompany.finalPrice ??
+                                request.selectedCompany.cost,
+                            ),
+                            (request.selectedCompany as any).currency || "USD",
+                          ).formatted
+                        }
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-green-700 dark:text-green-300">
+                      <span className="text-yellow-500">★</span>
+                      <span className="font-semibold">
+                        {request.selectedCompany.rate}
+                      </span>
+                    </div>
+                  </div>
+                )}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-primary/5 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">
@@ -1299,9 +1331,12 @@ export default function RequestDetailsPage() {
 
                         {/* Cost */}
                         <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
-                          <p className="text-2xl font-bold text-foreground">
-                            ${(offer.finalPrice ?? offer.cost).toFixed(2)}
-                          </p>
+                          <OfferPrice
+                            cost={offer.cost}
+                            currency={(offer as any).currency}
+                            finalPrice={offer.finalPrice}
+                            className="text-2xl font-bold text-foreground"
+                          />
                         </div>
 
                         {/* Delivery Reason */}
@@ -1399,10 +1434,12 @@ export default function RequestDetailsPage() {
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-primary mb-2">
-                    $
-                    {(
-                      confirmingOffer.finalPrice ?? confirmingOffer.cost
-                    ).toFixed(2)}
+                    {
+                      convert(
+                        confirmingOffer.finalPrice ?? confirmingOffer.cost,
+                        (confirmingOffer as any).currency || "USD",
+                      ).formatted
+                    }
                   </p>
                   {confirmingOffer.comment && (
                     <p className="text-sm text-muted-foreground mb-2">
@@ -1763,35 +1800,42 @@ export default function RequestDetailsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <p
-                      className={`text-base font-medium ${request.selectedCompany ? "line-through text-muted-foreground" : "text-foreground"}`}
+                      className={`text-base font-medium ${request.selectedCompany && request.requestStatus === "Assigned to Company" ? "line-through text-muted-foreground" : "text-foreground"}`}
                     >
-                      {/* TEMPORARILY HIDDEN - primaryCost */}
-                      {/* request.primaryCost && Number(request.primaryCost) > 0
-                        ? `$${Number(request.primaryCost).toFixed(2)}`
-                        : */}
-                      {request.cost && Number(request.cost) > 0
-                        ? `$${Number(request.cost).toFixed(2)}`
-                        : t.userRequestDetail.notCalculated}
+                      {
+                        // request.primaryCost && Number(request.primaryCost) > 0
+                        //   ? convert(Number(request.primaryCost), "USD").formatted
+                        //   :
+                        request.cost && Number(request.cost) > 0
+                          ? convert(Number(request.cost), "USD").formatted
+                          : t.userRequestDetail.notCalculated
+                      }
                     </p>
                     {/* <span className="text-xs text-muted-foreground">
                       {t.userRequestDetail.estimated}
                     </span> */}
                   </div>
                   {/* Show accepted offer price when available */}
-                  {request.selectedCompany && (
-                    <div className="flex items-center gap-2">
-                      <p className="text-xl font-bold text-primary">
-                        $
-                        {Number(
-                          request.selectedCompany.finalPrice ??
-                            request.selectedCompany.cost,
-                        ).toFixed(2)}
-                      </p>
-                      <span className="text-xs text-green-600 dark:text-green-400">
-                        {t.userRequestDetail.acceptedOffer}
-                      </span>
-                    </div>
-                  )}
+                  {request.selectedCompany &&
+                    request.requestStatus === "Assigned to Company" && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-xl font-bold text-primary">
+                          {
+                            convert(
+                              Number(
+                                request.selectedCompany.finalPrice ??
+                                  request.selectedCompany.cost,
+                              ),
+                              (request.selectedCompany as any).currency ||
+                                "USD",
+                            ).formatted
+                          }
+                        </p>
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          {t.userRequestDetail.acceptedOffer}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
@@ -1826,30 +1870,36 @@ export default function RequestDetailsPage() {
               </div>
 
               {/* Selected offer info */}
-              {request.selectedCompany && (
-                <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        {t.userRequestDetail.acceptedOfferLabel}
-                      </p>
-                      <p className="text-sm font-semibold text-primary">
-                        $
-                        {Number(
-                          request.selectedCompany.finalPrice ??
-                            request.selectedCompany.cost,
-                        ).toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
-                      <span className="text-yellow-500 text-sm">★</span>
-                      <span className="text-sm font-bold text-foreground">
-                        {request.selectedCompany.rate}
-                      </span>
+              {request.selectedCompany &&
+                request.requestStatus === "Assigned to Company" && (
+                  <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.acceptedOfferLabel}
+                        </p>
+                        <p className="text-sm font-semibold text-primary">
+                          {
+                            convert(
+                              Number(
+                                request.selectedCompany.finalPrice ??
+                                  request.selectedCompany.cost,
+                              ),
+                              (request.selectedCompany as any).currency ||
+                                "USD",
+                            ).formatted
+                          }
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
+                        <span className="text-yellow-500 text-sm">★</span>
+                        <span className="text-sm font-bold text-foreground">
+                          {request.selectedCompany.rate}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Activity entries */}
               {request.activityHistory && request.activityHistory.length > 0 ? (
@@ -1939,14 +1989,19 @@ export default function RequestDetailsPage() {
                                     {t.userRequestDetail.costLabel}{" "}
                                   </span>
                                   <span className="text-primary font-semibold">
-                                    $
-                                    {Number(
-                                      isClientRole &&
-                                        activity.action === "offer_submitted"
-                                        ? activity.cost *
-                                            (1 + headoverPercentage / 100)
-                                        : activity.cost,
-                                    ).toFixed(2)}
+                                    {
+                                      convert(
+                                        Number(
+                                          isClientRole &&
+                                            activity.action ===
+                                              "offer_submitted"
+                                            ? activity.cost *
+                                                (1 + headoverPercentage / 100)
+                                            : activity.cost,
+                                        ),
+                                        activity.currency || "USD",
+                                      ).formatted
+                                    }
                                   </span>
                                 </div>
                               )}

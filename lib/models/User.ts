@@ -49,6 +49,15 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "inactive", "suspended"],
       default: "active",
     },
+    // User's country (used for default currency determination for clients)
+    country: {
+      type: String,
+    },
+    // User's preferred currency for displaying prices
+    preferredCurrency: {
+      type: String,
+      default: "USD",
+    },
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",

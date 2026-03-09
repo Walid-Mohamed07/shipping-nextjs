@@ -68,7 +68,10 @@ export async function POST(req: NextRequest) {
 
     if (!canPay) {
       return NextResponse.json(
-        { error: "Request is not ready for payment. Please select an offer first." },
+        {
+          error:
+            "Request is not ready for payment. Please select an offer first.",
+        },
         { status: 400 },
       );
     }
@@ -81,10 +84,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get the amount to pay (from selected company offer)
-    // Cast to any to access potential finalPrice or fallback to cost
+    // Get the amount to pay
+    // IMPORTANT: Use locked price if available (to prevent exchange rate fluctuation issues)
+    // Priority: lockedPrice > selectedCompany.finalPrice > selectedCompany.cost
+    const pricing = request.pricing as any;
     const selectedCompany = request.selectedCompany as any;
-    const totalAmount = selectedCompany.finalPrice || selectedCompany.cost || 0;
+
+    let totalAmount: number;
+    let paymentCurrency: string;
+
+    if (pricing?.finalLockedPrice || pricing?.lockedPrice) {
+      // Use locked price - this was set when the client accepted the offer
+      totalAmount = pricing.finalLockedPrice || pricing.lockedPrice;
+      paymentCurrency = pricing.clientCurrency || "USD";
+      console.log(
+        "[Payment] Using locked price:",
+        totalAmount,
+        paymentCurrency,
+      );
+    } else {
+      // Fallback to selected company price (for backwards compatibility)
+      totalAmount = selectedCompany.finalPrice || selectedCompany.cost || 0;
+      paymentCurrency = selectedCompany.currency || "USD";
+      console.log(
+        "[Payment] Using selectedCompany price (no locked price):",
+        totalAmount,
+        paymentCurrency,
+      );
+    }
 
     // Get user wallet if using wallet
     let wallet = null;
@@ -110,7 +137,7 @@ export async function POST(req: NextRequest) {
       user: user.id,
       request: request._id,
       amount: totalAmount,
-      currency: "EGP",
+      currency: paymentCurrency,
       status: cardAmount > 0 ? "pending" : "processing",
       paymentMethod: cardAmount > 0 ? "card" : "wallet",
       kashierOrderId: orderId,
@@ -118,6 +145,14 @@ export async function POST(req: NextRequest) {
         shippingCost: totalAmount,
         walletDeduction: actualWalletAmount,
         cardAmount: cardAmount,
+      },
+      // Store locked price metadata for audit trail
+      metadata: {
+        isLockedPrice: !!pricing?.lockedPrice,
+        basePrice: pricing?.basePrice,
+        baseCurrency: pricing?.baseCurrency,
+        exchangeRateAtAcceptance: pricing?.exchangeRateAtAcceptance,
+        lockedAt: pricing?.lockedAt,
       },
       ipAddress:
         req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
@@ -138,7 +173,7 @@ export async function POST(req: NextRequest) {
         user: user.id,
         type: "payment",
         amount: actualWalletAmount,
-        currency: "EGP",
+        currency: paymentCurrency,
         description: `Payment for shipping request ${request.publicId || requestId}`,
         reference: orderId,
         request: request._id,
@@ -174,10 +209,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Kashier payment session for card payment
-    const currency = "EGP"; // Kashier primarily uses EGP
+    const currency = paymentCurrency; // Kashier primarily uses EGP
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const isTestMode = (process.env.KASHIER_MODE || "test") === "test";
-    
+
     // Set expiration to 1 hour from now
     const expireAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
@@ -191,7 +226,9 @@ export async function POST(req: NextRequest) {
       amount: String(cardAmount.toFixed(2)),
       currency: currency,
       order: orderId,
-      merchantRedirect: encodeURI(`${baseUrl}/payment-result?orderId=${orderId}`),
+      merchantRedirect: encodeURI(
+        `${baseUrl}/payment-result?orderId=${orderId}`,
+      ),
       serverWebhook: `${baseUrl}/api/pay/webhook`,
       display: "en",
       type: "one-time",
@@ -214,7 +251,7 @@ export async function POST(req: NextRequest) {
     const apiUrl = isTestMode
       ? "https://test-api.kashier.io/v3/payment/sessions"
       : "https://api.kashier.io/v3/payment/sessions";
-    
+
     console.log("Kashier API Request:", {
       url: apiUrl,
       merchantId: process.env.KASHIER_MERCHANT_ID,
@@ -224,7 +261,7 @@ export async function POST(req: NextRequest) {
       expireAt: expireAt,
     });
     console.log("Kashier Headers:", {
-      "Authorization": `${process.env.KASHIER_SECRET_KEY?.substring(0, 20)}...`,
+      Authorization: `${process.env.KASHIER_SECRET_KEY?.substring(0, 20)}...`,
       "api-key": `${process.env.KASHIER_API_KEY?.substring(0, 20)}...`,
     });
     console.log("Kashier Payload:", JSON.stringify(kashierPayload, null, 2));
@@ -236,7 +273,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": process.env.KASHIER_SECRET_KEY!,
+        Authorization: process.env.KASHIER_SECRET_KEY!,
         "api-key": process.env.KASHIER_API_KEY!,
       },
       body: JSON.stringify(kashierPayload),
@@ -304,8 +341,10 @@ export async function POST(req: NextRequest) {
     // Or redirect user directly to it
     const sessionId = data._id;
     const sessionUrl = data.sessionUrl;
-    const paymentUrl = sessionUrl || `https://payments.kashier.io/session/${sessionId}?mode=${isTestMode ? 'test' : 'live'}`;
-    
+    const paymentUrl =
+      sessionUrl ||
+      `https://payments.kashier.io/session/${sessionId}?mode=${isTestMode ? "test" : "live"}`;
+
     console.log("Kashier Session Created:", {
       sessionId,
       sessionUrl,

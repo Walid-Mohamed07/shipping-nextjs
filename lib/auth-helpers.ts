@@ -25,9 +25,18 @@ export async function getCurrentUser(
 ): Promise<AuthUser | null> {
   try {
     const cookieStore = await cookies();
-    const token =
+    // 1. Try HTTP-only cookie (primary)
+    const cookieToken =
       cookieStore.get("auth_token")?.value ||
       request.cookies.get("auth_token")?.value;
+
+    // 2. Fall back to Authorization: Bearer <token> header (sent by useLiveData)
+    const authHeader = request.headers.get("Authorization") ?? "";
+    const bearerToken = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
+
+    const token = cookieToken || bearerToken;
 
     if (!token) {
       return null;
