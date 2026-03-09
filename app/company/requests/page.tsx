@@ -28,6 +28,7 @@ import { Request } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
 import { AuthGuard } from "@/app/components/AuthGuard";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { PriceDisplay } from "@/app/components/PriceDisplay";
 
 export default function CompanyRequestsPage() {
   const { user, isLoading } = useAuth();
@@ -405,9 +406,11 @@ export default function CompanyRequestsPage() {
                           <div className="pt-2 border-t border-border/50">
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-muted-foreground">{t.admin.estimatedCost}</span>
-                              <span className="text-sm font-bold text-primary">
-                                ${parseFloat(request.primaryCost).toFixed(2)}
-                              </span>
+                              <PriceDisplay
+                                amount={parseFloat(request.primaryCost)}
+                                size="sm"
+                                className="text-sm font-bold text-primary"
+                              />
                             </div>
                           </div>
                         )}
@@ -425,7 +428,12 @@ export default function CompanyRequestsPage() {
                           >
                             <span className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
-                              {t.company.yourOfferLabel}: ${myOffer.cost.toFixed(2)}
+                              {t.company.yourOfferLabel}:{" "}
+                              <PriceDisplay
+                                amount={myOffer.cost}
+                                currency={(myOffer as any).currency}
+                                size="sm"
+                              />
                             </span>
                             <Badge
                               className={`text-xs ${

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
 function PaymentResultContent() {
   const { t, isRtl } = useTranslation();
   const { user, isLoading: authLoading } = useProtectedRoute();
+  const { formatPrice } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -161,7 +163,7 @@ function PaymentResultContent() {
               {paymentInfo?.amount && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{pt.amount}:</span>
-                  <span className="font-semibold text-foreground">${paymentInfo.amount.toFixed(2)}</span>
+                  <span className="font-semibold text-foreground">{formatPrice(paymentInfo.amount, paymentInfo.currency || "USD")}</span>
                 </div>
               )}
             </div>

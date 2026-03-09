@@ -19,8 +19,11 @@ import {
   Edit2,
   MapPin,
   Trash2,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
+import { CurrencySelector, PriceDisplay } from "@/app/components/PriceDisplay";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 interface UserStats {
   totalRequests: number;
@@ -51,6 +54,7 @@ interface UserAddress {
 
 export default function ProfilePage() {
   const { user, isLoading: authLoading } = useProtectedRoute();
+  const { currency } = useCurrency();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -197,53 +201,70 @@ export default function ProfilePage() {
             </div>
           </div>
         ) : (
-          <div className="bg-card rounded-lg border border-border p-8 mb-6">
-            <div className="flex items-start gap-6">
-              {user?.profilePicture ? (
-                <img
-                  src={user.profilePicture}
-                  alt={user?.fullName || "Profile"}
-                  className="w-24 h-24 rounded-full object-cover border-2 border-primary"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary">
-                  <Package className="w-12 h-12 text-primary" />
-                </div>
-              )}
-              <div className="flex-1">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h1 className="text-3xl font-bold text-foreground mb-2">
-                      {user?.fullName || "User"}
-                    </h1>
-                    <p className="text-muted-foreground mb-2">{user?.email}</p>
-                    <div className="flex gap-4 flex-wrap">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                        <span className="w-2 h-2 bg-primary rounded-full" />
-                        {user?.role}
-                      </span>
-                      {user?.mobile && (
-                        <span className="text-sm text-muted-foreground">
-                          {user.mobile}
-                        </span>
-                      )}
-                      {user?.birthDate && (
-                        <span className="text-sm text-muted-foreground">
-                          Born: {new Date(user.birthDate).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
+          <>
+            <div className="bg-card rounded-lg border border-border p-8 mb-6">
+              <div className="flex items-start gap-6">
+                {user?.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt={user?.fullName || "Profile"}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary">
+                    <Package className="w-12 h-12 text-primary" />
                   </div>
-                  <Link href="/profile/edit">
-                    <Button className="gap-2 cursor-pointer whitespace-nowrap">
-                      <Edit2 className="w-4 h-4" />
-                      Edit Profile
-                    </Button>
-                  </Link>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-bold text-foreground mb-2">
+                        {user?.fullName || "User"}
+                      </h1>
+                      <p className="text-muted-foreground mb-2">{user?.email}</p>
+                      <div className="flex gap-4 flex-wrap">
+                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                          <span className="w-2 h-2 bg-primary rounded-full" />
+                          {user?.role}
+                        </span>
+                        {user?.mobile && (
+                          <span className="text-sm text-muted-foreground">
+                            {user.mobile}
+                          </span>
+                        )}
+                        {user?.birthDate && (
+                          <span className="text-sm text-muted-foreground">
+                            Born: {new Date(user.birthDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Link href="/profile/edit">
+                      <Button className="gap-2 cursor-pointer whitespace-nowrap">
+                        <Edit2 className="w-4 h-4" />
+                        Edit Profile
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Preferences Section */}
+            <div className="bg-card rounded-lg border border-border p-6 mb-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-primary" />
+              Preferences
+            </h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Preferred Currency</p>
+                <p className="text-xs text-muted-foreground">All prices will be displayed in this currency</p>
+              </div>
+              <CurrencySelector showLabel={false} />
+            </div>
           </div>
+        </>
         )}
 
         {/* Statistics Grid */}
@@ -327,17 +348,21 @@ export default function ProfilePage() {
                     <p className="text-sm text-muted-foreground mb-2">
                       Total Spent
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      ${stats.totalSpent.toFixed(2)}
-                    </p>
+                    <PriceDisplay
+                      amount={stats.totalSpent}
+                      size="lg"
+                      className="text-2xl font-bold text-foreground"
+                    />
                   </div>
                   <div className="pt-4 border-t border-border">
                     <p className="text-sm text-muted-foreground mb-2">
                       Average Cost Per Request
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      ${stats.averageCost.toFixed(2)}
-                    </p>
+                    <PriceDisplay
+                      amount={stats.averageCost}
+                      size="lg"
+                      className="text-2xl font-bold text-foreground"
+                    />
                   </div>
                 </div>
               </div>

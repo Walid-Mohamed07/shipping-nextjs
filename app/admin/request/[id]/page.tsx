@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/app/context/LocaleContext";
 import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 interface CostOffer {
   cost: number;
@@ -75,6 +76,7 @@ export default function RequestDetailPage() {
   const [selectedRequestStatus, setSelectedRequestStatus] = useState("");
   const { t } = useTranslation();
   const { getCategoryLabel } = useCategoryLabel();
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -385,7 +387,7 @@ export default function RequestDetailPage() {
                               {offer.comment}
                             </p>
                           </div>
-                          <p className="font-semibold">${offer.cost}</p>
+                          <p className="font-semibold">{formatPrice(offer.cost, "USD")}</p>
                         </div>
                       </div>
                     );
@@ -497,7 +499,7 @@ export default function RequestDetailPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">{t.admin.estimatedCost}</p>
-                  <p className="font-medium">${request.estimatedCost}</p>
+                  <p className="font-medium">{formatPrice(Number(request.estimatedCost) || 0, "USD")}</p>
                 </div>
               </div>
             </Card>

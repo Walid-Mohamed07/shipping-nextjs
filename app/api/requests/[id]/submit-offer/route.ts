@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
-import { Request, Settings } from "@/lib/models";
+import { Request, Settings, User } from "@/lib/models";
 import { ActivityActions } from "@/lib/activityLogger";
 import {
   broadcastEvent,
@@ -8,6 +8,8 @@ import {
   broadcastToAdmins,
 } from "@/lib/eventBroadcaster";
 import { getCurrentUser, isUserAuthorizedForRequest } from "@/lib/auth-helpers";
+import { lockPrice, formatAmount } from "@/lib/currencyService";
+import { getCurrencyFromCountry, BASE_CURRENCY, FALLBACK_CURRENCY } from "@/constants/currencies";
 
 /**
  * @swagger
@@ -46,7 +48,7 @@ export async function POST(
     await connectDB();
     const { id } = await params;
     const body = await request.json();
-    const { offerId } = body;
+    const { offerId, clientCurrency: requestedCurrency } = body;
 
     if (!offerId) {
       return NextResponse.json(
@@ -55,7 +57,7 @@ export async function POST(
       );
     }
 
-    console.log("[Submit-offer] Received offerId:", offerId);
+    console.log("[Submit-offer] Received offerId:", offerId, "clientCurrency:", requestedCurrency);
 
     // Get current user for authorization check
     const currentUser = await getCurrentUser(request);
@@ -121,7 +123,19 @@ export async function POST(
     const companyName = selectedOffer?.company?.name || "Unknown Company";
     const companyId = selectedOffer?.company?.id; // Use the offerId directly as it's the company ID
     const companyRate = selectedOffer?.company?.rate || "";
-    const cost = selectedOffer?.cost;
+    const cost = typeof selectedOffer?.cost === "number" && !isNaN(selectedOffer.cost)
+      ? selectedOffer.cost
+      : selectedOffer?.finalPrice && !isNaN(Number(selectedOffer.finalPrice))
+        ? Number(selectedOffer.finalPrice)
+        : null;
+
+    if (cost === null || cost <= 0) {
+      console.error("[Submit-offer] Offer has invalid/missing cost:", selectedOffer?.cost);
+      return NextResponse.json(
+        { error: "Offer has an invalid or missing price. Please contact support." },
+        { status: 400 },
+      );
+    }
 
     // Fetch headover percentage from settings for final price calculation
     let headoverPercentage = 0;
@@ -138,7 +152,35 @@ export async function POST(
       // Continue with 0% headover if settings fetch fails
     }
 
-    const finalPrice = cost * (1 + headoverPercentage / 100);
+    const rawFinalPrice = selectedOffer?.finalPrice;
+    const finalPrice = rawFinalPrice !== undefined && !isNaN(Number(rawFinalPrice))
+      ? Number(rawFinalPrice)   // use pre-computed finalPrice if stored on offer
+      : cost * (1 + headoverPercentage / 100);
+
+    // Get the offer's currency (default to USD)
+    const offerCurrency = selectedOffer?.currency || BASE_CURRENCY;
+
+    // Determine client's preferred currency
+    // Priority: 1. Requested currency in body, 2. User's preferred currency, 3. Country-based, 4. Fallback to USD
+    let clientCurrency = requestedCurrency;
+    
+    if (!clientCurrency) {
+      // Try to get from user profile
+      const userDoc = await User.findById(currentUser.id).lean().exec() as any;
+      if (userDoc?.preferredCurrency) {
+        clientCurrency = userDoc.preferredCurrency;
+      } else if (userDoc?.country) {
+        clientCurrency = getCurrencyFromCountry(userDoc.country);
+      }
+    }
+    
+    // Fallback to base currency
+    if (!clientCurrency) {
+      clientCurrency = offerCurrency; // Use the same currency as the offer
+    }
+
+    // Lock the price at current exchange rate
+    const lockedPriceData = await lockPrice(finalPrice, offerCurrency, clientCurrency);
 
     console.log(
       "[Submit-offer] Setting assignedCompany to:",
@@ -150,6 +192,12 @@ export async function POST(
       headoverPercentage,
       "finalPrice:",
       finalPrice,
+      "lockedPrice:",
+      lockedPriceData.lockedPrice,
+      "clientCurrency:",
+      clientCurrency,
+      "exchangeRate:",
+      lockedPriceData.exchangeRateAtAcceptance,
     );
 
     if (!companyId) {
@@ -161,6 +209,7 @@ export async function POST(
 
     // Mark the accepted offer and update request status
     // Also set selectedCompany with full details including cost and finalPrice for UI display
+    // Store locked price information for payment
     const updatedRequest = await Request.findByIdAndUpdate(
       currentRequest._id,
       {
@@ -174,6 +223,17 @@ export async function POST(
             cost: cost,
             finalPrice: finalPrice,
             headoverPercentage: headoverPercentage,
+            currency: offerCurrency,
+          },
+          // Currency locking - store locked price at acceptance
+          pricing: {
+            basePrice: finalPrice,
+            baseCurrency: offerCurrency,
+            clientCurrency: clientCurrency,
+            exchangeRateAtAcceptance: lockedPriceData.exchangeRateAtAcceptance,
+            lockedPrice: lockedPriceData.lockedPrice,
+            lockedAt: lockedPriceData.lockedAt,
+            finalLockedPrice: lockedPriceData.lockedPrice,
           },
           "costOffers.$[elem].selected": true,
         },
@@ -181,11 +241,21 @@ export async function POST(
           activityHistory: {
             action: "offer_accepted",
             timestamp: new Date(),
-            description: `Client accepted offer from ${companyName} for $${finalPrice.toFixed(2)}`,
+            description: `Client accepted offer from ${companyName} for ${!isNaN(lockedPriceData.lockedPrice) ? formatAmount(lockedPriceData.lockedPrice, clientCurrency) : formatAmount(finalPrice, offerCurrency)}`,
             companyName,
             companyRate,
             cost: finalPrice,
-            details: { offerId, companyId, baseCost: cost, headoverPercentage },
+            details: { 
+              offerId, 
+              companyId, 
+              baseCost: cost, 
+              headoverPercentage,
+              // Currency locking details
+              baseCurrency: offerCurrency,
+              clientCurrency: clientCurrency,
+              exchangeRate: lockedPriceData.exchangeRateAtAcceptance,
+              lockedPrice: lockedPriceData.lockedPrice,
+            },
           },
         },
       },
@@ -208,6 +278,7 @@ export async function POST(
         companyId,
         companyName,
         cost,
+        pricing: lockedPriceData,
       },
       {
         requestId: id,
@@ -224,6 +295,7 @@ export async function POST(
         companyId,
         companyName,
         cost,
+        pricing: lockedPriceData,
         message: "Your offer has been accepted!",
       },
       {
@@ -238,6 +310,14 @@ export async function POST(
         message:
           "Offer accepted successfully! The request has been assigned to the company.",
         request: updatedRequest,
+        pricing: {
+          basePrice: lockedPriceData.basePrice,
+          baseCurrency: lockedPriceData.baseCurrency,
+          clientCurrency: lockedPriceData.clientCurrency,
+          exchangeRate: lockedPriceData.exchangeRateAtAcceptance,
+          lockedPrice: lockedPriceData.lockedPrice,
+          formattedPrice: formatAmount(lockedPriceData.lockedPrice, lockedPriceData.clientCurrency),
+        },
       },
       { status: 200 },
     );

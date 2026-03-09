@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
           company: user.company || null,
           role: user.role,
           status: user.status,
+          country: user.country || null,
+          preferredCurrency: user.preferredCurrency || "USD",
         },
         token,
       },

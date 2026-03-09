@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
 
       const newOffer = {
         cost: companyCost,
+        currency: offer.currency || "USD", // Store the currency from the offer
         headoverPercentage,
         headoverAmount,
         finalPrice,
@@ -189,6 +190,13 @@ export async function POST(request: NextRequest) {
         currentRequest.requestStatus = "Action needed";
       }
 
+      // Clear any previously auto-set selectedCompany / assignedCompany
+      // so that the request is not shown as accepted until the user explicitly picks an offer
+      if (currentRequest.requestStatus === "Action needed") {
+        currentRequest.selectedCompany = undefined;
+        currentRequest.assignedCompany = undefined;
+      }
+
       currentRequest.updatedAt = new Date();
       await currentRequest.save();
 
@@ -198,6 +206,7 @@ export async function POST(request: NextRequest) {
         offer.companyName || "Company",
         offer.cost,
         offer.comment,
+        offer.currency || "USD",
       );
       await addActivityLog(requestId, activity);
 

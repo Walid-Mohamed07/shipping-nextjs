@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { Request } from "@/types";
 import dynamic from "next/dynamic";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 // Dynamically import map component
 const SimpleLocationMap = dynamic(
@@ -69,6 +70,7 @@ export default function OngoingRequestDetailPage() {
   const { isConnected } = useRealTime();
   const { t } = useTranslation();
   const { getCategoryLabel } = useCategoryLabel();
+  const { convert } = useCurrency();
 
   // Use live data hook for real-time request updates
   const {
@@ -902,7 +904,7 @@ export default function OngoingRequestDetailPage() {
               <div className="text-center py-2">
                 <p className="text-xs text-muted-foreground">{t.companyOngoingDetail.yourOffer}</p>
                 <p className="text-3xl font-bold text-primary">
-                  ${request.selectedCompany?.cost?.toFixed(2) || "0.00"}
+                  {convert(request.selectedCompany?.cost || 0, request.selectedCompany?.currency || "USD").formatted}
                 </p>
               </div>
             </Card>

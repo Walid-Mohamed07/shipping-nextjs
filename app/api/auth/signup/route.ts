@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import bcryptjs from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import { User, Address } from "@/lib/models";
+import { getCurrencyFromCountry, getCurrencyFromCountryCode } from "@/constants/currencies";
 
 /**
  * @swagger
@@ -82,6 +83,14 @@ export async function POST(request: NextRequest) {
     // Hash the password
     const hashedPassword = await bcryptjs.hash(password, 10);
 
+    // Determine preferred currency from address country
+    let preferredCurrency = "USD"; // default
+    if (address?.countryCode) {
+      preferredCurrency = getCurrencyFromCountryCode(address.countryCode);
+    } else if (address?.country) {
+      preferredCurrency = getCurrencyFromCountry(address.country);
+    }
+
     // Create user
     const newUser = await User.create({
       email,
@@ -95,6 +104,8 @@ export async function POST(request: NextRequest) {
       role: "client",
       status: "active",
       locations: [],
+      country: address?.country || null,
+      preferredCurrency,
     });
 
     // If address is provided, create address document(s)
@@ -154,6 +165,8 @@ export async function POST(request: NextRequest) {
           company: newUser.company || null,
           role: newUser.role,
           status: newUser.status,
+          country: newUser.country || null,
+          preferredCurrency: newUser.preferredCurrency || "USD",
         },
         address: createdAddress,
         token,

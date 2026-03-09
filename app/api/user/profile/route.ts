@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { userId, name, email, mobile, birthDate, profilePicture, currentPassword, newPassword } = body;
+    const { userId, name, email, mobile, birthDate, profilePicture, currentPassword, newPassword, country, preferredCurrency } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
@@ -28,6 +28,8 @@ export async function PUT(req: NextRequest) {
     if (birthDate !== undefined) updateData.birthDate = birthDate;
     if (profilePicture !== undefined)
       updateData.profilePicture = profilePicture;
+    if (country !== undefined) updateData.country = country;
+    if (preferredCurrency !== undefined) updateData.preferredCurrency = preferredCurrency;
 
     // Handle password change if provided
     if (currentPassword && newPassword) {
@@ -87,6 +89,8 @@ export async function PUT(req: NextRequest) {
         company: updatedUser.company || null,
         role: updatedUser.role,
         status: updatedUser.status,
+        country: updatedUser.country,
+        preferredCurrency: updatedUser.preferredCurrency,
       },
     });
 

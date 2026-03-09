@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import type { Item, Address, DayOfWeek } from "@/types";
 import { useToast, getErrorMessage } from "@/lib/useToast";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 const LocationMapPicker = dynamic(
   () =>
@@ -71,6 +72,7 @@ export default function NewRequestForm() {
   const { user } = useAuth();
   const toast = useToast();
   const { t, locale } = useTranslation();
+  const { formatPrice } = useCurrency();
   // State for showing the select address dialog
   const [showSelectAddress, setShowSelectAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -2045,7 +2047,7 @@ export default function NewRequestForm() {
                         <div className="flex-1">
                           <div className="text-3xl font-bold text-blue-600">
                             {primaryCost
-                              ? `$${primaryCost}`
+                              ? formatPrice(Number(primaryCost), "USD")
                               : t.newRequest.calculating}
                           </div>
                           {deliveryType === "Urgent" && primaryCost && (

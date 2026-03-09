@@ -26,9 +26,27 @@ export async function POST(request: NextRequest) {
     const selectedOffer = currentRequest.costOffers?.find(
       (offer: any) => offer.company?.id === companyId,
     );
+
+    if (!selectedOffer) {
+      return NextResponse.json(
+        { error: "Offer not found for this company" },
+        { status: 404 },
+      );
+    }
+
     const cost = selectedOffer?.cost;
+    const finalPrice = selectedOffer?.finalPrice || cost;
+    const headoverPercentage = selectedOffer?.headoverPercentage || 0;
+    const offerCurrency = selectedOffer?.currency || "USD";
     const companyRateFromOffer = selectedOffer?.company?.rate || companyRate || "";
     const companyNameFromOffer = selectedOffer?.company?.name || companyName || "Company";
+
+    if (!cost || cost <= 0) {
+      return NextResponse.json(
+        { error: "Offer has invalid or missing price" },
+        { status: 400 },
+      );
+    }
 
     // Update request with assignedCompany and selectedCompany (with full details including cost)
     const updatedRequest = await Request.findByIdAndUpdate(
@@ -41,6 +59,9 @@ export async function POST(request: NextRequest) {
           name: companyNameFromOffer,
           rate: companyRateFromOffer,
           cost: cost,
+          finalPrice: finalPrice,
+          headoverPercentage: headoverPercentage,
+          currency: offerCurrency,
         },
         updatedAt: new Date(),
       },
@@ -59,11 +80,12 @@ export async function POST(request: NextRequest) {
         companyName || "Company",
         cost,
         companyRate,
+        offerCurrency,
       ),
     );
 
     // Broadcast real-time event for assignment
-    const requestOwnerId = currentRequest.user?.toString() || currentRequest.user;
+    const requestOwnerId = String(currentRequest.user);
     broadcastEvent("ASSIGNMENT_UPDATED", {
       requestId,
       companyId,

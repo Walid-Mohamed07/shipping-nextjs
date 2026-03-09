@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import { RealTimeProvider } from "./context/RealTimeContext";
 import { LocaleProvider } from "./context/LocaleContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 import { Footer } from "./components/Footer";
 import "./globals.css";
 import { Header } from "./components/Header";
@@ -67,11 +68,13 @@ export default function RootLayout({
       <body className="font-sans antialiased flex flex-col min-h-screen">
         <LocaleProvider>
           <AuthProvider>
-            <RealTimeProvider>
-              <Header />
-              {children}
-              <Footer />
-            </RealTimeProvider>
+            <CurrencyProvider>
+              <RealTimeProvider>
+                <Header />
+                {children}
+                <Footer />
+              </RealTimeProvider>
+            </CurrencyProvider>
           </AuthProvider>
         </LocaleProvider>
         <Toaster position="top-right" richColors />

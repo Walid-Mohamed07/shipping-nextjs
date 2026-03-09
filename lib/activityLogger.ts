@@ -7,6 +7,7 @@ export interface ActivityLogEntry {
   companyName?: string;
   companyRate?: string;
   cost?: number;
+  currency?: string;
   details?: Record<string, any>;
 }
 
@@ -29,6 +30,7 @@ export async function addActivityLog(
             companyName: activity.companyName,
             companyRate: activity.companyRate,
             cost: activity.cost,
+            currency: activity.currency,
             details: activity.details,
           },
         },
@@ -65,11 +67,13 @@ export const ActivityActions = {
     companyName: string,
     cost: number,
     comment?: string,
+    currency?: string,
   ) => ({
     action: "offer_submitted",
-    description: `${companyName} submitted an offer of $${cost}`,
+    description: `${companyName} submitted an offer of ${cost} ${currency || "USD"}`,
     companyName,
     cost,
+    currency: currency || "USD",
     details: { companyId, comment },
   }),
 
@@ -78,11 +82,13 @@ export const ActivityActions = {
     companyName: string,
     cost: number,
     comment?: string,
+    currency?: string,
   ) => ({
     action: "offer_updated",
-    description: `${companyName} updated their offer to $${cost}`,
+    description: `${companyName} updated their offer to ${cost} ${currency || "USD"}`,
     companyName,
     cost,
+    currency: currency || "USD",
     details: { companyId, comment },
   }),
 
@@ -91,11 +97,13 @@ export const ActivityActions = {
     companyName: string,
     cost: number,
     rate?: string,
+    currency?: string,
   ) => ({
     action: "offer_accepted",
-    description: `Client accepted offer from ${companyName} for $${cost}`,
+    description: `Client accepted offer from ${companyName} for ${cost} ${currency || "USD"}`,
     companyName,
     cost,
+    currency: currency || "USD",
     companyRate: rate,
     details: { companyId },
   }),

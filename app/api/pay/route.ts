@@ -78,10 +78,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get the amount to pay (from selected company offer)
-    // Cast to any to access potential finalPrice or fallback to cost
+    // Get the amount to pay
+    // IMPORTANT: Use locked price if available (to prevent exchange rate fluctuation issues)
+    // Priority: lockedPrice > selectedCompany.finalPrice > selectedCompany.cost
+    const pricing = request.pricing as any;
     const selectedCompany = request.selectedCompany as any;
-    const totalAmount = selectedCompany.finalPrice || selectedCompany.cost || 0;
+    
+    let totalAmount: number;
+    let paymentCurrency: string;
+    
+    if (pricing?.finalLockedPrice || pricing?.lockedPrice) {
+      // Use locked price - this was set when the client accepted the offer
+      totalAmount = pricing.finalLockedPrice || pricing.lockedPrice;
+      paymentCurrency = pricing.clientCurrency || "USD";
+      console.log("[Payment] Using locked price:", totalAmount, paymentCurrency);
+    } else {
+      // Fallback to selected company price (for backwards compatibility)
+      totalAmount = selectedCompany.finalPrice || selectedCompany.cost || 0;
+      paymentCurrency = selectedCompany.currency || "USD";
+      console.log("[Payment] Using selectedCompany price (no locked price):", totalAmount, paymentCurrency);
+    }
 
     // Get user wallet if using wallet
     let wallet = null;
@@ -107,7 +123,7 @@ export async function POST(req: NextRequest) {
       user: user.id,
       request: request._id,
       amount: totalAmount,
-      currency: "USD",
+      currency: paymentCurrency,
       status: cardAmount > 0 ? "pending" : "processing",
       paymentMethod: cardAmount > 0 ? "card" : "wallet",
       kashierOrderId: orderId,
@@ -115,6 +131,14 @@ export async function POST(req: NextRequest) {
         shippingCost: totalAmount,
         walletDeduction: actualWalletAmount,
         cardAmount: cardAmount,
+      },
+      // Store locked price metadata for audit trail
+      metadata: {
+        isLockedPrice: !!(pricing?.lockedPrice),
+        basePrice: pricing?.basePrice,
+        baseCurrency: pricing?.baseCurrency,
+        exchangeRateAtAcceptance: pricing?.exchangeRateAtAcceptance,
+        lockedAt: pricing?.lockedAt,
       },
       ipAddress:
         req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
@@ -135,7 +159,7 @@ export async function POST(req: NextRequest) {
         user: user.id,
         type: "payment",
         amount: actualWalletAmount,
-        currency: "USD",
+        currency: paymentCurrency,
         description: `Payment for shipping request ${request.publicId || requestId}`,
         reference: orderId,
         request: request._id,
@@ -170,7 +194,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Kashier payment session for card payment
-    const currency = "USD";
+    // Note: Kashier may require specific currencies - check their documentation
+    const currency = paymentCurrency;
     const hash = generateKashierHash(orderId, cardAmount, currency);
 
     const kashierPayload = {

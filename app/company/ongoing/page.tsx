@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Request } from "@/types";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 interface CompanyWarehouse {
   id: string;
@@ -38,6 +39,7 @@ export default function CompanyOngoingRequestsPage() {
     [key: string]: string;
   }>({});
   const { t } = useTranslation();
+  const { convert } = useCurrency();
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
@@ -281,7 +283,7 @@ export default function CompanyOngoingRequestsPage() {
                             : "User"}
                         </span>
                         <span className="font-semibold text-primary">
-                          ${request.selectedCompany?.cost.toFixed(2)}
+                          {convert(request.selectedCompany?.cost || 0, request.selectedCompany?.currency || "USD").formatted}
                         </span>
                       </div>
                     </div>

@@ -992,9 +992,9 @@
     "activityDescriptions": {
       "request_created": "Request created by user",
       "request_updated": "Request details updated",
-      "offer_submitted": "{companyName} submitted an offer of ${cost}",
-      "offer_updated": "{companyName} updated their offer to ${cost}",
-      "offer_accepted": "Client accepted offer from {companyName} for ${cost}",
+      "offer_submitted": "{companyName} submitted an offer of {cost} {currency}",
+      "offer_updated": "{companyName} updated their offer to {cost} {currency}",
+      "offer_accepted": "Client accepted offer from {companyName} for {cost} {currency}",
       "offer_rejected": "Client rejected offer from {companyName}",
       "request_rejected_by_company": "{companyName} rejected this request",
       "warehouse_assigned": "Warehouse \"{warehouseName}\" assigned as {type} location",
