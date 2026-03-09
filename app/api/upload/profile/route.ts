@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  // Validate token exists
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error("[PROFILE UPLOAD] Missing BLOB_READ_WRITE_TOKEN environment variable");
+    return NextResponse.json(
+      { error: "Upload service not configured" },
+      { status: 500 },
+    );
+  }
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -19,42 +29,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(
-      process.cwd(),
-      "public",
-      "assets",
-      "images",
-      folder,
-    );
-
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
-    const extension = path.extname(file.name) || ".jpg";
-    const filename = `${folder}-${timestamp}-${randomStr}${extension}`;
-    const filepath = path.join(uploadDir, filename);
+    const extension = file.name.split(".").pop() || "jpg";
+    const filename = `${folder}-${timestamp}-${randomStr}.${extension}`;
+    const blobPath = `${folder}/${filename}`;
 
-    // Convert file to buffer
-    const buffer = await file.arrayBuffer();
+    // Upload to Vercel Blob
+    const blob = await put(blobPath, file, {
+      access: "public",
+      addRandomSuffix: false,
+    });
 
-    // Save file
-    await writeFile(filepath, new Uint8Array(buffer));
-
-    // Return relative URL path
-    const url = `/assets/images/${folder}/${filename}`;
-
-    return NextResponse.json({ url, filename }, { status: 200 });
+    console.log(`[PROFILE UPLOAD] Successfully uploaded: ${filename}`);
+    return NextResponse.json({ url: blob.url, filename }, { status: 200 });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("[PROFILE UPLOAD] Error:", error);
     return NextResponse.json(
-      { error: "Failed to upload profile picture" },
+      { error: error instanceof Error ? error.message : "Failed to upload profile picture" },
       { status: 500 },
     );
   }

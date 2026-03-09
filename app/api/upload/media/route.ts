@@ -1,130 +1,97 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import { promisify } from "util";
+import { put } from "@vercel/blob";
 
-const mkdir = promisify(fs.mkdir);
-const writeFile = promisify(fs.writeFile);
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("=== UPLOAD START ===");
-    console.log("Current working directory:", process.cwd());
+    // Validate token exists
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error("Missing BLOB_READ_WRITE_TOKEN environment variable");
+      return NextResponse.json(
+        { error: "Upload service not configured" },
+        { status: 500 },
+      );
+    }
 
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
 
-    console.log("Files received:", files.length);
-    if (files && files.length > 0) {
-      files.forEach((f, i) => {
-        console.log(`File ${i}:`, f.name, "Type:", f.type, "Size:", f.size);
-      });
-    }
+    console.log("[MEDIA UPLOAD] Files received:", files.length);
 
     if (!files || files.length === 0) {
-      console.warn("No files provided");
       return NextResponse.json(
         { error: "No files provided" },
         { status: 400 },
       );
     }
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(
-      process.cwd(),
-      "public",
-      "assets",
-      "images",
-      "items",
-    );
-
-    console.log("Upload directory:", uploadDir);
-
-    try {
-      await mkdir(uploadDir, { recursive: true });
-      console.log("Directory created/verified successfully");
-
-      // Verify directory exists and is writable
-      if (fs.existsSync(uploadDir)) {
-        console.log("Directory exists:", true);
-        const stats = fs.statSync(uploadDir);
-        console.log("Directory permissions:", stats.mode);
-      } else {
-        console.warn("Directory does NOT exist after mkdir call");
-      }
-    } catch (error) {
-      console.error("Error creating directory:", error);
-      throw error;
+    // Validate file count
+    if (files.length > 10) {
+      return NextResponse.json(
+        { error: "Maximum 10 files per upload" },
+        { status: 400 },
+      );
     }
 
     const uploadedUrls: string[] = [];
+    const failedUploads: string[] = [];
 
     // Process each file
     for (const file of files) {
-      console.log(`\nProcessing file: ${file.name}`);
-
+      // Validate file type
       if (!file.type.startsWith("image/")) {
-        console.log(`Skipping non-image file: ${file.type}`);
+        failedUploads.push(`${file.name}: Not an image`);
+        continue;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        failedUploads.push(`${file.name}: File too large (max 10MB)`);
         continue;
       }
 
       try {
-        const buffer = await file.arrayBuffer();
-        console.log(`Buffer received: ${buffer.byteLength} bytes`);
-
         const timestamp = Date.now();
         const randomStr = Math.random().toString(36).substring(2, 8);
-        const extension = path.extname(file.name) || ".jpg";
-        const filename = `item-${timestamp}-${randomStr}${extension}`;
-        const filepath = path.join(uploadDir, filename);
+        const extension = file.name.split(".").pop() || "jpg";
+        const filename = `items/item-${timestamp}-${randomStr}.${extension}`;
 
-        console.log(`Writing to: ${filepath}`);
+        // Upload to Vercel Blob
+        const blob = await put(filename, file, {
+          access: "public",
+          addRandomSuffix: false,
+        });
 
-        // Save file
-        const bufferToWrite = Buffer.from(buffer);
-        console.log(`Buffer size for write: ${bufferToWrite.length} bytes`);
-
-        await writeFile(filepath, bufferToWrite);
-        console.log(`File written successfully`);
-
-        // Verify file exists
-        if (fs.existsSync(filepath)) {
-          const fileStats = fs.statSync(filepath);
-          console.log(
-            `File verified: exists=${true}, size=${fileStats.size} bytes`,
-          );
-        } else {
-          console.error(`File NOT found after write: ${filepath}`);
-        }
-
-        // Return relative URL path
-        const url = `/assets/images/items/${filename}`;
-        uploadedUrls.push(url);
-        console.log(`URL added: ${url}`);
+        uploadedUrls.push(blob.url);
       } catch (fileError) {
-        console.error(`Error processing file ${file.name}:`, fileError);
-        throw fileError;
+        console.error(`[MEDIA UPLOAD] Error uploading ${file.name}:`, fileError);
+        failedUploads.push(`${file.name}: ${String(fileError)}`);
       }
     }
 
-    console.log("=== UPLOAD SUCCESS ===");
-    console.log("Total URLs returned:", uploadedUrls.length);
+    if (uploadedUrls.length === 0) {
+      return NextResponse.json(
+        { error: "No files could be uploaded", details: failedUploads },
+        { status: 400 },
+      );
+    }
+
+    console.log(`[MEDIA UPLOAD] Success: ${uploadedUrls.length} uploaded, ${failedUploads.length} failed`);
     return NextResponse.json(
-      { urls: uploadedUrls },
+      {
+        urls: uploadedUrls,
+        failed: failedUploads.length > 0 ? failedUploads : undefined,
+      },
       { status: 200 },
     );
   } catch (error) {
-    console.error("=== UPLOAD ERROR ===");
-    console.error("Full error:", error);
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
+    console.error("[MEDIA UPLOAD] Fatal error:", error);
     return NextResponse.json(
       {
         error:
           error instanceof Error ? error.message : "Failed to upload media",
-        details: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 },
     );

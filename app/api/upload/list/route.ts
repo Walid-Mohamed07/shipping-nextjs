@@ -1,47 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
-import path from "path";
-import fs from "fs";
+import { list } from "@vercel/blob";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const cwd = process.cwd();
-    const uploadDir = path.join(cwd, "public", "assets", "images", "items");
-    
-    console.log("[FILE LIST] Upload directory:", uploadDir);
-    
-    if (!fs.existsSync(uploadDir)) {
+    // Validate token exists
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error("[FILE LIST] Missing BLOB_READ_WRITE_TOKEN");
       return NextResponse.json({
-        error: "Upload directory does not exist",
-        uploadDir,
-      }, { status: 404 });
+        error: "Upload service not configured",
+      }, { status: 500 });
     }
+
+    // Get prefix from query params (e.g., "items/" to list item images)
+    const prefix = request.nextUrl.searchParams.get("prefix") || "items/";
     
-    const files = fs.readdirSync(uploadDir);
-    console.log("[FILE LIST] Found files:", files.length);
-    
-    const fileDetails = files
-      .filter(f => f !== '.gitkeep')
-      .reverse()
+    console.log("[FILE LIST] Listing files with prefix:", prefix);
+
+    // List files from Vercel Blob
+    const { blobs } = await list({
+      prefix: prefix,
+      limit: 100,
+    });
+
+    console.log("[FILE LIST] Found", blobs.length, "files");
+
+    const fileDetails = blobs
       .slice(0, 20)
-      .map((filename) => {
-        const filepath = path.join(uploadDir, filename);
-        const stats = fs.statSync(filepath);
-        const url = `/assets/images/items/${filename}`;
-        
-        return {
-          filename,
-          size: stats.size,
-          modified: stats.mtime,
-          url,
-          accessibleAt: url,
-        };
-      });
-    
-    console.log("[FILE LIST] Returning details for", fileDetails.length, "files");
-    
+      .map((blob) => ({
+        filename: blob.pathname.split("/").pop(),
+        url: blob.url,
+        size: blob.size,
+        uploadedAt: blob.uploadedAt,
+        pathname: blob.pathname,
+      }));
+
     return NextResponse.json({
-      uploadDir,
-      totalFiles: files.length,
+      prefix,
+      totalFiles: blobs.length,
       recentFiles: fileDetails,
     });
   } catch (error) {
