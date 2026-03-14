@@ -3,13 +3,21 @@ import jwt from "jsonwebtoken";
 import bcryptjs from "bcryptjs";
 import { connectDB, handleError } from "@/lib/db";
 import { User } from "@/lib/models";
+import { getCurrentUser } from "@/lib/auth-helpers";
 
 export async function PUT(req: NextRequest) {
   try {
     await connectDB();
+
+    // Extract userId from authenticated JWT token
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = currentUser.id;
     const body = await req.json();
     const {
-      userId,
       name,
       email,
       mobile,
@@ -20,10 +28,6 @@ export async function PUT(req: NextRequest) {
       country,
       preferredCurrency,
     } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
-    }
 
     // Get user for password verification
     const user = await User.findById(userId);
@@ -143,15 +147,17 @@ export async function PUT(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    // Extract userId from authenticated JWT token
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await User.findById(userId).lean();
+    const userId = currentUser.id;
 
+    const user = await User.findById(userId).lean();
+    9;
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

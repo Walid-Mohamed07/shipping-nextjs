@@ -117,12 +117,30 @@ const requestSchema = new mongoose.Schema(
     startTime: Date,
     collectionAvailableDays: {
       type: [String],
-      enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "All Week"],
+      enum: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "All Week",
+      ],
       default: [],
     },
     deliveryAvailableDays: {
       type: [String],
-      enum: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "All Week"],
+      enum: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "All Week",
+      ],
       default: [],
     },
     requestStatus: {
@@ -268,7 +286,7 @@ const requestSchema = new mongoose.Schema(
     // Payment related fields
     paymentStatus: {
       type: String,
-      enum: ["unpaid", "pending", "paid", "refunded", "failed"],
+      enum: ["unpaid", "pending", "paid", "refunded", "failed", "ABANDONED"],
       default: "unpaid",
     },
     paymentId: {

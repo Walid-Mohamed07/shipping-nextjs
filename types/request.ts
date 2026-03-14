@@ -196,7 +196,13 @@ export interface Request {
   // Company rejection tracking
   rejectedByCompanies?: string[];
   // Payment fields
-  paymentStatus?: "unpaid" | "pending" | "paid" | "refunded" | "failed";
+  paymentStatus?:
+    | "unpaid"
+    | "pending"
+    | "paid"
+    | "refunded"
+    | "failed"
+    | "ABANDONED";
   paymentId?: string;
   paidAmount?: number;
   paidAt?: string;
