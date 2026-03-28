@@ -49,11 +49,13 @@ export async function POST(req: NextRequest) {
     // Upload to Vercel Blob
     const blob = await put(blobPath, file, {
       access: "private",
+      addRandomSuffix: false,
     });
 
+    const proxyUrl = `/api/upload/serve?url=${encodeURIComponent(blob.url)}`;
     console.log(`[UPLOAD] File uploaded: ${filename}`);
     return NextResponse.json({
-      url: blob.url,
+      url: proxyUrl,
       filename,
       size: file.size,
     });

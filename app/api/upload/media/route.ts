@@ -58,9 +58,11 @@ export async function POST(request: NextRequest) {
         // Upload to Vercel Blob
         const blob = await put(filename, file, {
           access: "private",
+          addRandomSuffix: false,
         });
 
-        uploadedUrls.push(blob.url);
+        const proxyUrl = `/api/upload/serve?url=${encodeURIComponent(blob.url)}`;
+        uploadedUrls.push(proxyUrl);
       } catch (fileError) {
         console.error(
           `[MEDIA UPLOAD] Error uploading ${file.name}:`,
