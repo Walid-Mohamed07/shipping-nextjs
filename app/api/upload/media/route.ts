@@ -21,10 +21,7 @@ export async function POST(request: NextRequest) {
     console.log("[MEDIA UPLOAD] Files received:", files.length);
 
     if (!files || files.length === 0) {
-      return NextResponse.json(
-        { error: "No files provided" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
     // Validate file count
@@ -60,12 +57,15 @@ export async function POST(request: NextRequest) {
 
         // Upload to Vercel Blob
         const blob = await put(filename, file, {
-          addRandomSuffix: false,
+          access: "private",
         });
 
         uploadedUrls.push(blob.url);
       } catch (fileError) {
-        console.error(`[MEDIA UPLOAD] Error uploading ${file.name}:`, fileError);
+        console.error(
+          `[MEDIA UPLOAD] Error uploading ${file.name}:`,
+          fileError,
+        );
         failedUploads.push(`${file.name}: ${String(fileError)}`);
       }
     }
@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[MEDIA UPLOAD] Success: ${uploadedUrls.length} uploaded, ${failedUploads.length} failed`);
+    console.log(
+      `[MEDIA UPLOAD] Success: ${uploadedUrls.length} uploaded, ${failedUploads.length} failed`,
+    );
     return NextResponse.json(
       {
         urls: uploadedUrls,

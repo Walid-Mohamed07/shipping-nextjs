@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   // Validate token exists
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    console.error("[UPLOAD] Missing BLOB_READ_WRITE_TOKEN environment variable");
+    console.error(
+      "[UPLOAD] Missing BLOB_READ_WRITE_TOKEN environment variable",
+    );
     return NextResponse.json(
       { error: "Upload service not configured" },
       { status: 500 },
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     // Upload to Vercel Blob
     const blob = await put(blobPath, file, {
-      addRandomSuffix: false,
+      access: "private",
     });
 
     console.log(`[UPLOAD] File uploaded: ${filename}`);
@@ -58,7 +60,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[UPLOAD] Error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Upload failed" },
+      {
+        error: error instanceof Error ? error.message : "Upload failed",
+      },
       { status: 500 },
     );
   }

@@ -1516,7 +1516,7 @@ export default function NewRequestForm() {
                     </div>
 
                     {/* Item list */}
-                    {items.length > 0 && (
+                    {/* {items.length > 0 && (
                       <div className="space-y-3 mb-5">
                         {items.map((itm, idx) => (
                           <div
@@ -1592,7 +1592,7 @@ export default function NewRequestForm() {
                           </div>
                         ))}
                       </div>
-                    )}
+                    )} */}
 
                     {/* Add item form */}
                     <Card className="border border-dashed border-gray-300 bg-gray-50 rounded-lg">
