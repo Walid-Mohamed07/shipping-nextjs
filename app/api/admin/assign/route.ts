@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
+
     const { requestId, driverId, vehicleId, estimatedDelivery } = body;
 
     // Check if assignment already exists
