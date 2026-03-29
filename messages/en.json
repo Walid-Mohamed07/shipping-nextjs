@@ -359,7 +359,7 @@
     "category": "Category",
     "quantity": "Quantity",
     "deliveryType": "Delivery Type",
-    "reviewCost": "Cost",
+    "reviewCost": "Estimated Cost",
     "reviewCollectionDays": "Collection Days",
     "reviewDeliveryDays": "Delivery Days",
     "additionalNotes": "Additional Notes",

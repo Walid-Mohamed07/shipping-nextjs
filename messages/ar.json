@@ -359,7 +359,7 @@
     "category": "الفئة",
     "quantity": "الكمية",
     "deliveryType": "نوع التسليم",
-    "reviewCost": "التكلفة",
+    "reviewCost": "التكلفة التقديرية",
     "reviewCollectionDays": "أيام الاستلام",
     "reviewDeliveryDays": "أيام التسليم",
     "additionalNotes": "ملاحظات إضافية",
