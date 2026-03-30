@@ -10,7 +10,8 @@ import { Request } from "@/lib/models";
  *     tags: [Company]
  *     parameters:
  *       - in: query
- *         name: companyId\n *         required: true
+ *         name: companyId
+ *         required: true
  *         schema:
  *           type: string
  *     responses:
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     // Find ongoing requests assigned to this company user
     // Note: assignedCompany is stored as the company user's ID (string)
     console.log("[Ongoing API] Querying for companyId:", companyId);
-    
+
     const ongoingRequests = await Request.find({
       assignedCompany: companyId,
       requestStatus: {
