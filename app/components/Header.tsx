@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
 import { useLocale, useTranslation } from "@/app/context/LocaleContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, ChevronDown, Globe  } from "lucide-react";
+import { LogOut, User, ChevronDown, Globe, Wallet  } from "lucide-react";
 import Image from "next/image";
 import { MessageNotification } from "./MessageNotification";
 import { useState, useRef, useEffect } from "react";
@@ -102,12 +102,21 @@ export function Header() {
           ) : user ? (
             <>
               {user.role === "client" && (
-                <Link
-                  href="/my-requests"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
-                  {t.header.myRequests}
-                </Link>
+                <>
+                  <Link
+                    href="/my-requests"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
+                    {t.header.myRequests}
+                  </Link>
+                  <Link
+                    href="/wallet"
+                    className="text-foreground hover:text-primary transition-colors flex items-center gap-1"
+                  >
+                    <Wallet className="w-4 h-4" />
+                    {t.header.wallet}
+                  </Link>
+                </>
               )}
               {user.role === "driver" && (
                 <Link

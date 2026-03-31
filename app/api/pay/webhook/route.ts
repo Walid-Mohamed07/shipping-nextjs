@@ -173,22 +173,32 @@ export async function POST(req: NextRequest) {
         payment.status,
       );
 
-      // Handle wallet deduction if applicable
-      const walletDeduction = payment.breakdown?.walletDeduction || 0;
-      if (walletDeduction > 0) {
-        const wallet = await Wallet.findOne({ user: payment.user });
-        if (wallet && wallet.balance >= walletDeduction) {
-          const balanceBefore = wallet.balance;
-          wallet.balance -= walletDeduction;
-          wallet.totalDebits += walletDeduction;
-          wallet.lastTransactionAt = new Date();
-          await wallet.save();
+      // Handle wallet deduction if applicable (atomic operation)
+      // Use the pre-converted USD amount from metadata, fallback to breakdown amount
+      const walletDeductionInUSD =
+        payment.metadata?.walletDeductionInUSD ||
+        payment.breakdown?.walletDeduction ||
+        0;
+      if (walletDeductionInUSD > 0) {
+        const wallet = await Wallet.findOneAndUpdate(
+          { user: payment.user, balance: { $gte: walletDeductionInUSD } },
+          {
+            $inc: {
+              balance: -walletDeductionInUSD,
+              totalDebits: walletDeductionInUSD,
+            },
+            $set: { lastTransactionAt: new Date() },
+          },
+          { new: true },
+        );
+        if (wallet) {
+          const balanceBefore = wallet.balance + walletDeductionInUSD;
 
           // Create wallet transaction
           const transaction = await Transaction.create({
             user: payment.user,
             type: "payment",
-            amount: walletDeduction,
+            amount: walletDeductionInUSD,
             currency: "USD",
             description: `Partial payment for order ${orderRef}`,
             reference: `${orderRef}-WALLET`,
@@ -202,6 +212,10 @@ export async function POST(req: NextRequest) {
             status: "completed",
             balanceBefore,
             balanceAfter: wallet.balance,
+            metadata: {
+              paymentCurrency: payment.currency,
+              amountInPaymentCurrency: payment.breakdown?.walletDeduction,
+            },
           });
 
           payment.walletTransactionId = transaction._id;

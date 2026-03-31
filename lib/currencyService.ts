@@ -1,7 +1,7 @@
 /**
  * Currency Service
  * Handles exchange rate fetching, caching, and currency conversions.
- * 
+ *
  * Features:
  * - Real-time exchange rates from external API
  * - In-memory caching with configurable TTL
@@ -26,82 +26,145 @@ interface ExchangeRateCache {
 }
 
 // Cache TTL in milliseconds (default: 1 hour)
-const CACHE_TTL = parseInt(process.env.EXCHANGE_RATE_CACHE_TTL || "3600000", 10);
+const CACHE_TTL = parseInt(
+  process.env.EXCHANGE_RATE_CACHE_TTL || "3600000",
+  10,
+);
 
 // In-memory cache
 let exchangeRateCache: ExchangeRateCache | null = null;
 
 /**
- * Configuration for ExchangeRate.host API
+ * Hardcoded fallback rates relative to USD.
+ * Used only when all external API sources fail.
+ * Update periodically if needed.
  */
-interface ExchangeRateConfig {
-  apiKey: string;
-  baseCurrency: string;
-}
-
-function getConfig(): ExchangeRateConfig {
-  const apiKey = process.env.EXCHANGE_RATE_API_KEY;
-  if (!apiKey) {
-    throw new Error("EXCHANGE_RATE_API_KEY environment variable is required");
-  }
-  
-  return {
-    apiKey,
-    baseCurrency: BASE_CURRENCY,
-  };
-}
+const FALLBACK_RATES: Record<string, number> = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  EGP: 50.5,
+  SAR: 3.75,
+  AED: 3.67,
+  KWD: 0.307,
+  QAR: 3.64,
+  OMR: 0.385,
+  BHD: 0.377,
+  JOD: 0.709,
+  LBP: 89500,
+  IQD: 1310,
+  SYP: 13000,
+  YER: 250,
+  TND: 3.1,
+  MAD: 10.0,
+  DZD: 135,
+  LYD: 4.85,
+  SDG: 575,
+  INR: 83.5,
+  PKR: 278,
+  BDT: 110,
+  NGN: 1600,
+  ZAR: 18.6,
+  KES: 130,
+  GHS: 15.5,
+  TRY: 32.5,
+  RUB: 92,
+  CNY: 7.24,
+  JPY: 149,
+  AUD: 1.53,
+  CAD: 1.36,
+  CHF: 0.9,
+  SEK: 10.5,
+  NOK: 10.6,
+  DKK: 6.88,
+  PLN: 3.96,
+  CZK: 23.1,
+  HUF: 357,
+  RON: 4.57,
+  BGN: 1.8,
+  HRK: 6.93,
+  RSD: 107,
+  UAH: 38.5,
+  BYN: 3.27,
+  GEL: 2.65,
+  AZN: 1.7,
+  KZT: 450,
+  UZS: 12600,
+  THB: 35.1,
+  MYR: 4.72,
+  SGD: 1.34,
+  IDR: 15750,
+  PHP: 56.5,
+  VND: 24500,
+  KRW: 1330,
+  TWD: 31.8,
+  HKD: 7.82,
+  NZD: 1.63,
+  MXN: 17.2,
+  BRL: 4.97,
+  ARS: 875,
+  CLP: 970,
+  COP: 3950,
+  PEN: 3.7,
+};
 
 /**
- * Fetch exchange rates from ExchangeRate.host API
+ * Fetch exchange rates from @fawazahmed0/currency-api (free, no key required).
+ * Primary URL: jsDelivr CDN. Fallback URL: Cloudflare Pages.
+ * Response: { date: "...", usd: { eur: 0.92, egp: 50.5, ... } }
  */
 async function fetchExchangeRates(): Promise<Record<string, number>> {
-  const config = getConfig();
-  
-  // ExchangeRate.host /live endpoint
-  const url = `https://api.exchangerate.host/live?access_key=${config.apiKey}&source=${config.baseCurrency}`;
+  const base = BASE_CURRENCY.toLowerCase();
+  const urls = [
+    `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${base}.json`,
+    `https://latest.currency-api.pages.dev/v1/currencies/${base}.json`,
+  ];
 
-  try {
-    const response = await fetch(url, {
-      next: { revalidate: CACHE_TTL / 1000 }, // Next.js cache
-    });
+  let lastError: unknown;
 
-    if (!response.ok) {
-      throw new Error(`Exchange rate API returned HTTP ${response.status}: ${response.statusText}`);
+  for (const url of urls) {
+    try {
+      console.log("[CurrencyService] Fetching rates from:", url);
+      const response = await fetch(url, {
+        next: { revalidate: CACHE_TTL / 1000 },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Response shape: { date: "...", usd: { eur: 0.92, egp: 50.5, ... } }
+      const rawRates: Record<string, number> = data[base];
+      if (!rawRates || typeof rawRates !== "object") {
+        throw new Error(`Unexpected response shape from ${url}`);
+      }
+
+      // Normalise keys to uppercase
+      const rates: Record<string, number> = {};
+      for (const [key, value] of Object.entries(rawRates)) {
+        rates[key.toUpperCase()] = value as number;
+      }
+      rates[BASE_CURRENCY] = 1;
+
+      console.log(
+        `[CurrencyService] Fetched ${Object.keys(rates).length} rates from ${url}`,
+      );
+      return rates;
+    } catch (error) {
+      lastError = error;
+      console.warn(
+        "[CurrencyService] Source failed, trying next:",
+        url,
+        error instanceof Error ? error.message : error,
+      );
     }
-
-    const data = await response.json();
-
-    if (!data.success) {
-      const errorInfo = data.error?.info || data.error?.type || "Unknown error";
-      throw new Error(`ExchangeRate.host API returned success=false: ${errorInfo}`);
-    }
-
-    // Ensure we have quotes
-    if (!data.quotes || typeof data.quotes !== "object") {
-      throw new Error(`ExchangeRate.host API returned invalid quotes: ${JSON.stringify(data.quotes)}`);
-    }
-
-    // Response quotes are keyed as "USDUSD", "USDEUR", etc.
-    // Strip the 3-char source prefix to get plain currency codes
-    const quotes: Record<string, number> = data.quotes;
-    const prefixLen = config.baseCurrency.length;
-    
-    const rates = Object.fromEntries(
-      Object.entries(quotes).map(([key, value]) => [
-        key.slice(prefixLen),
-        value as number,
-      ])
-    );
-
-    // Ensure base currency rate is always 1
-    rates[config.baseCurrency] = 1;
-
-    return rates;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("[CurrencyService] Failed to fetch exchange rates:", errorMessage);
-    throw error;
   }
+
+  throw new Error(
+    `All exchange rate sources failed. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+  );
 }
 
 /**
@@ -117,7 +180,7 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
 
   try {
     const rates = await fetchExchangeRates();
-    
+
     // Update cache
     exchangeRateCache = {
       rates,
@@ -134,8 +197,11 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
       return exchangeRateCache.rates;
     }
 
-    // No fallback available, rethrow the error
-    throw error;
+    // Last resort: use hardcoded fallback rates so the app doesn't crash
+    console.warn(
+      "[CurrencyService] All sources failed, using hardcoded fallback rates",
+    );
+    return FALLBACK_RATES;
   }
 }
 
@@ -144,7 +210,7 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
  */
 export async function getExchangeRate(
   from: string,
-  to: string
+  to: string,
 ): Promise<number> {
   if (from === to) return 1;
 
@@ -164,7 +230,7 @@ export async function getExchangeRate(
   // Cross-rate calculation through base currency
   const fromRate = rates[from] || 1;
   const toRate = rates[to] || 1;
-  
+
   return toRate / fromRate;
 }
 
@@ -174,7 +240,7 @@ export async function getExchangeRate(
 export async function convertCurrency(
   amount: number,
   from: string,
-  to: string
+  to: string,
 ): Promise<{ amount: number; rate: number }> {
   if (from === to) {
     return { amount: Number(amount.toFixed(2)), rate: 1 };
@@ -182,7 +248,9 @@ export async function convertCurrency(
 
   // Guard against non-numeric amounts
   if (!isFinite(amount) || isNaN(amount)) {
-    console.warn(`[CurrencyService] convertCurrency received invalid amount: ${amount}`);
+    console.warn(
+      `[CurrencyService] convertCurrency received invalid amount: ${amount}`,
+    );
     return { amount: 0, rate: 1 };
   }
 
@@ -202,7 +270,7 @@ export async function convertCurrency(
 export function convertCurrencySync(
   amount: number,
   from: string,
-  to: string
+  to: string,
 ): { amount: number; rate: number } {
   if (from === to) {
     return { amount: Number(amount.toFixed(2)), rate: 1 };
@@ -210,9 +278,11 @@ export function convertCurrencySync(
 
   // Use cached rates if available
   const rates = exchangeRateCache?.rates;
-  
+
   if (!rates) {
-    console.warn("[CurrencyService] No cached rates available for synchronous conversion");
+    console.warn(
+      "[CurrencyService] No cached rates available for synchronous conversion",
+    );
     return { amount: Number(amount.toFixed(2)), rate: 1 };
   }
 
@@ -252,16 +322,18 @@ export interface LockedPrice {
 export async function lockPrice(
   basePrice: number,
   baseCurrency: string,
-  clientCurrency: string
+  clientCurrency: string,
 ): Promise<LockedPrice> {
   // Guard against invalid base price
   if (!isFinite(basePrice) || isNaN(basePrice) || basePrice <= 0) {
-    throw new Error(`[CurrencyService] lockPrice received invalid basePrice: ${basePrice}`);
+    throw new Error(
+      `[CurrencyService] lockPrice received invalid basePrice: ${basePrice}`,
+    );
   }
   const { amount, rate } = await convertCurrency(
     basePrice,
     baseCurrency,
-    clientCurrency
+    clientCurrency,
   );
 
   return {
@@ -280,7 +352,7 @@ export async function lockPrice(
 export function formatAmount(
   amount: number,
   currencyCode: string,
-  locale?: string
+  locale?: string,
 ): string {
   return formatCurrencyConst(amount, currencyCode, locale);
 }
@@ -292,7 +364,7 @@ export async function getDisplayPrice(
   basePrice: number,
   baseCurrency: string,
   displayCurrency: string,
-  locale?: string
+  locale?: string,
 ): Promise<{
   originalPrice: string;
   convertedPrice: string;
@@ -302,7 +374,7 @@ export async function getDisplayPrice(
   const { amount, rate } = await convertCurrency(
     basePrice,
     baseCurrency,
-    displayCurrency
+    displayCurrency,
   );
 
   return {
@@ -318,10 +390,10 @@ export async function getDisplayPrice(
  */
 export async function batchConvert(
   items: Array<{ amount: number; from: string }>,
-  to: string
+  to: string,
 ): Promise<Array<{ amount: number; rate: number }>> {
   const rates = await getExchangeRates();
-  
+
   return items.map(({ amount, from }) => {
     if (from === to) {
       return { amount, rate: 1 };

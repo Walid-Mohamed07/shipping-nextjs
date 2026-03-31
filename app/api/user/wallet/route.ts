@@ -2,23 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Wallet, Transaction } from "@/lib/models";
 import { getCurrentUser } from "@/lib/auth-helpers";
+import { convertCurrency } from "@/lib/currencyService";
+import { SUPPORTED_CURRENCIES, BASE_CURRENCY } from "@/constants/currencies";
 
 // Get user wallet
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser(req);
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();
 
     // Find or create wallet
     let wallet = await Wallet.findOne({ user: user.id });
-    
+
     if (!wallet) {
       wallet = await Wallet.create({
         user: user.id,
@@ -58,17 +57,19 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Get wallet error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal server error";
-    const errorDetails = process.env.NODE_ENV === "development" && error instanceof Error 
-      ? { message: error.message, stack: error.stack }
-      : undefined;
-    
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+    const errorDetails =
+      process.env.NODE_ENV === "development" && error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : undefined;
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
-        details: errorDetails
+        details: errorDetails,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -80,20 +81,36 @@ export async function PATCH(req: NextRequest) {
     if (!user || user.role !== "admin") {
       return NextResponse.json(
         { error: "Unauthorized - Admin only" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     await connectDB();
 
     const body = await req.json();
-    const { userId, amount, type, description } = body;
+    const { userId, amount, type, description, currency: inputCurrency } = body;
 
     if (!userId || typeof amount !== "number" || !type) {
       return NextResponse.json(
         { error: "userId, amount, and type are required" },
-        { status: 400 }
+        { status: 400 },
       );
+    }
+
+    // Convert amount to USD (wallet base currency) if a different currency is specified
+    const sourceCurrency =
+      inputCurrency &&
+      SUPPORTED_CURRENCIES.includes(inputCurrency.toUpperCase())
+        ? inputCurrency.toUpperCase()
+        : BASE_CURRENCY;
+    let amountInUSD = amount;
+    if (sourceCurrency !== BASE_CURRENCY) {
+      const converted = await convertCurrency(
+        amount,
+        sourceCurrency,
+        BASE_CURRENCY,
+      );
+      amountInUSD = converted.amount;
     }
 
     // Find or create wallet
@@ -107,47 +124,61 @@ export async function PATCH(req: NextRequest) {
       });
     }
 
-    const balanceBefore = wallet.balance;
-
     if (type === "credit") {
-      wallet.balance += amount;
-      wallet.totalCredits += amount;
+      wallet = await Wallet.findOneAndUpdate(
+        { _id: wallet._id },
+        {
+          $inc: { balance: amountInUSD, totalCredits: amountInUSD },
+          $set: { lastTransactionAt: new Date() },
+        },
+        { new: true },
+      );
     } else if (type === "debit") {
-      if (wallet.balance < amount) {
+      wallet = await Wallet.findOneAndUpdate(
+        { _id: wallet._id, balance: { $gte: amountInUSD } },
+        {
+          $inc: { balance: -amountInUSD, totalDebits: amountInUSD },
+          $set: { lastTransactionAt: new Date() },
+        },
+        { new: true },
+      );
+      if (!wallet) {
         return NextResponse.json(
           { error: "Insufficient wallet balance" },
-          { status: 400 }
+          { status: 400 },
         );
       }
-      wallet.balance -= amount;
-      wallet.totalDebits += amount;
     }
 
-    wallet.lastTransactionAt = new Date();
-    await wallet.save();
+    const balanceBefore =
+      type === "credit"
+        ? wallet!.balance - amountInUSD
+        : wallet!.balance + amountInUSD;
 
     // Create transaction record
     const transaction = await Transaction.create({
       user: userId,
       type: type,
-      amount: amount,
-      currency: "USD",
-      description: description || `Admin ${type}: $${amount}`,
+      amount: amountInUSD,
+      currency: BASE_CURRENCY,
+      description: description || `Admin ${type}: ${amount} ${sourceCurrency}`,
       reference: `ADMIN-${Date.now()}`,
       status: "completed",
       balanceBefore,
-      balanceAfter: wallet.balance,
+      balanceAfter: wallet!.balance,
       metadata: {
         adminId: user.id,
         adminEmail: user.email,
+        inputAmount: amount,
+        inputCurrency: sourceCurrency,
       },
     });
 
     return NextResponse.json({
       success: true,
       wallet: {
-        id: wallet._id,
-        balance: wallet.balance,
+        id: wallet!._id,
+        balance: wallet!.balance,
       },
       transaction: {
         id: transaction._id,
@@ -157,17 +188,19 @@ export async function PATCH(req: NextRequest) {
     });
   } catch (error) {
     console.error("Update wallet error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal server error";
-    const errorDetails = process.env.NODE_ENV === "development" && error instanceof Error 
-      ? { message: error.message, stack: error.stack }
-      : undefined;
-    
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+    const errorDetails =
+      process.env.NODE_ENV === "development" && error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : undefined;
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
-        details: errorDetails
+        details: errorDetails,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

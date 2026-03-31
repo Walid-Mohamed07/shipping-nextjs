@@ -53,7 +53,7 @@ interface Transaction {
 function WalletContent() {
   const { t, isRtl, locale } = useTranslation();
   const { user, isLoading: authLoading } = useProtectedRoute();
-  const { formatPrice } = useCurrency();
+  const { currency, convert, formatPrice } = useCurrency();
   const searchParams = useSearchParams();
 
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -65,16 +65,7 @@ function WalletContent() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  // Check for topup result from URL
-  useEffect(() => {
-    const topupStatus = searchParams.get("topup");
-    if (topupStatus === "success") {
-      toast.success("Wallet topped up successfully!");
-    } else if (topupStatus === "failed") {
-      toast.error("Wallet topup failed. Please try again.");
-    }
-  }, [searchParams]);
+  const [verifying, setVerifying] = useState(false);
 
   // Fetch wallet and transactions
   const fetchWallet = useCallback(async () => {
@@ -97,7 +88,9 @@ function WalletContent() {
   const fetchMoreTransactions = async () => {
     try {
       setLoadingMore(true);
-      const response = await fetch(`/api/user/wallet/transactions?page=${page + 1}&limit=20`);
+      const response = await fetch(
+        `/api/user/wallet/transactions?page=${page + 1}&limit=20`,
+      );
       if (response.ok) {
         const data = await response.json();
         setTransactions((prev) => [...prev, ...data.transactions]);
@@ -113,18 +106,51 @@ function WalletContent() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      fetchWallet();
+      const topupStatus = searchParams.get("topup");
+      const orderId = searchParams.get("orderId");
+
+      if (topupStatus === "success" && orderId) {
+        // Verify the topup with Kashier to reliably update transaction status
+        setVerifying(true);
+        fetch("/api/user/wallet/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              toast.success("Wallet topped up successfully!");
+            } else if (data.pending) {
+              toast.info(data.message || "Payment is still being processed.");
+            } else if (data.alreadyProcessed && data.status === "completed") {
+              toast.success("Wallet already credited.");
+            } else {
+              toast.error(data.message || "Could not confirm topup.");
+            }
+          })
+          .catch(() => toast.error("Could not verify topup status."))
+          .finally(() => {
+            setVerifying(false);
+            fetchWallet();
+          });
+      } else if (topupStatus === "failed") {
+        toast.error("Wallet topup failed. Please try again.");
+        fetchWallet();
+      } else {
+        fetchWallet();
+      }
     }
-  }, [authLoading, user, fetchWallet]);
+  }, [authLoading, user, fetchWallet, searchParams]);
 
   // Handle topup
   const handleTopup = async () => {
     if (topupAmount < 1) {
-      toast.error(`Minimum topup amount is ${formatPrice(1, "USD")}`);
+      toast.error(`Minimum topup amount is ${formatPrice(1, currency)}`);
       return;
     }
     if (topupAmount > 10000) {
-      toast.error(`Maximum topup amount is ${formatPrice(10000, "USD")}`);
+      toast.error(`Maximum topup amount is ${formatPrice(10000, currency)}`);
       return;
     }
 
@@ -133,7 +159,7 @@ function WalletContent() {
       const response = await fetch("/api/user/wallet/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: topupAmount }),
+        body: JSON.stringify({ amount: topupAmount, currency }),
       });
 
       const data = await response.json();
@@ -146,7 +172,9 @@ function WalletContent() {
         window.location.href = data.paymentUrl;
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to initiate topup");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to initiate topup",
+      );
     } finally {
       setTopupLoading(false);
     }
@@ -214,10 +242,15 @@ function WalletContent() {
 
   if (!user) return null;
 
-  if (loading || authLoading) {
+  if (loading || authLoading || verifying) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          {verifying && (
+            <p className="text-sm text-muted-foreground">Confirming payment...</p>
+          )}
+        </div>
       </div>
     );
   }
@@ -242,13 +275,33 @@ function WalletContent() {
                   </div>
                   <div>
                     <p className="text-white/80 text-sm">{wt.balance}</p>
-                    <p className="text-4xl font-bold">{formatPrice(wallet?.balance || 0, wallet?.currency || "USD")}</p>
+                    <p className="text-4xl font-bold">
+                      {currency === (wallet?.currency || "USD")
+                        ? formatPrice(
+                            wallet?.balance || 0,
+                            wallet?.currency || "USD",
+                          )
+                        : convert(
+                            wallet?.balance || 0,
+                            wallet?.currency || "USD",
+                            currency,
+                          ).formatted}
+                    </p>
+                    {currency !== (wallet?.currency || "USD") && (
+                      <p className="text-white/60 text-xs mt-1">
+                        ≈{" "}
+                        {formatPrice(
+                          wallet?.balance || 0,
+                          wallet?.currency || "USD",
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-white/60 text-xs">{wallet?.currency || "USD"}</p>
+                    <p className="text-white/60 text-xs">{currency}</p>
                   </div>
                   <Button
                     onClick={() => setShowTopupModal(true)}
@@ -269,9 +322,20 @@ function WalletContent() {
                     <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">{wt.totalCredits}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {wt.totalCredits}
+                    </p>
                     <p className="text-lg font-semibold text-foreground">
-                      {formatPrice(wallet?.totalCredits || 0, wallet?.currency || "USD")}
+                      {currency === (wallet?.currency || "USD")
+                        ? formatPrice(
+                            wallet?.totalCredits || 0,
+                            wallet?.currency || "USD",
+                          )
+                        : convert(
+                            wallet?.totalCredits || 0,
+                            wallet?.currency || "USD",
+                            currency,
+                          ).formatted}
                     </p>
                   </div>
                 </div>
@@ -282,9 +346,20 @@ function WalletContent() {
                     <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">{wt.totalDebits}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {wt.totalDebits}
+                    </p>
                     <p className="text-lg font-semibold text-foreground">
-                      {formatPrice(wallet?.totalDebits || 0, wallet?.currency || "USD")}
+                      {currency === (wallet?.currency || "USD")
+                        ? formatPrice(
+                            wallet?.totalDebits || 0,
+                            wallet?.currency || "USD",
+                          )
+                        : convert(
+                            wallet?.totalDebits || 0,
+                            wallet?.currency || "USD",
+                            currency,
+                          ).formatted}
                     </p>
                   </div>
                 </div>
@@ -294,7 +369,9 @@ function WalletContent() {
 
           {/* Quick Actions */}
           <div className="bg-card rounded-lg border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">Quick Actions</h3>
+            <h3 className="font-semibold text-foreground mb-4">
+              Quick Actions
+            </h3>
             <div className="space-y-3">
               <Button
                 onClick={() => setShowTopupModal(true)}
@@ -305,7 +382,10 @@ function WalletContent() {
                 Add Funds
               </Button>
               <Link href="/my-requests">
-                <Button className="w-full justify-start cursor-pointer bg-transparent" variant="outline">
+                <Button
+                  className="w-full justify-start cursor-pointer bg-transparent"
+                  variant="outline"
+                >
                   <History className="w-4 h-4 mr-3" />
                   View Requests
                 </Button>
@@ -334,13 +414,18 @@ function WalletContent() {
             ) : (
               <>
                 {transactions.map((tx) => (
-                  <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                  <div
+                    key={tx.id}
+                    className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                         {getTransactionIcon(tx.type)}
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">{tx.description}</p>
+                        <p className="font-medium text-foreground">
+                          {tx.description}
+                        </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>
                             {new Date(tx.createdAt).toLocaleDateString(locale, {
@@ -366,12 +451,18 @@ function WalletContent() {
                     <div className="text-right">
                       <p
                         className={`font-semibold ${
-                          tx.type === "credit" || tx.type === "topup" || tx.type === "refund"
+                          tx.type === "credit" ||
+                          tx.type === "topup" ||
+                          tx.type === "refund"
                             ? "text-green-600 dark:text-green-400"
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {tx.type === "credit" || tx.type === "topup" || tx.type === "refund" ? "+" : "-"}
+                        {tx.type === "credit" ||
+                        tx.type === "topup" ||
+                        tx.type === "refund"
+                          ? "+"
+                          : "-"}
                         {formatPrice(tx.amount, tx.currency || "USD")}
                       </p>
                       {getStatusBadge(tx.status)}
@@ -410,14 +501,20 @@ function WalletContent() {
                   <Plus className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground text-lg">{wt.topupWallet}</h3>
-                  <p className="text-sm text-muted-foreground">{wt.enterAmount}</p>
+                  <h3 className="font-semibold text-foreground text-lg">
+                    {wt.topupWallet}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {wt.enterAmount}
+                  </p>
                 </div>
               </div>
 
               {/* Quick Amounts */}
               <div className="mb-6">
-                <p className="text-sm font-medium text-foreground mb-3">{wt.quickAmounts}</p>
+                <p className="text-sm font-medium text-foreground mb-3">
+                  {wt.quickAmounts}
+                </p>
                 <div className="grid grid-cols-4 gap-2">
                   {[10, 25, 50, 100].map((amount) => (
                     <button
@@ -429,7 +526,7 @@ function WalletContent() {
                           : "bg-background border-border text-foreground hover:bg-muted"
                       }`}
                     >
-                      {formatPrice(amount, "USD")}
+                      {formatPrice(amount, currency)}
                     </button>
                   ))}
                 </div>
@@ -437,15 +534,19 @@ function WalletContent() {
 
               {/* Custom Amount */}
               <div className="mb-6">
-                <p className="text-sm font-medium text-foreground mb-2">{wt.customAmount}</p>
+                <p className="text-sm font-medium text-foreground mb-2">
+                  {wt.customAmount}
+                </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold">USD</span>
+                  <span className="text-lg font-semibold">{currency}</span>
                   <input
                     type="number"
                     min={1}
                     max={10000}
                     value={topupAmount}
-                    onChange={(e) => setTopupAmount(parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setTopupAmount(parseFloat(e.target.value) || 0)
+                    }
                     className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary text-lg"
                   />
                 </div>
@@ -484,11 +585,13 @@ function WalletContent() {
 
 export default function WalletPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }
+    >
       <WalletContent />
     </Suspense>
   );

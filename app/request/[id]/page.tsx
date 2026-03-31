@@ -130,6 +130,7 @@ export default function RequestDetailsPage() {
       walletDeduction?: number;
       cardAmount?: number;
     };
+    kashierPaymentUrl?: string;
     paidAt?: string;
     createdAt?: string;
   } | null>(null);
@@ -844,8 +845,29 @@ export default function RequestDetailsPage() {
                     </div>
                   </div>
 
-                  {/* Manual check button (fallback if webhook fails) */}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-yellow-200 dark:border-yellow-800">
+                  {/* Action buttons */}
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-yellow-200 dark:border-yellow-800">
+                    {paymentInfo?.kashierPaymentUrl ? (
+                      <a
+                        href={paymentInfo.kashierPaymentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" className="cursor-pointer gap-2">
+                          <CreditCard className="w-4 h-4" />
+                          {t.userRequestDetail?.continuePayment ||
+                            "Continue Payment"}
+                        </Button>
+                      </a>
+                    ) : (
+                      <Link href={`/checkout?requestId=${requestId}`}>
+                        <Button size="sm" className="cursor-pointer gap-2">
+                          <CreditCard className="w-4 h-4" />
+                          {t.userRequestDetail?.continuePayment ||
+                            "Continue Payment"}
+                        </Button>
+                      </Link>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -863,8 +885,9 @@ export default function RequestDetailsPage() {
                   </div>
 
                   <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-3">
-                    💡 If payment status doesn&apos;t update automatically after
-                    completing payment, click &quot;Check Status Manually&quot;
+                    💡{" "}
+                    {t.userRequestDetail?.paymentPendingHint ||
+                      'If you haven\'t completed payment yet, click "Continue Payment". If you already paid, click "Check Status Manually".'}
                   </p>
                 </div>
               </div>

@@ -32,6 +32,7 @@ const paymentSchema = new mongoose.Schema(
     },
     // Kashier payment details
     kashierOrderId: String,
+    kashierSessionId: String,
     kashierTransactionId: String,
     kashierPaymentUrl: String,
     kashierResponse: mongoose.Schema.Types.Mixed,
@@ -66,6 +67,7 @@ const paymentSchema = new mongoose.Schema(
 paymentSchema.index({ user: 1, createdAt: -1 });
 paymentSchema.index({ request: 1 });
 paymentSchema.index({ kashierOrderId: 1 });
+paymentSchema.index({ kashierSessionId: 1 });
 paymentSchema.index({ kashierTransactionId: 1 });
 paymentSchema.index({ status: 1 });
 

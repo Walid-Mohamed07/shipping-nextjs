@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { connectDB } from "@/lib/db";
 import { Payment, Request, Wallet, Transaction } from "@/lib/models";
 import { getCurrentUser } from "@/lib/auth-helpers";
+import { convertCurrency } from "@/lib/currencyService";
+import { BASE_CURRENCY } from "@/constants/currencies";
 
 // Generate Kashier hash for secure payment
 function generateKashierHash(
@@ -115,15 +117,42 @@ export async function POST(req: NextRequest) {
 
     // Get user wallet if using wallet
     let wallet = null;
-    let actualWalletAmount = 0;
+    let actualWalletAmount = 0; // in payment currency
+    let walletDeductionInUSD = 0; // in wallet base currency (USD)
     if (useWallet) {
       wallet = await Wallet.findOne({ user: user.id });
       if (wallet && wallet.status === "active") {
+        // Convert wallet balance (USD) to payment currency for comparison
+        let walletBalanceInPaymentCurrency = wallet.balance;
+        let usdToPaymentRate = 1;
+        if (paymentCurrency !== BASE_CURRENCY) {
+          const converted = await convertCurrency(
+            wallet.balance,
+            BASE_CURRENCY,
+            paymentCurrency,
+          );
+          walletBalanceInPaymentCurrency = converted.amount;
+          usdToPaymentRate = converted.rate;
+        }
+
+        // Calculate how much wallet can cover (in payment currency)
         actualWalletAmount = Math.min(
           walletAmount,
-          wallet.balance,
+          walletBalanceInPaymentCurrency,
           totalAmount,
         );
+
+        // Convert back to USD for the actual wallet deduction
+        if (paymentCurrency !== BASE_CURRENCY) {
+          const toUSD = await convertCurrency(
+            actualWalletAmount,
+            paymentCurrency,
+            BASE_CURRENCY,
+          );
+          walletDeductionInUSD = toUSD.amount;
+        } else {
+          walletDeductionInUSD = actualWalletAmount;
+        }
       }
     }
 
@@ -152,6 +181,7 @@ export async function POST(req: NextRequest) {
         basePrice: pricing?.basePrice,
         baseCurrency: pricing?.baseCurrency,
         exchangeRateAtAcceptance: pricing?.exchangeRateAtAcceptance,
+        walletDeductionInUSD,
         lockedAt: pricing?.lockedAt,
       },
       ipAddress:
@@ -161,25 +191,47 @@ export async function POST(req: NextRequest) {
 
     // If fully paid by wallet
     if (cardAmount <= 0 && actualWalletAmount > 0) {
-      // Deduct from wallet
-      const balanceBefore = wallet.balance;
-      wallet.balance -= actualWalletAmount;
-      wallet.totalDebits += actualWalletAmount;
-      wallet.lastTransactionAt = new Date();
-      await wallet.save();
+      // Deduct from wallet atomically (deduct in USD, the wallet's base currency)
+      const updatedWallet = await Wallet.findOneAndUpdate(
+        { user: user.id, balance: { $gte: walletDeductionInUSD } },
+        {
+          $inc: {
+            balance: -walletDeductionInUSD,
+            totalDebits: walletDeductionInUSD,
+          },
+          $set: { lastTransactionAt: new Date() },
+        },
+        { new: true },
+      );
 
-      // Create wallet transaction
+      if (!updatedWallet) {
+        payment.status = "failed";
+        payment.failureReason = "Insufficient wallet balance";
+        await payment.save();
+        return NextResponse.json(
+          { error: "Insufficient wallet balance" },
+          { status: 400 },
+        );
+      }
+
+      const balanceBefore = updatedWallet.balance + walletDeductionInUSD;
+
+      // Create wallet transaction (store in wallet base currency for balance tracking)
       const transaction = await Transaction.create({
         user: user.id,
         type: "payment",
-        amount: actualWalletAmount,
-        currency: paymentCurrency,
+        amount: walletDeductionInUSD,
+        currency: BASE_CURRENCY,
         description: `Payment for shipping request ${request.publicId || requestId}`,
         reference: orderId,
         request: request._id,
         status: "completed",
         balanceBefore,
-        balanceAfter: wallet.balance,
+        balanceAfter: updatedWallet.balance,
+        metadata: {
+          paymentCurrency,
+          amountInPaymentCurrency: actualWalletAmount,
+        },
       });
 
       // Update payment and request
@@ -441,6 +493,7 @@ export async function GET(req: NextRequest) {
         amount: payment.amount,
         paymentMethod: payment.paymentMethod,
         breakdown: payment.breakdown,
+        kashierPaymentUrl: payment.kashierPaymentUrl,
         paidAt: payment.paidAt,
         createdAt: payment.createdAt,
       },

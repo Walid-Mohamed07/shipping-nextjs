@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { useTranslation } from "@/app/context/LocaleContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -24,6 +25,7 @@ import type { Request } from "@/types";
 export default function CheckoutPage() {
   const { t, isRtl, locale } = useTranslation();
   const { user, isLoading: authLoading } = useProtectedRoute();
+  const { convert } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestId = searchParams.get("requestId");
@@ -144,33 +146,46 @@ export default function CheckoutPage() {
   const getPaymentAmount = () => {
     if (request?.pricing?.finalLockedPrice || request?.pricing?.lockedPrice) {
       return {
-        amount: request.pricing.finalLockedPrice || request.pricing.lockedPrice || 0,
+        amount:
+          request.pricing.finalLockedPrice || request.pricing.lockedPrice || 0,
         currency: request.pricing.clientCurrency || "USD",
         isLocked: true,
       };
     }
     return {
-      amount: request?.selectedCompany?.finalPrice || request?.selectedCompany?.cost || 0,
+      amount:
+        request?.selectedCompany?.finalPrice ||
+        request?.selectedCompany?.cost ||
+        0,
       currency: (request?.selectedCompany as any)?.currency || "USD",
       isLocked: false,
     };
   };
-  
+
   const paymentInfo = getPaymentAmount();
   const totalAmount = paymentInfo.amount;
   const paymentCurrency = paymentInfo.currency;
   const isLockedPrice = paymentInfo.isLocked;
-  
-  const maxWalletUsage = Math.min(wallet?.balance || 0, totalAmount);
+
+  // Convert wallet balance (stored in USD) to payment currency for comparison
+  const walletBalanceInPaymentCurrency = wallet
+    ? paymentCurrency === "USD"
+      ? wallet.balance
+      : convert(wallet.balance, "USD", paymentCurrency).amount
+    : 0;
+  const maxWalletUsage = Math.min(walletBalanceInPaymentCurrency, totalAmount);
   const cardAmount = useWallet
     ? Math.max(0, totalAmount - walletAmount)
     : totalAmount;
-    
+
   // Format currency helper
-  const formatCurrencyAmount = (amount: number, currency: string = paymentCurrency) => {
+  const formatCurrencyAmount = (
+    amount: number,
+    currency: string = paymentCurrency,
+  ) => {
     try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
         currency: currency,
       }).format(amount);
     } catch {
@@ -372,9 +387,22 @@ export default function CheckoutPage() {
                     </p>
                     {isLockedPrice && (
                       <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        <svg
+                          className="w-3 h-3"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect
+                            x="3"
+                            y="11"
+                            width="18"
+                            height="11"
+                            rx="2"
+                            ry="2"
+                          />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
                         Price Locked
                       </span>
@@ -382,8 +410,13 @@ export default function CheckoutPage() {
                   </div>
                   {request.pricing && isLockedPrice && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Original: {formatCurrencyAmount(request.pricing.basePrice, request.pricing.baseCurrency)} 
-                      {' '}(Rate: {request.pricing.exchangeRateAtAcceptance?.toFixed(4)})
+                      Original:{" "}
+                      {formatCurrencyAmount(
+                        request.pricing.basePrice,
+                        request.pricing.baseCurrency,
+                      )}{" "}
+                      (Rate:{" "}
+                      {request.pricing.exchangeRateAtAcceptance?.toFixed(4)})
                     </p>
                   )}
                 </div>
@@ -398,7 +431,7 @@ export default function CheckoutPage() {
               </h2>
 
               {/* Wallet Option */}
-              {wallet && wallet.balance > 0 && (
+              {wallet && walletBalanceInPaymentCurrency > 0 && (
                 <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -408,7 +441,10 @@ export default function CheckoutPage() {
                           {ct.walletBalance}
                         </p>
                         <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                          ${wallet.balance.toFixed(2)}
+                          {formatCurrencyAmount(
+                            walletBalanceInPaymentCurrency,
+                            paymentCurrency,
+                          )}
                         </p>
                       </div>
                     </div>
@@ -482,9 +518,10 @@ export default function CheckoutPage() {
                     </span>
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    You&apos;ll be redirected to Kashier&apos;s secure payment page to enter your card details.
+                    You&apos;ll be redirected to Kashier&apos;s secure payment
+                    page to enter your card details.
                   </p>
-                  
+
                   {/* Test Card Info - Only shown in development */}
                   {process.env.NODE_ENV === "development" && (
                     <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
@@ -492,12 +529,24 @@ export default function CheckoutPage() {
                         🧪 Test Mode - Use these test cards:
                       </p>
                       <div className="space-y-1 text-xs text-yellow-700 dark:text-yellow-400">
-                        <p><strong>MasterCard:</strong> 5123 4500 0000 1118</p>
-                        <p><strong>Visa:</strong> 4508 7500 0000 0026</p>
-                        <p><strong>With 3DS:</strong> 5123 4500 0000 0008</p>
-                        <p className="mt-2"><strong>Name:</strong> John Doe</p>
-                        <p><strong>Expiry:</strong> 06/25 (approved)</p>
-                        <p><strong>CVV:</strong> 100 (match)</p>
+                        <p>
+                          <strong>MasterCard:</strong> 5123 4500 0000 1118
+                        </p>
+                        <p>
+                          <strong>Visa:</strong> 4508 7500 0000 0026
+                        </p>
+                        <p>
+                          <strong>With 3DS:</strong> 5123 4500 0000 0008
+                        </p>
+                        <p className="mt-2">
+                          <strong>Name:</strong> John Doe
+                        </p>
+                        <p>
+                          <strong>Expiry:</strong> 06/25 (approved)
+                        </p>
+                        <p>
+                          <strong>CVV:</strong> 100 (match)
+                        </p>
                       </div>
                     </div>
                   )}
@@ -529,7 +578,9 @@ export default function CheckoutPage() {
                   <span className="text-muted-foreground">
                     {ct.shippingCost}
                   </span>
-                  <span className="font-medium">{formatCurrencyAmount(totalAmount)}</span>
+                  <span className="font-medium">
+                    {formatCurrencyAmount(totalAmount)}
+                  </span>
                 </div>
 
                 {useWallet && walletAmount > 0 && (

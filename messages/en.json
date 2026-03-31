@@ -101,7 +101,8 @@
     "warehouses": "Warehouses",
     "inbox": "Inbox",
     "messages": "Messages",
-    "inbox": "Inbox"
+    "inbox": "Inbox",
+    "wallet": "Wallet"
   },
   "home": {
     "heroTitle": "Ship Your Packages",
@@ -1064,6 +1065,8 @@
     "viewPaymentDetails": "View Payment Details",
     "verifyPayment": "Verify Payment",
     "refresh": "Refresh",
+    "continuePayment": "Continue Payment",
+    "paymentPendingHint": "If you haven't completed payment yet, click \"Continue Payment\". If you already paid, click \"Check Status Manually\".",
     "webhookDelayNote": "If you've completed payment but status hasn't updated, click 'Verify Payment' to check manually."
   },
   "adminAssignment": {

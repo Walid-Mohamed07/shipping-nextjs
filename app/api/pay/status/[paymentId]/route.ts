@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
+import { connectDB } from "@/lib/db";
 import { Payment, Request, Wallet, Transaction } from "@/lib/models";
 import { getKashierClient } from "@/lib/kashierClient";
 import { getCurrentUser } from "@/lib/auth-helpers";
@@ -18,7 +18,7 @@ export async function GET(
   try {
     console.log("[Payment Status Check] Starting auto-check for:", params.paymentId);
 
-    await dbConnect();
+    await connectDB();
 
     // Get current user
     const currentUser = await getCurrentUser(request);
@@ -59,10 +59,21 @@ export async function GET(
       });
     }
 
-    // Query Kashier API for real-time status
-    console.log("[Payment Status Check] Querying Kashier API...");
+    // Need sessionId to query Kashier — fall back to orderId-based lookup if missing
+    if (!payment.kashierSessionId) {
+      console.warn("[Payment Status Check] No kashierSessionId stored for payment:", payment._id);
+      return NextResponse.json({
+        success: false,
+        error: "No Kashier session ID available for this payment",
+        currentStatus: payment.status,
+      }, { status: 400 });
+    }
+
+    // Query Kashier API for real-time status using session ID
+    // Endpoint: GET /v3/payment/sessions/:sessionId/payment
+    console.log("[Payment Status Check] Querying Kashier API with sessionId:", payment.kashierSessionId);
     const kashierClient = getKashierClient();
-    const kashierStatus = await kashierClient.getPaymentStatus(payment.kashierOrderId);
+    const kashierStatus = await kashierClient.getPaymentStatus(payment.kashierSessionId);
 
     if (!kashierStatus.success) {
       console.error("[Payment Status Check] Failed to query Kashier:", kashierStatus.message);
@@ -79,13 +90,13 @@ export async function GET(
     // Update database if status has changed
     let updated = false;
 
-    if (kashierPaymentStatus === "SUCCESS" || kashierPaymentStatus === "CAPTURED" || kashierPaymentStatus === "PAID") {
+    if (kashierPaymentStatus === "SUCCESS" || kashierPaymentStatus === "CAPTURED" || kashierPaymentStatus === "PAID" || kashierPaymentStatus === "COMPLETED") {
       console.log("[Payment Status Check] Payment completed! Updating database...");
       
       // Update payment
       payment.status = "completed";
       payment.paidAt = new Date();
-      payment.kashierTransactionId = kashierStatus.response?.transaction_id || payment.kashierTransactionId;
+      payment.kashierTransactionId = kashierStatus.response?.orderId || payment.kashierTransactionId;
       await payment.save();
 
       // Handle wallet deduction if applicable
@@ -110,7 +121,7 @@ export async function GET(
             request: payment.request,
             paymentGateway: {
               provider: "kashier",
-              transactionId: kashierStatus.response?.transaction_id,
+              transactionId: kashierStatus.response?.orderId || payment.kashierOrderId,
               orderId: payment.kashierOrderId,
               status: "completed",
             },
@@ -139,7 +150,7 @@ export async function GET(
           description: `Payment of $${payment.amount} completed successfully (auto-verified)`,
           details: {
             paymentId: String(payment._id),
-            transactionId: kashierStatus.response?.transaction_id,
+            transactionId: kashierStatus.response?.orderId || payment.kashierOrderId,
             paymentMethod: payment.paymentMethod,
             amount: payment.amount,
             verifiedVia: "auto-check",
