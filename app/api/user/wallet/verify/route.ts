@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
     try {
       const kashierClient = getKashierClient();
       const result = await kashierClient.getPaymentStatus(sessionId);
+      console.log("[WalletVerify] Kashier API result:", result);
 
       if (result.success && result.response?.status) {
         paymentStatus = result.response.status.toUpperCase();
