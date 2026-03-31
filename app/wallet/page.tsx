@@ -53,7 +53,7 @@ interface Transaction {
 function WalletContent() {
   const { t, isRtl, locale } = useTranslation();
   const { user, isLoading: authLoading } = useProtectedRoute();
-  const { currency, convert, formatPrice } = useCurrency();
+  const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
 
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -146,11 +146,11 @@ function WalletContent() {
   // Handle topup
   const handleTopup = async () => {
     if (topupAmount < 1) {
-      toast.error(`Minimum topup amount is ${formatPrice(1, currency)}`);
+      toast.error(`Minimum topup amount is ${formatPrice(1, "USD")}`);
       return;
     }
     if (topupAmount > 10000) {
-      toast.error(`Maximum topup amount is ${formatPrice(10000, currency)}`);
+      toast.error(`Maximum topup amount is ${formatPrice(10000, "USD")}`);
       return;
     }
 
@@ -159,7 +159,7 @@ function WalletContent() {
       const response = await fetch("/api/user/wallet/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: topupAmount, currency }),
+        body: JSON.stringify({ amount: topupAmount }),
       });
 
       const data = await response.json();
@@ -248,7 +248,9 @@ function WalletContent() {
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           {verifying && (
-            <p className="text-sm text-muted-foreground">Confirming payment...</p>
+            <p className="text-sm text-muted-foreground">
+              Confirming payment...
+            </p>
           )}
         </div>
       </div>
@@ -276,32 +278,19 @@ function WalletContent() {
                   <div>
                     <p className="text-white/80 text-sm">{wt.balance}</p>
                     <p className="text-4xl font-bold">
-                      {currency === (wallet?.currency || "USD")
-                        ? formatPrice(
-                            wallet?.balance || 0,
-                            wallet?.currency || "USD",
-                          )
-                        : convert(
-                            wallet?.balance || 0,
-                            wallet?.currency || "USD",
-                            currency,
-                          ).formatted}
+                      {formatPrice(
+                        wallet?.balance || 0,
+                        wallet?.currency || "USD",
+                      )}
                     </p>
-                    {currency !== (wallet?.currency || "USD") && (
-                      <p className="text-white/60 text-xs mt-1">
-                        ≈{" "}
-                        {formatPrice(
-                          wallet?.balance || 0,
-                          wallet?.currency || "USD",
-                        )}
-                      </p>
-                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-white/60 text-xs">{currency}</p>
+                    <p className="text-white/60 text-xs">
+                      {wallet?.currency || "USD"}
+                    </p>
                   </div>
                   <Button
                     onClick={() => setShowTopupModal(true)}
@@ -326,16 +315,10 @@ function WalletContent() {
                       {wt.totalCredits}
                     </p>
                     <p className="text-lg font-semibold text-foreground">
-                      {currency === (wallet?.currency || "USD")
-                        ? formatPrice(
-                            wallet?.totalCredits || 0,
-                            wallet?.currency || "USD",
-                          )
-                        : convert(
-                            wallet?.totalCredits || 0,
-                            wallet?.currency || "USD",
-                            currency,
-                          ).formatted}
+                      {formatPrice(
+                        wallet?.totalCredits || 0,
+                        wallet?.currency || "USD",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -350,16 +333,10 @@ function WalletContent() {
                       {wt.totalDebits}
                     </p>
                     <p className="text-lg font-semibold text-foreground">
-                      {currency === (wallet?.currency || "USD")
-                        ? formatPrice(
-                            wallet?.totalDebits || 0,
-                            wallet?.currency || "USD",
-                          )
-                        : convert(
-                            wallet?.totalDebits || 0,
-                            wallet?.currency || "USD",
-                            currency,
-                          ).formatted}
+                      {formatPrice(
+                        wallet?.totalDebits || 0,
+                        wallet?.currency || "USD",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -526,7 +503,7 @@ function WalletContent() {
                           : "bg-background border-border text-foreground hover:bg-muted"
                       }`}
                     >
-                      {formatPrice(amount, currency)}
+                      {formatPrice(amount, "USD")}
                     </button>
                   ))}
                 </div>
@@ -538,7 +515,7 @@ function WalletContent() {
                   {wt.customAmount}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold">{currency}</span>
+                  <span className="text-lg font-semibold">USD</span>
                   <input
                     type="number"
                     min={1}

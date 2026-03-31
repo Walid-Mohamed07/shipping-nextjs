@@ -3,8 +3,6 @@ import crypto from "crypto";
 import { connectDB } from "@/lib/db";
 import { Payment, Request, Wallet, Transaction } from "@/lib/models";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { convertCurrency } from "@/lib/currencyService";
-import { BASE_CURRENCY } from "@/constants/currencies";
 
 // Generate Kashier hash for secure payment
 function generateKashierHash(
@@ -117,42 +115,16 @@ export async function POST(req: NextRequest) {
 
     // Get user wallet if using wallet
     let wallet = null;
-    let actualWalletAmount = 0; // in payment currency
-    let walletDeductionInUSD = 0; // in wallet base currency (USD)
+    let actualWalletAmount = 0;
     if (useWallet) {
       wallet = await Wallet.findOne({ user: user.id });
       if (wallet && wallet.status === "active") {
-        // Convert wallet balance (USD) to payment currency for comparison
-        let walletBalanceInPaymentCurrency = wallet.balance;
-        let usdToPaymentRate = 1;
-        if (paymentCurrency !== BASE_CURRENCY) {
-          const converted = await convertCurrency(
-            wallet.balance,
-            BASE_CURRENCY,
-            paymentCurrency,
-          );
-          walletBalanceInPaymentCurrency = converted.amount;
-          usdToPaymentRate = converted.rate;
-        }
-
-        // Calculate how much wallet can cover (in payment currency)
+        // Wallet balance is in USD
         actualWalletAmount = Math.min(
           walletAmount,
-          walletBalanceInPaymentCurrency,
+          wallet.balance,
           totalAmount,
         );
-
-        // Convert back to USD for the actual wallet deduction
-        if (paymentCurrency !== BASE_CURRENCY) {
-          const toUSD = await convertCurrency(
-            actualWalletAmount,
-            paymentCurrency,
-            BASE_CURRENCY,
-          );
-          walletDeductionInUSD = toUSD.amount;
-        } else {
-          walletDeductionInUSD = actualWalletAmount;
-        }
       }
     }
 
@@ -175,13 +147,11 @@ export async function POST(req: NextRequest) {
         walletDeduction: actualWalletAmount,
         cardAmount: cardAmount,
       },
-      // Store locked price metadata for audit trail
       metadata: {
         isLockedPrice: !!pricing?.lockedPrice,
         basePrice: pricing?.basePrice,
         baseCurrency: pricing?.baseCurrency,
         exchangeRateAtAcceptance: pricing?.exchangeRateAtAcceptance,
-        walletDeductionInUSD,
         lockedAt: pricing?.lockedAt,
       },
       ipAddress:
@@ -191,13 +161,13 @@ export async function POST(req: NextRequest) {
 
     // If fully paid by wallet
     if (cardAmount <= 0 && actualWalletAmount > 0) {
-      // Deduct from wallet atomically (deduct in USD, the wallet's base currency)
+      // Deduct from wallet atomically
       const updatedWallet = await Wallet.findOneAndUpdate(
-        { user: user.id, balance: { $gte: walletDeductionInUSD } },
+        { user: user.id, balance: { $gte: actualWalletAmount } },
         {
           $inc: {
-            balance: -walletDeductionInUSD,
-            totalDebits: walletDeductionInUSD,
+            balance: -actualWalletAmount,
+            totalDebits: actualWalletAmount,
           },
           $set: { lastTransactionAt: new Date() },
         },
@@ -214,24 +184,20 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const balanceBefore = updatedWallet.balance + walletDeductionInUSD;
+      const balanceBefore = updatedWallet.balance + actualWalletAmount;
 
-      // Create wallet transaction (store in wallet base currency for balance tracking)
+      // Create wallet transaction
       const transaction = await Transaction.create({
         user: user.id,
         type: "payment",
-        amount: walletDeductionInUSD,
-        currency: BASE_CURRENCY,
+        amount: actualWalletAmount,
+        currency: "USD",
         description: `Payment for shipping request ${request.publicId || requestId}`,
         reference: orderId,
         request: request._id,
         status: "completed",
         balanceBefore,
         balanceAfter: updatedWallet.balance,
-        metadata: {
-          paymentCurrency,
-          amountInPaymentCurrency: actualWalletAmount,
-        },
       });
 
       // Update payment and request

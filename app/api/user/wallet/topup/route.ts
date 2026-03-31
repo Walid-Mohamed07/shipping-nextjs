@@ -4,7 +4,6 @@ import { connectDB } from "@/lib/db";
 import { Wallet, Transaction } from "@/lib/models";
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { convertCurrency } from "@/lib/currencyService";
-import { SUPPORTED_CURRENCIES, BASE_CURRENCY } from "@/constants/currencies";
 
 // Generate Kashier hash
 function generateKashierHash(
@@ -32,16 +31,9 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const body = await req.json();
-    const { amount, currency: inputCurrency } = body;
+    const { amount } = body;
 
-    // Validate and normalize the input currency
-    const userCurrency =
-      inputCurrency &&
-      SUPPORTED_CURRENCIES.includes(inputCurrency.toUpperCase())
-        ? inputCurrency.toUpperCase()
-        : BASE_CURRENCY;
-
-    // Validate amount
+    // Validate amount (in USD)
     if (!amount || typeof amount !== "number" || amount < 1) {
       return NextResponse.json(
         { error: "Amount must be at least 1" },
@@ -78,47 +70,27 @@ export async function POST(req: NextRequest) {
     const orderId = `TOPUP-${user.id.slice(-6).toUpperCase()}-${Date.now()}`;
     const gatewayCurrency = "EGP"; // Kashier primarily uses EGP
 
-    // Convert user's input amount to USD (wallet base currency) and EGP (gateway currency)
-    let amountInUSD = amount;
+    // Amount is in USD (wallet currency)
+    const amountInUSD = amount;
+
+    // Convert USD to EGP for Kashier gateway
     let amountInGateway = amount;
-    let exchangeRateToUSD = 1;
-    let exchangeRateToGateway = 1;
-
-    if (userCurrency !== BASE_CURRENCY) {
-      const toUSD = await convertCurrency(amount, userCurrency, BASE_CURRENCY);
-      amountInUSD = toUSD.amount;
-      exchangeRateToUSD = toUSD.rate;
-    }
-
-    if (userCurrency !== gatewayCurrency) {
-      const toGateway = await convertCurrency(
-        amount,
-        userCurrency,
-        gatewayCurrency,
-      );
-      amountInGateway = toGateway.amount;
-      exchangeRateToGateway = toGateway.rate;
-    } else {
-      amountInGateway = amount;
-    }
+    const toGateway = await convertCurrency(amount, "USD", gatewayCurrency);
+    amountInGateway = toGateway.amount;
 
     // Create pending transaction (store the USD amount that will be added to wallet)
     const transaction = await Transaction.create({
       user: user.id,
       type: "topup",
       amount: amountInUSD,
-      currency: BASE_CURRENCY,
-      description: `Wallet topup: ${amount} ${userCurrency}`,
+      currency: "USD",
+      description: `Wallet topup: $${amount} USD`,
       reference: orderId,
       status: "pending",
       balanceBefore: wallet.balance,
       metadata: {
-        inputAmount: amount,
-        inputCurrency: userCurrency,
         gatewayAmount: amountInGateway,
         gatewayCurrency: gatewayCurrency,
-        exchangeRateToUSD,
-        exchangeRateToGateway,
       },
     });
 
@@ -234,8 +206,7 @@ export async function POST(req: NextRequest) {
         id: transaction._id,
         orderId: orderId,
         amount: amountInUSD,
-        inputAmount: amount,
-        inputCurrency: userCurrency,
+        currency: "USD",
         gatewayAmount: amountInGateway,
         gatewayCurrency: gatewayCurrency,
       },

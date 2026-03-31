@@ -174,31 +174,27 @@ export async function POST(req: NextRequest) {
       );
 
       // Handle wallet deduction if applicable (atomic operation)
-      // Use the pre-converted USD amount from metadata, fallback to breakdown amount
-      const walletDeductionInUSD =
-        payment.metadata?.walletDeductionInUSD ||
-        payment.breakdown?.walletDeduction ||
-        0;
-      if (walletDeductionInUSD > 0) {
+      const walletDeduction = payment.breakdown?.walletDeduction || 0;
+      if (walletDeduction > 0) {
         const wallet = await Wallet.findOneAndUpdate(
-          { user: payment.user, balance: { $gte: walletDeductionInUSD } },
+          { user: payment.user, balance: { $gte: walletDeduction } },
           {
             $inc: {
-              balance: -walletDeductionInUSD,
-              totalDebits: walletDeductionInUSD,
+              balance: -walletDeduction,
+              totalDebits: walletDeduction,
             },
             $set: { lastTransactionAt: new Date() },
           },
           { new: true },
         );
         if (wallet) {
-          const balanceBefore = wallet.balance + walletDeductionInUSD;
+          const balanceBefore = wallet.balance + walletDeduction;
 
           // Create wallet transaction
           const transaction = await Transaction.create({
             user: payment.user,
             type: "payment",
-            amount: walletDeductionInUSD,
+            amount: walletDeduction,
             currency: "USD",
             description: `Partial payment for order ${orderRef}`,
             reference: `${orderRef}-WALLET`,
@@ -212,10 +208,6 @@ export async function POST(req: NextRequest) {
             status: "completed",
             balanceBefore,
             balanceAfter: wallet.balance,
-            metadata: {
-              paymentCurrency: payment.currency,
-              amountInPaymentCurrency: payment.breakdown?.walletDeduction,
-            },
           });
 
           payment.walletTransactionId = transaction._id;

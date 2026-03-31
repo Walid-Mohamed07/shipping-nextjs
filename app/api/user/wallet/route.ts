@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Wallet, Transaction } from "@/lib/models";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { convertCurrency } from "@/lib/currencyService";
-import { SUPPORTED_CURRENCIES, BASE_CURRENCY } from "@/constants/currencies";
 
 // Get user wallet
 export async function GET(req: NextRequest) {
@@ -88,7 +86,7 @@ export async function PATCH(req: NextRequest) {
     await connectDB();
 
     const body = await req.json();
-    const { userId, amount, type, description, currency: inputCurrency } = body;
+    const { userId, amount, type, description } = body;
 
     if (!userId || typeof amount !== "number" || !type) {
       return NextResponse.json(
@@ -97,21 +95,8 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Convert amount to USD (wallet base currency) if a different currency is specified
-    const sourceCurrency =
-      inputCurrency &&
-      SUPPORTED_CURRENCIES.includes(inputCurrency.toUpperCase())
-        ? inputCurrency.toUpperCase()
-        : BASE_CURRENCY;
-    let amountInUSD = amount;
-    if (sourceCurrency !== BASE_CURRENCY) {
-      const converted = await convertCurrency(
-        amount,
-        sourceCurrency,
-        BASE_CURRENCY,
-      );
-      amountInUSD = converted.amount;
-    }
+    // Amount is in USD (wallet base currency)
+    const amountInUSD = amount;
 
     // Find or create wallet
     let wallet = await Wallet.findOne({ user: userId });
@@ -160,8 +145,8 @@ export async function PATCH(req: NextRequest) {
       user: userId,
       type: type,
       amount: amountInUSD,
-      currency: BASE_CURRENCY,
-      description: description || `Admin ${type}: ${amount} ${sourceCurrency}`,
+      currency: "USD",
+      description: description || `Admin ${type}: $${amount}`,
       reference: `ADMIN-${Date.now()}`,
       status: "completed",
       balanceBefore,
@@ -169,8 +154,6 @@ export async function PATCH(req: NextRequest) {
       metadata: {
         adminId: user.id,
         adminEmail: user.email,
-        inputAmount: amount,
-        inputCurrency: sourceCurrency,
       },
     });
 

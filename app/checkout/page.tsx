@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { useTranslation } from "@/app/context/LocaleContext";
-import { useCurrency } from "@/app/context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -25,7 +24,6 @@ import type { Request } from "@/types";
 export default function CheckoutPage() {
   const { t, isRtl, locale } = useTranslation();
   const { user, isLoading: authLoading } = useProtectedRoute();
-  const { convert } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestId = searchParams.get("requestId");
@@ -167,12 +165,8 @@ export default function CheckoutPage() {
   const paymentCurrency = paymentInfo.currency;
   const isLockedPrice = paymentInfo.isLocked;
 
-  // Convert wallet balance (stored in USD) to payment currency for comparison
-  const walletBalanceInPaymentCurrency = wallet
-    ? paymentCurrency === "USD"
-      ? wallet.balance
-      : convert(wallet.balance, "USD", paymentCurrency).amount
-    : 0;
+  // Wallet balance is in USD
+  const walletBalanceInPaymentCurrency = wallet ? wallet.balance : 0;
   const maxWalletUsage = Math.min(walletBalanceInPaymentCurrency, totalAmount);
   const cardAmount = useWallet
     ? Math.max(0, totalAmount - walletAmount)
