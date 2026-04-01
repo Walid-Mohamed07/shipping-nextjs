@@ -146,7 +146,7 @@ export default function CheckoutPage() {
       return {
         amount:
           request.pricing.finalLockedPrice || request.pricing.lockedPrice || 0,
-        currency: request.pricing.clientCurrency || "USD",
+        currency: request.pricing.clientCurrency || "EGP",
         isLocked: true,
       };
     }
@@ -155,7 +155,7 @@ export default function CheckoutPage() {
         request?.selectedCompany?.finalPrice ||
         request?.selectedCompany?.cost ||
         0,
-      currency: (request?.selectedCompany as any)?.currency || "USD",
+      currency: (request?.selectedCompany as any)?.currency || "EGP",
       isLocked: false,
     };
   };
@@ -165,7 +165,7 @@ export default function CheckoutPage() {
   const paymentCurrency = paymentInfo.currency;
   const isLockedPrice = paymentInfo.isLocked;
 
-  // Wallet balance is in USD
+  // Wallet balance is in EGP
   const walletBalanceInPaymentCurrency = wallet ? wallet.balance : 0;
   const maxWalletUsage = Math.min(walletBalanceInPaymentCurrency, totalAmount);
   const cardAmount = useWallet

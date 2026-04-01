@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     if (pricing?.finalLockedPrice || pricing?.lockedPrice) {
       // Use locked price - this was set when the client accepted the offer
       totalAmount = pricing.finalLockedPrice || pricing.lockedPrice;
-      paymentCurrency = pricing.clientCurrency || "USD";
+      paymentCurrency = pricing.clientCurrency || "EGP";
       console.log(
         "[Payment] Using locked price:",
         totalAmount,
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Fallback to selected company price (for backwards compatibility)
       totalAmount = selectedCompany.finalPrice || selectedCompany.cost || 0;
-      paymentCurrency = selectedCompany.currency || "USD";
+      paymentCurrency = selectedCompany.currency || "EGP";
       console.log(
         "[Payment] Using selectedCompany price (no locked price):",
         totalAmount,
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     if (useWallet) {
       wallet = await Wallet.findOne({ user: user.id });
       if (wallet && wallet.status === "active") {
-        // Wallet balance is in USD
+        // Wallet balance is in EGP
         actualWalletAmount = Math.min(
           walletAmount,
           wallet.balance,
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
         user: user.id,
         type: "payment",
         amount: actualWalletAmount,
-        currency: "USD",
+        currency: "EGP",
         description: `Payment for shipping request ${request.publicId || requestId}`,
         reference: orderId,
         request: request._id,

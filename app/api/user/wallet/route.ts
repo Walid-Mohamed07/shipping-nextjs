@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       wallet = await Wallet.create({
         user: user.id,
         balance: 0,
-        currency: "USD",
+        currency: "EGP",
         status: "active",
         totalCredits: 0,
         totalDebits: 0,
@@ -95,8 +95,8 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Amount is in USD (wallet base currency)
-    const amountInUSD = amount;
+    // Amount is in EGP (wallet base currency)
+    const amountInEGP = amount;
 
     // Find or create wallet
     let wallet = await Wallet.findOne({ user: userId });
@@ -104,7 +104,7 @@ export async function PATCH(req: NextRequest) {
       wallet = await Wallet.create({
         user: userId,
         balance: 0,
-        currency: "USD",
+        currency: "EGP",
         status: "active",
       });
     }
@@ -113,16 +113,16 @@ export async function PATCH(req: NextRequest) {
       wallet = await Wallet.findOneAndUpdate(
         { _id: wallet._id },
         {
-          $inc: { balance: amountInUSD, totalCredits: amountInUSD },
+          $inc: { balance: amountInEGP, totalCredits: amountInEGP },
           $set: { lastTransactionAt: new Date() },
         },
         { new: true },
       );
     } else if (type === "debit") {
       wallet = await Wallet.findOneAndUpdate(
-        { _id: wallet._id, balance: { $gte: amountInUSD } },
+        { _id: wallet._id, balance: { $gte: amountInEGP } },
         {
-          $inc: { balance: -amountInUSD, totalDebits: amountInUSD },
+          $inc: { balance: -amountInEGP, totalDebits: amountInEGP },
           $set: { lastTransactionAt: new Date() },
         },
         { new: true },
@@ -137,16 +137,16 @@ export async function PATCH(req: NextRequest) {
 
     const balanceBefore =
       type === "credit"
-        ? wallet!.balance - amountInUSD
-        : wallet!.balance + amountInUSD;
+        ? wallet!.balance - amountInEGP
+        : wallet!.balance + amountInEGP;
 
     // Create transaction record
     const transaction = await Transaction.create({
       user: userId,
       type: type,
-      amount: amountInUSD,
-      currency: "USD",
-      description: description || `Admin ${type}: $${amount}`,
+      amount: amountInEGP,
+      currency: "EGP",
+      description: description || `Admin ${type}: ${amount} EGP`,
       reference: `ADMIN-${Date.now()}`,
       status: "completed",
       balanceBefore,

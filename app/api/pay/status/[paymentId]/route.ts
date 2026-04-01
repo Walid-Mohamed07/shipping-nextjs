@@ -115,7 +115,7 @@ export async function GET(
             user: payment.user,
             type: "payment",
             amount: walletDeduction,
-            currency: "USD",
+            currency: "EGP",
             description: `Partial payment for order ${payment.kashierOrderId}`,
             reference: `${payment.kashierOrderId}-WALLET`,
             request: payment.request,

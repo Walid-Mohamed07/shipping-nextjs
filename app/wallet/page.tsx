@@ -146,11 +146,11 @@ function WalletContent() {
   // Handle topup
   const handleTopup = async () => {
     if (topupAmount < 1) {
-      toast.error(`Minimum topup amount is ${formatPrice(1, "USD")}`);
+      toast.error(`Minimum topup amount is ${formatPrice(1, "EGP")}`);
       return;
     }
     if (topupAmount > 10000) {
-      toast.error(`Maximum topup amount is ${formatPrice(10000, "USD")}`);
+      toast.error(`Maximum topup amount is ${formatPrice(10000, "EGP")}`);
       return;
     }
 
@@ -280,7 +280,7 @@ function WalletContent() {
                     <p className="text-4xl font-bold">
                       {formatPrice(
                         wallet?.balance || 0,
-                        wallet?.currency || "USD",
+                        wallet?.currency || "EGP",
                       )}
                     </p>
                   </div>
@@ -289,7 +289,7 @@ function WalletContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white/60 text-xs">
-                      {wallet?.currency || "USD"}
+                      {wallet?.currency || "EGP"}
                     </p>
                   </div>
                   <Button
@@ -317,7 +317,7 @@ function WalletContent() {
                     <p className="text-lg font-semibold text-foreground">
                       {formatPrice(
                         wallet?.totalCredits || 0,
-                        wallet?.currency || "USD",
+                        wallet?.currency || "EGP",
                       )}
                     </p>
                   </div>
@@ -335,7 +335,7 @@ function WalletContent() {
                     <p className="text-lg font-semibold text-foreground">
                       {formatPrice(
                         wallet?.totalDebits || 0,
-                        wallet?.currency || "USD",
+                        wallet?.currency || "EGP",
                       )}
                     </p>
                   </div>
@@ -440,7 +440,7 @@ function WalletContent() {
                         tx.type === "refund"
                           ? "+"
                           : "-"}
-                        {formatPrice(tx.amount, tx.currency || "USD")}
+                        {formatPrice(tx.amount, tx.currency || "EGP")}
                       </p>
                       {getStatusBadge(tx.status)}
                     </div>
@@ -503,7 +503,7 @@ function WalletContent() {
                           : "bg-background border-border text-foreground hover:bg-muted"
                       }`}
                     >
-                      {formatPrice(amount, "USD")}
+                      {formatPrice(amount, "EGP")}
                     </button>
                   ))}
                 </div>
@@ -515,7 +515,7 @@ function WalletContent() {
                   {wt.customAmount}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold">USD</span>
+                  <span className="text-lg font-semibold">EGP</span>
                   <input
                     type="number"
                     min={1}

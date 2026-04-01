@@ -3,7 +3,6 @@ import crypto from "crypto";
 import { connectDB } from "@/lib/db";
 import { Wallet, Transaction } from "@/lib/models";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { convertCurrency } from "@/lib/currencyService";
 
 // Generate Kashier hash
 function generateKashierHash(
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { amount } = body;
 
-    // Validate amount (in USD)
+    // Validate amount (in EGP)
     if (!amount || typeof amount !== "number" || amount < 1) {
       return NextResponse.json(
         { error: "Amount must be at least 1" },
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
       wallet = await Wallet.create({
         user: user.id,
         balance: 0,
-        currency: "USD",
+        currency: "EGP",
         status: "active",
       });
     }
@@ -68,30 +67,17 @@ export async function POST(req: NextRequest) {
 
     // Generate unique order ID for topup
     const orderId = `TOPUP-${user.id.slice(-6).toUpperCase()}-${Date.now()}`;
-    const gatewayCurrency = "EGP"; // Kashier primarily uses EGP
 
-    // Amount is in USD (wallet currency)
-    const amountInUSD = amount;
-
-    // Convert USD to EGP for Kashier gateway
-    let amountInGateway = amount;
-    const toGateway = await convertCurrency(amount, "USD", gatewayCurrency);
-    amountInGateway = toGateway.amount;
-
-    // Create pending transaction (store the USD amount that will be added to wallet)
+    // Create pending transaction (amount is in EGP, same as Kashier)
     const transaction = await Transaction.create({
       user: user.id,
       type: "topup",
-      amount: amountInUSD,
-      currency: "USD",
-      description: `Wallet topup: $${amount} USD`,
+      amount: amount,
+      currency: "EGP",
+      description: `Wallet topup: ${amount} EGP`,
       reference: orderId,
       status: "pending",
       balanceBefore: wallet.balance,
-      metadata: {
-        gatewayAmount: amountInGateway,
-        gatewayCurrency: gatewayCurrency,
-      },
     });
 
     // Create Kashier payment session
@@ -108,8 +94,8 @@ export async function POST(req: NextRequest) {
       expireAt: expireAt,
       maxFailureAttempts: 3,
       paymentType: "credit",
-      amount: String(amountInGateway.toFixed(2)),
-      currency: gatewayCurrency,
+      amount: String(amount.toFixed(2)),
+      currency: "EGP",
       order: orderId,
       merchantRedirect: encodeURI(
         `${baseUrl}/wallet?topup=success&orderId=${orderId}`,
@@ -205,10 +191,8 @@ export async function POST(req: NextRequest) {
       transaction: {
         id: transaction._id,
         orderId: orderId,
-        amount: amountInUSD,
-        currency: "USD",
-        gatewayAmount: amountInGateway,
-        gatewayCurrency: gatewayCurrency,
+        amount: amount,
+        currency: "EGP",
       },
     });
   } catch (error) {
