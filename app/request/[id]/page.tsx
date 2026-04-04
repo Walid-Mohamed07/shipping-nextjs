@@ -59,6 +59,14 @@ const LocationMapPicker = dynamic(
   { ssr: false },
 );
 
+const RequestRouteMap = dynamic(
+  () =>
+    import("@/app/components/RequestRouteMap").then((mod) => ({
+      default: mod.RequestRouteMap,
+    })),
+  { ssr: false },
+);
+
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
   if (!loc) return "-";
@@ -1531,6 +1539,42 @@ export default function RequestDetailsPage() {
             </div>
           )}
 
+          {/* Route Map Section - Show when both source and destination have coordinates */}
+          {(() => {
+            const src = request.source || request.from;
+            const dst = request.destination || request.to;
+            if (
+              src?.coordinates?.latitude &&
+              src?.coordinates?.longitude &&
+              dst?.coordinates?.latitude &&
+              dst?.coordinates?.longitude
+            ) {
+              return (
+                <RequestRouteMap
+                  sourceCoords={src.coordinates}
+                  destinationCoords={dst.coordinates}
+                  sourceLabel={formatLocation(src)}
+                  destinationLabel={formatLocation(dst)}
+                  translations={{
+                    routeMap: t.userRequestDetail.routeMap || "Route Map",
+                    distance: t.userRequestDetail.distance || "Distance",
+                    estimatedTime:
+                      t.userRequestDetail.estimatedTime || "Est. Travel Time",
+                    source: t.userRequestDetail.from || "Source",
+                    destination: t.userRequestDetail.to || "Destination",
+                    loadingRoute:
+                      t.userRequestDetail.loadingRoute || "Loading route...",
+                    straightLineEstimate:
+                      t.userRequestDetail.straightLineEstimate ||
+                      "Straight-line estimate",
+                    km: t.userRequestDetail.km || "km",
+                  }}
+                />
+              );
+            }
+            return null;
+          })()}
+
           {/* Details Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Route Details */}
@@ -1576,7 +1620,7 @@ export default function RequestDetailsPage() {
                 {request.items?.length || 0})
               </h3>
 
-              <div className="max-h-52 overflow-y-auto pr-2 space-y-4   p-2 rounded-md">
+              <div className="max-h-[395px] overflow-y-auto pr-2 space-y-4 p-2 rounded-md">
                 {request.items && request.items.length > 0 ? (
                   request.items.map((item, idx) => (
                     <div

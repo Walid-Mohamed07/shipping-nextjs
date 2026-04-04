@@ -204,8 +204,8 @@ export default function CompanyRequestDetailPage() {
       return;
     }
 
-    // Check if max offers reached
-    if (myOffers.length >= 3) {
+    // Check if offer already submitted
+    if (myOffers.length >= 1) {
       showError(t.companyRequestDetail.maxOffersReached);
       return;
     }
@@ -899,7 +899,6 @@ export default function CompanyRequestDetailPage() {
                   <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
                     {t.companyRequestDetail.yourActiveOffer}
-                    {myOffers.length > 1 ? "s" : ""}
                   </h3>
                   <div className="space-y-3">
                     {myOffers.map((offer, idx) => (
@@ -1067,8 +1066,8 @@ export default function CompanyRequestDetailPage() {
                   )}
                   */}
 
-                  {/* Max offers reached message */}
-                  {myOffers.length >= 3 ? (
+                  {/* Offer already submitted message */}
+                  {myOffers.length >= 1 ? (
                     <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
                       <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
                         {t.companyRequestDetail.maxOffersReached}
@@ -1085,11 +1084,6 @@ export default function CompanyRequestDetailPage() {
                       >
                         <DollarSign className="w-4 h-4" />
                         {t.companyRequestDetail.makeAnOffer}
-                        {myOffers.length > 0 && (
-                          <span className="ml-1 text-xs opacity-80">
-                            ({myOffers.length}/3)
-                          </span>
-                        )}
                       </Button>
                       {myOffers.length === 0 && (
                         <Button

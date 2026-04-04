@@ -132,14 +132,14 @@ export async function POST(request: NextRequest) {
         currentRequest.costOffers = [] as any;
       }
 
-      // Check if company has reached maximum offers (3)
+      // Check if company has already submitted an offer
       const companyOffers = currentRequest.costOffers.filter(
         (o: any) => o.company?.id === companyId,
       );
       
-      if (companyOffers.length >= 3) {
+      if (companyOffers.length >= 1) {
         return NextResponse.json(
-          { error: "Maximum of 3 offers per company reached" },
+          { error: "You have already submitted an offer for this request" },
           { status: 400 },
         );
       }
