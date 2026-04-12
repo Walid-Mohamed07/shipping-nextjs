@@ -217,7 +217,9 @@ export default function RequestDetailPage() {
           <div className="col-span-2 space-y-6">
             {/* Client Info */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">{t.admin.clientInfo}</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.clientInfo}
+              </h2>
               <div className="space-y-2">
                 <p>
                   <span className="font-medium">{t.admin.nameLabel}:</span>{" "}
@@ -228,14 +230,17 @@ export default function RequestDetailPage() {
                   {request.user?.email}
                 </p>
                 <p>
-                  <span className="font-medium">{t.admin.requestId}:</span> {request.publicId || request.id}
+                  <span className="font-medium">{t.admin.requestId}:</span>{" "}
+                  {request.publicId || request.id}
                 </p>
               </div>
             </Card>
 
             {/* Route Information */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">{t.admin.routeInfo}</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.routeInfo}
+              </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="font-medium text-sm mb-2">{t.common.from}</p>
@@ -271,38 +276,93 @@ export default function RequestDetailPage() {
             {/* Item Details */}
             {firstItem && (
               <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">{t.admin.itemDetails}</h2>
+                <h2 className="text-lg font-semibold mb-4">
+                  {t.admin.itemDetails}
+                </h2>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <p>
-                    <span className="font-medium">{t.admin.itemLabel}:</span> {firstItem.item}
+                    <span className="font-medium">{t.admin.itemLabel}:</span>{" "}
+                    {firstItem.item}
                   </p>
                   <p>
-                    <span className="font-medium">{t.admin.categoryLabel}:</span>{" "}
+                    <span className="font-medium">
+                      {t.admin.categoryLabel}:
+                    </span>{" "}
                     {getCategoryLabel(firstItem.category)}
-                  </p>
-                  <p>
-                    <span className="font-medium">{t.admin.dimensionsLabel}:</span>{" "}
-                    {firstItem.dimensions}
                   </p>
                   <p>
                     <span className="font-medium">{t.admin.weightLabel}:</span>{" "}
                     {firstItem.weight} kg
                   </p>
                   <p>
-                    <span className="font-medium">{t.admin.quantityLabel}:</span>{" "}
+                    <span className="font-medium">
+                      {t.admin.quantityLabel}:
+                    </span>{" "}
                     {firstItem.quantity}
                   </p>
                   <p>
                     <span className="font-medium">{t.admin.typeLabel}:</span>{" "}
-                    {request.deliveryType}
+                    {request.deliveryType === "Scheduled"
+                      ? `📅 ${request.deliveryType}`
+                      : request.deliveryType === "Urgent"
+                        ? `⚡ ${request.deliveryType}`
+                        : request.deliveryType}
                   </p>
+                  {request.deliveryType === "Scheduled" &&
+                    request.scheduledDate && (
+                      <p>
+                        <span className="font-medium">Scheduled Date:</span>{" "}
+                        {new Date(request.scheduledDate).toLocaleString(
+                          undefined,
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </p>
+                    )}
+                  {request.receiptFloorNumber && (
+                    <p>
+                      <span className="font-medium">
+                        {t.newRequest.receiptFloorNumber}:
+                      </span>{" "}
+                      {request.receiptFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.receiptFloorNumber}
+                      {request.needsWinchPickup && (
+                        <span className="text-amber-600 ml-1">
+                          ({t.newRequest.needsWinchPickup})
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {request.deliveryFloorNumber && (
+                    <p>
+                      <span className="font-medium">
+                        {t.newRequest.deliveryFloorNumber}:
+                      </span>{" "}
+                      {request.deliveryFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.deliveryFloorNumber}
+                      {request.needsWinchDropoff && (
+                        <span className="text-amber-600 ml-1">
+                          ({t.newRequest.needsWinchDropoff})
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
               </Card>
             )}
 
             {/* Cost Offers */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">{t.admin.costOffersTitle}</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.costOffersTitle}
+              </h2>
 
               {/* Add New Offer */}
               {request.requestStatus === "Pending" && (
@@ -387,7 +447,9 @@ export default function RequestDetailPage() {
                               {offer.comment}
                             </p>
                           </div>
-                          <p className="font-semibold">{formatPrice(offer.cost, "USD")}</p>
+                          <p className="font-semibold">
+                            {formatPrice(offer.cost, "USD")}
+                          </p>
                         </div>
                       </div>
                     );
@@ -402,10 +464,14 @@ export default function RequestDetailPage() {
 
             {/* History */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">{t.admin.statusHistory}</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.statusHistory}
+              </h2>
               <div className="space-y-3">
                 <div>
-                  <h3 className="font-medium mb-2">{t.admin.requestStatusLabel}</h3>
+                  <h3 className="font-medium mb-2">
+                    {t.admin.requestStatusLabel}
+                  </h3>
                   <div className="space-y-1 text-sm">
                     {request.requestStatusHistory?.map((h, idx) => (
                       <p key={idx} className="text-muted-foreground">
@@ -417,7 +483,9 @@ export default function RequestDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">{t.admin.deliveryStatusLabel}</h3>
+                  <h3 className="font-medium mb-2">
+                    {t.admin.deliveryStatusLabel}
+                  </h3>
                   <div className="space-y-1 text-sm">
                     {request.deliveryStatusHistory?.map((h, idx) => (
                       <p key={idx} className="text-muted-foreground">
@@ -486,7 +554,9 @@ export default function RequestDetailPage() {
               <h3 className="font-semibold mb-3">{t.admin.summary}</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <p className="text-muted-foreground">{t.admin.createdLabel}</p>
+                  <p className="text-muted-foreground">
+                    {t.admin.createdLabel}
+                  </p>
                   <p className="font-medium">
                     {new Date(request.createdAt).toLocaleString()}
                   </p>
@@ -498,8 +568,12 @@ export default function RequestDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{t.admin.estimatedCost}</p>
-                  <p className="font-medium">{formatPrice(Number(request.estimatedCost) || 0, "USD")}</p>
+                  <p className="text-muted-foreground">
+                    {t.admin.estimatedCost}
+                  </p>
+                  <p className="font-medium">
+                    {formatPrice(Number(request.estimatedCost) || 0, "USD")}
+                  </p>
                 </div>
               </div>
             </Card>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" fill="none">
+  <rect width="400" height="200" rx="12" fill="#fef2f2"/>
+  <rect x="80" y="85" width="200" height="8" rx="2" fill="#ef4444" opacity="0.7"/>
+  <rect x="280" y="40" width="80" height="100" rx="8" fill="#dc2626"/>
+  <rect x="293" y="50" width="50" height="38" rx="4" fill="#fecaca"/>
+  <!-- Winch arm -->
+  <line x1="150" y1="30" x2="150" y2="85" stroke="#991b1b" stroke-width="6" stroke-linecap="round"/>
+  <line x1="80" y1="30" x2="150" y2="30" stroke="#991b1b" stroke-width="6" stroke-linecap="round"/>
+  <line x1="80" y1="30" x2="80" y2="70" stroke="#b91c1c" stroke-width="2" stroke-dasharray="4"/>
+  <circle cx="80" cy="70" r="5" fill="#991b1b"/>
+  <circle cx="120" cy="150" r="18" fill="#1e3a5f"/>
+  <circle cx="120" cy="150" r="8" fill="#94a3b8"/>
+  <circle cx="240" cy="150" r="18" fill="#1e3a5f"/>
+  <circle cx="240" cy="150" r="8" fill="#94a3b8"/>
+  <circle cx="320" cy="150" r="18" fill="#1e3a5f"/>
+  <circle cx="320" cy="150" r="8" fill="#94a3b8"/>
+  <text x="200" y="190" text-anchor="middle" font-family="Arial" font-size="11" fill="#64748b">Rescue Winch / ونش إنقاذ</text>
+</svg>

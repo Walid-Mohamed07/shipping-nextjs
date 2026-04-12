@@ -28,15 +28,10 @@ function normalizeItems(req: LegacyRequest) {
         item: it.item ?? it.name ?? "-",
         name: it.name ?? it.item ?? "-",
         category: it.category ?? "",
-        dimensions: it.dimensions ?? "",
         weight: it.weight ?? "",
         quantity: Number(it.quantity ?? 1) || 1,
         note: it.note || undefined,
         media: normalizedMedia.slice(0, 4),
-        services: it.services || {
-          assemblyDisassembly: false,
-          packaging: false,
-        },
       };
     });
   }
@@ -59,12 +54,10 @@ function normalizeItems(req: LegacyRequest) {
         item: req.item ?? "-",
         name: req.item ?? "-",
         category: req.category ?? "",
-        dimensions: req.dimensions ?? "",
         weight: req.weight ?? "",
         quantity: Number(req.quantity ?? 1) || 1,
         note: req.note || undefined,
         media: media.slice(0, 4),
-        services: { assemblyDisassembly: false, packaging: false },
       },
     ];
   }
@@ -72,11 +65,14 @@ function normalizeItems(req: LegacyRequest) {
   return [];
 }
 
-function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
+function normalizeDeliveryType(
+  value: any,
+): "Normal" | "Urgent" | "Scheduled" | undefined {
   const v = String(value || "")
     .toLowerCase()
     .trim();
   if (v === "urgent" || v === "fast") return "Urgent";
+  if (v === "scheduled") return "Scheduled";
   if (v === "normal") return "Normal";
   return undefined;
 }
@@ -87,7 +83,8 @@ function normalizeRequest(req: any) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime;
-  const collectionAvailableDays = req.collectionAvailableDays || req.availableDays || [];
+  const collectionAvailableDays =
+    req.collectionAvailableDays || req.availableDays || [];
   const deliveryAvailableDays = req.deliveryAvailableDays || [];
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
@@ -100,6 +97,7 @@ function normalizeRequest(req: any) {
     source,
     destination,
     deliveryType,
+    scheduledDate: req.scheduledDate,
     startTime,
     collectionAvailableDays,
     deliveryAvailableDays,
@@ -119,6 +117,11 @@ function normalizeRequest(req: any) {
     destinationWarehouse: req.destinationWarehouse,
     sourcePickupMode: req.sourcePickupMode,
     destinationPickupMode: req.destinationPickupMode,
+    // Floor number and winch fields
+    receiptFloorNumber: req.receiptFloorNumber,
+    needsWinchPickup: req.needsWinchPickup,
+    deliveryFloorNumber: req.deliveryFloorNumber,
+    needsWinchDropoff: req.needsWinchDropoff,
     // Payment fields
     paymentStatus: req.paymentStatus,
     paymentId: req.paymentId,
@@ -217,6 +220,7 @@ export async function POST(request: NextRequest) {
       destination,
       items,
       deliveryType,
+      scheduledDate,
       startTime,
       collectionAvailableDays,
       deliveryAvailableDays,
@@ -228,6 +232,12 @@ export async function POST(request: NextRequest) {
       requestStatus,
       deliveryStatus,
       comment,
+      workersCount,
+      transportVehicle,
+      receiptFloorNumber,
+      needsWinchPickup,
+      deliveryFloorNumber,
+      needsWinchDropoff,
     } = body;
 
     const sourceAddr = source;
@@ -243,23 +253,15 @@ export async function POST(request: NextRequest) {
 
     const normalizedDeliveryType = normalizeDeliveryType(deliveryType);
     if (!normalizedDeliveryType) {
-      return handleValidationError("deliveryType is required (normal | fast)");
+      return handleValidationError(
+        "deliveryType is required (Normal | Urgent | Scheduled)",
+      );
     }
-    // Validate collectionAvailableDays (minimum 2 days required, or "All Week")
-    if (
-      !Array.isArray(finalCollectionDays) ||
-      (finalCollectionDays.length < 2 &&
-        !finalCollectionDays.includes("All Week"))
-    ) {
-      return handleValidationError("At least 2 collection available days are required");
-    }
-    // Validate deliveryAvailableDays (minimum 2 days required, or "All Week")
-    if (
-      !Array.isArray(finalDeliveryDays) ||
-      (finalDeliveryDays.length < 2 &&
-        !finalDeliveryDays.includes("All Week"))
-    ) {
-      return handleValidationError("At least 2 delivery available days are required");
+    // Validate scheduledDate when deliveryType is Scheduled
+    if (normalizedDeliveryType === "Scheduled" && !scheduledDate) {
+      return handleValidationError(
+        "scheduledDate is required for Scheduled delivery",
+      );
     }
     if (!Array.isArray(items) || items.length === 0) {
       return handleValidationError("At least one item is required");
@@ -285,17 +287,12 @@ export async function POST(request: NextRequest) {
         name: item.name ?? item.item ?? "-",
         category: item.category || "",
         weight: item.weight || "",
-        dimensions: item.dimensions || "",
         quantity: Number(item.quantity ?? 1) || 1,
         note: item.note || undefined,
         media: Array.isArray(item.media) ? item.media.slice(0, 4) : [],
-        services: item.services || {
-          canBeAssembledDisassembled: false,
-          assemblyDisassemblyHandler: undefined,
-          packaging: false,
-        },
       })),
       deliveryType: normalizedDeliveryType,
+      scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
       startTime: finalStartTime,
       collectionAvailableDays: finalCollectionDays,
       deliveryAvailableDays: finalDeliveryDays,
@@ -306,6 +303,23 @@ export async function POST(request: NextRequest) {
       comment: comment || "",
       sourcePickupMode,
       destinationPickupMode,
+      receiptFloorNumber: receiptFloorNumber || undefined,
+      needsWinchPickup: !!needsWinchPickup,
+      deliveryFloorNumber: deliveryFloorNumber || undefined,
+      needsWinchDropoff: !!needsWinchDropoff,
+      workersCount:
+        typeof workersCount === "number"
+          ? Math.min(6, Math.max(0, workersCount))
+          : 0,
+      transportVehicle: transportVehicle
+        ? {
+            id: transportVehicle.id,
+            nameEn: transportVehicle.nameEn,
+            nameAr: transportVehicle.nameAr,
+            dimensions: transportVehicle.dimensions,
+            maxWeight: transportVehicle.maxWeight,
+          }
+        : undefined,
     });
 
     // Add activity log for request creation

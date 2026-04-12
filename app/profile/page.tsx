@@ -136,30 +136,11 @@ export default function ProfilePage() {
 
         const averageCost = totalRequests > 0 ? totalSpent / totalRequests : 0;
 
-        const requestsWithServices = requests.filter((r: any) =>
-          r.items?.some(
-            (item: any) =>
-              item.services &&
-              (item.services.canBeAssembledDisassembled ||
-                item.services.assemblyDisassembly ||
-                item.services.packaging),
-          ),
-        ).length;
+        const requestsWithServices = 0;
 
-        const assemblyDisassemblyRequests = requests.filter((r: any) =>
-          r.items?.some(
-            (item: any) =>
-              item.services &&
-              (item.services.canBeAssembledDisassembled ||
-                item.services.assemblyDisassembly),
-          ),
-        ).length;
+        const assemblyDisassemblyRequests = 0;
 
-        const packagingRequests = requests.filter((r: any) =>
-          r.items?.some(
-            (item: any) => item.services && item.services.packaging,
-          ),
-        ).length;
+        const packagingRequests = 0;
 
         setStats({
           totalRequests,
@@ -784,53 +765,6 @@ export default function ProfilePage() {
                       size="lg"
                       className="text-2xl font-bold text-foreground"
                     />
-                  </div>
-                </div>
-              </div>
-
-              {/* Services Used */}
-              <div className="bg-card rounded-lg border border-border p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  Services Used
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium">
-                        <Wrench className="w-3 h-3" />
-                        Assembly/Disassembly
-                      </span>
-                    </div>
-                    <p className="text-lg font-bold text-foreground">
-                      {stats.assemblyDisassemblyRequests}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium">
-                        <BoxSelect className="w-3 h-3" />
-                        Packaging
-                      </span>
-                    </div>
-                    <p className="text-lg font-bold text-foreground">
-                      {stats.packagingRequests}
-                    </p>
-                  </div>
-                  <div className="pt-4 border-t border-border">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Total Requests with Services
-                    </p>
-                    <p className="text-lg font-bold text-foreground">
-                      {stats.requestsWithServices} (
-                      {stats.totalRequests > 0
-                        ? Math.round(
-                            (stats.requestsWithServices / stats.totalRequests) *
-                              100,
-                          )
-                        : 0}
-                      %)
-                    </p>
                   </div>
                 </div>
               </div>

@@ -1377,38 +1377,6 @@ export default function RequestDetailsPage() {
                           </p>
                         )}
 
-                        {/* Pickup DateTime */}
-                        {offer.pickupDateTime && (
-                          <div className="mb-2 text-xs text-muted-foreground">
-                            <span className="font-medium">
-                              {t.userRequestDetail.pickup}
-                            </span>{" "}
-                            {new Date(offer.pickupDateTime).toLocaleString(
-                              locale,
-                              {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              },
-                            )}
-                          </div>
-                        )}
-
-                        {/* Delivery DateTime */}
-                        {offer.deliveryDateTime && (
-                          <div className="mb-3 text-xs text-muted-foreground">
-                            <span className="font-medium">
-                              {t.userRequestDetail.delivery}
-                            </span>{" "}
-                            {new Date(offer.deliveryDateTime).toLocaleString(
-                              locale,
-                              {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              },
-                            )}
-                          </div>
-                        )}
-
                         {/* Select Indicator */}
                         <div
                           className={`text-center text-xs font-medium py-1 rounded ${
@@ -1478,39 +1446,6 @@ export default function RequestDetailsPage() {
                     </p>
                   )}
 
-                  {/* Display pickup/delivery datetime if present */}
-                  {confirmingOffer.pickupDateTime && (
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                        {t.userRequestDetail.pickup}
-                      </p>
-                      <p className="text-sm text-foreground">
-                        {new Date(
-                          confirmingOffer.pickupDateTime,
-                        ).toLocaleString(locale, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </p>
-                    </div>
-                  )}
-                  {confirmingOffer.deliveryDateTime && (
-                    <div
-                      className={`${confirmingOffer.pickupDateTime ? "mt-2" : "mt-3 pt-3 border-t border-border"}`}
-                    >
-                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                        {t.userRequestDetail.delivery}
-                      </p>
-                      <p className="text-sm text-foreground">
-                        {new Date(
-                          confirmingOffer.deliveryDateTime,
-                        ).toLocaleString(locale, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -1539,7 +1474,7 @@ export default function RequestDetailsPage() {
             </div>
           )}
 
-          {/* Route Map Section - Show when both source and destination have coordinates */}
+          {/* Route Map / Addresses Section */}
           {(() => {
             const src = request.source || request.from;
             const dst = request.destination || request.to;
@@ -1560,8 +1495,8 @@ export default function RequestDetailsPage() {
                     distance: t.userRequestDetail.distance || "Distance",
                     estimatedTime:
                       t.userRequestDetail.estimatedTime || "Est. Travel Time",
-                    source: t.userRequestDetail.from || "Source",
-                    destination: t.userRequestDetail.to || "Destination",
+                    source: t.userRequestDetail.from || "From",
+                    destination: t.userRequestDetail.to || "To",
                     loadingRoute:
                       t.userRequestDetail.loadingRoute || "Loading route...",
                     straightLineEstimate:
@@ -1572,185 +1507,135 @@ export default function RequestDetailsPage() {
                 />
               );
             }
-            return null;
+            // Fallback when no coordinates — show compact addresses card
+            return (
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  {t.userRequestDetail.routeDetails}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-2">
+                    <span className="mt-1 inline-block w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        {t.userRequestDetail.from}
+                      </p>
+                      <p className="text-sm font-medium text-foreground leading-tight">
+                        {src ? formatLocation(src) : "-"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-1 inline-block w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        {t.userRequestDetail.to}
+                      </p>
+                      <p className="text-sm font-medium text-foreground leading-tight">
+                        {dst ? formatLocation(dst) : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
           })()}
 
-          {/* Details Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Route Details */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" />
-                {t.userRequestDetail.routeDetails}
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t.userRequestDetail.from}
-                  </p>
-                  <p className="text-lg font-medium text-foreground">
-                    {request.source
-                      ? formatLocation(request.source)
-                      : request.from
-                        ? formatLocation(request.from)
-                        : "-"}
-                  </p>
-                </div>
-                <div className="border-l-2 border-primary h-8" />
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t.userRequestDetail.to}
-                  </p>
-                  <p className="text-lg font-medium text-foreground">
-                    {request.destination
-                      ? formatLocation(request.destination)
-                      : request.to
-                        ? formatLocation(request.to)
-                        : "-"}
-                  </p>
-                </div>
-              </div>
-            </div>
+          {/* Package Details - All Items */}
+          <div className="bg-card rounded-lg border border-border p-6">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              {t.userRequestDetail.shipmentItems} ({request.items?.length || 0})
+            </h3>
 
-            {/* Package Details - All Items */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" />
-                {t.userRequestDetail.shipmentItems} (
-                {request.items?.length || 0})
-              </h3>
-
-              <div className="max-h-[395px] overflow-y-auto pr-2 space-y-4 p-2 rounded-md">
-                {request.items && request.items.length > 0 ? (
-                  request.items.map((item, idx) => (
-                    <div
-                      key={item._id || `item-${idx}`}
-                      className="border border-border rounded-lg p-4 bg-white dark:bg-gray-900"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="font-semibold text-foreground flex items-center gap-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">
-                              {idx + 1}
-                            </span>
-                            {item.name || item.item}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {getCategoryLabel(item.category)}
-                          </p>
-                        </div>
-                        {item.quantity > 1 && (
-                          <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
-                            ×{item.quantity}
+            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-3 p-2 rounded-md">
+              {request.items && request.items.length > 0 ? (
+                request.items.map((item, idx) => (
+                  <div
+                    key={item._id || `item-${idx}`}
+                    className="border border-border rounded-lg p-3 bg-white dark:bg-gray-900"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground flex items-center gap-2">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">
+                            {idx + 1}
                           </span>
-                        )}
+                          {item.name || item.item}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {getCategoryLabel(item.category)}
+                        </p>
                       </div>
-                      <div className="grid grid-cols-3 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t.userRequestDetail.dimensions}
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {item.dimensions}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t.userRequestDetail.weight}
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {item.weight} kg
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t.userRequestDetail.quantity}
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {item.quantity}
-                          </p>
-                        </div>
-                      </div>
-                      {item.note && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground">
-                            {t.userRequestDetail.note}
-                          </p>
-                          <p className="text-sm text-foreground italic">
-                            {item.note}
-                          </p>
-                        </div>
+                      {item.quantity > 1 && (
+                        <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+                          ×{item.quantity}
+                        </span>
                       )}
-                      {item.media && item.media.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {t.userRequestDetail.media} ({item.media.length})
-                          </p>
-                          <div className="flex gap-2 flex-wrap">
-                            {item.media.map((mediaItem, mIdx) => {
-                              const url =
-                                typeof mediaItem === "string"
-                                  ? mediaItem
-                                  : mediaItem.url;
-                              return (
-                                <img
-                                  key={mIdx}
-                                  src={url}
-                                  alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
-                                  className="w-16 h-16 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                                  onClick={() => {
-                                    setSelectedImageUrl(url);
-                                    setShowImageZoom(true);
-                                  }}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {item.services &&
-                        (item.services.canBeAssembledDisassembled ||
-                          item.services.assemblyDisassembly ||
-                          item.services.packaging) && (
-                          <div className="mt-3 pt-3 border-t border-border">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              {t.userRequestDetail.services}
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {(item.services.canBeAssembledDisassembled ||
-                                item.services.assemblyDisassembly) && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                  <Wrench className="w-3 h-3" />
-                                  {t.userRequestDetail.assemblyDisassembly}
-                                  {item.services.assemblyDisassemblyHandler && (
-                                    <span className="ml-1 text-[10px]">
-                                      (
-                                      {item.services
-                                        .assemblyDisassemblyHandler === "self"
-                                        ? t.userRequestDetail.assemblySelf
-                                        : t.userRequestDetail.assemblyCompany}
-                                      )
-                                    </span>
-                                  )}
-                                </span>
-                              )}
-                              {item.services.packaging && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                                  <BoxSelect className="w-3 h-3" />
-                                  {t.userRequestDetail.packaging}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
                     </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">
-                    {t.userRequestDetail.noItems}
-                  </p>
-                )}
-              </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.weight}
+                        </p>
+                        <p className="font-medium text-foreground">
+                          {item.weight} kg
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.quantity}
+                        </p>
+                        <p className="font-medium text-foreground">
+                          {item.quantity}
+                        </p>
+                      </div>
+                    </div>
+                    {item.note && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.note}
+                        </p>
+                        <p className="text-sm text-foreground italic">
+                          {item.note}
+                        </p>
+                      </div>
+                    )}
+                    {item.media && item.media.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {t.userRequestDetail.media} ({item.media.length})
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          {item.media.map((mediaItem, mIdx) => {
+                            const url =
+                              typeof mediaItem === "string"
+                                ? mediaItem
+                                : mediaItem.url;
+                            return (
+                              <img
+                                key={mIdx}
+                                src={url}
+                                alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
+                                className="w-14 h-14 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => {
+                                  setSelectedImageUrl(url);
+                                  setShowImageZoom(true);
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground">
+                  {t.userRequestDetail.noItems}
+                </p>
+              )}
             </div>
           </div>
 
@@ -1849,14 +1734,73 @@ export default function RequestDetailsPage() {
                 <p className="text-base font-medium w-max text-foreground capitalize">
                   {request.deliveryType === "Urgent"
                     ? t.userRequestDetail.urgentDelivery
-                    : t.userRequestDetail.normalDelivery}
+                    : request.deliveryType === "Scheduled"
+                      ? t.userRequestDetail.scheduledDelivery
+                      : t.userRequestDetail.normalDelivery}
                 </p>
                 {request.deliveryType === "Urgent" && (
                   <p className="text-xs text-muted-foreground mt-1">
                     {t.userRequestDetail.urgentSurcharge}
                   </p>
                 )}
+                {request.deliveryType === "Scheduled" &&
+                  request.scheduledDate && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t.userRequestDetail.scheduledFor.replace(
+                        "{date}",
+                        new Date(request.scheduledDate).toLocaleString(
+                          locale,
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        ),
+                      )}
+                    </p>
+                  )}
               </div>
+
+              {/* Workers Count */}
+              {request.workersCount != null && request.workersCount > 0 && (
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                    👷 {t.userRequestDetail.workersRequested}
+                  </h3>
+                  <p className="text-base font-medium text-foreground">
+                    {request.workersCount}{" "}
+                    {request.workersCount === 1
+                      ? t.userRequestDetail.worker
+                      : t.userRequestDetail.workers}
+                  </p>
+                </div>
+              )}
+
+              {/* Transport Vehicle */}
+              {request.transportVehicle && (
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-primary min-w-min" />
+                    {t.userRequestDetail.transportVehicle}
+                  </h3>
+                  <p className="text-base font-bold text-foreground">
+                    {request.transportVehicle.nameAr}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {request.transportVehicle.nameEn}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {request.transportVehicle.dimensions.length}m ×{" "}
+                    {request.transportVehicle.dimensions.width}m ×{" "}
+                    {request.transportVehicle.dimensions.height}m —{" "}
+                    {t.userRequestDetail.maxLoad}:{" "}
+                    {request.transportVehicle.maxWeight}{" "}
+                    {t.userRequestDetail.kg}
+                  </p>
+                </div>
+              )}
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
@@ -2113,6 +2057,69 @@ export default function RequestDetailsPage() {
               )}
             </div>
           </div>
+
+          {/* Floor Numbers & Winch */}
+          {(request.receiptFloorNumber || request.deliveryFloorNumber) && (
+            <div className="bg-card rounded-lg border border-border p-6">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <span className="text-gray-400">🏢</span>
+                {t.newRequest.floorAndWinch}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {request.receiptFloorNumber && (
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>{" "}
+                      {t.newRequest.receiptFloorNumber}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {request.receiptFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.receiptFloorNumber}
+                    </p>
+                    {request.needsWinchPickup && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchPickup}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {request.deliveryFloorNumber && (
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>{" "}
+                      {t.newRequest.deliveryFloorNumber}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {request.deliveryFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.deliveryFloorNumber}
+                    </p>
+                    {request.needsWinchDropoff && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchDropoff}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Client Comments */}
+          {request.comment && (
+            <div className="bg-card rounded-lg border border-border p-6">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <span className="text-gray-400">💬</span>
+                {t.userRequestDetail.clientComment || "Client Comments"}
+              </h3>
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm text-foreground whitespace-pre-wrap">
+                  {request.comment}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Warehouse Locations Section - Show when warehouses are assigned */}
           {(request.sourceWarehouse || request.destinationWarehouse) && (

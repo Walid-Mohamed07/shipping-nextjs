@@ -24,7 +24,7 @@ export enum RequestDeliveryStatus {
 
 export type DeliveryStatus = RequestDeliveryStatus;
 export type PickupMode = "Delegate" | "Self";
-export type DeliveryType = "Normal" | "Urgent";
+export type DeliveryType = "Normal" | "Urgent" | "Scheduled";
 export type DayOfWeek =
   | "Sunday"
   | "Monday"
@@ -57,33 +57,33 @@ export interface Item {
   item?: string;
   name?: string;
   category: string;
-  dimensions: string;
   weight: string;
   quantity: number;
   note?: string;
   media?: MediaItem[];
   mediaFiles?: File[]; // Temporary storage for files before upload
-  services?: {
-    canBeAssembledDisassembled?: boolean;
-    assemblyDisassemblyHandler?: "self" | "company";
-    packaging?: boolean;
-    // Backward compatibility
-    assemblyDisassembly?: boolean;
-  };
 }
 
 export interface ShippingItem {
   item: string;
   category: string;
-  dimensions: string;
   weight: string;
   quantity: number;
 }
 
-export interface RequestServices {
-  assemblyDisassembly: boolean;
-  packaging: boolean;
-}
+export type FloorNumber =
+  | "0"
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5"
+  | "6"
+  | "7"
+  | "8"
+  | "9"
+  | "10"
+  | "10+";
 
 export interface CostOffer {
   _id?: string;
@@ -104,8 +104,6 @@ export interface CostOffer {
   comment?: string;
   selected: boolean;
   status: "pending" | "accepted" | "rejected";
-  pickupDateTime?: string;
-  deliveryDateTime?: string;
   createdAt?: string;
 }
 
@@ -131,6 +129,7 @@ export interface Request {
   to?: Address;
   items: Item[];
   deliveryType: DeliveryType;
+  scheduledDate?: string;
   startTime?: string;
   collectionAvailableDays?: DayOfWeek[];
   deliveryAvailableDays?: DayOfWeek[];
@@ -193,8 +192,27 @@ export interface Request {
   // Pickup mode fields
   sourcePickupMode?: "Delegate" | "Self";
   destinationPickupMode?: "Delegate" | "Self";
+  // Floor number and winch fields
+  receiptFloorNumber?: string;
+  needsWinchPickup?: boolean;
+  deliveryFloorNumber?: string;
+  needsWinchDropoff?: boolean;
   // Company rejection tracking
   rejectedByCompanies?: string[];
+  // Workers
+  workersCount?: number; // 0 to 6
+  // Transport vehicle type
+  transportVehicle?: {
+    id: string;
+    nameEn: string;
+    nameAr: string;
+    dimensions: {
+      length: number;
+      width: number;
+      height: number;
+    };
+    maxWeight: number;
+  };
   // Payment fields
   paymentStatus?:
     | "unpaid"
@@ -215,6 +233,7 @@ export interface RequestPayload {
   destination: Address;
   items: Item[];
   deliveryType: DeliveryType;
+  scheduledDate?: string;
   startTime?: string;
   collectionAvailableDays?: DayOfWeek[];
   deliveryAvailableDays?: DayOfWeek[];

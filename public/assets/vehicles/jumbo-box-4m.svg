@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" fill="none">
+  <rect width="400" height="200" rx="12" fill="#fefce8"/>
+  <rect x="30" y="35" width="250" height="105" rx="6" fill="#eab308" opacity="0.8"/>
+  <rect x="280" y="35" width="90" height="105" rx="8" fill="#ca8a04"/>
+  <rect x="295" y="45" width="55" height="42" rx="4" fill="#fef9c3"/>
+  <circle cx="70" cy="150" r="18" fill="#1e3a5f"/>
+  <circle cx="70" cy="150" r="8" fill="#94a3b8"/>
+  <circle cx="150" cy="150" r="18" fill="#1e3a5f"/>
+  <circle cx="150" cy="150" r="8" fill="#94a3b8"/>
+  <circle cx="230" cy="150" r="18" fill="#1e3a5f"/>
+  <circle cx="230" cy="150" r="8" fill="#94a3b8"/>
+  <circle cx="320" cy="150" r="18" fill="#1e3a5f"/>
+  <circle cx="320" cy="150" r="8" fill="#94a3b8"/>
+  <text x="200" y="190" text-anchor="middle" font-family="Arial" font-size="11" fill="#64748b">Jumbo Box 4m / جامبو صندوق 4 متر</text>
+</svg>

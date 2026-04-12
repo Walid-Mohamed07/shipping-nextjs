@@ -7,8 +7,6 @@ import {
   Package,
   MapPin,
   Truck,
-  Wrench,
-  BoxSelect,
   MessageSquare,
   Clock,
   Phone,
@@ -18,6 +16,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import type { Item, Address, DayOfWeek } from "@/types";
+import type { TransportVehicleType } from "@/constants/transportVehicles";
 import { useTranslation } from "@/app/context/LocaleContext";
 import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
@@ -27,13 +26,20 @@ export interface ReviewData {
   destinationAddress: Address | null;
   sourcePickupMode: string;
   destPickupMode: string;
-  deliveryType: "Normal" | "Urgent";
+  deliveryType: "Normal" | "Urgent" | "Scheduled";
+  scheduledDate?: string;
   collectionAvailableDays: DayOfWeek[];
   deliveryAvailableDays: DayOfWeek[];
   mobile: string;
   primaryCost?: string; // TEMPORARILY HIDDEN - primaryCost (optional now)
   comments: string;
   itemMediaPreviewsMap?: Record<number, string[]>; // Preview URLs from uploaded files
+  workersCount?: number;
+  selectedVehicle?: TransportVehicleType | null;
+  receiptFloorNumber?: string;
+  needsWinchPickup?: boolean;
+  deliveryFloorNumber?: string;
+  needsWinchDropoff?: boolean;
 }
 
 interface ReviewModalProps {
@@ -136,32 +142,13 @@ export default function ReviewModal({
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {item.dimensions} · {item.weight} kg · ×{item.quantity}
+                      {item.weight} kg · ×{item.quantity}
                     </p>
                     {item.note && (
                       <p className="text-xs text-muted-foreground italic mt-0.5">
                         {t.newRequest.noteLabel} {item.note}
                       </p>
                     )}
-                    {item.services &&
-                      (item.services.assemblyDisassemblyHandler === "company" ||
-                        item.services.packaging) && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {item.services.assemblyDisassemblyHandler ===
-                            "company" && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              <Wrench className="w-2.5 h-2.5" />
-                              {t.newRequest.assemblyCompanyBadge}
-                            </span>
-                          )}
-                          {item.services.packaging && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                              <BoxSelect className="w-2.5 h-2.5" />
-                              {t.newRequest.packagingBadge}
-                            </span>
-                          )}
-                        </div>
-                      )}
                   </div>
                 </div>
               ))}
@@ -229,82 +216,35 @@ export default function ReviewModal({
               <Truck className="w-4 h-4 text-primary" />
               {t.newRequest.deliveryCost}
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
                   {t.newRequest.deliveryType}
                 </p>
                 <p className="text-sm font-medium text-foreground">
                   {data.deliveryType === "Urgent"
-                    ? `🔥 ${t.newRequest.urgent}`
-                    : t.newRequest.normal}
+                    ? `⚡ ${t.newRequest.urgent}`
+                    : data.deliveryType === "Scheduled"
+                      ? `📅 ${t.newRequest.scheduledDelivery}`
+                      : t.newRequest.normal}
                 </p>
               </div>
-              {/* TEMPORARILY HIDDEN - primaryCost
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  {t.newRequest.reviewCost}
-                </p>
-                <p className="text-sm font-bold text-primary flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" />
-                  {data.primaryCost ? data.primaryCost : "—"}
-                </p>
-              </div>
-              */}
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  {t.newRequest.reviewCollectionDays}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {data.collectionAvailableDays &&
-                  data.collectionAvailableDays.length > 0 ? (
-                    data.collectionAvailableDays.includes("All Week") ||
-                    data.collectionAvailableDays.length === 7 ? (
-                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
-                        {t.common.allWeek}
-                      </span>
-                    ) : (
-                      data.collectionAvailableDays.map((day) => (
-                        <span
-                          key={`collection-${day}`}
-                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
-                        >
-                          {day.slice(0, 3)}
-                        </span>
-                      ))
-                    )
-                  ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
-                  )}
+              {data.deliveryType === "Scheduled" && data.scheduledDate && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    {t.newRequest.scheduledFor}
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {new Date(data.scheduledDate).toLocaleString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </div>
-              </div>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  {t.newRequest.reviewDeliveryDays}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {data.deliveryAvailableDays &&
-                  data.deliveryAvailableDays.length > 0 ? (
-                    data.deliveryAvailableDays.includes("All Week") ||
-                    data.deliveryAvailableDays.length === 7 ? (
-                      <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                        {t.common.allWeek}
-                      </span>
-                    ) : (
-                      data.deliveryAvailableDays.map((day) => (
-                        <span
-                          key={`delivery-${day}`}
-                          className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                        >
-                          {day.slice(0, 3)}
-                        </span>
-                      ))
-                    )
-                  ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
-                  )}
-                </div>
-              </div>
+              )}
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
                   {t.newRequest.contact}
@@ -316,6 +256,100 @@ export default function ReviewModal({
               </div>
             </div>
           </section>
+
+          {/* Floor Numbers & Winch Section */}
+          {(data.receiptFloorNumber || data.deliveryFloorNumber) && (
+            <section>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                <Package className="w-4 h-4 text-primary" />
+                {t.newRequest.floorAndWinch}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {data.receiptFloorNumber && (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>
+                      {t.newRequest.receiptFloorNumber}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.receiptFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : data.receiptFloorNumber}
+                    </p>
+                    {data.needsWinchPickup && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchPickup}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {data.deliveryFloorNumber && (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>
+                      {t.newRequest.deliveryFloorNumber}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.deliveryFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : data.deliveryFloorNumber}
+                    </p>
+                    {data.needsWinchDropoff && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchDropoff}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Workers & Vehicle Section */}
+          {(data.workersCount && data.workersCount > 0) ||
+          data.selectedVehicle ? (
+            <section>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                <Truck className="w-4 h-4 text-primary" />
+                {t.newRequest.workersAndVehicle}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {data.workersCount && data.workersCount > 0 ? (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      {t.newRequest.addWorkers}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.workersCount}{" "}
+                      {data.workersCount === 1
+                        ? t.newRequest.worker
+                        : t.newRequest.workers}
+                    </p>
+                  </div>
+                ) : null}
+                {data.selectedVehicle ? (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      {t.newRequest.transportVehicle}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.selectedVehicle.nameAr}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {data.selectedVehicle.nameEn}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {data.selectedVehicle.dimensions.length}m ×{" "}
+                      {data.selectedVehicle.dimensions.width}m ×{" "}
+                      {data.selectedVehicle.dimensions.height}m —{" "}
+                      {t.newRequest.maxLoad}: {data.selectedVehicle.maxWeight}{" "}
+                      {t.newRequest.kg}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           {/* Comments Section */}
           {data.comments && (

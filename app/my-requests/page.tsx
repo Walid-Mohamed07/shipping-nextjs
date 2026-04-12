@@ -12,7 +12,10 @@ import {
   MapPin,
   Banknote,
   Wrench,
-  BoxSelect,
+  Tag,
+  Truck,
+  Users,
+  Ruler,
 } from "lucide-react";
 import { Request, Address, Item } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
@@ -21,6 +24,25 @@ import {
   LockedPriceDisplay,
   PriceDisplay,
 } from "@/app/components/PriceDisplay";
+
+// Haversine formula to compute distance in km between two lat/lng points
+const haversineKm = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 
 // Helper to format a location object for display
 const formatLocation = (loc: Address) => {
@@ -168,7 +190,7 @@ export default function MyRequestsPage() {
               const remaining = Math.max(0, (request.items || []).length - 2);
               return (
                 <Link key={request.id} href={`/request/${request.publicId}`}>
-                  <div className="h-96 flex flex-col bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
+                  <div className="flex flex-col bg-card rounded-lg border border-border hover:border-primary transition-colors p-6 cursor-pointer hover:shadow-md">
                     {/* Header - fixed height */}
                     <div className="flex items-start justify-between mb-4 h-8">
                       <div className="flex-1 min-w-0">
@@ -187,8 +209,8 @@ export default function MyRequestsPage() {
                       </div>
                     </div>
 
-                    {/* Items preview - fixed height */}
-                    <div className="h-18 mb-4 bg-muted/50 rounded-lg p-3 overflow-hidden">
+                    {/* Items preview */}
+                    <div className="mb-3 bg-muted/50 rounded-lg p-3 overflow-hidden">
                       {previewItems.map((item: Item, idx: number) => (
                         <div
                           key={item._id || `item-${idx}`}
@@ -205,29 +227,31 @@ export default function MyRequestsPage() {
                       )}
                     </div>
 
-                    {/* Services badges - fixed height */}
-                    <div className="h-6 flex flex-wrap gap-1.5 mb-4 overflow-hidden">
-                      {request.items?.some(
-                        (item: Item) =>
-                          item.services?.canBeAssembledDisassembled ||
-                          item.services?.assemblyDisassembly,
-                      ) && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                          <Wrench className="w-3 h-3" />
-                          {t.myRequests.assembly}
-                        </span>
-                      )}
-                      {request.items?.some(
-                        (item: Item) => item.services?.packaging,
-                      ) && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                          <BoxSelect className="w-3 h-3" />
-                          {t.myRequests.packaging}
-                        </span>
-                      )}
-                    </div>
+                    {/* Categories */}
+                    {(() => {
+                      const cats = [
+                        ...new Set(
+                          (request.items || [])
+                            .map((i) => i.category)
+                            .filter(Boolean),
+                        ),
+                      ];
+                      return cats.length > 0 ? (
+                        <div className="flex items-center gap-1 flex-wrap mb-3">
+                          <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          {cats.map((cat) => (
+                            <span
+                              key={cat}
+                              className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
+                            >
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
 
-                    {/* Main info - flex grow to fill space */}
+                    {/* Main info */}
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="w-4 h-4 shrink-0" />
@@ -235,13 +259,54 @@ export default function MyRequestsPage() {
                           {formatLocation(request.from ?? request.source)} →{" "}
                           {formatLocation(request.to ?? request.destination)}
                         </span>
+                        {(() => {
+                          const src = request.from ?? request.source;
+                          const dst = request.to ?? request.destination;
+                          if (
+                            src?.coordinates?.latitude != null &&
+                            src?.coordinates?.longitude != null &&
+                            dst?.coordinates?.latitude != null &&
+                            dst?.coordinates?.longitude != null
+                          ) {
+                            const km = haversineKm(
+                              src.coordinates.latitude,
+                              src.coordinates.longitude,
+                              dst.coordinates.latitude,
+                              dst.coordinates.longitude,
+                            );
+                            return (
+                              <span className="ml-auto shrink-0 flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                                <Ruler className="w-3 h-3" />
+                                {t.myRequests.distance.replace(
+                                  "{km}",
+                                  String(Math.round(km)),
+                                )}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4 shrink-0" />
                         <span>
                           {request.deliveryType === "Urgent"
                             ? t.myRequests.urgentDelivery
-                            : t.myRequests.normalDelivery}
+                            : request.deliveryType === "Scheduled" &&
+                                request.scheduledDate
+                              ? t.myRequests.scheduledDelivery.replace(
+                                  "{date}",
+                                  new Date(
+                                    request.scheduledDate,
+                                  ).toLocaleString(undefined, {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }),
+                                )
+                              : t.myRequests.normalDelivery}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -263,26 +328,53 @@ export default function MyRequestsPage() {
                           </>
                         ) : (
                           <>
-                            {
-                              // (request.primaryCost && Number(request.primaryCost) > 0) ||
-                              request.cost && Number(request.cost) > 0 ? (
-                                <PriceDisplay
-                                  amount={Number(request.cost)}
-                                  className="font-medium text-foreground"
-                                  size="sm"
-                                />
-                              ) : (
-                                <span className="font-medium text-foreground">
-                                  N/A
-                                </span>
-                              )
-                            }
+                            {request.cost && Number(request.cost) > 0 ? (
+                              <PriceDisplay
+                                amount={Number(request.cost)}
+                                className="font-medium text-foreground"
+                                size="sm"
+                              />
+                            ) : (
+                              <span className="font-medium text-foreground">
+                                N/A
+                              </span>
+                            )}
                             <span className="text-xs">
                               ({t.myRequests.estimated})
                             </span>
                           </>
                         )}
                       </div>
+                      {request.transportVehicle?.nameEn && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Truck className="w-4 h-4 shrink-0" />
+                          <span className="truncate">
+                            {request.transportVehicle.nameEn}
+                          </span>
+                        </div>
+                      )}
+                      {((request.workersCount ?? 0) > 0 ||
+                        request.needsWinchPickup ||
+                        request.needsWinchDropoff) && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(request.workersCount ?? 0) > 0 && (
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground border border-border">
+                              <Users className="w-3 h-3" />
+                              {t.myRequests.workers.replace(
+                                "{count}",
+                                String(request.workersCount),
+                              )}
+                            </span>
+                          )}
+                          {(request.needsWinchPickup ||
+                            request.needsWinchDropoff) && (
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700">
+                              <Wrench className="w-3 h-3" />
+                              {t.myRequests.winch}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer with date - fixed height */}

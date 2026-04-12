@@ -95,7 +95,6 @@ const requestSchema = new mongoose.Schema(
         name: String,
         category: String,
         weight: String,
-        dimensions: String,
         quantity: Number,
         note: String,
         media: [
@@ -104,12 +103,6 @@ const requestSchema = new mongoose.Schema(
             existing: Boolean,
           },
         ],
-        services: {
-          canBeAssembledDisassembled: Boolean,
-          assemblyDisassemblyHandler: String,
-          packaging: Boolean,
-          assemblyDisassembly: Boolean,
-        },
       },
     ],
     // primaryCost: String, // TEMPORARILY HIDDEN - primaryCost
@@ -172,6 +165,7 @@ const requestSchema = new mongoose.Schema(
       default: "Pending",
     },
     deliveryType: String,
+    scheduledDate: Date,
     comment: String,
     sourceWarehouse: {
       id: String,
@@ -204,6 +198,17 @@ const requestSchema = new mongoose.Schema(
     destinationPickupMode: {
       type: String,
       enum: ["Delegate", "Self"],
+    },
+    // Floor number and winch fields
+    receiptFloorNumber: String,
+    needsWinchPickup: {
+      type: Boolean,
+      default: false,
+    },
+    deliveryFloorNumber: String,
+    needsWinchDropoff: {
+      type: Boolean,
+      default: false,
     },
     requestStatusHistory: [
       {
@@ -242,8 +247,6 @@ const requestSchema = new mongoose.Schema(
         headoverPercentage: Number,
         headoverAmount: Number,
         finalPrice: Number,
-        pickupDateTime: Date,
-        deliveryDateTime: Date,
         createdAt: Date,
         offeredAt: Date,
       },
@@ -283,6 +286,25 @@ const requestSchema = new mongoose.Schema(
     orderFlow: [String],
     orderCompletedStatuses: [String],
     rejectedByCompanies: [String],
+    // Workers count (0-6)
+    workersCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 6,
+    },
+    // Transport vehicle type preference
+    transportVehicle: {
+      id: String,
+      nameEn: String,
+      nameAr: String,
+      dimensions: {
+        length: Number,
+        width: Number,
+        height: Number,
+      },
+      maxWeight: Number,
+    },
     // Payment related fields
     paymentStatus: {
       type: String,

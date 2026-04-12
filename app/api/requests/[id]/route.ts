@@ -24,26 +24,24 @@ function normalizeItems(req: LegacyRequest) {
         item: it.item ?? it.name ?? "-",
         name: it.name ?? it.item ?? "-",
         category: it.category ?? "",
-        dimensions: it.dimensions ?? "",
         weight: it.weight ?? "",
         quantity: Number(it.quantity ?? 1) || 1,
         note: it.note || undefined,
         media: normalizedMedia.slice(0, 4),
-        services: it.services || {
-          canBeAssembledDisassembled: false,
-          packaging: false,
-        },
       };
     });
   }
   return [];
 }
 
-function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
+function normalizeDeliveryType(
+  value: any,
+): "Normal" | "Urgent" | "Scheduled" | undefined {
   const v = String(value || "")
     .toLowerCase()
     .trim();
   if (v === "urgent" || v === "fast") return "Urgent";
+  if (v === "scheduled") return "Scheduled";
   if (v === "normal") return "Normal";
   return undefined;
 }
@@ -54,7 +52,8 @@ function normalizeRequest(req: LegacyRequest) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime;
-  const collectionAvailableDays = req.collectionAvailableDays || req.availableDays || [];
+  const collectionAvailableDays =
+    req.collectionAvailableDays || req.availableDays || [];
   const deliveryAvailableDays = req.deliveryAvailableDays || [];
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
@@ -67,6 +66,7 @@ function normalizeRequest(req: LegacyRequest) {
     source,
     destination,
     deliveryType,
+    scheduledDate: req.scheduledDate,
     startTime,
     collectionAvailableDays,
     deliveryAvailableDays,
@@ -88,6 +88,11 @@ function normalizeRequest(req: LegacyRequest) {
     assignedWarehouse: req.assignedWarehouse,
     sourcePickupMode: req.sourcePickupMode,
     destinationPickupMode: req.destinationPickupMode,
+    // Floor number and winch fields
+    receiptFloorNumber: req.receiptFloorNumber,
+    needsWinchPickup: req.needsWinchPickup,
+    deliveryFloorNumber: req.deliveryFloorNumber,
+    needsWinchDropoff: req.needsWinchDropoff,
     // Payment fields
     paymentStatus: req.paymentStatus,
     paymentId: req.paymentId,
@@ -166,7 +171,10 @@ export async function GET(
         headoverPercentage = settings.headoverPercentage;
       }
     } catch (settingsError) {
-      console.error("[GET Request] Failed to fetch headover settings:", settingsError);
+      console.error(
+        "[GET Request] Failed to fetch headover settings:",
+        settingsError,
+      );
       // Continue with 0% headover if settings fetch fails
     }
 
@@ -181,10 +189,13 @@ export async function GET(
       }));
     }
 
-    return NextResponse.json({ 
-      request: normalized,
-      headoverPercentage: headoverPercentage,
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        request: normalized,
+        headoverPercentage: headoverPercentage,
+      },
+      { status: 200 },
+    );
   } catch (error) {
     return handleError(error);
   }

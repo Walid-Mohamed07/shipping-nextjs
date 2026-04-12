@@ -67,26 +67,13 @@ const options = {
             existing: { type: "boolean" },
           },
         },
-        ItemServices: {
-          type: "object",
-          properties: {
-            canBeAssembledDisassembled: { type: "boolean" },
-            assemblyDisassemblyHandler: {
-              type: "string",
-              enum: ["self", "company"],
-            },
-            packaging: { type: "boolean" },
-            assemblyDisassembly: { type: "boolean" },
-          },
-        },
         Item: {
           type: "object",
-          required: ["category", "dimensions", "weight", "quantity"],
+          required: ["category", "weight", "quantity"],
           properties: {
             item: { type: "string" },
             name: { type: "string" },
             category: { type: "string" },
-            dimensions: { type: "string" },
             weight: { type: "string" },
             quantity: { type: "number" },
             note: { type: "string" },
@@ -94,7 +81,6 @@ const options = {
               type: "array",
               items: { $ref: "#/components/schemas/MediaItem" },
             },
-            services: { $ref: "#/components/schemas/ItemServices" },
           },
         },
         User: {
@@ -319,6 +305,10 @@ const options = {
               type: "string",
               enum: ["Delegate", "Self"],
             },
+            receiptFloorNumber: { type: "string" },
+            needsWinchPickup: { type: "boolean" },
+            deliveryFloorNumber: { type: "string" },
+            needsWinchDropoff: { type: "boolean" },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
           },

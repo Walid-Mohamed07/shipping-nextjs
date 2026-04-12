@@ -178,8 +178,6 @@ export async function POST(request: NextRequest) {
         },
         selected: false,
         status: "pending",
-        pickupDateTime: offer.pickupDateTime ? new Date(offer.pickupDateTime) : undefined,
-        deliveryDateTime: offer.deliveryDateTime ? new Date(offer.deliveryDateTime) : undefined,
         createdAt: new Date(),
       };
 

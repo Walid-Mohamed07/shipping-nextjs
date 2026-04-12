@@ -370,8 +370,7 @@ export function AdminRequestsTab() {
                           {item.quantity}x {item.item} ({getCategoryLabel(item.category)})
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {t.adminRequests.weight} {item.weight}kg |{" "}
-                          {t.adminRequests.size} {item.dimensions}
+                          {t.adminRequests.weight} {item.weight}kg
                         </p>
                       </div>
                     ))}
@@ -729,9 +728,6 @@ export function AdminRequestsTab() {
                         </p>
                         <p className="text-sm text-muted-foreground mb-1">
                           {t.adminRequests.weight} {item.weight} kg
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {t.adminRequests.dimensions} {item.dimensions}
                         </p>
                         {item.note && (
                           <p className="text-sm text-muted-foreground italic">

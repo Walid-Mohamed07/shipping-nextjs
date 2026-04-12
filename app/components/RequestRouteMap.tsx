@@ -212,6 +212,24 @@ export function RequestRouteMap({
         {t.routeMap || "Route Map"}
       </h3>
 
+      {/* Addresses */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <div className="flex items-start gap-2">
+          <span className="mt-1 inline-block w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">{t.source || "From"}</p>
+            <p className="text-sm font-medium text-foreground leading-tight truncate">{sourceLabel || "-"}</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="mt-1 inline-block w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">{t.destination || "To"}</p>
+            <p className="text-sm font-medium text-foreground leading-tight truncate">{destinationLabel || "-"}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <div className="bg-primary/5 rounded-lg p-3">
