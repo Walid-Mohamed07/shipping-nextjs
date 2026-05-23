@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Truck, User } from "lucide-react";
-import { Request, Warehouse, Address, Vehicle, User as AppUser } from "@/types";
+import { Request, Address, Vehicle, User as AppUser } from "@/types";
 import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Location extends Address {
@@ -56,8 +56,6 @@ export function AdminAssignmentTab({
   const [selectedVehicle, setSelectedVehicle] = useState<string>("");
   const [estimatedDelivery, setEstimatedDelivery] = useState<string>("");
 
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("");
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -67,7 +65,6 @@ export function AdminAssignmentTab({
           fetch("/api/admin/orders"),
           fetch("/api/admin/resources"),
           fetch("/api/admin/assign"),
-          fetch("/api/admin/warehouse"),
         ]);
 
         const ordersData = await ordersRes.json();
@@ -75,10 +72,6 @@ export function AdminAssignmentTab({
         const assignmentsData = await assignmentsRes.json();
         console.log({ resourcesData });
         console.log({ assignmentsData });
-
-        const warehousesData = await (
-          await fetch("/api/admin/warehouse")
-        ).json();
 
         setOrders(
           ordersData.requests.filter(
@@ -92,7 +85,6 @@ export function AdminAssignmentTab({
         );
         setDrivers(resourcesData.drivers);
         setAssignments(assignmentsData.assignments);
-        setWarehouses(warehousesData.warehouses || []);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -103,10 +95,8 @@ export function AdminAssignmentTab({
     fetchData();
   }, []);
 
-  // When order changes, set warehouse selection
   useEffect(() => {
     if (!selectedOrder) {
-      setSelectedWarehouse("");
       setSelectedFromCountry("");
       setSelectedToCountry("");
       setSelectedFrom("");
@@ -125,26 +115,8 @@ export function AdminAssignmentTab({
       setSelectedFrom(
         `${order.from.building}, ${order.from.street}, ${order.from.city} - ${order.from.country}`,
       );
-      // Filter warehouses by country
-      const filtered = warehouses.filter(
-        (w) => w.country === order.from.country,
-      );
-      // Set initial value from order.warehouseId if present
-      // @ts-ignore
-      if (
-        order.warehouseId &&
-        filtered.some((w) => w.id === order.warehouseId)
-      ) {
-        // @ts-ignore
-        setSelectedWarehouse(order.warehouseId);
-      } else if (filtered.length > 0) {
-        setSelectedWarehouse(filtered[0].id);
-      } else {
-        setSelectedWarehouse("");
-      }
       setSelectedDriver(""); // reset driver when order changes
     } else {
-      setSelectedWarehouse("");
       setSelectedFromCountry("");
       setSelectedToCountry("");
       setSelectedFrom("");
@@ -152,7 +124,7 @@ export function AdminAssignmentTab({
       setSelectedDriver("");
       setEstimatedDelivery("");
     }
-  }, [selectedOrder, orders, warehouses]);
+  }, [selectedOrder, orders]);
 
   const handleAssign = async () => {
     if (
@@ -163,7 +135,6 @@ export function AdminAssignmentTab({
       !selectedTo ||
       !selectedDriver ||
       !selectedVehicle ||
-      !selectedWarehouse ||
       !estimatedDelivery
     ) {
       alert(t.adminAssignment.fillAllFields);
@@ -210,7 +181,9 @@ export function AdminAssignmentTab({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">{t.adminAssignment.title}</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {t.adminAssignment.title}
+        </h3>
         <Card className="p-6">
           <div className="space-y-4">
             <div>
@@ -242,7 +215,11 @@ export function AdminAssignmentTab({
                 <input
                   type="text"
                   value={selectedOrder ? selectedFrom : ""}
-                  placeholder={selectedOrder ? undefined : t.adminAssignment.chooseOrderFirst}
+                  placeholder={
+                    selectedOrder
+                      ? undefined
+                      : t.adminAssignment.chooseOrderFirst
+                  }
                   readOnly
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
                 />
@@ -255,7 +232,11 @@ export function AdminAssignmentTab({
                 <input
                   type="text"
                   value={selectedOrder ? selectedTo : ""}
-                  placeholder={selectedOrder ? undefined : t.adminAssignment.chooseOrderFirst}
+                  placeholder={
+                    selectedOrder
+                      ? undefined
+                      : t.adminAssignment.chooseOrderFirst
+                  }
                   readOnly
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
                 />
@@ -263,37 +244,6 @@ export function AdminAssignmentTab({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Selected Warehouse Field */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  {t.adminAssignment.selectWarehouse}
-                </label>
-                <select
-                  value={selectedWarehouse}
-                  onChange={(e) => setSelectedWarehouse(e.target.value)}
-                  disabled={!selectedOrder}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
-                >
-                  <option value="">
-                    {selectedOrder
-                      ? t.adminAssignment.chooseWarehouse
-                      : t.adminAssignment.selectOrderFirst}
-                  </option>
-                  {(() => {
-                    const order = orders.find((o) => o.id === selectedOrder);
-                    if (!order || !order.from || !order.from.country)
-                      return null;
-                    return warehouses
-                      .filter((w) => w.country === order.from.country)
-                      .map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name} ({w.state || w.country})
-                        </option>
-                      ));
-                  })()}
-                </select>
-              </div>
-
               {/* Pickup Mode Field */}
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -306,7 +256,11 @@ export function AdminAssignmentTab({
                     return order?.pickupMode || "";
                   })()}
                   readOnly
-                  placeholder={selectedOrder ? undefined : t.adminAssignment.selectOrderForValue}
+                  placeholder={
+                    selectedOrder
+                      ? undefined
+                      : t.adminAssignment.selectOrderForValue
+                  }
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
                 />
               </div>
@@ -407,7 +361,11 @@ export function AdminAssignmentTab({
                     return order?.estimatedTime || "";
                   })()}
                   readOnly
-                  placeholder={selectedOrder ? undefined : t.adminAssignment.selectOrderForValue}
+                  placeholder={
+                    selectedOrder
+                      ? undefined
+                      : t.adminAssignment.selectOrderForValue
+                  }
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground disabled:opacity-50"
                 />
               </div>
@@ -450,7 +408,9 @@ export function AdminAssignmentTab({
         <div className="space-y-3">
           {assignments.length === 0 ? (
             <Card className="p-8 text-center">
-              <p className="text-muted-foreground">{t.adminAssignment.noActiveAssignments}</p>
+              <p className="text-muted-foreground">
+                {t.adminAssignment.noActiveAssignments}
+              </p>
             </Card>
           ) : (
             assignments.map((assignment) => (
@@ -462,7 +422,9 @@ export function AdminAssignmentTab({
                     </p>
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">{t.adminAssignment.route}:</span>
+                        <span className="text-muted-foreground">
+                          {t.adminAssignment.route}:
+                        </span>
                         <span>
                           {formatLocation(assignment.from)} →{" "}
                           {formatLocation(assignment.to)}

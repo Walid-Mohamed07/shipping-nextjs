@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
         req.paymentStatus = "paid";
         req.paidAmount = payment.amount;
         req.paidAt = new Date();
-        req.requestStatus = "Assigned to Company";
+        req.requestStatus = "Assigned to Driver";
 
         // Add activity to history
         const activityEntry = {
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
 
         await req.save();
         console.log(
-          "[Verify Redirect] Request updated to 'Assigned to Company'",
+          "[Verify Redirect] Request updated to 'Assigned to Driver'",
         );
 
         // Broadcast real-time event

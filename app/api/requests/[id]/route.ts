@@ -81,11 +81,7 @@ function normalizeRequest(req: LegacyRequest) {
     updatedAt: req.updatedAt,
     costOffers: req.costOffers,
     activityHistory: req.activityHistory,
-    selectedCompany: req.selectedCompany,
-    sourceWarehouse: req.sourceWarehouse,
-    destinationWarehouse: req.destinationWarehouse,
-    assignedWarehouseId: req.assignedWarehouseId,
-    assignedWarehouse: req.assignedWarehouse,
+    selectedDriver: req.selectedDriver,
     sourcePickupMode: req.sourcePickupMode,
     destinationPickupMode: req.destinationPickupMode,
     // Floor number and winch fields

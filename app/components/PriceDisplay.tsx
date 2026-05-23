@@ -358,7 +358,7 @@ export function usePaymentAmount(request: {
     finalLockedPrice?: number;
     clientCurrency?: string;
   };
-  selectedCompany?: {
+  selectedDriver?: {
     finalPrice?: number;
     cost?: number;
     currency?: string;
@@ -367,7 +367,7 @@ export function usePaymentAmount(request: {
   const { formatPrice } = useCurrency();
 
   return useMemo(() => {
-    // Priority: locked price > selectedCompany.finalPrice > selectedCompany.cost
+    // Priority: locked price > selectedDriver.finalPrice > selectedDriver.cost
     if (request.pricing?.finalLockedPrice || request.pricing?.lockedPrice) {
       const amount = request.pricing.finalLockedPrice || request.pricing.lockedPrice!;
       const currency = request.pricing.clientCurrency || BASE_CURRENCY;
@@ -379,9 +379,9 @@ export function usePaymentAmount(request: {
       };
     }
 
-    if (request.selectedCompany) {
-      const amount = request.selectedCompany.finalPrice || request.selectedCompany.cost || 0;
-      const currency = request.selectedCompany.currency || BASE_CURRENCY;
+    if (request.selectedDriver) {
+      const amount = request.selectedDriver.finalPrice || request.selectedDriver.cost || 0;
+      const currency = request.selectedDriver.currency || BASE_CURRENCY;
       return {
         amount,
         currency,

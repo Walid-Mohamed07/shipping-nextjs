@@ -21,14 +21,12 @@ export type RealTimeEventType =
   | "OFFER_UPDATED"
   | "STATUS_CHANGED"
   | "ASSIGNMENT_UPDATED"
-  | "WAREHOUSE_ASSIGNED"
   | "DRIVER_ASSIGNED"
   | "MESSAGE_RECEIVED"
   | "MESSAGE_SENT"
   | "USER_UPDATED"
-  | "COMPANY_UPDATED"
+  | "DRIVER_UPDATED"
   | "VEHICLE_UPDATED"
-  | "WAREHOUSE_UPDATED"
   | "DELIVERY_STATUS_CHANGED"
   | "TRACKING_UPDATED"
   | "PAYMENT_COMPLETED"
@@ -40,7 +38,7 @@ export interface RealTimeEvent<T = any> {
   payload: T;
   timestamp: number;
   targetUsers?: string[]; // Specific users who should receive this event
-  targetRoles?: string[]; // Roles that should receive this event (admin, company, client, driver, operator)
+  targetRoles?: string[]; // Roles that should receive this event (admin, driver, client, driver, operator)
   requestId?: string; // For request-specific events
   userId?: string; // The user who triggered the event
 }

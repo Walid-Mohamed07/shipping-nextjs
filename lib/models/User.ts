@@ -39,8 +39,6 @@ const userSchema = new mongoose.Schema(
         "admin",
         "driver",
         "operator",
-        "company",
-        "warehouse_manager",
       ],
       default: "client",
     },
@@ -58,9 +56,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "USD",
     },
-    company: {
+    driver: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
+      ref: "Driver",
       default: null,
     },
     // OTP Verification fields

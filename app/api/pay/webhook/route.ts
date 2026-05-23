@@ -228,10 +228,10 @@ export async function POST(req: NextRequest) {
         request.paymentStatus = "paid";
         request.paidAmount = payment.amount;
         request.paidAt = new Date();
-        // Change status to "Assigned to Company" after successful payment
-        request.requestStatus = "Assigned to Company";
+        // Change status to "Assigned to Driver" after successful payment
+        request.requestStatus = "Assigned to Driver";
         console.log(
-          "[Kashier Webhook] Setting request status to 'Assigned to Company'",
+          "[Kashier Webhook] Setting request status to 'Assigned to Driver'",
         );
 
         // Add activity to history

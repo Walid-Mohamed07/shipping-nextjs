@@ -30,57 +30,57 @@ The Activity Logging System provides comprehensive tracking of all request lifec
 
 ### Offer Management
 
-#### 3. **offer_submitted** - Cost Offer Submitted by Company
+#### 3. **offer_submitted** - Cost Offer Submitted by Driver
 
-- **When**: A company submits a cost offer for a request
-- **Route**: `POST /api/company/requests` (action: "add-offer")
-- **Details**: Company ID, offer cost, comment
-- **Company Info**: Name, rate
+- **When**: A driver submits a cost offer for a request
+- **Route**: `POST /api/driver/requests` (action: "add-offer")
+- **Details**: Driver ID, offer cost, comment
+- **Driver Info**: Name, rate
 - **Example Log**:
   ```
   "John's Logistics submitted an offer of $150"
-  Details: { companyId: "...", comment: "Quick delivery available" }
+  Details: { driverId: "...", comment: "Quick delivery available" }
   ```
 
 #### 4. **offer_updated** - Cost Offer Updated
 
-- **When**: A company updates their existing offer
-- **Route**: `POST /api/company/requests` (action: "add-offer")
-- **Details**: Company ID, new offer cost, updated comment
-- **Company Info**: Name, rate
+- **When**: A driver updates their existing offer
+- **Route**: `POST /api/driver/requests` (action: "add-offer")
+- **Details**: Driver ID, new offer cost, updated comment
+- **Driver Info**: Name, rate
 - **Example Log**:
   ```
   "John's Logistics updated their offer to $120"
   ```
 
-#### 5. **offer_accepted** - Offer Accepted by Client/Company
+#### 5. **offer_accepted** - Offer Accepted by Client/Driver
 
-- **When**: Client accepts a company's offer
-- **Route**: `POST /api/requests/[id]/submit-offer` OR `POST /api/company/accept-offer`
-- **Details**: Company ID
-- **Company Info**: Name, rate (if available)
+- **When**: Client accepts a driver's offer
+- **Route**: `POST /api/requests/[id]/submit-offer` OR `POST /api/driver/accept-offer`
+- **Details**: Driver ID
+- **Driver Info**: Name, rate (if available)
 - **Cost**: Accepted offer amount
 - **Example Log**:
   ```
   "Client accepted offer from John's Logistics for $150"
-  Details: { companyId: "..." }
+  Details: { driverId: "..." }
   ```
 
 #### 6. **offer_rejected** - Offer Rejected
 
-- **When**: Client rejects a company's offer (future implementation)
-- **Details**: Company ID
+- **When**: Client rejects a driver's offer (future implementation)
+- **Details**: Driver ID
 - **Example Log**:
   ```
   "Client rejected offer from John's Logistics"
   ```
 
-#### 7. **request_rejected_by_company** - Request Rejected by Company
+#### 7. **request_rejected_by_driver** - Request Rejected by Driver
 
-- **When**: A company rejects/passes on a request
-- **Route**: `POST /api/company/requests` (action: "reject-request")
-- **Details**: Company ID
-- **Company Info**: Name
+- **When**: A driver rejects/passes on a request
+- **Route**: `POST /api/driver/requests` (action: "reject-request")
+- **Details**: Driver ID
+- **Driver Info**: Name
 - **Example Log**:
   ```
   "John's Logistics rejected this request"
@@ -119,7 +119,7 @@ The Activity Logging System provides comprehensive tracking of all request lifec
 #### 10. **warehouse_assigned** - Warehouse Assigned
 
 - **When**: Source or destination warehouse is assigned to request
-- **Route**: `POST /api/company/assign-warehouse`
+- **Route**: `POST /api/driver/assign-warehouse`
 - **Details**: Warehouse ID, warehouse type (source/destination)
 - **Example Log**:
   ```
@@ -134,8 +134,8 @@ interface ActivityHistory {
   timestamp: Date; // When the action occurred
   action: string; // Action type (e.g., "offer_submitted")
   description?: string; // Human-readable description
-  companyName?: string; // Company involved (if applicable)
-  companyRate?: string; // Company rating (if applicable)
+  driverName?: string; // Driver involved (if applicable)
+  driverRate?: string; // Driver rating (if applicable)
   cost?: number; // Cost amount (for offer-related actions)
   details?: Record<string, any>; // Additional contextual data
 }
@@ -178,12 +178,12 @@ The activity history is displayed in a timeline format with all relevant details
             </p>
           )}
 
-          {/* Company, cost, and rate information */}
+          {/* Driver, cost, and rate information */}
           <div className="flex flex-wrap gap-3 mt-2">
-            {activity.companyName && (
+            {activity.driverName && (
               <div className="text-xs">
-                <span className="text-muted-foreground">Company: </span>
-                <span className="font-medium">{activity.companyName}</span>
+                <span className="text-muted-foreground">Driver: </span>
+                <span className="font-medium">{activity.driverName}</span>
               </div>
             )}
             {activity.cost !== undefined && (
@@ -194,10 +194,10 @@ The activity history is displayed in a timeline format with all relevant details
                 </span>
               </div>
             )}
-            {activity.companyRate && (
+            {activity.driverRate && (
               <div className="text-xs">
                 <span className="text-muted-foreground">Rate: </span>
-                <span>{activity.companyRate} ⭐</span>
+                <span>{activity.driverRate} ⭐</span>
               </div>
             )}
           </div>
@@ -246,12 +246,12 @@ The admin component displays activity history in a card-based layout with all in
         )}
 
         {/* Details in grid */}
-        {(activity.companyName || activity.cost || activity.companyRate) && (
+        {(activity.driverName || activity.cost || activity.driverRate) && (
           <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-            {activity.companyName && (
+            {activity.driverName && (
               <div>
-                <span className="text-muted-foreground">Company: </span>
-                <span className="font-medium">{activity.companyName}</span>
+                <span className="text-muted-foreground">Driver: </span>
+                <span className="font-medium">{activity.driverName}</span>
               </div>
             )}
             {activity.cost !== undefined && (
@@ -262,10 +262,10 @@ The admin component displays activity history in a card-based layout with all in
                 </span>
               </div>
             )}
-            {activity.companyRate && (
+            {activity.driverRate && (
               <div>
                 <span className="text-muted-foreground">Rate: </span>
-                <span>{activity.companyRate} ⭐</span>
+                <span>{activity.driverRate} ⭐</span>
               </div>
             )}
           </div>
@@ -309,7 +309,7 @@ await addActivityLog(requestId, {
 // Use predefined activity builders
 await addActivityLog(
   requestId,
-  ActivityActions.OFFER_SUBMITTED(companyId, "Company Name", 150, "comment"),
+  ActivityActions.OFFER_SUBMITTED(driverId, "Driver Name", 150, "comment"),
 );
 ```
 
@@ -320,10 +320,10 @@ Routes with Activity Logging:
 - ✅ POST `/api/requests` - Request creation
 - ✅ PUT `/api/requests/manage` - Status updates
 - ✅ PUT `/api/admin/requests` - Admin status updates
-- ✅ POST `/api/company/requests` - Offer submission & rejection
+- ✅ POST `/api/driver/requests` - Offer submission & rejection
 - ✅ POST `/api/requests/[id]/submit-offer` - Client accept offer
-- ✅ POST `/api/company/accept-offer` - Company accept offer
-- ✅ POST `/api/company/assign-warehouse` - Warehouse assignment
+- ✅ POST `/api/driver/accept-offer` - Driver accept offer
+- ✅ POST `/api/driver/assign-warehouse` - Warehouse assignment
 
 ## Future Enhancements
 
@@ -349,7 +349,7 @@ Potential activities to track in the future:
 The activity history enables:
 
 - Request lifecycle analytics
-- Company performance tracking
+- Driver performance tracking
 - User behavior analysis
 - Audit trails for compliance
 - Issue investigation and troubleshooting

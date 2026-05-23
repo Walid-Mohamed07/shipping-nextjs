@@ -517,7 +517,7 @@
                                                      ],
                                            "services":  {
                                                             "canBeAssembledDisassembled":  true,
-                                                            "assemblyDisassemblyHandler":  "company",
+                                                            "assemblyDisassemblyHandler":  "driver",
                                                             "packaging":  true
                                                         }
                                        }
@@ -526,7 +526,7 @@
                          "startTime":  "2026-02-10T10:29:00.000Z",
                          "primaryCost":  "20.00",
                          "cost":  "12.00",
-                         "requestStatus":  "Assigned to Company",
+                         "requestStatus":  "Assigned to Driver",
                          "deliveryStatus":  "Pending",
                          "comment":  "",
                          "createdAt":  "2026-02-10T10:29:38.617Z",
@@ -540,7 +540,7 @@
                                                           "note":  "Request accepted by operator"
                                                       },
                                                       {
-                                                          "status":  "Assigned to Company",
+                                                          "status":  "Assigned to Driver",
                                                           "changedAt":  "2026-02-10T10:32:18.599Z",
                                                           "changedBy":  "walid-client-001",
                                                           "role":  "client",
@@ -557,8 +557,8 @@
                                             {
                                                 "cost":  12,
                                                 "comment":  "in one day",
-                                                "company":  {
-                                                                "id":  "company-001",
+                                                "driver":  {
+                                                                "id":  "driver-001",
                                                                 "name":  "Mohamed Shipping Co",
                                                                 "phoneNumber":  "+20123456789",
                                                                 "email":  "mohamedprovider@cepac.com",
@@ -575,16 +575,16 @@
                                                  {
                                                      "timestamp":  "2026-02-10T10:31:59.222Z",
                                                      "action":  "offer_submitted",
-                                                     "description":  "Company Mohamed Shipping Co submitted an offer of $12",
-                                                     "companyName":  "Mohamed Shipping Co",
+                                                     "description":  "Driver Mohamed Shipping Co submitted an offer of $12",
+                                                     "driverName":  "Mohamed Shipping Co",
                                                      "cost":  12
                                                  },
                                                  {
                                                      "timestamp":  "2026-02-10T10:32:18.599Z",
                                                      "action":  "offer_accepted",
                                                      "description":  "Client accepted offer from Mohamed Shipping Co for $12",
-                                                     "companyName":  "Mohamed Shipping Co",
-                                                     "companyRate":  "4.5",
+                                                     "driverName":  "Mohamed Shipping Co",
+                                                     "driverRate":  "4.5",
                                                      "cost":  12
                                                  },
                                                  {
@@ -593,15 +593,15 @@
                                                      "description":  "Warehouse \"Cairo Main Warehouse\" assigned as pickup location"
                                                  }
                                              ],
-                         "assignedCompanyId":  "company-001",
-                         "selectedCompany":  {
+                         "assignedDriverId":  "driver-001",
+                         "selectedDriver":  {
                                                  "name":  "Mohamed Shipping Co",
                                                  "rate":  "4.5",
                                                  "cost":  12
                                              },
-                         "assignedWarehouseId":  "wh-company-001",
+                         "assignedWarehouseId":  "wh-driver-001",
                          "assignedWarehouse":  {
-                                                   "id":  "wh-company-001",
+                                                   "id":  "wh-driver-001",
                                                    "name":  "Cairo Main Warehouse",
                                                    "address":  "10 Industrial Zone",
                                                    "city":  "Cairo",
@@ -612,7 +612,7 @@
                                                                    }
                                                },
                          "pickupWarehouse":  {
-                                                 "id":  "wh-company-001",
+                                                 "id":  "wh-driver-001",
                                                  "name":  "Cairo Main Warehouse",
                                                  "address":  "10 Industrial Zone",
                                                  "city":  "Cairo",
@@ -686,7 +686,7 @@
                                                      ],
                                            "services":  {
                                                             "canBeAssembledDisassembled":  true,
-                                                            "assemblyDisassemblyHandler":  "company",
+                                                            "assemblyDisassemblyHandler":  "driver",
                                                             "packaging":  true
                                                         }
                                        }
@@ -695,7 +695,7 @@
                          "startTime":  "2026-02-10T10:46:00.000Z",
                          "primaryCost":  "7.92",
                          "cost":  "10.00",
-                         "requestStatus":  "Assigned to Company",
+                         "requestStatus":  "Assigned to Driver",
                          "deliveryStatus":  "Pending",
                          "comment":  "",
                          "createdAt":  "2026-02-10T10:47:38.898Z",
@@ -709,7 +709,7 @@
                                                           "note":  "Request accepted by operator"
                                                       },
                                                       {
-                                                          "status":  "Assigned to Company",
+                                                          "status":  "Assigned to Driver",
                                                           "changedAt":  "2026-02-10T10:53:58.301Z",
                                                           "changedBy":  "walid-client-001",
                                                           "role":  "client",
@@ -726,8 +726,8 @@
                                             {
                                                 "cost":  10,
                                                 "comment":  "in 2 days",
-                                                "company":  {
-                                                                "id":  "company-001",
+                                                "driver":  {
+                                                                "id":  "driver-001",
                                                                 "name":  "Mohamed Shipping Co",
                                                                 "phoneNumber":  "+20123456789",
                                                                 "email":  "mohamedprovider@cepac.com",
@@ -744,16 +744,16 @@
                                                  {
                                                      "timestamp":  "2026-02-10T10:49:29.473Z",
                                                      "action":  "offer_submitted",
-                                                     "description":  "Company Mohamed Shipping Co submitted an offer of $10",
-                                                     "companyName":  "Mohamed Shipping Co",
+                                                     "description":  "Driver Mohamed Shipping Co submitted an offer of $10",
+                                                     "driverName":  "Mohamed Shipping Co",
                                                      "cost":  10
                                                  },
                                                  {
                                                      "timestamp":  "2026-02-10T10:53:58.301Z",
                                                      "action":  "offer_accepted",
                                                      "description":  "Client accepted offer from Mohamed Shipping Co for $10",
-                                                     "companyName":  "Mohamed Shipping Co",
-                                                     "companyRate":  "4.5",
+                                                     "driverName":  "Mohamed Shipping Co",
+                                                     "driverRate":  "4.5",
                                                      "cost":  10
                                                  },
                                                  {
@@ -762,15 +762,15 @@
                                                      "description":  "Warehouse \"Cairo Main Warehouse\" assigned as pickup location"
                                                  }
                                              ],
-                         "assignedCompanyId":  "company-001",
-                         "selectedCompany":  {
+                         "assignedDriverId":  "driver-001",
+                         "selectedDriver":  {
                                                  "name":  "Mohamed Shipping Co",
                                                  "rate":  "4.5",
                                                  "cost":  10
                                              },
-                         "assignedWarehouseId":  "wh-company-001",
+                         "assignedWarehouseId":  "wh-driver-001",
                          "assignedWarehouse":  {
-                                                   "id":  "wh-company-001",
+                                                   "id":  "wh-driver-001",
                                                    "name":  "Cairo Main Warehouse",
                                                    "address":  "10 Industrial Zone",
                                                    "city":  "Cairo",
@@ -781,7 +781,7 @@
                                                                    }
                                                },
                          "pickupWarehouse":  {
-                                                 "id":  "wh-company-001",
+                                                 "id":  "wh-driver-001",
                                                  "name":  "Cairo Main Warehouse",
                                                  "address":  "10 Industrial Zone",
                                                  "city":  "Cairo",
@@ -855,7 +855,7 @@
                                                      ],
                                            "services":  {
                                                             "canBeAssembledDisassembled":  true,
-                                                            "assemblyDisassemblyHandler":  "company",
+                                                            "assemblyDisassemblyHandler":  "driver",
                                                             "packaging":  true
                                                         }
                                        }
@@ -864,7 +864,7 @@
                          "startTime":  "2026-02-10T14:23:00.000Z",
                          "primaryCost":  "8.00",
                          "cost":  "10.00",
-                         "requestStatus":  "Assigned to Company",
+                         "requestStatus":  "Assigned to Driver",
                          "deliveryStatus":  "Pending",
                          "comment":  "",
                          "createdAt":  "2026-02-10T14:23:49.441Z",
@@ -878,7 +878,7 @@
                                                           "note":  "Request accepted by operator"
                                                       },
                                                       {
-                                                          "status":  "Assigned to Company",
+                                                          "status":  "Assigned to Driver",
                                                           "changedAt":  "2026-02-10T14:24:41.555Z",
                                                           "changedBy":  "walid-client-001",
                                                           "role":  "client",
@@ -895,8 +895,8 @@
                                             {
                                                 "cost":  10,
                                                 "comment":  "",
-                                                "company":  {
-                                                                "id":  "company-001",
+                                                "driver":  {
+                                                                "id":  "driver-001",
                                                                 "name":  "Mohamed Shipping Co",
                                                                 "phoneNumber":  "+20123456789",
                                                                 "email":  "mohamedprovider@cepac.com",
@@ -913,16 +913,16 @@
                                                  {
                                                      "timestamp":  "2026-02-10T14:24:23.662Z",
                                                      "action":  "offer_submitted",
-                                                     "description":  "Company Mohamed Shipping Co submitted an offer of $10",
-                                                     "companyName":  "Mohamed Shipping Co",
+                                                     "description":  "Driver Mohamed Shipping Co submitted an offer of $10",
+                                                     "driverName":  "Mohamed Shipping Co",
                                                      "cost":  10
                                                  },
                                                  {
                                                      "timestamp":  "2026-02-10T14:24:41.555Z",
                                                      "action":  "offer_accepted",
                                                      "description":  "Client accepted offer from Mohamed Shipping Co for $10",
-                                                     "companyName":  "Mohamed Shipping Co",
-                                                     "companyRate":  "4.5",
+                                                     "driverName":  "Mohamed Shipping Co",
+                                                     "driverRate":  "4.5",
                                                      "cost":  10
                                                  },
                                                  {
@@ -936,14 +936,14 @@
                                                      "description":  "Warehouse \"Sheraton warehouse\" assigned as delivery location"
                                                  }
                                              ],
-                         "assignedCompanyId":  "company-001",
-                         "selectedCompany":  {
+                         "assignedDriverId":  "driver-001",
+                         "selectedDriver":  {
                                                  "name":  "Mohamed Shipping Co",
                                                  "rate":  "4.5",
                                                  "cost":  10
                                              },
                          "sourceWarehouse":  {
-                                                 "id":  "wh-company-001",
+                                                 "id":  "wh-driver-001",
                                                  "name":  "Cairo Main Warehouse",
                                                  "address":  "10 Industrial Zone",
                                                  "city":  "Cairo",
@@ -954,9 +954,9 @@
                                                                  },
                                                  "assignedAt":  "2026-02-10T14:25:11.124Z"
                                              },
-                         "assignedWarehouseId":  "wh-company-001",
+                         "assignedWarehouseId":  "wh-driver-001",
                          "assignedWarehouse":  {
-                                                   "id":  "wh-company-001",
+                                                   "id":  "wh-driver-001",
                                                    "name":  "Cairo Main Warehouse",
                                                    "address":  "10 Industrial Zone",
                                                    "city":  "Cairo",
@@ -968,7 +968,7 @@
                                                    "assignedAt":  "2026-02-10T14:25:11.124Z"
                                                },
                          "pickupWarehouse":  {
-                                                 "id":  "wh-company-001",
+                                                 "id":  "wh-driver-001",
                                                  "name":  "Cairo Main Warehouse",
                                                  "address":  "10 Industrial Zone",
                                                  "city":  "Cairo",
@@ -980,7 +980,7 @@
                                                  "assignedAt":  "2026-02-10T14:25:11.124Z"
                                              },
                          "destinationWarehouse":  {
-                                                      "id":  "wh-company-1770729041415",
+                                                      "id":  "wh-driver-1770729041415",
                                                       "name":  "Sheraton warehouse",
                                                       "address":  "near to sun city mall ",
                                                       "city":  "Nasr City",
@@ -1063,7 +1063,7 @@
                          "startTime":  "2026-02-11T08:38:00.000Z",
                          "primaryCost":  "8.00",
                          "cost":  "5.00",
-                         "requestStatus":  "Assigned to Company",
+                         "requestStatus":  "Assigned to Driver",
                          "deliveryStatus":  "Pending",
                          "comment":  "",
                          "createdAt":  "2026-02-11T08:39:03.358Z",
@@ -1077,7 +1077,7 @@
                                                           "note":  "Request accepted by operator"
                                                       },
                                                       {
-                                                          "status":  "Assigned to Company",
+                                                          "status":  "Assigned to Driver",
                                                           "changedAt":  "2026-02-11T09:21:46.639Z",
                                                           "changedBy":  "1769861366877",
                                                           "role":  "client",
@@ -1094,8 +1094,8 @@
                                             {
                                                 "cost":  5,
                                                 "comment":  "in one day",
-                                                "company":  {
-                                                                "id":  "company-001",
+                                                "driver":  {
+                                                                "id":  "driver-001",
                                                                 "name":  "Mohamed Shipping Co",
                                                                 "phoneNumber":  "+20123456789",
                                                                 "email":  "mohamedprovider@cepac.com",
@@ -1112,16 +1112,16 @@
                                                  {
                                                      "timestamp":  "2026-02-11T09:21:16.165Z",
                                                      "action":  "offer_submitted",
-                                                     "description":  "Company Mohamed Shipping Co submitted an offer of $5",
-                                                     "companyName":  "Mohamed Shipping Co",
+                                                     "description":  "Driver Mohamed Shipping Co submitted an offer of $5",
+                                                     "driverName":  "Mohamed Shipping Co",
                                                      "cost":  5
                                                  },
                                                  {
                                                      "timestamp":  "2026-02-11T09:21:46.639Z",
                                                      "action":  "offer_accepted",
                                                      "description":  "Client accepted offer from Mohamed Shipping Co for $5",
-                                                     "companyName":  "Mohamed Shipping Co",
-                                                     "companyRate":  "4.5",
+                                                     "driverName":  "Mohamed Shipping Co",
+                                                     "driverRate":  "4.5",
                                                      "cost":  5
                                                  },
                                                  {
@@ -1135,14 +1135,14 @@
                                                      "description":  "Warehouse \"Sheraton warehouse\" assigned as delivery location"
                                                  }
                                              ],
-                         "assignedCompanyId":  "company-001",
-                         "selectedCompany":  {
+                         "assignedDriverId":  "driver-001",
+                         "selectedDriver":  {
                                                  "name":  "Mohamed Shipping Co",
                                                  "rate":  "4.5",
                                                  "cost":  5
                                              },
                          "sourceWarehouse":  {
-                                                 "id":  "wh-company-001",
+                                                 "id":  "wh-driver-001",
                                                  "name":  "Cairo Main Warehouse",
                                                  "address":  "10 Industrial Zone",
                                                  "city":  "Cairo",
@@ -1153,9 +1153,9 @@
                                                                  },
                                                  "assignedAt":  "2026-02-11T09:22:06.563Z"
                                              },
-                         "assignedWarehouseId":  "wh-company-001",
+                         "assignedWarehouseId":  "wh-driver-001",
                          "assignedWarehouse":  {
-                                                   "id":  "wh-company-001",
+                                                   "id":  "wh-driver-001",
                                                    "name":  "Cairo Main Warehouse",
                                                    "address":  "10 Industrial Zone",
                                                    "city":  "Cairo",
@@ -1167,7 +1167,7 @@
                                                    "assignedAt":  "2026-02-11T09:22:06.563Z"
                                                },
                          "pickupWarehouse":  {
-                                                 "id":  "wh-company-001",
+                                                 "id":  "wh-driver-001",
                                                  "name":  "Cairo Main Warehouse",
                                                  "address":  "10 Industrial Zone",
                                                  "city":  "Cairo",
@@ -1179,7 +1179,7 @@
                                                  "assignedAt":  "2026-02-11T09:22:06.563Z"
                                              },
                          "destinationWarehouse":  {
-                                                      "id":  "wh-company-1770729041415",
+                                                      "id":  "wh-driver-1770729041415",
                                                       "name":  "Sheraton warehouse",
                                                       "address":  "near to sun city mall ",
                                                       "city":  "Nasr City",
@@ -1253,7 +1253,7 @@
                                                      ],
                                            "services":  {
                                                             "canBeAssembledDisassembled":  true,
-                                                            "assemblyDisassemblyHandler":  "company",
+                                                            "assemblyDisassemblyHandler":  "driver",
                                                             "packaging":  true
                                                         }
                                        }
@@ -1345,7 +1345,7 @@
                                                      ],
                                            "services":  {
                                                             "canBeAssembledDisassembled":  true,
-                                                            "assemblyDisassemblyHandler":  "company",
+                                                            "assemblyDisassemblyHandler":  "driver",
                                                             "packaging":  true
                                                         }
                                        }
@@ -1354,7 +1354,7 @@
                          "startTime":  "2026-02-11T09:42:00.000Z",
                          "primaryCost":  "11.88",
                          "cost":  "2.00",
-                         "requestStatus":  "Assigned to Company",
+                         "requestStatus":  "Assigned to Driver",
                          "deliveryStatus":  "Pending",
                          "comment":  "",
                          "createdAt":  "2026-02-11T09:42:11.088Z",
@@ -1368,7 +1368,7 @@
                                                           "note":  "Request accepted by operator"
                                                       },
                                                       {
-                                                          "status":  "Assigned to Company",
+                                                          "status":  "Assigned to Driver",
                                                           "changedAt":  "2026-02-11T09:43:38.383Z",
                                                           "changedBy":  "1769861366877",
                                                           "role":  "client",
@@ -1385,8 +1385,8 @@
                                             {
                                                 "cost":  2,
                                                 "comment":  "",
-                                                "company":  {
-                                                                "id":  "company-001",
+                                                "driver":  {
+                                                                "id":  "driver-001",
                                                                 "name":  "Mohamed Shipping Co",
                                                                 "phoneNumber":  "+20123456789",
                                                                 "email":  "mohamedprovider@cepac.com",
@@ -1403,21 +1403,21 @@
                                                  {
                                                      "timestamp":  "2026-02-11T09:43:13.103Z",
                                                      "action":  "offer_submitted",
-                                                     "description":  "Company Mohamed Shipping Co submitted an offer of $2",
-                                                     "companyName":  "Mohamed Shipping Co",
+                                                     "description":  "Driver Mohamed Shipping Co submitted an offer of $2",
+                                                     "driverName":  "Mohamed Shipping Co",
                                                      "cost":  2
                                                  },
                                                  {
                                                      "timestamp":  "2026-02-11T09:43:38.383Z",
                                                      "action":  "offer_accepted",
                                                      "description":  "Client accepted offer from Mohamed Shipping Co for $2",
-                                                     "companyName":  "Mohamed Shipping Co",
-                                                     "companyRate":  "4.5",
+                                                     "driverName":  "Mohamed Shipping Co",
+                                                     "driverRate":  "4.5",
                                                      "cost":  2
                                                  }
                                              ],
-                         "assignedCompanyId":  "company-001",
-                         "selectedCompany":  {
+                         "assignedDriverId":  "driver-001",
+                         "selectedDriver":  {
                                                  "name":  "Mohamed Shipping Co",
                                                  "rate":  "4.5",
                                                  "cost":  2
@@ -1506,7 +1506,7 @@
                                                      ],
                                            "services":  {
                                                             "canBeAssembledDisassembled":  true,
-                                                            "assemblyDisassemblyHandler":  "company",
+                                                            "assemblyDisassemblyHandler":  "driver",
                                                             "packaging":  true
                                                         }
                                        }
@@ -1539,8 +1539,8 @@
                                             {
                                                 "cost":  17,
                                                 "comment":  "Test Comment",
-                                                "company":  {
-                                                                "id":  "company-001",
+                                                "driver":  {
+                                                                "id":  "driver-001",
                                                                 "name":  "Mohamed Shipping Co",
                                                                 "phoneNumber":  "+20123456789",
                                                                 "email":  "mohamedprovider@cepac.com",
@@ -1556,8 +1556,8 @@
                                                  {
                                                      "timestamp":  "2026-02-12T14:58:28.644Z",
                                                      "action":  "offer_submitted",
-                                                     "description":  "Company Mohamed Shipping Co submitted an offer of $17",
-                                                     "companyName":  "Mohamed Shipping Co",
+                                                     "description":  "Driver Mohamed Shipping Co submitted an offer of $17",
+                                                     "driverName":  "Mohamed Shipping Co",
                                                      "cost":  17
                                                  }
                                              ],

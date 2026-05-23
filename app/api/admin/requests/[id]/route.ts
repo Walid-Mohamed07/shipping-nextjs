@@ -11,8 +11,8 @@ export async function GET(
     const requestId = id;
     const requestsPath = path.join(process.cwd(), "data", "requests.json");
     const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
-    const companiesPath = path.join(process.cwd(), "data", "companies.json");
-    const companiesData = JSON.parse(fs.readFileSync(companiesPath, "utf-8"));
+    const driversPath = path.join(process.cwd(), "data", "drivers.json");
+    const driversData = JSON.parse(fs.readFileSync(driversPath, "utf-8"));
 
     const foundRequest = requestsData.requests.find(
       (r: any) => r.id === requestId,
@@ -21,17 +21,17 @@ export async function GET(
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    // Enrich cost offers with company data
+    // Enrich cost offers with driver data
     const enrichedRequest = {
       ...foundRequest,
       costOffers: (foundRequest.costOffers || []).map((offer: any) => {
-        const company = companiesData.companies.find(
-          (c: any) => c.id === (offer.companyId || offer.company?.id),
+        const driver = driversData.drivers.find(
+          (c: any) => c.id === (offer.driverId || offer.driver?.id),
         );
         return {
           cost: offer.cost,
-          companyId: offer.companyId || offer.company?.id,
-          company: company,
+          driverId: offer.driverId || offer.driver?.id,
+          driver: driver,
           comment: offer.comment,
           selected: offer.selected || false,
         };
@@ -76,7 +76,7 @@ export async function PUT(
       currentRequest.costOffers = currentRequest.costOffers || [];
       body.costOffers.forEach((newOffer: any) => {
         const existingOfferIndex = currentRequest.costOffers.findIndex(
-          (o: any) => o.companyId === newOffer.companyId,
+          (o: any) => o.driverId === newOffer.driverId,
         );
         if (existingOfferIndex >= 0) {
           currentRequest.costOffers[existingOfferIndex] = {

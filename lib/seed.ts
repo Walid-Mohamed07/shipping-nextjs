@@ -28,12 +28,11 @@ if (fs.existsSync(envPath)) {
 import { connectDB } from "./db";
 import {
   User,
-  Warehouse,
   Vehicle,
   VehicleRule,
   Request,
   Message,
-  Company,
+  Driver,
   Assignment,
   AuditLog,
 } from "./models";
@@ -47,12 +46,11 @@ async function seedDatabase() {
     console.log("\nClearing existing data...");
     await Promise.all([
       User.deleteMany({}),
-      Warehouse.deleteMany({}),
       Vehicle.deleteMany({}),
       VehicleRule.deleteMany({}),
       Request.deleteMany({}),
       Message.deleteMany({}),
-      Company.deleteMany({}),
+      Driver.deleteMany({}),
       Assignment.deleteMany({}),
       AuditLog.deleteMany({}),
     ]);
@@ -86,21 +84,6 @@ async function seedDatabase() {
           `✓ Seeded ${uniqueUsers.length} users (skipped ${usersData.users.length - uniqueUsers.length} duplicates)`,
         );
       }
-    }
-
-    // Read and seed warehouses
-    const warehousesData = JSON.parse(
-      fs.readFileSync(
-        path.join(process.cwd(), "data", "warehouse.json"),
-        "utf-8",
-      ),
-    );
-    const warehouses = Array.isArray(warehousesData)
-      ? warehousesData
-      : warehousesData.warehouses || [];
-    if (warehouses.length > 0) {
-      await Warehouse.insertMany(warehouses);
-      console.log(`✓ Seeded ${warehouses.length} warehouses`);
     }
 
     // Read and seed vehicles
@@ -155,17 +138,17 @@ async function seedDatabase() {
       console.log(`✓ Seeded ${messages.length} messages`);
     }
 
-    // Read and seed companies
-    const companiesData = JSON.parse(
+    // Read and seed drivers
+    const driversData = JSON.parse(
       fs.readFileSync(
-        path.join(process.cwd(), "data", "companies.json"),
+        path.join(process.cwd(), "data", "drivers.json"),
         "utf-8",
       ),
     );
-    const companies = companiesData.companies || [];
-    if (companies.length > 0) {
-      await Company.insertMany(companies);
-      console.log(`✓ Seeded ${companies.length} companies`);
+    const drivers = driversData.drivers || [];
+    if (drivers.length > 0) {
+      await Driver.insertMany(drivers);
+      console.log(`✓ Seeded ${drivers.length} drivers`);
     }
 
     // Read and seed assignments

@@ -37,7 +37,7 @@
 
 ## Overview
 
-**ShipHub** is a full-stack shipping and logistics management platform built with Next.js 16 and React 19. It enables clients to create shipping requests, companies to submit competitive offers, and administrators to manage the entire logistics workflow with real-time updates.
+**ShipHub** is a full-stack shipping and logistics management platform built with Next.js 16 and React 19. It enables clients to create shipping requests, drivers to submit competitive offers, and administrators to manage the entire logistics workflow with real-time updates.
 
 ### Key Highlights
 
@@ -58,24 +58,24 @@
 - Create shipping requests with detailed item information
 - Upload media files for items (images, documents)
 - Track shipment status in real-time
-- View and accept offers from shipping companies
+- View and accept offers from shipping drivers
 - Manage saved addresses
 - View complete activity history for each request
 - Real-time notifications for offer updates
 
-### For Companies
+### For Drivers
 - Browse available shipping requests
 - Submit competitive cost offers with comments
 - Manage warehouse inventory
 - Track ongoing shipments
 - Assign source and destination warehouses
 - Update delivery status
-- View company performance metrics
+- View driver performance metrics
 
 ### For Administrators
 - Complete dashboard with multiple management tabs
 - User management (CRUD operations)
-- Company management and approval
+- Driver management and approval
 - Vehicle fleet management
 - Vehicle rules configuration
 - Order assignment to drivers
@@ -172,7 +172,7 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          API LAYER                                   │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌─────────────┐ │
-│  │    Auth      │ │   Requests   │ │   Admin      │ │   Company   │ │
+│  │    Auth      │ │   Requests   │ │   Admin      │ │   Driver   │ │
 │  │   Routes     │ │    Routes    │ │   Routes     │ │   Routes    │ │
 │  └──────────────┘ └──────────────┘ └──────────────┘ └─────────────┘ │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌─────────────┐ │
@@ -187,7 +187,7 @@
 │  ┌─────────────────────────────────────────────────────────────────┐│
 │  │                    Mongoose ODM                                  ││
 │  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐         ││
-│  │  │ User   │ │Request │ │Company │ │Vehicle │ │Message │ ...     ││
+│  │  │ User   │ │Request │ │Driver │ │Vehicle │ │Message │ ...     ││
 │  │  └────────┘ └────────┘ └────────┘ └────────┘ └────────┘         ││
 │  └─────────────────────────────────────────────────────────────────┘│
 │  ┌─────────────────────────────────────────────────────────────────┐│
@@ -215,7 +215,7 @@ shipping-nextjs/
 │   │   ├── admin/               # Admin API endpoints
 │   │   │   ├── assign/          # Order assignment
 │   │   │   ├── audit-logs/      # Audit logging
-│   │   │   ├── companies/       # Company management
+│   │   │   ├── drivers/       # Driver management
 │   │   │   ├── metrics/         # Performance metrics
 │   │   │   ├── orders/          # Order management
 │   │   │   ├── requests/        # Request management
@@ -229,14 +229,14 @@ shipping-nextjs/
 │   │   │   ├── login/           # Login endpoint
 │   │   │   └── signup/          # Registration endpoint
 │   │   │
-│   │   ├── company/             # Company API endpoints
+│   │   ├── driver/             # Driver API endpoints
 │   │   │   ├── accept-offer/    # Accept client offers
 │   │   │   ├── assign-warehouse/# Warehouse assignment
 │   │   │   ├── delivery-status/ # Delivery status updates
 │   │   │   ├── ongoing/         # Ongoing shipments
-│   │   │   ├── profile/         # Company profile
+│   │   │   ├── profile/         # Driver profile
 │   │   │   ├── requests/        # Available requests
-│   │   │   └── warehouses/      # Company warehouses
+│   │   │   └── warehouses/      # Driver warehouses
 │   │   │
 │   │   ├── driver/              # Driver API endpoints
 │   │   ├── messages/            # Messaging system
@@ -250,8 +250,8 @@ shipping-nextjs/
 │   │   ├── nominatim-search/    # Nominatim geocoding
 │   │   └── reverse-geocode/     # Reverse geocoding
 │   │
-│   ├── company/                 # Company pages
-│   │   ├── inbox/               # Company inbox
+│   ├── driver/                 # Driver pages
+│   │   ├── inbox/               # Driver inbox
 │   │   ├── ongoing/             # Ongoing shipments
 │   │   ├── requests/            # Available requests
 │   │   └── warehouses/          # Warehouse management
@@ -324,7 +324,7 @@ shipping-nextjs/
 ├── data/                        # Seed data (JSON)
 │   ├── assignments.json
 │   ├── audit-logs.json
-│   ├── companies.json
+│   ├── drivers.json
 │   ├── locations.json
 │   ├── messages.json
 │   ├── requests.json
@@ -351,7 +351,7 @@ shipping-nextjs/
 │       ├── index.ts             # Model exports
 │       ├── User.ts              # User model
 │       ├── Request.ts           # Request model
-│       ├── Company.ts           # Company model
+│       ├── Driver.ts           # Driver model
 │       ├── Warehouse.ts         # Warehouse model
 │       ├── Vehicle.ts           # Vehicle model
 │       ├── VehicleRule.ts       # Vehicle rules model
@@ -370,7 +370,7 @@ shipping-nextjs/
 ├── types/                       # TypeScript definitions
 │   ├── index.ts                 # Type exports
 │   ├── address.ts               # Address types
-│   ├── company.ts               # Company types
+│   ├── driver.ts               # Driver types
 │   ├── request.ts               # Request types
 │   ├── user.ts                  # User types
 │   ├── vehicle.ts               # Vehicle types
@@ -476,13 +476,13 @@ End-users who create and manage shipping requests.
 |------------|-------------|
 | Create requests | Create new shipping requests |
 | View own requests | View requests they created |
-| Accept offers | Accept cost offers from companies |
+| Accept offers | Accept cost offers from drivers |
 | Track shipments | View real-time tracking |
 | Manage addresses | Save and edit delivery addresses |
-| Send messages | Communicate with companies |
+| Send messages | Communicate with drivers |
 
-### 2. Company (`company`)
-Shipping companies that fulfill requests.
+### 2. Driver (`driver`)
+Shipping drivers that fulfill requests.
 
 | Permission | Description |
 |------------|-------------|
@@ -499,7 +499,7 @@ Full system administrators.
 | Permission | Description |
 |------------|-------------|
 | Manage users | Create, edit, delete users |
-| Manage companies | Approve, edit companies |
+| Manage drivers | Approve, edit drivers |
 | Manage vehicles | Fleet management |
 | View all requests | Access all system requests |
 | Assign orders | Assign requests to drivers |
@@ -557,20 +557,20 @@ Warehouse operations managers.
 | POST | `/api/requests/[id]/submit-offer` | Submit/accept offer |
 | PUT | `/api/requests/manage` | Manage request status |
 
-### Company Endpoints
+### Driver Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/company/requests` | Get available requests |
-| POST | `/api/company/requests` | Submit offer / reject |
-| GET | `/api/company/ongoing` | Get ongoing shipments |
-| GET | `/api/company/ongoing/[id]` | Get specific ongoing |
-| POST | `/api/company/accept-offer` | Accept client's selection |
-| POST | `/api/company/assign-warehouse` | Assign warehouses |
-| PUT | `/api/company/delivery-status` | Update delivery status |
-| GET | `/api/company/warehouses` | List company warehouses |
-| POST | `/api/company/warehouses` | Add warehouse |
-| GET | `/api/company/profile` | Get company profile |
+| GET | `/api/driver/requests` | Get available requests |
+| POST | `/api/driver/requests` | Submit offer / reject |
+| GET | `/api/driver/ongoing` | Get ongoing shipments |
+| GET | `/api/driver/ongoing/[id]` | Get specific ongoing |
+| POST | `/api/driver/accept-offer` | Accept client's selection |
+| POST | `/api/driver/assign-warehouse` | Assign warehouses |
+| PUT | `/api/driver/delivery-status` | Update delivery status |
+| GET | `/api/driver/warehouses` | List driver warehouses |
+| POST | `/api/driver/warehouses` | Add warehouse |
+| GET | `/api/driver/profile` | Get driver profile |
 
 ### Admin Endpoints
 
@@ -580,8 +580,8 @@ Warehouse operations managers.
 | POST | `/api/admin/users` | Create user |
 | PUT | `/api/admin/users` | Update user |
 | DELETE | `/api/admin/users` | Delete user |
-| GET | `/api/admin/companies` | List companies |
-| POST | `/api/admin/companies` | Create company |
+| GET | `/api/admin/drivers` | List drivers |
+| POST | `/api/admin/drivers` | Create driver |
 | GET | `/api/admin/vehicles` | List vehicles |
 | POST | `/api/admin/vehicles` | Add vehicle |
 | GET | `/api/admin/vehicle-rules` | List vehicle rules |
@@ -631,9 +631,9 @@ http://localhost:3000/swagger
   idImage?: string;
   licenseImage?: string;
   criminalRecord?: string;
-  role: 'client' | 'admin' | 'driver' | 'operator' | 'company' | 'warehouse_manager';
+  role: 'client' | 'admin' | 'driver' | 'operator' | 'driver' | 'warehouse_manager';
   status: 'active' | 'inactive' | 'suspended';
-  company?: ObjectId;      // Reference to Company
+  driver?: ObjectId;      // Reference to Driver
   createdAt: Date;
   updatedAt: Date;
 }
@@ -664,15 +664,15 @@ http://localhost:3000/swagger
     media?: [{ url, existing }];
     services?: {
       canBeAssembledDisassembled?: boolean;
-      assemblyDisassemblyHandler?: 'self' | 'company';
+      assemblyDisassemblyHandler?: 'self' | 'driver';
       packaging?: boolean;
     };
   }];
   deliveryType: 'Normal' | 'Urgent';
-  requestStatus: 'Pending' | 'Accepted' | 'Rejected' | 'Assigned to Company' | 'In Progress' | 'Completed' | 'Cancelled' | 'Action needed';
+  requestStatus: 'Pending' | 'Accepted' | 'Rejected' | 'Assigned to Driver' | 'In Progress' | 'Completed' | 'Cancelled' | 'Action needed';
   deliveryStatus: 'Pending' | 'Picked Up Source' | 'Warehouse Source Received' | 'In Transit' | 'Warehouse Destination Received' | 'Shipment Deliver' | 'Delivered' | 'Failed';
   costOffers?: [{
-    company: { id, name, phoneNumber, email, address, rate };
+    driver: { id, name, phoneNumber, email, address, rate };
     cost: number;
     comment?: string;
     selected: boolean;
@@ -682,7 +682,7 @@ http://localhost:3000/swagger
     timestamp: Date;
     action: string;
     description?: string;
-    companyName?: string;
+    driverName?: string;
     cost?: number;
     details?: object;
   }];
@@ -693,7 +693,7 @@ http://localhost:3000/swagger
 }
 ```
 
-### Company Model
+### Driver Model
 ```typescript
 {
   userId?: string;
@@ -802,16 +802,16 @@ ShipHub uses Server-Sent Events (SSE) for real-time updates across the applicati
 
 | Event | Description | Target Roles |
 |-------|-------------|--------------|
-| `REQUEST_CREATED` | New request created | admin, operator, company |
-| `REQUEST_UPDATED` | Request modified | admin, operator, company, owner |
+| `REQUEST_CREATED` | New request created | admin, operator, driver |
+| `REQUEST_UPDATED` | Request modified | admin, operator, driver, owner |
 | `REQUEST_DELETED` | Request removed | admin, operator |
-| `OFFER_SUBMITTED` | Company submitted offer | admin, operator, owner |
-| `OFFER_ACCEPTED` | Client accepted offer | admin, operator, company |
+| `OFFER_SUBMITTED` | Driver submitted offer | admin, operator, owner |
+| `OFFER_ACCEPTED` | Client accepted offer | admin, operator, driver |
 | `OFFER_UPDATED` | Offer modified | admin, operator, owner |
 | `STATUS_CHANGED` | Request status change | all relevant parties |
-| `DELIVERY_STATUS_CHANGED` | Delivery progress | admin, operator, company, owner |
-| `WAREHOUSE_ASSIGNED` | Warehouse assigned | admin, operator, company, owner |
-| `DRIVER_ASSIGNED` | Driver assigned | admin, operator, company, driver |
+| `DELIVERY_STATUS_CHANGED` | Delivery progress | admin, operator, driver, owner |
+| `WAREHOUSE_ASSIGNED` | Warehouse assigned | admin, operator, driver, owner |
+| `DRIVER_ASSIGNED` | Driver assigned | admin, operator, driver, driver |
 | `MESSAGE_RECEIVED` | New message | recipient |
 | `TRACKING_UPDATED` | Live tracking | owner, admin |
 
@@ -850,7 +850,7 @@ const { data: requests, refresh } = useLiveData({
   email: string;
   username: string;
   fullName: string;
-  company?: string;  // Company ID if applicable
+  driver?: string;  // Driver ID if applicable
   role: UserRole;
 }
 ```
@@ -902,7 +902,7 @@ export async function GET(request: NextRequest) {
 | `AdminOrdersTab` | Order management |
 | `AdminAssignmentTab` | Resource assignment |
 | `AdminUsersTab` | User management |
-| `AdminCompaniesTab` | Company management |
+| `AdminDriversTab` | Driver management |
 | `AdminDriversTab` | Driver management |
 | `AdminVehicleManagementTab` | Fleet management |
 | `AdminVehicleRulesTab` | Allocation rules |
@@ -978,7 +978,7 @@ const { data: requests, isLoading } = useLiveRequests(userId);
 Route protection with role checking.
 
 ```typescript
-const { isAuthorized, isLoading } = useProtectedRoute(['admin', 'company']);
+const { isAuthorized, isLoading } = useProtectedRoute(['admin', 'driver']);
 ```
 
 ### `useAuth`
@@ -1015,11 +1015,11 @@ ShipHub tracks all significant request events for audit purposes.
 |--------|-------------|
 | `request_created` | New request created |
 | `request_updated` | Request details modified |
-| `offer_submitted` | Company submitted offer |
-| `offer_updated` | Company modified offer |
+| `offer_submitted` | Driver submitted offer |
+| `offer_updated` | Driver modified offer |
 | `offer_accepted` | Client accepted offer |
 | `offer_rejected` | Offer was rejected |
-| `request_rejected_by_company` | Company declined request |
+| `request_rejected_by_driver` | Driver declined request |
 | `status_changed` | Request status updated |
 | `delivery_status_changed` | Delivery progress updated |
 | `warehouse_assigned` | Warehouse assigned |
@@ -1030,7 +1030,7 @@ ShipHub tracks all significant request events for audit purposes.
 import { addActivityLog, ActivityActions } from "@/lib/activityLogger";
 
 await addActivityLog(requestId, 
-  ActivityActions.OFFER_SUBMITTED(companyId, companyName, 150, "Fast delivery")
+  ActivityActions.OFFER_SUBMITTED(driverId, driverName, 150, "Fast delivery")
 );
 ```
 
@@ -1041,8 +1041,8 @@ await addActivityLog(requestId,
   timestamp: Date;
   action: string;
   description?: string;
-  companyName?: string;
-  companyRate?: string;
+  driverName?: string;
+  driverRate?: string;
   cost?: number;
   details?: Record<string, any>;
 }
@@ -1116,11 +1116,11 @@ Email: driver2@example.com
 Password: driver_password_456
 ```
 
-### Company
+### Driver
 
 ```
-Email: company@example.com
-Password: company_password_123
+Email: driver@example.com
+Password: driver_password_123
 ```
 
 ---

@@ -141,7 +141,7 @@ export async function GET(
         req.paymentStatus = "paid";
         req.paidAmount = payment.amount;
         req.paidAt = new Date();
-        req.requestStatus = "Assigned to Company";
+        req.requestStatus = "Assigned to Driver";
 
         // Add activity to history
         const activityEntry = {
@@ -163,7 +163,7 @@ export async function GET(
         req.activityHistory.push(activityEntry);
 
         await req.save();
-        console.log("[Payment Status Check] Request updated to 'Assigned to Company'");
+        console.log("[Payment Status Check] Request updated to 'Assigned to Driver'");
       }
 
       updated = true;

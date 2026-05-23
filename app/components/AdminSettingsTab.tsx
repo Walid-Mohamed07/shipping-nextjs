@@ -100,8 +100,8 @@ export function AdminSettingsTab() {
   };
 
   // Calculate example prices
-  const exampleCompanyPrice = 100;
-  const calculatedFinalPrice = exampleCompanyPrice * (1 + (parseFloat(headoverPercentage) || 0) / 100);
+  const exampleDriverPrice = 100;
+  const calculatedFinalPrice = exampleDriverPrice * (1 + (parseFloat(headoverPercentage) || 0) / 100);
 
   if (loading) {
     return (
@@ -188,16 +188,16 @@ export function AdminSettingsTab() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {t.adminSettings?.companyOffer || "Company Offer:"}
+                      {t.adminSettings?.driverOffer || "Driver Offer:"}
                     </span>
-                    <span className="font-medium">${exampleCompanyPrice.toFixed(2)}</span>
+                    <span className="font-medium">${exampleDriverPrice.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       {t.adminSettings?.headoverAmount || "Headover"} ({headoverPercentage || 0}%):
                     </span>
                     <span className="font-medium text-primary">
-                      +${(calculatedFinalPrice - exampleCompanyPrice).toFixed(2)}
+                      +${(calculatedFinalPrice - exampleDriverPrice).toFixed(2)}
                     </span>
                   </div>
                   <div className="border-t border-border pt-2 mt-2">

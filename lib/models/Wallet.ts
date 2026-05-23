@@ -93,9 +93,9 @@ const walletSchema = new mongoose.Schema(
 );
 
 // Index for faster lookups
-walletSchema.index({ user: 1 });
+// Note: walletSchema.user already has unique:true, so no separate index needed
 transactionSchema.index({ user: 1, createdAt: -1 });
-transactionSchema.index({ reference: 1 });
+// Note: transactionSchema.reference already has unique:true + sparse:true, so no separate index needed
 transactionSchema.index({ "paymentGateway.transactionId": 1 });
 transactionSchema.index({ request: 1 });
 

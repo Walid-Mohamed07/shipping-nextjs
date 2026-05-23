@@ -79,7 +79,7 @@ You can now test all API endpoints directly!
 ✅ lib/models/VehicleRule.ts   - Vehicle rules
 ✅ lib/models/Request.ts       - Request schema
 ✅ lib/models/Message.ts       - Message schema
-✅ lib/models/Company.ts       - Company schema
+✅ lib/models/Driver.ts       - Driver schema
 ✅ lib/models/Assignment.ts    - Assignment schema
 ✅ lib/models/AuditLog.ts      - Audit logs
 ✅ app/swagger/page.tsx        - Swagger UI page
@@ -254,7 +254,7 @@ Examples:
 
 - `/api/auth/login/route.ts` ✅
 - `/api/admin/vehicles/route.ts` → Todo
-- `/api/company/requests/route.ts` → Todo
+- `/api/driver/requests/route.ts` → Todo
 - `/api/driver/orders/route.ts` → Todo
 
 ---

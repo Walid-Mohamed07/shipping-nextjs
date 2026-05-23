@@ -23,19 +23,19 @@
 - ❌ `GET|POST /api/admin/vehicles` - Todo
 - ❌ `GET /api/admin/warehouse` - Todo
 - ❌ `GET /api/admin/audit-logs` - Todo
-- ❌ `GET /api/admin/companies` - Todo
+- ❌ `GET /api/admin/drivers` - Todo
 - ❌ `GET /api/admin/orders` - Todo
 - ❌ `GET /api/admin/resources` - Todo
 - ❌ `GET /api/admin/requests/[id]` - Todo
 
-### Company Routes (4/6)
+### Driver Routes (4/6)
 
-- ✅ `GET|POST /api/company/warehouses` - MongoDB
-- ✅ `GET|POST /api/company/requests` - MongoDB
-- ✅ `GET|PUT /api/company/profile` - MongoDB
-- ✅ `GET /api/company/ongoing` - MongoDB
-- ❌ `POST /api/company/accept-offer` - Todo
-- ❌ `POST /api/company/assign-warehouse` - Todo
+- ✅ `GET|POST /api/driver/warehouses` - MongoDB
+- ✅ `GET|POST /api/driver/requests` - MongoDB
+- ✅ `GET|PUT /api/driver/profile` - MongoDB
+- ✅ `GET /api/driver/ongoing` - MongoDB
+- ❌ `POST /api/driver/accept-offer` - Todo
+- ❌ `POST /api/driver/assign-warehouse` - Todo
 
 ### Driver Routes (1/1)
 
@@ -93,5 +93,5 @@ export async function GET(request: NextRequest) {
 
 1. Quick-update utility routes (reverse-geocode, upload/media, addresses) - Simple pass-through
 2. Finish admin routes batch
-3. Finish company routes batch
+3. Finish driver routes batch
 4. Test everything via Swagger UI

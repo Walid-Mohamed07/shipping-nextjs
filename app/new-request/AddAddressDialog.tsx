@@ -113,7 +113,9 @@ export default function AddAddressDialog({
   userName,
   userId,
   editAddress,
-}: AddAddressDialogProps) {  const { t } = useTranslation();  const isEditMode = !!editAddress;
+}: AddAddressDialogProps) {
+  const { t } = useTranslation();
+  const isEditMode = !!editAddress;
   // Initial form state factory function to get fresh state
   const getInitialFormState = () => ({
     country: "",
@@ -132,7 +134,6 @@ export default function AddAddressDialog({
     addressType: "Home",
     deliveryInstructions: "",
     primary: false,
-    warehouseId: "",
     pickupMode: "Self",
     coordinates: undefined as
       | { latitude: number; longitude: number }
@@ -148,7 +149,9 @@ export default function AddAddressDialog({
   const [showMap, setShowMap] = useState(false);
   const [mapEditable, setMapEditable] = useState(true);
   // Track which fields user has manually edited (to prevent map overwrites)
-  const [userEditedFields, setUserEditedFields] = useState<Set<string>>(new Set());
+  const [userEditedFields, setUserEditedFields] = useState<Set<string>>(
+    new Set(),
+  );
   // Unique key for map to force remount and prevent container reuse
   const [mapKey, setMapKey] = useState(Date.now());
 
@@ -181,7 +184,7 @@ export default function AddAddressDialog({
           mobileNumber = editAddress.mobile.replace(/[^\d]/g, "");
         }
       }
-      
+
       setForm({
         country: editAddress.country || "",
         countryCode: editAddress.countryCode || "",
@@ -199,11 +202,13 @@ export default function AddAddressDialog({
         addressType: editAddress.addressType || "Home",
         deliveryInstructions: editAddress.deliveryInstructions || "",
         primary: editAddress.primary || false,
-        warehouseId: editAddress.warehouseId || "",
         pickupMode: editAddress.pickupMode || "Self",
         coordinates: editAddress.coordinates,
       });
-      if (editAddress.coordinates?.latitude && editAddress.coordinates?.longitude) {
+      if (
+        editAddress.coordinates?.latitude &&
+        editAddress.coordinates?.longitude
+      ) {
         setShowMap(true);
       }
     }
@@ -323,36 +328,36 @@ export default function AddAddressDialog({
       errors.country = true;
       toast.error(t.address.errCountryRequired);
     }
-    
+
     // Validate full name
     if (!form.fullName || !formatters.validateName(form.fullName)) {
       errors.fullName = true;
       toast.error(t.address.errFullNameRequired);
     }
-    
+
     // Validate street address
     if (!form.street || !formatters.validateStreet(form.street)) {
       errors.street = true;
       toast.error(t.address.errStreetRequired);
     }
-    
+
     // Validate postal code
     if (!form.postalCode || !form.postalCode.trim()) {
       errors.postalCode = true;
       toast.error(t.address.errPostalRequired);
     }
-    
+
     // Validate mobile number
     if (!form.mobileNumber || form.mobileNumber.length < 8) {
       errors.mobile = true;
       toast.error(t.address.errMobileLength);
     }
-    
+
     if (!form.phoneCode) {
       errors.phoneCode = true;
       toast.error(t.address.errPhoneCodeRequired);
     }
-    
+
     // Validate city
     if (!form.city || form.city.trim().length < 2) {
       errors.city = true;
@@ -370,7 +375,7 @@ export default function AddAddressDialog({
     try {
       // Combine phoneCode and mobileNumber before saving
       const combinedMobile = form.phoneCode + form.mobileNumber;
-      
+
       // Clean and format all fields before saving
       const addressToSave = {
         ...form,
@@ -390,29 +395,33 @@ export default function AddAddressDialog({
             ? form.coordinates
             : undefined,
       };
-      
+
       // Use PUT for updates, POST for new addresses
       const method = isEditMode ? "PUT" : "POST";
-      const requestBody = isEditMode 
+      const requestBody = isEditMode
         ? { userId, addressId: editAddress?.id, ...addressToSave }
         : { userId, ...addressToSave };
-      
+
       const response = await fetch("/api/user/addresses", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
       const resData = await response.json();
-      
+
       if (!response.ok) {
-        const errorMsg = resData.error || `Failed to ${isEditMode ? "update" : "save"} address`;
+        const errorMsg =
+          resData.error ||
+          `Failed to ${isEditMode ? "update" : "save"} address`;
         throw new Error(errorMsg);
       }
-      const savedAddress = isEditMode 
-        ? resData.address 
+      const savedAddress = isEditMode
+        ? resData.address
         : (resData.addresses?.[resData.addresses.length - 1] ?? addressToSave);
 
-      toast.success(isEditMode ? t.address.addressUpdated : t.address.addressSavedOk);
+      toast.success(
+        isEditMode ? t.address.addressUpdated : t.address.addressSavedOk,
+      );
 
       // Call parent's onSave callback and wait for it to complete
       await Promise.resolve(onSave(savedAddress as Address));
@@ -441,7 +450,12 @@ export default function AddAddressDialog({
           style={{ maxHeight: "90vh", overflowY: "scroll" }}
         >
           <Dialog.Title className="text-lg font-bold mb-4">
-            {isEditMode ? t.address.editAddressTitle : t.address.addNewAddress} ({type === "source" ? t.address.sourceType : t.address.destinationType})
+            {isEditMode ? t.address.editAddressTitle : t.address.addNewAddress}{" "}
+            (
+            {type === "source"
+              ? t.address.sourceType
+              : t.address.destinationType}
+            )
           </Dialog.Title>
           {error && (
             <div className="mb-2 text-red-600 dark:text-red-400 text-sm">
@@ -526,16 +540,33 @@ export default function AddAddressDialog({
                     // Only update fields that user hasn't manually edited
                     setForm((prev) => ({
                       ...prev,
-                      street: !userEditedFields.has('street') && addressData.street ? addressData.street : prev.street,
-                      city: !userEditedFields.has('city') && addressData.city ? addressData.city : prev.city,
-                      district: !userEditedFields.has('district') && addressData.district ? addressData.district : prev.district,
-                      governorate: !userEditedFields.has('governorate') && addressData.governorate ? addressData.governorate : prev.governorate,
+                      street:
+                        !userEditedFields.has("street") && addressData.street
+                          ? addressData.street
+                          : prev.street,
+                      city:
+                        !userEditedFields.has("city") && addressData.city
+                          ? addressData.city
+                          : prev.city,
+                      district:
+                        !userEditedFields.has("district") &&
+                        addressData.district
+                          ? addressData.district
+                          : prev.district,
+                      governorate:
+                        !userEditedFields.has("governorate") &&
+                        addressData.governorate
+                          ? addressData.governorate
+                          : prev.governorate,
                       country: addressData.country || prev.country,
                       postalCode: addressData.postalCode || prev.postalCode,
                       // Only update phoneCode if user hasn't manually selected/edited it
-                      phoneCode: !userEditedFields.has('phoneCode') && addressData.country && countryPhoneCodes[addressData.country] 
-                        ? countryPhoneCodes[addressData.country] 
-                        : prev.phoneCode,
+                      phoneCode:
+                        !userEditedFields.has("phoneCode") &&
+                        addressData.country &&
+                        countryPhoneCodes[addressData.country]
+                          ? countryPhoneCodes[addressData.country]
+                          : prev.phoneCode,
                     }));
                   }}
                   editable={mapEditable}
@@ -648,7 +679,9 @@ export default function AddAddressDialog({
                   value={form.postalCode}
                   onChange={handleChange}
                   required
-                  className={validationErrors.postalCode ? "border-red-500" : ""}
+                  className={
+                    validationErrors.postalCode ? "border-red-500" : ""
+                  }
                 />
               </div>
             </div>
@@ -656,7 +689,8 @@ export default function AddAddressDialog({
             {/* Street Address */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                {t.address.streetAddress} <span className="text-red-500">*</span>
+                {t.address.streetAddress}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <Input
                 name="street"
@@ -720,12 +754,19 @@ export default function AddAddressDialog({
                     name="phoneCodeSelect"
                     value={form.phoneCode}
                     onChange={(e) => {
-                      setForm((prev) => ({ ...prev, phoneCode: e.target.value }));
+                      setForm((prev) => ({
+                        ...prev,
+                        phoneCode: e.target.value,
+                      }));
                       // Mark phoneCode as manually edited when selected from dropdown
-                      setUserEditedFields((prev) => new Set(prev).add("phoneCode"));
+                      setUserEditedFields((prev) =>
+                        new Set(prev).add("phoneCode"),
+                      );
                     }}
                     className={`block w-full h-10 rounded border px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary bg-background cursor-pointer ${
-                      validationErrors.phoneCode ? "border-red-500" : "border-border"
+                      validationErrors.phoneCode
+                        ? "border-red-500"
+                        : "border-border"
                     }`}
                   >
                     <option value="">{t.address.selectCode}</option>
@@ -739,7 +780,7 @@ export default function AddAddressDialog({
                     ))}
                   </select>
                 </div>
-                
+
                 {/* Phone Number Input */}
                 <div className="flex-1">
                   <Input
@@ -838,7 +879,9 @@ export default function AddAddressDialog({
                   onChange={handleChange}
                   className="cursor-pointer"
                 />
-                <span className="text-sm font-medium">{t.address.setAsPrimaryAddress}</span>
+                <span className="text-sm font-medium">
+                  {t.address.setAsPrimaryAddress}
+                </span>
               </label>
               {form.primary && (
                 <p className="text-xs text-muted-foreground mt-2 ml-6">
@@ -857,7 +900,11 @@ export default function AddAddressDialog({
               {t.common.cancel}
             </Button>
             <Button type="button" onClick={handleSave} disabled={loading}>
-              {loading ? t.address.saving : (isEditMode ? t.address.updateAddress : t.address.saveAddress)}
+              {loading
+                ? t.address.saving
+                : isEditMode
+                  ? t.address.updateAddress
+                  : t.address.saveAddress}
             </Button>
           </div>
         </Dialog.Content>

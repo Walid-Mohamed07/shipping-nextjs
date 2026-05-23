@@ -5,7 +5,7 @@ import { handleError, handleValidationError } from "@/lib/apiHelpers";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
 import {
   broadcastEvent,
-  broadcastToCompanies,
+  broadcastToDrivers,
   broadcastToAdmins,
 } from "@/lib/eventBroadcaster";
 
@@ -112,9 +112,7 @@ function normalizeRequest(req: any) {
     updatedAt: req.updatedAt,
     costOffers: req.costOffers,
     activityHistory: req.activityHistory,
-    selectedCompany: req.selectedCompany,
-    sourceWarehouse: req.sourceWarehouse,
-    destinationWarehouse: req.destinationWarehouse,
+    selectedDriver: req.selectedDriver,
     sourcePickupMode: req.sourcePickupMode,
     destinationPickupMode: req.destinationPickupMode,
     // Floor number and winch fields
@@ -127,6 +125,9 @@ function normalizeRequest(req: any) {
     paymentId: req.paymentId,
     paidAmount: req.paidAmount,
     paidAt: req.paidAt,
+    // Vehicle & workers
+    transportVehicle: req.transportVehicle,
+    workersCount: req.workersCount,
   };
 }
 
@@ -333,7 +334,7 @@ export async function POST(request: NextRequest) {
     broadcastEvent("REQUEST_CREATED", normalizedRequest, {
       requestId: newRequest._id.toString(),
       userId: user,
-      targetRoles: ["admin", "operator", "company"],
+      targetRoles: ["admin", "operator", "driver"],
     });
     broadcastToAdmins(
       "REQUEST_CREATED",

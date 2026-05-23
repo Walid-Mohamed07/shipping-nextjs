@@ -126,25 +126,19 @@ export function Header() {
                   {t.header.myOrders}
                 </Link>
               )}
-              {user.role === "company" && (
+              {user.role === "driver" && (
                 <>
                   <Link
-                    href="/company/requests"
+                    href="/driver/requests"
                     className="text-foreground hover:text-primary transition-colors"
                   >
                     {t.header.requests}
                   </Link>
                   <Link
-                    href="/company/ongoing"
+                    href="/driver/ongoing"
                     className="text-foreground hover:text-primary transition-colors"
                   >
                     {t.header.ongoing}
-                  </Link>
-                  <Link
-                    href="/company/warehouses"
-                    className="text-foreground hover:text-primary transition-colors"
-                  >
-                    {t.header.warehouses}
                   </Link>
                 </>
               )}

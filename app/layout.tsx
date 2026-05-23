@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description:
     "Fast and reliable shipping services worldwide. Simplify your logistics operations with our smart assignment and tracking system.",
   keywords:
-    "shipping, logistics, delivery, tracking, warehouse management, freight, global shipping, supply chain",
+    "shipping, logistics, delivery, tracking, freight, global shipping, supply chain",
   authors: [{ name: "ShipHub" }],
   creator: "ShipHub",
   publisher: "ShipHub",

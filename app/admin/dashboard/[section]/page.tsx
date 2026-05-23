@@ -10,9 +10,8 @@ import { AdminShipmentsMapTab } from "@/app/components/AdminShipmentsMapTab";
 import { AdminOverrideAssignmentsTab } from "@/app/components/AdminOverrideAssignmentsTab";
 import { AdminPerformanceMetricsTab } from "@/app/components/AdminPerformanceMetricsTab";
 import { AdminAuditLogsTab } from "@/app/components/AdminAuditLogsTab";
-import { AdminCompaniesTab } from "@/app/components/AdminCompaniesTab";
-import { AdminUsersTab } from "@/app/components/AdminUsersTab";
 import { AdminDriversTab } from "@/app/components/AdminDriversTab";
+import { AdminUsersTab } from "@/app/components/AdminUsersTab";
 import { OperatorCostOffersTab } from "@/app/components/OperatorCostOffersTab";
 import { AdminCategoriesTab } from "@/app/components/AdminCategoriesTab";
 import { AdminCostCriteriaTab } from "@/app/components/AdminCostCriteriaTab";
@@ -38,8 +37,7 @@ export default function DashboardSection({
     vehicles: t.admin.sectionVehicles,
     "vehicle-rules": t.admin.sectionVehicleRules,
     users: t.admin.sectionUsers,
-    drivers: t.admin.sectionDrivers,
-    companies: t.admin.sectionCompanies,
+    drivers: t.admin.sectionDrivers || "Drivers",
     "cost-offers": t.admin.sectionCostOffers,
     map: t.admin.sectionMap,
     override: t.admin.sectionOverride,
@@ -77,8 +75,6 @@ export default function DashboardSection({
         return <AdminUsersTab />;
       case "drivers":
         return <AdminDriversTab />;
-      case "companies":
-        return <AdminCompaniesTab />;
       case "cost-offers":
         return <OperatorCostOffersTab />;
       case "map":

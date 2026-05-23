@@ -7,8 +7,8 @@ const activityHistorySchema = new mongoose.Schema(
     timestamp: { type: Date, default: Date.now },
     action: { type: String, required: true },
     description: String,
-    companyName: String,
-    companyRate: String,
+    driverName: String,
+    driverRate: String,
     cost: Number,
     currency: String,
     details: mongoose.Schema.Types.Mixed,
@@ -60,7 +60,6 @@ const requestSchema = new mongoose.Schema(
       addressType: String,
       deliveryInstructions: String,
       primary: Boolean,
-      warehouseId: String,
       pickupMode: String,
       coordinates: {
         latitude: Number,
@@ -82,7 +81,6 @@ const requestSchema = new mongoose.Schema(
       addressType: String,
       deliveryInstructions: String,
       primary: Boolean,
-      warehouseId: String,
       pickupMode: String,
       coordinates: {
         latitude: Number,
@@ -142,7 +140,7 @@ const requestSchema = new mongoose.Schema(
         "Pending",
         "Accepted",
         "Rejected",
-        "Assigned to Company",
+        "Assigned to Driver",
         "In Progress",
         "Completed",
         "Cancelled",
@@ -155,9 +153,7 @@ const requestSchema = new mongoose.Schema(
       enum: [
         "Pending",
         "Picked Up Source",
-        "Warehouse Source Received",
         "In Transit",
-        "Warehouse Destination Received",
         "Shipment Deliver",
         "Delivered",
         "Failed",
@@ -167,30 +163,6 @@ const requestSchema = new mongoose.Schema(
     deliveryType: String,
     scheduledDate: Date,
     comment: String,
-    sourceWarehouse: {
-      id: String,
-      name: String,
-      address: String,
-      city: String,
-      country: String,
-      coordinates: {
-        latitude: Number,
-        longitude: Number,
-      },
-      assignedAt: Date,
-    },
-    destinationWarehouse: {
-      id: String,
-      name: String,
-      address: String,
-      city: String,
-      country: String,
-      coordinates: {
-        latitude: Number,
-        longitude: Number,
-      },
-      assignedAt: Date,
-    },
     sourcePickupMode: {
       type: String,
       enum: ["Delegate", "Self"],
@@ -230,7 +202,7 @@ const requestSchema = new mongoose.Schema(
       {
         cost: Number,
         currency: { type: String, default: "USD" }, // Currency of the offer
-        company: {
+        driver: {
           id: String,
           name: String,
           phoneNumber: String,
@@ -252,8 +224,8 @@ const requestSchema = new mongoose.Schema(
       },
     ],
     activityHistory: [activityHistorySchema],
-    assignedCompany: String,
-    selectedCompany: {
+    assignedDriver: String,
+    selectedDriver: {
       id: String,
       name: String,
       rate: String,
@@ -279,13 +251,11 @@ const requestSchema = new mongoose.Schema(
       // Final amount to pay (lockedPrice with any additional fees)
       finalLockedPrice: Number,
     },
-    assignedWarehouseId: String,
-    assignedWarehouse: mongoose.Schema.Types.Mixed,
     deliveryFlow: [String],
     deliveryCompletedStatuses: [String],
     orderFlow: [String],
     orderCompletedStatuses: [String],
-    rejectedByCompanies: [String],
+    rejectedByDrivers: [String],
     // Workers count (0-6)
     workersCount: {
       type: Number,

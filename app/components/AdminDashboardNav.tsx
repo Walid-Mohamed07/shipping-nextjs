@@ -45,16 +45,10 @@ const allNavItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    labelKey: "companies",
-    href: "/admin/dashboard/companies",
-    icon: Building2,
-    roles: ["admin"],
-  },
-  {
     labelKey: "costOffers",
     href: "/admin/dashboard/cost-offers",
     icon: BarChart3,
-    roles: ["company"],
+    roles: ["driver"],
   },
   {
     labelKey: "override",
@@ -119,7 +113,6 @@ export function AdminDashboardNav({
     requests: t.admin.requests,
     users: t.admin.users,
     drivers: t.admin.drivers,
-    companies: t.admin.companies,
     costOffers: t.admin.costOffers,
     override: t.admin.override,
     metrics: t.admin.metrics,

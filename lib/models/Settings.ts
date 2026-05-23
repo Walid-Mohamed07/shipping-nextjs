@@ -14,7 +14,7 @@ const settingsSchema = new mongoose.Schema(
       default: 0,
       min: 0,
       max: 100,
-      description: "Percentage markup added to company offers shown to clients",
+      description: "Percentage markup added to driver offers shown to clients",
     },
     // Store last updated by info
     lastUpdatedBy: {

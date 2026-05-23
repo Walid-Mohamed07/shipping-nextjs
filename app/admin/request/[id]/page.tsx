@@ -13,11 +13,11 @@ import { useCurrency } from "@/app/context/CurrencyContext";
 
 interface CostOffer {
   cost: number;
-  companyId: string;
+  driverId: string;
   comment: string;
 }
 
-interface Company {
+interface Driver {
   id: string;
   name: string;
   phoneNumber: string;
@@ -64,10 +64,10 @@ export default function RequestDetailPage() {
   const requestId = params.id as string;
 
   const [request, setRequest] = useState<RequestDetail | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [newOffer, setNewOffer] = useState({
-    companyId: "",
+    driverId: "",
     cost: "",
     comment: "",
   });
@@ -82,9 +82,9 @@ export default function RequestDetailPage() {
     const fetchData = async () => {
       try {
         // Fetch request details
-        const [reqResponse, companiesResponse] = await Promise.all([
+        const [reqResponse, driversResponse] = await Promise.all([
           fetch(`/api/admin/requests/${requestId}`),
-          fetch("/api/admin/companies"),
+          fetch("/api/admin/drivers"),
         ]);
 
         if (reqResponse.ok) {
@@ -94,9 +94,9 @@ export default function RequestDetailPage() {
           setSelectedDeliveryStatus(reqData.request.deliveryStatus);
         }
 
-        if (companiesResponse.ok) {
-          const companiesData = await companiesResponse.json();
-          setCompanies(companiesData.companies);
+        if (driversResponse.ok) {
+          const driversData = await driversResponse.json();
+          setDrivers(driversData.drivers);
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -109,8 +109,8 @@ export default function RequestDetailPage() {
   }, [requestId]);
 
   const handleAddCostOffer = async () => {
-    if (!newOffer.companyId || !newOffer.cost) {
-      alert(t.admin.fillCompanyAndCost);
+    if (!newOffer.driverId || !newOffer.cost) {
+      alert(t.admin.fillDriverAndCost);
       return;
     }
 
@@ -123,7 +123,7 @@ export default function RequestDetailPage() {
           costOffers: [
             {
               cost: parseFloat(newOffer.cost),
-              companyId: newOffer.companyId,
+              driverId: newOffer.driverId,
               comment: newOffer.comment,
             },
           ],
@@ -133,7 +133,7 @@ export default function RequestDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setRequest(data.request);
-        setNewOffer({ companyId: "", cost: "", comment: "" });
+        setNewOffer({ driverId: "", cost: "", comment: "" });
       }
     } catch (error) {
       console.error("Failed to add cost offer:", error);
@@ -371,20 +371,20 @@ export default function RequestDetailPage() {
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium mb-1 block">
-                        {t.admin.companyLabel}
+                        {t.admin.driverLabel}
                       </label>
                       <select
-                        value={newOffer.companyId}
+                        value={newOffer.driverId}
                         onChange={(e) =>
                           setNewOffer({
                             ...newOffer,
-                            companyId: e.target.value,
+                            driverId: e.target.value,
                           })
                         }
                         className="w-full px-3 py-2 border border-input rounded-md"
                       >
-                        <option value="">{t.admin.selectCompany}</option>
-                        {companies.map((c) => (
+                        <option value="">{t.admin.selectDriver}</option>
+                        {drivers.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.rate}%)
                           </option>
@@ -432,8 +432,8 @@ export default function RequestDetailPage() {
               {request.costOffers && request.costOffers.length > 0 ? (
                 <div className="space-y-2">
                   {request.costOffers.map((offer, idx) => {
-                    const company = companies.find(
-                      (c) => c.id === offer.companyId,
+                    const driver = drivers.find(
+                      (c) => c.id === offer.driverId,
                     );
                     return (
                       <div
@@ -442,7 +442,7 @@ export default function RequestDetailPage() {
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium">{company?.name}</p>
+                            <p className="font-medium">{driver?.name}</p>
                             <p className="text-sm text-muted-foreground">
                               {offer.comment}
                             </p>

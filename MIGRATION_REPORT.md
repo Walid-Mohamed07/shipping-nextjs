@@ -17,7 +17,7 @@
 - ✅ GET|POST `/api/admin/users` - Manage users
 - ✅ GET|POST `/api/admin/vehicles` - Vehicle management
 - ✅ GET `/api/admin/audit-logs` - Activity logs
-- ✅ GET|POST `/api/admin/companies` - Company management
+- ✅ GET|POST `/api/admin/drivers` - Driver management
 - ✅ GET|PUT `/api/admin/warehouse` - Warehouse management
 - ✅ GET|POST `/api/admin/vehicle-rules` - Vehicle constraints
 
@@ -30,12 +30,12 @@
 
 - ✅ GET|POST `/api/requests` - List and create requests
 
-### Company Routes (4/6)
+### Driver Routes (4/6)
 
-- ✅ GET|POST `/api/company/warehouses` - Company warehouse management
-- ✅ GET|POST `/api/company/requests` - Visible requests for companies
-- ✅ GET|PUT `/api/company/profile` - Company profile
-- ✅ GET `/api/company/ongoing` - Active assignments
+- ✅ GET|POST `/api/driver/warehouses` - Driver warehouse management
+- ✅ GET|POST `/api/driver/requests` - Visible requests for drivers
+- ✅ GET|PUT `/api/driver/profile` - Driver profile
+- ✅ GET `/api/driver/ongoing` - Active assignments
 
 ### Driver Routes (1/1) ✅ Complete
 
@@ -67,10 +67,10 @@
 - [ ] `POST /api/requests/[id]/submit-offer` - Submit cost offer
 - [ ] `GET|POST /api/requests/manage` - Bulk request management
 
-### Company Routes (2 remaining)
+### Driver Routes (2 remaining)
 
-- [ ] `POST /api/company/accept-offer` - Accept delivery offer
-- [ ] `POST /api/company/assign-warehouse` - Assign warehouse
+- [ ] `POST /api/driver/accept-offer` - Accept delivery offer
+- [ ] `POST /api/driver/assign-warehouse` - Assign warehouse
 
 ### User/Utility Routes (3 remaining - No DB needed)
 
@@ -200,7 +200,7 @@ The console warnings about `UNSAFE_componentWillReceiveProps` are from `swagger-
 - User authentication (login/signup)
 - Request management (create, list, filter)
 - Admin dashboard data (users, vehicles, warehouses, assignments)
-- Company operations (view requests, manage warehouses)
+- Driver operations (view requests, manage warehouses)
 - Driver assignments (view pickup/delivery orders)
 - Messaging system
 

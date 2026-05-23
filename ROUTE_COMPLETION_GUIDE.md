@@ -7,14 +7,14 @@
 - All critical MongoDB infrastructure in place
 - Database seeded successfully
 - Core endpoints working
-- Auth, requests, messages, admin assignments, company routes all migrated
+- Auth, requests, messages, admin assignments, driver routes all migrated
 
 ## Completed Routes (18/31)
 
 ### ✅ Core Infrastructure
 
-- Admin: assign, requests, users, vehicles, audit-logs, companies, warehouse
-- Company: warehouses, requests, profile, ongoing
+- Admin: assign, requests, users, vehicles, audit-logs, drivers, warehouse
+- Driver: warehouses, requests, profile, ongoing
 - Driver: orders
 - Auth: login, signup
 - Requests: GET/POST (main)
@@ -113,10 +113,10 @@ export async function GET(request: NextRequest, { params }: any) {
 }
 ```
 
-### Company Routes (2 remaining)
+### Driver Routes (2 remaining)
 
-- [ ] `company/accept-offer` - Accept cost offer
-- [ ] `company/assign-warehouse` - Assign warehouse to request
+- [ ] `driver/accept-offer` - Accept cost offer
+- [ ] `driver/assign-warehouse` - Assign warehouse to request
 
 **Template:**
 
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const { offerId, requestId, companyId } = body;
+    const { offerId, requestId, driverId } = body;
 
     // Find offer and update status
     // Update request with accepted offer

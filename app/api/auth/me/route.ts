@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
           mobile: decoded.mobile,
           birthDate: decoded.birthDate,
           profilePicture: decoded.profilePicture,
-          company: decoded.company,
+          driver: decoded.driver,
           role: decoded.role,
           emailVerified: decoded.emailVerified || false,
           mobileVerified: decoded.mobileVerified || false,

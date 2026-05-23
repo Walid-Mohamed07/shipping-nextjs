@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.98 0.001 0);
+  --background: #fff;
   --foreground: oklch(0.2 0.01 240);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.01 240);
@@ -192,7 +192,9 @@
 
 /* Ensure proper text rendering for Arabic */
 [dir="rtl"] body {
-  font-feature-settings: "liga" 1, "calt" 1;
+  font-feature-settings:
+    "liga" 1,
+    "calt" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

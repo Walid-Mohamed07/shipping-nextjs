@@ -160,9 +160,9 @@ export async function PUT(req: NextRequest) {
       request.paidAmount = payment.amount;
       request.paidAt = new Date();
       
-      // Change status to "Assigned to Company" after successful payment
+      // Change status to "Assigned to Driver" after successful payment
       if (request.requestStatus === "Action needed") {
-        request.requestStatus = "Assigned to Company";
+        request.requestStatus = "Assigned to Driver";
       }
 
       // Add activity to history

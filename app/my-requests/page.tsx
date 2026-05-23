@@ -16,6 +16,7 @@ import {
   Truck,
   Users,
   Ruler,
+  Scale,
 } from "lucide-react";
 import { Request, Address, Item } from "@/types";
 import { RequestCardSkeleton } from "@/app/components/loaders";
@@ -311,13 +312,13 @@ export default function MyRequestsPage() {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Banknote className="w-4 h-4 shrink-0" />
-                        {request.selectedCompany ? (
+                        {request.selectedDriver ? (
                           <>
                             <LockedPriceDisplay
                               pricing={(request as any).pricing}
                               fallbackAmount={Number(
-                                request.selectedCompany.finalPrice ??
-                                  request.selectedCompany.cost,
+                                request.selectedDriver.finalPrice ??
+                                  request.selectedDriver.cost,
                               )}
                               className="font-semibold text-primary"
                               size="sm"
@@ -345,6 +346,35 @@ export default function MyRequestsPage() {
                           </>
                         )}
                       </div>
+
+                      {/* Vehicle, Workers, Weight */}
+                      <div className="grid grid-cols-3 gap-2 text-xs bg-muted/30 rounded-lg p-2 -mx-2">
+                        <div className="flex flex-col items-center gap-1 text-center">
+                          <Truck className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium text-foreground truncate w-full px-1">
+                            {request.transportVehicle?.nameEn || "—"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1 text-center border-l border-r border-border/30">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium text-foreground">
+                            {(request.workersCount ?? 0) > 0 ? request.workersCount : "—"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1 text-center">
+                          <Scale className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium text-foreground">
+                            {(() => {
+                              const total = (request.items || []).reduce(
+                                (sum: number, item: Item) =>
+                                  sum + parseFloat(item.weight || "0") * item.quantity,
+                                0,
+                              );
+                              return total > 0 ? `${total.toFixed(1)}kg` : "—";
+                            })()}
+                          </span>
+                        </div>
+                      </div>
                       {request.transportVehicle?.nameEn && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Truck className="w-4 h-4 shrink-0" />
@@ -353,26 +383,13 @@ export default function MyRequestsPage() {
                           </span>
                         </div>
                       )}
-                      {((request.workersCount ?? 0) > 0 ||
-                        request.needsWinchPickup ||
+                      {(request.needsWinchPickup ||
                         request.needsWinchDropoff) && (
                         <div className="flex items-center gap-2 flex-wrap">
-                          {(request.workersCount ?? 0) > 0 && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground border border-border">
-                              <Users className="w-3 h-3" />
-                              {t.myRequests.workers.replace(
-                                "{count}",
-                                String(request.workersCount),
-                              )}
-                            </span>
-                          )}
-                          {(request.needsWinchPickup ||
-                            request.needsWinchDropoff) && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700">
-                              <Wrench className="w-3 h-3" />
-                              {t.myRequests.winch}
-                            </span>
-                          )}
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700">
+                            <Wrench className="w-3 h-3" />
+                            {t.myRequests.winch}
+                          </span>
                         </div>
                       )}
                     </div>

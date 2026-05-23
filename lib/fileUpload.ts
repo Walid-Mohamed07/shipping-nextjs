@@ -2,8 +2,8 @@ import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync, mkdirSync } from "fs";
 
-const UPLOAD_DIR = join(process.cwd(), "public/assets/images/companies");
-const PUBLIC_PATH = "/assets/images/companies";
+const UPLOAD_DIR = join(process.cwd(), "public/assets/images/drivers");
+const PUBLIC_PATH = "/assets/images/drivers";
 
 // Ensure the upload directory exists
 function ensureUploadDir() {
@@ -12,7 +12,7 @@ function ensureUploadDir() {
   }
 }
 
-export async function uploadCompanyLogo(
+export async function uploadDriverLogo(
   file: File,
 ): Promise<string | undefined> {
   try {
@@ -34,7 +34,7 @@ export async function uploadCompanyLogo(
   }
 }
 
-export async function deleteCompanyLogo(logoPath: string): Promise<void> {
+export async function deleteDriverLogo(logoPath: string): Promise<void> {
   try {
     if (!logoPath) return;
 

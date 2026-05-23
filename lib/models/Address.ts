@@ -22,7 +22,6 @@ const addressSchema = new mongoose.Schema(
     },
     deliveryInstructions: String,
     primary: Boolean,
-    warehouseId: String,
     pickupMode: String,
     coordinates: {
       latitude: Number,

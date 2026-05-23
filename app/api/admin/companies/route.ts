@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
-import { Company } from "@/lib/models";
-import { uploadCompanyLogo, deleteCompanyLogo } from "@/lib/fileUpload";
+import { Driver } from "@/lib/models";
+import { uploadDriverLogo, deleteDriverLogo } from "@/lib/fileUpload";
 
 /**
  * @swagger
- * /api/admin/companies:
+ * /api/admin/drivers:
  *   get:
- *     summary: Get all companies
+ *     summary: Get all drivers
  *     tags: [Admin]
  *     responses:
  *       200:
- *         description: List of all companies
+ *         description: List of all drivers
  *       500:
- *         description: Failed to fetch companies
+ *         description: Failed to fetch drivers
  *   post:
- *     summary: Create a new company
+ *     summary: Create a new driver
  *     tags: [Admin]
  *     requestBody:
  *       required: true
@@ -35,25 +35,25 @@ import { uploadCompanyLogo, deleteCompanyLogo } from "@/lib/fileUpload";
  *                 type: number
  *     responses:
  *       201:
- *         description: Company created successfully
+ *         description: Driver created successfully
  *       400:
  *         description: Missing required fields
  *       500:
- *         description: Failed to create company
+ *         description: Failed to create driver
  */
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    const companies = await Company.find({}).populate("warehouses").lean();
+    const drivers = await Driver.find({}).lean();
 
     // Transform _id to id for consistency
-    const transformedCompanies = companies.map((company: any) => ({
-      ...company,
-      id: company._id.toString(),
+    const transformedDrivers = drivers.map((driver: any) => ({
+      ...driver,
+      id: driver._id.toString(),
     }));
 
-    return NextResponse.json(transformedCompanies, { status: 200 });
+    return NextResponse.json(transformedDrivers, { status: 200 });
   } catch (error) {
     return handleError(error);
   }
@@ -81,10 +81,10 @@ export async function POST(request: NextRequest) {
 
     let logoPath: string | undefined;
     if (logoFile && logoFile.size > 0) {
-      logoPath = await uploadCompanyLogo(logoFile);
+      logoPath = await uploadDriverLogo(logoFile);
     }
 
-    const newCompany = new Company({
+    const newDriver = new Driver({
       name,
       phoneNumber,
       email,
@@ -94,17 +94,17 @@ export async function POST(request: NextRequest) {
       logo: logoPath,
     });
 
-    await newCompany.save();
+    await newDriver.save();
 
     return NextResponse.json(
       {
         success: true,
-        company: newCompany,
+        driver: newDriver,
       },
       { status: 201 },
     );
   } catch (error) {
-    console.error("Error creating company:", error);
+    console.error("Error creating driver:", error);
     return handleError(error);
   }
 }
@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json(
-        { error: "Company ID is required" },
+        { error: "Driver ID is required" },
         { status: 400 },
       );
     }
@@ -143,31 +143,31 @@ export async function PUT(request: NextRequest) {
     if (logoFile && logoFile.size > 0) {
       // Delete old logo if exists
       if (existingLogo) {
-        await deleteCompanyLogo(existingLogo);
+        await deleteDriverLogo(existingLogo);
       }
       // Upload new logo
-      updateData.logo = await uploadCompanyLogo(logoFile);
+      updateData.logo = await uploadDriverLogo(logoFile);
     }
 
-    const updatedCompany = await Company.findByIdAndUpdate(
+    const updatedDriver = await Driver.findByIdAndUpdate(
       id,
       updateData,
       { returnDocument: "after" },
     );
 
-    if (!updatedCompany) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    if (!updatedDriver) {
+      return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
     return NextResponse.json(
       {
         success: true,
-        company: updatedCompany,
+        driver: updatedDriver,
       },
       { status: 200 },
     );
   } catch (error) {
-    console.error("Error updating company:", error);
+    console.error("Error updating driver:", error);
     return handleError(error);
   }
 }
@@ -180,25 +180,25 @@ export async function DELETE(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json(
-        { error: "Company ID is required" },
+        { error: "Driver ID is required" },
         { status: 400 },
       );
     }
 
-    const deletedCompany = await Company.findByIdAndDelete(id);
+    const deletedDriver = await Driver.findByIdAndDelete(id);
 
-    if (!deletedCompany) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    if (!deletedDriver) {
+      return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
     // Delete associated logo file
-    if (deletedCompany.logo) {
-      await deleteCompanyLogo(deletedCompany.logo);
+    if (deletedDriver.logo) {
+      await deleteDriverLogo(deletedDriver.logo);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error("Error deleting company:", error);
+    console.error("Error deleting driver:", error);
     return handleError(error);
   }
 }

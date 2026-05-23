@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Polyline,
+  Marker,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 
-// Route colors: primary blue for line, blue = customer, red = warehouse
+// Route colors: primary blue for line, blue = customer
 const ROUTE_LINE_COLOR = "#2563eb"; // primary blue
 const CUSTOMER_PIN_COLOR = "#2563eb"; // blue – source & destination
-const WAREHOUSE_PIN_COLOR = "#dc2626"; // red – source & dest warehouse
 
 function createPinIcon(color: string, label: string): L.DivIcon {
   const size = 28;
@@ -46,43 +51,35 @@ export interface RoutePoint {
 
 interface RouteMapProps {
   source: RoutePoint | null;
-  sourceWarehouse: RoutePoint | null;
-  destWarehouse: RoutePoint | null;
   destination: RoutePoint | null;
   height?: number;
 }
 
 function MapBounds({ points }: { points: [number, number][] }) {
   const map = useMap();
-  
+
   useEffect(() => {
     if (points.length < 2) return;
-    
+
     try {
       // Add a small delay to ensure map is fully rendered
       const timeoutId = setTimeout(() => {
-        if (map && map.getContainer() && typeof map.fitBounds === 'function') {
+        if (map && map.getContainer() && typeof map.fitBounds === "function") {
           const bounds = L.latLngBounds(points);
           map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
         }
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     } catch (error) {
       console.error("Error fitting map bounds:", error);
     }
   }, [map, points]);
-  
+
   return null;
 }
 
-export function RouteMap({
-  source,
-  sourceWarehouse,
-  destWarehouse,
-  destination,
-  height = 320,
-}: RouteMapProps) {
+export function RouteMap({ source, destination, height = 320 }: RouteMapProps) {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -90,12 +87,11 @@ export function RouteMap({
   }, []);
 
   const customerIcon = useMemo(
-    () => (typeof L !== "undefined" ? createPinIcon(CUSTOMER_PIN_COLOR, "Customer") : null),
-    []
-  );
-  const warehouseIcon = useMemo(
-    () => (typeof L !== "undefined" ? createPinIcon(WAREHOUSE_PIN_COLOR, "Warehouse") : null),
-    []
+    () =>
+      typeof L !== "undefined"
+        ? createPinIcon(CUSTOMER_PIN_COLOR, "Customer")
+        : null,
+    [],
   );
 
   if (!isClient) {
@@ -110,29 +106,17 @@ export function RouteMap({
   }
 
   // Filter out null points and create the route
-  const allPoints = [source, sourceWarehouse, destWarehouse, destination].filter(
-    (point): point is RoutePoint => point !== null
+  const allPoints = [source, destination].filter(
+    (point): point is RoutePoint => point !== null,
   );
 
   const hasRoute = allPoints.length >= 2;
 
-  // Create route segments: Source → Source WH → Dest WH → Destination
+  // Create route segment: Source → Destination
   const segments: [number, number][][] = [];
-  if (source && sourceWarehouse) {
+  if (source && destination) {
     segments.push([
       [source.lat, source.lng],
-      [sourceWarehouse.lat, sourceWarehouse.lng],
-    ]);
-  }
-  if (sourceWarehouse && destWarehouse) {
-    segments.push([
-      [sourceWarehouse.lat, sourceWarehouse.lng],
-      [destWarehouse.lat, destWarehouse.lng],
-    ]);
-  }
-  if (destWarehouse && destination) {
-    segments.push([
-      [destWarehouse.lat, destWarehouse.lng],
       [destination.lat, destination.lng],
     ]);
   }
@@ -148,11 +132,9 @@ export function RouteMap({
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          {hasRoute
-            ? "Source → Source Warehouse → Destination Warehouse → Destination"
-            : "Set locations to view route"}
+          {hasRoute ? "Source → Destination" : "Set locations to view route"}
         </p>
-        {hasRoute && customerIcon && warehouseIcon && (
+        {hasRoute && customerIcon && (
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span
@@ -160,13 +142,6 @@ export function RouteMap({
                 style={{ background: CUSTOMER_PIN_COLOR }}
               />
               Customer (source & destination)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className="inline-block w-3 h-3 rounded-full border border-white shadow"
-                style={{ background: WAREHOUSE_PIN_COLOR }}
-              />
-              Warehouse
             </span>
           </div>
         )}
@@ -208,20 +183,6 @@ export function RouteMap({
               position={[source.lat, source.lng]}
               icon={customerIcon}
               title="Source (Customer)"
-            />
-          )}
-          {sourceWarehouse && warehouseIcon && (
-            <Marker
-              position={[sourceWarehouse.lat, sourceWarehouse.lng]}
-              icon={warehouseIcon}
-              title="Source Warehouse"
-            />
-          )}
-          {destWarehouse && warehouseIcon && (
-            <Marker
-              position={[destWarehouse.lat, destWarehouse.lng]}
-              icon={warehouseIcon}
-              title="Destination Warehouse"
             />
           )}
           {destination && customerIcon && (

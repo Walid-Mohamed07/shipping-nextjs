@@ -7,16 +7,14 @@ export type RequestStatus =
   | "Rejected"
   | "Cancelled"
   | "Action needed"
-  | "Assigned to Company"
+  | "Assigned to Driver"
   | "In Progress"
   | "Completed";
 
 export enum RequestDeliveryStatus {
   PENDING = "Pending",
   PICKED_UP_SOURCE = "Picked Up Source",
-  WAREHOUSE_SOURCE_RECEIVED = "Warehouse Source Received",
   IN_TRANSIT = "In Transit",
-  WAREHOUSE_DESTINATION_RECEIVED = "Warehouse Destination Received",
   SHIPMENT_DELIVER = "Shipment Deliver",
   DELIVERED = "Delivered",
   FAILED = "Failed",
@@ -93,7 +91,7 @@ export interface CostOffer {
   headoverPercentage?: number; // The headover percentage applied
   headoverAmount?: number; // Computed headover in dollars
   finalPrice?: number; // Cost with headover markup applied
-  company: {
+  driver: {
     id: string;
     name: string;
     phoneNumber: string;
@@ -111,8 +109,8 @@ export interface ActivityHistory {
   timestamp: string;
   action: string;
   description: string;
-  companyName?: string;
-  companyRate?: string;
+  driverName?: string;
+  driverRate?: string;
   cost?: number;
   currency?: string;
   details?: Record<string, any>;
@@ -142,7 +140,7 @@ export interface Request {
   updatedAt?: string;
   costOffers?: CostOffer[];
   activityHistory?: ActivityHistory[];
-  selectedCompany?: {
+  selectedDriver?: {
     id?: string;
     name: string;
     rate: string;
@@ -161,34 +159,8 @@ export interface Request {
     lockedAt?: string;
     finalLockedPrice?: number;
   };
-  // Company assignment fields
-  assignedCompanyId?: string;
-  assignedWarehouseId?: string;
-  // Source and destination warehouse assignments
-  sourceWarehouse?: {
-    id: string;
-    name: string;
-    address: string;
-    city?: string;
-    country?: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-    assignedAt?: string;
-  } | null;
-  destinationWarehouse?: {
-    id: string;
-    name: string;
-    address: string;
-    city?: string;
-    country?: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-    assignedAt?: string;
-  } | null;
+  // Driver assignment fields
+  assignedDriverId?: string;
   // Pickup mode fields
   sourcePickupMode?: "Delegate" | "Self";
   destinationPickupMode?: "Delegate" | "Self";
@@ -197,8 +169,8 @@ export interface Request {
   needsWinchPickup?: boolean;
   deliveryFloorNumber?: string;
   needsWinchDropoff?: boolean;
-  // Company rejection tracking
-  rejectedByCompanies?: string[];
+  // Driver rejection tracking
+  rejectedByDrivers?: string[];
   // Workers
   workersCount?: number; // 0 to 6
   // Transport vehicle type
@@ -241,8 +213,6 @@ export interface RequestPayload {
   requestStatus?: RequestStatus;
   deliveryStatus?: DeliveryStatus;
   comment?: string;
-  sourceWarehouse?: any;
-  destinationWarehouse?: any;
 }
 
 // Request response with fully populated user data (from GET endpoints)

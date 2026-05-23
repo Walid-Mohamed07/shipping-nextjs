@@ -16,7 +16,6 @@ import {
   AlertCircle,
   ArrowLeft,
   Banknote,
-  Warehouse,
   Navigation,
   MapPinned,
   Truck,
@@ -39,10 +38,8 @@ import {
 import {
   Request,
   Address,
-  Warehouse as WarehouseType,
   RequestDeliveryStatus,
 } from "@/types";
-import { getDistanceKm } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useTranslation } from "@/app/context/LocaleContext";
 import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
@@ -84,17 +81,10 @@ const formatLocation = (loc: Address) => {
 const statusSteps = [
   { name: RequestDeliveryStatus.PENDING, icon: Clock },
   { name: RequestDeliveryStatus.PICKED_UP_SOURCE, icon: MapPin },
-  { name: RequestDeliveryStatus.WAREHOUSE_SOURCE_RECEIVED, icon: Warehouse },
   { name: RequestDeliveryStatus.IN_TRANSIT, icon: Truck },
-  {
-    name: RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED,
-    icon: Warehouse,
-  },
   { name: RequestDeliveryStatus.SHIPMENT_DELIVER, icon: Package },
   { name: RequestDeliveryStatus.DELIVERED, icon: CheckCircle2 },
 ];
-
-const NEARBY_RADIUS_KM = 50;
 
 export default function RequestDetailsPage() {
   const { t, isRtl, locale } = useTranslation();
@@ -109,17 +99,6 @@ export default function RequestDetailsPage() {
   const [request, setRequest] = useState<Request | null>(null);
   const [requestLoading, setRequestLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState("");
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  const [nearbyWarehouses, setNearbyWarehouses] = useState<
-    (WarehouseType & { distanceKm: number })[]
-  >([]);
-  const [locationChecked, setLocationChecked] = useState(false);
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmingOffer, setConfirmingOffer] = useState<any>(null);
@@ -146,7 +125,7 @@ export default function RequestDetailsPage() {
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const [lastPaymentCheck, setLastPaymentCheck] = useState<Date | null>(null);
 
-  const isClientRole = !["admin", "operator", "company", "driver"].includes(
+  const isClientRole = !["admin", "operator", "driver", "driver"].includes(
     user?.role || "",
   );
 
@@ -404,69 +383,6 @@ export default function RequestDetailsPage() {
     }
   };
 
-  const findNearbyWarehouses = () => {
-    setShowLocationPrompt(true);
-  };
-
-  const handleLocationConfirm = () => {
-    setShowLocationPrompt(false);
-    setLocationError("");
-    setLocationLoading(true);
-    setLocationChecked(true);
-
-    if (!navigator.geolocation) {
-      setLocationError("Location is not supported by your browser.");
-      setLocationLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setUserLocation({ lat, lng });
-        try {
-          const res = await fetch("/api/warehouses");
-          const data = await res.json();
-          const warehouses: WarehouseType[] = data.warehouses || [];
-          const withCoords = warehouses.filter(
-            (w) =>
-              w.latitude != null &&
-              w.longitude != null &&
-              w.status === "active",
-          );
-          const withDistance = withCoords
-            .map((w) => ({
-              ...w,
-              distanceKm: getDistanceKm(lat, lng, w.latitude!, w.longitude!),
-            }))
-            .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
-            .sort((a, b) => a.distanceKm - b.distanceKm);
-          setNearbyWarehouses(withDistance);
-        } catch {
-          const errorMsg = t.userRequestDetail.warehouseLoadFailed;
-          setLocationError(errorMsg);
-          toast.error(errorMsg);
-        } finally {
-          setLocationLoading(false);
-        }
-      },
-      (err) => {
-        const errorMsg =
-          err.code === 1
-            ? "Location permission was denied."
-            : "Could not get your location. Please try again.";
-        setLocationError(errorMsg);
-        toast.error(errorMsg);
-        setLocationLoading(false);
-      },
-    );
-  };
-
-  const handleLocationDecline = () => {
-    setShowLocationPrompt(false);
-  };
-
   const handleSelectOffer = (offerId: string) => {
     // Update local request state to reflect the selection immediately
     if (request && request.costOffers) {
@@ -575,7 +491,7 @@ export default function RequestDetailsPage() {
     if (
       request?.paymentStatus === "paid" &&
       !hasShownPaymentNotification &&
-      request?.requestStatus === "Assigned to Company"
+      request?.requestStatus === "Assigned to Driver"
     ) {
       toast.success(
         t.userRequestDetail?.paymentSuccessNotification ||
@@ -600,11 +516,9 @@ export default function RequestDetailsPage() {
       case RequestDeliveryStatus.PENDING:
         return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-800";
       case RequestDeliveryStatus.PICKED_UP_SOURCE:
-      case RequestDeliveryStatus.WAREHOUSE_SOURCE_RECEIVED:
         return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border border-blue-300 dark:border-blue-800";
       case RequestDeliveryStatus.IN_TRANSIT:
         return "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-800";
-      case RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED:
       case RequestDeliveryStatus.SHIPMENT_DELIVER:
         return "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border border-purple-300 dark:border-purple-800";
       case RequestDeliveryStatus.DELIVERED:
@@ -690,19 +604,12 @@ export default function RequestDetailsPage() {
     const template = descs?.[activity.action];
     if (!template) return activity.description || "";
     return template
-      .replace("{companyName}", activity.companyName || "")
+      .replace("{driverName}", activity.driverName || "")
       .replace(
         "{cost}",
         activity.cost != null ? Number(activity.cost).toFixed(2) : "",
       )
       .replace("{currency}", activity.currency || "USD")
-      .replace("{warehouseName}", activity.details?.warehouseName || "")
-      .replace(
-        "{type}",
-        activity.details?.type === "source"
-          ? (descs?.warehouse_type_source ?? "source")
-          : (descs?.warehouse_type_destination ?? "destination"),
-      )
       .replace(
         "{oldStatus}",
         getTranslatedAnyStatus(activity.details?.oldStatus || ""),
@@ -791,7 +698,7 @@ export default function RequestDetailsPage() {
 
             {/* Proceed to Checkout - Show when offer confirmed (Action needed status) and not paid/pending */}
             {request.requestStatus === "Action needed" &&
-              request.selectedCompany &&
+              request.selectedDriver &&
               request.paymentStatus === "unpaid" && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-linear-to-r from-primary/10 to-primary/5 rounded-lg p-6">
@@ -807,8 +714,8 @@ export default function RequestDetailsPage() {
                       <p className="text-2xl font-bold text-primary mt-2">
                         $
                         {(
-                          request.selectedCompany.finalPrice ||
-                          request.selectedCompany.cost
+                          request.selectedDriver.finalPrice ||
+                          request.selectedDriver.cost
                         ).toFixed(2)}
                       </p>
                     </div>
@@ -982,7 +889,7 @@ export default function RequestDetailsPage() {
                       <p className="text-sm text-green-700 dark:text-green-500">
                         {t.userRequestDetail?.paidAmount || "Paid"}: $
                         {request.paidAmount?.toFixed(2) ||
-                          request.selectedCompany?.cost.toFixed(2)}
+                          request.selectedDriver?.cost.toFixed(2)}
                         {request.paidAt &&
                           ` • ${new Date(request.paidAt).toLocaleDateString(locale)}`}
                       </p>
@@ -1052,60 +959,6 @@ export default function RequestDetailsPage() {
               </div>
             )}
           </div>
-
-          {/* Live Tracking Map - Only show when In Transit or later */}
-          {/* {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT ||
-            request.deliveryStatus ===
-              RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
-            request.deliveryStatus ===
-              RequestDeliveryStatus.SHIPMENT_DELIVER) &&
-            request.source &&
-            request.destination && (
-              <LiveTrackingMap
-                from={request.source.country}
-                to={request.destination.country}
-                isInTransit={true}
-              />
-            )} */}
-
-          {/* Location permission dialog - ask before sharing */}
-          {showLocationPrompt && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6">
-                <div className="flex gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <MapPinned className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground text-lg">
-                      {t.userRequestDetail.shareLocation}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t.userRequestDetail.locationDesc.replace(
-                        "{km}",
-                        String(NEARBY_RADIUS_KM),
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleLocationConfirm}
-                    className="flex-1 cursor-pointer"
-                  >
-                    {t.userRequestDetail.allow}
-                  </Button>
-                  <Button
-                    onClick={handleLocationDecline}
-                    variant="outline"
-                    className="flex-1 bg-transparent cursor-pointer"
-                  >
-                    {t.userRequestDetail.notNow}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Status Timeline - Redesigned */}
           <div className="bg-card rounded-lg border border-border p-8">
@@ -1232,8 +1085,8 @@ export default function RequestDetailsPage() {
             {/* Status Summary Card */}
             <div className="mt-8 pt-6 border-t border-border">
               {/* Accepted offer price banner */}
-              {request.selectedCompany &&
-                request.requestStatus === "Assigned to Company" && (
+              {request.selectedDriver &&
+                request.requestStatus === "Assigned to Driver" && (
                   <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 mb-4">
                     <div>
                       <p className="text-xs text-green-700 dark:text-green-300 font-medium">
@@ -1243,10 +1096,10 @@ export default function RequestDetailsPage() {
                         {
                           convert(
                             Number(
-                              request.selectedCompany.finalPrice ??
-                                request.selectedCompany.cost,
+                              request.selectedDriver.finalPrice ??
+                                request.selectedDriver.cost,
                             ),
-                            (request.selectedCompany as any).currency || "USD",
+                            (request.selectedDriver as any).currency || "USD",
                           ).formatted
                         }
                       </p>
@@ -1254,7 +1107,7 @@ export default function RequestDetailsPage() {
                     <div className="flex items-center gap-1 text-sm text-green-700 dark:text-green-300">
                       <span className="text-yellow-500">★</span>
                       <span className="font-semibold">
-                        {request.selectedCompany.rate}
+                        {request.selectedDriver.rate}
                       </span>
                     </div>
                   </div>
@@ -1319,7 +1172,7 @@ export default function RequestDetailsPage() {
                     {t.userRequestDetail.shippingOffers}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {t.userRequestDetail.chooseCompany}
+                    {t.userRequestDetail.chooseDriver}
                   </p>
                 </div>
 
@@ -1355,7 +1208,7 @@ export default function RequestDetailsPage() {
                           <div className="flex items-center gap-1">
                             <span className="text-yellow-500 text-sm">★</span>
                             <span className="text-sm font-semibold text-foreground">
-                              {offer.company.rate}
+                              {offer.driver.rate}
                             </span>
                           </div>
                         </div>
@@ -1429,7 +1282,7 @@ export default function RequestDetailsPage() {
                   <div className="flex items-center gap-1 mb-2">
                     <span className="text-yellow-500">★</span>
                     <span className="font-semibold text-foreground">
-                      {confirmingOffer.company.rate}
+                      {confirmingOffer.driver.rate}
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-primary mb-2">
@@ -1445,7 +1298,6 @@ export default function RequestDetailsPage() {
                       {confirmingOffer.comment}
                     </p>
                   )}
-
                 </div>
 
                 <div className="flex gap-2">
@@ -1748,16 +1600,13 @@ export default function RequestDetailsPage() {
                     <p className="text-sm text-muted-foreground mt-1">
                       {t.userRequestDetail.scheduledFor.replace(
                         "{date}",
-                        new Date(request.scheduledDate).toLocaleString(
-                          locale,
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        ),
+                        new Date(request.scheduledDate).toLocaleString(locale, {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }),
                       )}
                     </p>
                   )}
@@ -1811,7 +1660,7 @@ export default function RequestDetailsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <p
-                      className={`text-base font-medium ${request.selectedCompany && request.requestStatus === "Assigned to Company" ? "line-through text-muted-foreground" : "text-foreground"}`}
+                      className={`text-base font-medium ${request.selectedDriver && request.requestStatus === "Assigned to Driver" ? "line-through text-muted-foreground" : "text-foreground"}`}
                     >
                       {
                         // request.primaryCost && Number(request.primaryCost) > 0
@@ -1827,17 +1676,17 @@ export default function RequestDetailsPage() {
                     </span> */}
                   </div>
                   {/* Show accepted offer price when available */}
-                  {request.selectedCompany &&
-                    request.requestStatus === "Assigned to Company" && (
+                  {request.selectedDriver &&
+                    request.requestStatus === "Assigned to Driver" && (
                       <div className="flex items-center gap-2">
                         <p className="text-xl font-bold text-primary">
                           {
                             convert(
                               Number(
-                                request.selectedCompany.finalPrice ??
-                                  request.selectedCompany.cost,
+                                request.selectedDriver.finalPrice ??
+                                  request.selectedDriver.cost,
                               ),
-                              (request.selectedCompany as any).currency ||
+                              (request.selectedDriver as any).currency ||
                                 "USD",
                             ).formatted
                           }
@@ -1881,8 +1730,8 @@ export default function RequestDetailsPage() {
               </div>
 
               {/* Selected offer info */}
-              {request.selectedCompany &&
-                request.requestStatus === "Assigned to Company" && (
+              {request.selectedDriver &&
+                request.requestStatus === "Assigned to Driver" && (
                   <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1893,10 +1742,10 @@ export default function RequestDetailsPage() {
                           {
                             convert(
                               Number(
-                                request.selectedCompany.finalPrice ??
-                                  request.selectedCompany.cost,
+                                request.selectedDriver.finalPrice ??
+                                  request.selectedDriver.cost,
                               ),
-                              (request.selectedCompany as any).currency ||
+                              (request.selectedDriver as any).currency ||
                                 "USD",
                             ).formatted
                           }
@@ -1905,7 +1754,7 @@ export default function RequestDetailsPage() {
                       <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
                         <span className="text-yellow-500 text-sm">★</span>
                         <span className="text-sm font-bold text-foreground">
-                          {request.selectedCompany.rate}
+                          {request.selectedDriver.rate}
                         </span>
                       </div>
                     </div>
@@ -1952,7 +1801,7 @@ export default function RequestDetailsPage() {
                                   activity.action === "offer_submitted"
                                   ? {
                                       ...activity,
-                                      companyName: "A company",
+                                      driverName: "A driver",
                                       cost:
                                         activity.cost != null
                                           ? activity.cost *
@@ -1977,19 +1826,19 @@ export default function RequestDetailsPage() {
                             </div>
                           )}
 
-                          {/* Company info and cost */}
+                          {/* Driver info and cost */}
                           <div className="flex flex-wrap gap-3 mt-2">
-                            {activity.companyName &&
+                            {activity.driverName &&
                               !(
                                 isClientRole &&
                                 activity.action === "offer_submitted"
                               ) && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">
-                                    {t.userRequestDetail.company}{" "}
+                                    {t.userRequestDetail.driver}{" "}
                                   </span>
                                   <span className="text-foreground font-medium">
-                                    {activity.companyName}
+                                    {activity.driverName}
                                   </span>
                                 </div>
                               )}
@@ -2016,7 +1865,7 @@ export default function RequestDetailsPage() {
                                   </span>
                                 </div>
                               )}
-                            {activity.companyRate &&
+                            {activity.driverRate &&
                               !(
                                 isClientRole &&
                                 activity.action === "offer_submitted"
@@ -2026,7 +1875,7 @@ export default function RequestDetailsPage() {
                                     {t.userRequestDetail.rateLabel}{" "}
                                   </span>
                                   <span className="text-foreground">
-                                    {activity.companyRate} ⭐
+                                    {activity.driverRate} ⭐
                                   </span>
                                 </div>
                               )}
@@ -2118,214 +1967,6 @@ export default function RequestDetailsPage() {
                   {request.comment}
                 </p>
               </div>
-            </div>
-          )}
-
-          {/* Warehouse Locations Section - Show when warehouses are assigned */}
-          {(request.sourceWarehouse || request.destinationWarehouse) && (
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Warehouse className="w-5 h-5 text-primary" />
-                {t.userRequestDetail.assignedWarehouses}
-              </h3>
-
-              {/* Show accordion for warehouses - always use accordion structure */}
-              <Accordion type="single" className="space-y-3">
-                {/* Source Warehouse */}
-                {request.sourceWarehouse && (
-                  <AccordionItem
-                    value="source"
-                    className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
-                  >
-                    <AccordionTrigger value="source" className="bg-transparent">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-semibold text-foreground">
-                            {t.userRequestDetail.sourceWarehouse}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {request.sourceWarehouse.name}
-                          </p>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent
-                      value="source"
-                      className="bg-white/50 dark:bg-gray-900/50"
-                    >
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {t.userRequestDetail.warehouseName}
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.sourceWarehouse.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {t.userRequestDetail.address}
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.sourceWarehouse.address}
-                          </p>
-                          {(request.sourceWarehouse.city ||
-                            request.sourceWarehouse.country) && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {[
-                                request.sourceWarehouse.city,
-                                request.sourceWarehouse.country,
-                              ]
-                                .filter(Boolean)
-                                .join(", ")}
-                            </p>
-                          )}
-                        </div>
-                        {request.sourceWarehouse.assignedAt && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">
-                              {t.userRequestDetail.assignedOn}
-                            </p>
-                            <p className="text-sm text-foreground">
-                              {new Date(
-                                request.sourceWarehouse.assignedAt,
-                              ).toLocaleDateString(locale, {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        )}
-                        {request.sourceWarehouse.coordinates && (
-                          <div className="mt-3">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              {t.userRequestDetail.locationOnMap}
-                            </p>
-                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
-                              <LocationMapPicker
-                                position={{
-                                  lat: request.sourceWarehouse.coordinates
-                                    .latitude,
-                                  lng: request.sourceWarehouse.coordinates
-                                    .longitude,
-                                }}
-                                onPositionChange={() => {}}
-                                editable={false}
-                                showUseMyLocation={false}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-
-                {/* Destination Warehouse */}
-                {request.destinationWarehouse && (
-                  <AccordionItem
-                    value="destination"
-                    className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
-                  >
-                    <AccordionTrigger
-                      value="destination"
-                      className="bg-transparent"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                          <MapPinned className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-semibold text-foreground">
-                            {t.userRequestDetail.destinationWarehouse}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {request.destinationWarehouse.name}
-                          </p>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent
-                      value="destination"
-                      className="bg-white/50 dark:bg-gray-900/50"
-                    >
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {t.userRequestDetail.warehouseName}
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.destinationWarehouse.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {t.userRequestDetail.address}
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.destinationWarehouse.address}
-                          </p>
-                          {(request.destinationWarehouse.city ||
-                            request.destinationWarehouse.country) && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {[
-                                request.destinationWarehouse.city,
-                                request.destinationWarehouse.country,
-                              ]
-                                .filter(Boolean)
-                                .join(", ")}
-                            </p>
-                          )}
-                        </div>
-                        {request.destinationWarehouse.assignedAt && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">
-                              {t.userRequestDetail.assignedOn}
-                            </p>
-                            <p className="text-sm text-foreground">
-                              {new Date(
-                                request.destinationWarehouse.assignedAt,
-                              ).toLocaleDateString(locale, {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        )}
-                        {request.destinationWarehouse.coordinates && (
-                          <div className="mt-3">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              {t.userRequestDetail.locationOnMap}
-                            </p>
-                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
-                              <LocationMapPicker
-                                position={{
-                                  lat: request.destinationWarehouse.coordinates
-                                    .latitude,
-                                  lng: request.destinationWarehouse.coordinates
-                                    .longitude,
-                                }}
-                                onPositionChange={() => {}}
-                                editable={false}
-                                showUseMyLocation={false}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-              </Accordion>
             </div>
           )}
 

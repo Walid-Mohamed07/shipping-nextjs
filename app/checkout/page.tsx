@@ -67,7 +67,7 @@ export default function CheckoutPage() {
       from: "From",
       to: "To",
       acceptedOffer: "Accepted Offer",
-      company: "Shipping Company",
+      driver: "Shipping Driver",
       items: "Items",
       proceedToPayment: "Proceed to Payment",
     },
@@ -101,11 +101,11 @@ export default function CheckoutPage() {
       setRequest(reqObj);
 
       // Validate request is ready for payment
-      // Allow checkout when status is "Action Needed" with selected offer, or "Assigned to Company"
+      // Allow checkout when status is "Action Needed" with selected offer, or "Assigned to Driver"
       const canCheckout =
         (reqObj.requestStatus === "Action needed" ||
-          reqObj.requestStatus === "Assigned to Company") &&
-        reqObj.selectedCompany;
+          reqObj.requestStatus === "Assigned to Driver") &&
+        reqObj.selectedDriver;
 
       if (!canCheckout) {
         setError(ct.notReadyForPayment);
@@ -140,7 +140,7 @@ export default function CheckoutPage() {
   }, [authLoading, user, fetchData]);
 
   // Calculate amounts - Use locked price if available
-  // Priority: request.pricing.finalLockedPrice > request.pricing.lockedPrice > selectedCompany.finalPrice > selectedCompany.cost
+  // Priority: request.pricing.finalLockedPrice > request.pricing.lockedPrice > selectedDriver.finalPrice > selectedDriver.cost
   const getPaymentAmount = () => {
     if (request?.pricing?.finalLockedPrice || request?.pricing?.lockedPrice) {
       return {
@@ -152,10 +152,10 @@ export default function CheckoutPage() {
     }
     return {
       amount:
-        request?.selectedCompany?.finalPrice ||
-        request?.selectedCompany?.cost ||
+        request?.selectedDriver?.finalPrice ||
+        request?.selectedDriver?.cost ||
         0,
-      currency: (request?.selectedCompany as any)?.currency || "EGP",
+      currency: (request?.selectedDriver as any)?.currency || "EGP",
       isLocked: false,
     };
   };
@@ -358,20 +358,20 @@ export default function CheckoutPage() {
                 </p>
               </div>
 
-              {/* Selected Company */}
-              {request?.selectedCompany && (
+              {/* Selected Driver */}
+              {request?.selectedDriver && (
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Truck className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium text-foreground">
-                        {ct.company}
+                        {ct.driver}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
                       <span className="text-yellow-500 text-xs">★</span>
                       <span className="text-xs font-semibold">
-                        {request.selectedCompany.rate}
+                        {request.selectedDriver.rate}
                       </span>
                     </div>
                   </div>

@@ -312,7 +312,7 @@ ENABLE_DYNAMIC_PRICING=true
 4. Analytics (price change impact analysis)
 5. A/B testing different criteria
 6. Geographic pricing zones
-7. Customer/company specific pricing
+7. Customer/driver specific pricing
 
 ### API Enhancements
 

@@ -87,11 +87,11 @@ Authentication and authorization utilities:
 #### Other Request APIs
 
 - **`app/api/requests/manage/route.ts`**
-- **`app/api/company/requests/route.ts`**
-- **`app/api/company/ongoing/[id]/route.ts`**
-- **`app/api/company/delivery-status/route.ts`**
-- **`app/api/company/assign-warehouse/route.ts`**
-- **`app/api/company/accept-offer/route.ts`**
+- **`app/api/driver/requests/route.ts`**
+- **`app/api/driver/ongoing/[id]/route.ts`**
+- **`app/api/driver/delivery-status/route.ts`**
+- **`app/api/driver/assign-warehouse/route.ts`**
+- **`app/api/driver/accept-offer/route.ts`**
 
 _All updated to handle `publicId` lookups and include authorization checks_
 

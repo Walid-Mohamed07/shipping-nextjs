@@ -5,7 +5,7 @@ import {
   ClientHomeView,
   AdminHomeView,
   OperatorHomeView,
-  CompanyHomeView,
+  DriverHomeView,
 } from "@/app/components/home";
 
 type HomeViewComponent = typeof ClientHomeView;
@@ -14,9 +14,7 @@ const viewMap: Record<UserRole | "guest", HomeViewComponent> = {
   client: ClientHomeView,
   admin: AdminHomeView,
   operator: OperatorHomeView,
-  company: CompanyHomeView,
-  driver: ClientHomeView, // drivers see the same as clients for now
-  warehouse_manager: CompanyHomeView, // warehouse managers see company view
+  driver: DriverHomeView,
   guest: ClientHomeView,
 };
 

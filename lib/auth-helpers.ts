@@ -12,7 +12,7 @@ export interface AuthUser {
   mobile?: string;
   birthDate?: string;
   profilePicture?: string;
-  company?: string;
+  driver?: string;
   role?: string;
 }
 
@@ -55,7 +55,7 @@ export async function getCurrentUser(
       mobile: decoded.mobile,
       birthDate: decoded.birthDate,
       profilePicture: decoded.profilePicture,
-      company: decoded.company,
+      driver: decoded.driver,
       role: decoded.role,
     };
   } catch (error) {
@@ -83,7 +83,7 @@ export function isUserAuthorizedForRequest(
   if (
     currentUserRole === "admin" ||
     currentUserRole === "operator" ||
-    currentUserRole === "company"
+    currentUserRole === "driver"
   ) {
     return true;
   }

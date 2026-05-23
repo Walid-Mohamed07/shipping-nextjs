@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest) {
         newStatus: requestStatus,
       }, {
         requestId,
-        targetRoles: ["admin", "operator", "company"],
+        targetRoles: ["admin", "operator", "driver"],
       });
       
       // Notify the client who owns the request
@@ -102,7 +102,7 @@ export async function PUT(request: NextRequest) {
         newStatus: deliveryStatus,
       }, {
         requestId,
-        targetRoles: ["admin", "operator", "company"],
+        targetRoles: ["admin", "operator", "driver"],
       });
       
       // Notify the client who owns the request

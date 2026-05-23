@@ -74,9 +74,9 @@ export function AdminRequestsTab() {
 
   const translateOfferStatus = (status: string): string => {
     const map: Record<string, string> = {
-      pending: t.company.offerStatusPending,
-      accepted: t.company.offerStatusAccepted,
-      rejected: t.company.offerStatusRejected,
+      pending: t.driver.offerStatusPending,
+      accepted: t.driver.offerStatusAccepted,
+      rejected: t.driver.offerStatusRejected,
     };
     return map[status?.toLowerCase()] || status;
   };
@@ -367,7 +367,8 @@ export function AdminRequestsTab() {
                     {request.items.map((item, idx) => (
                       <div key={idx} className="text-sm text-foreground">
                         <p>
-                          {item.quantity}x {item.item} ({getCategoryLabel(item.category)})
+                          {item.quantity}x {item.item} (
+                          {getCategoryLabel(item.category)})
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {t.adminRequests.weight} {item.weight}kg
@@ -636,9 +637,14 @@ export function AdminRequestsTab() {
                     {t.adminRequests.actualCost}
                   </p>
                   <p className="text-foreground font-medium">
-                    {selectedRequest.cost
-                      ? <PriceDisplay amount={Number(selectedRequest.cost)} size="sm" />
-                      : "Pending"}
+                    {selectedRequest.cost ? (
+                      <PriceDisplay
+                        amount={Number(selectedRequest.cost)}
+                        size="sm"
+                      />
+                    ) : (
+                      "Pending"
+                    )}
                   </p>
                 </div>
               </div>
@@ -724,7 +730,8 @@ export function AdminRequestsTab() {
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-1">
-                          {t.adminRequests.category} {getCategoryLabel(item.category)}
+                          {t.adminRequests.category}{" "}
+                          {getCategoryLabel(item.category)}
                         </p>
                         <p className="text-sm text-muted-foreground mb-1">
                           {t.adminRequests.weight} {item.weight} kg
@@ -763,143 +770,145 @@ export function AdminRequestsTab() {
             </div>
 
             {/* Cost Offers */}
-            {selectedRequest.costOffers && selectedRequest.costOffers.length > 0 && (() => {
-              const avgCompanyOffer =
-                selectedRequest.costOffers!.reduce(
-                  (sum, o) => sum + Number(o.cost),
-                  0,
-                ) / selectedRequest.costOffers!.length;
-              return (
-                <div className="mb-6 pb-6 border-b border-border">
-                  {/* Section header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-foreground flex items-center gap-2">
-                      {t.adminRequests.costOffers}
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
-                        {selectedRequest.costOffers!.length}
+            {selectedRequest.costOffers &&
+              selectedRequest.costOffers.length > 0 &&
+              (() => {
+                const avgDriverOffer =
+                  selectedRequest.costOffers!.reduce(
+                    (sum, o) => sum + Number(o.cost),
+                    0,
+                  ) / selectedRequest.costOffers!.length;
+                return (
+                  <div className="mb-6 pb-6 border-b border-border">
+                    {/* Section header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-foreground flex items-center gap-2">
+                        {t.adminRequests.costOffers}
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
+                          {selectedRequest.costOffers!.length}
+                        </span>
+                      </h3>
+                    </div>
+
+                    {/* Avg driver offer summary */}
+                    <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-900/20">
+                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        {t.adminRequests.avgDriverOffer}
                       </span>
-                    </h3>
-                  </div>
-
-                  {/* Avg company offer summary */}
-                  <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-900/20">
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                      {t.adminRequests.avgCompanyOffer}
-                    </span>
-                    <span
-                      className="text-base font-bold text-blue-700 dark:text-blue-300"
-                      dir="ltr"
-                    >
-                      ${avgCompanyOffer.toFixed(2)}
-                    </span>
-                  </div>
-
-                  {/* Scrollable offer cards */}
-                  <div
-                    className="space-y-3 overflow-y-auto pe-1"
-                    style={{ maxHeight: "22rem" }}
-                  >
-                    {selectedRequest.costOffers!.map((offer, idx) => (
-                      <div
-                        key={idx}
-                        className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+                      <span
+                        className="text-base font-bold text-blue-700 dark:text-blue-300"
+                        dir="ltr"
                       >
-                        {/* Card header: index + name + status */}
-                        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/60 px-4 py-2.5">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                              {idx + 1}
-                            </span>
-                            <span className="truncate text-sm font-semibold text-foreground">
-                              {offer.company.name ||
-                                `${t.adminRequests.offerLabel} ${idx + 1}`}
+                        ${avgDriverOffer.toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Scrollable offer cards */}
+                    <div
+                      className="space-y-3 overflow-y-auto pe-1"
+                      style={{ maxHeight: "22rem" }}
+                    >
+                      {selectedRequest.costOffers!.map((offer, idx) => (
+                        <div
+                          key={idx}
+                          className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+                        >
+                          {/* Card header: index + name + status */}
+                          <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/60 px-4 py-2.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                {idx + 1}
+                              </span>
+                              <span className="truncate text-sm font-semibold text-foreground">
+                                {offer.driver.name ||
+                                  `${t.adminRequests.offerLabel} ${idx + 1}`}
+                              </span>
+                            </div>
+                            <span
+                              className={
+                                "shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium " +
+                                (offer.status === "accepted"
+                                  ? "border-green-300 bg-green-100 text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                  : offer.status === "rejected"
+                                    ? "border-red-300 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                    : "border-yellow-300 bg-yellow-100 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300")
+                              }
+                            >
+                              {translateOfferStatus(offer.status)}
                             </span>
                           </div>
-                          <span
-                            className={
-                              "shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium " +
-                              (offer.status === "accepted"
-                                ? "border-green-300 bg-green-100 text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                : offer.status === "rejected"
-                                  ? "border-red-300 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300"
-                                  : "border-yellow-300 bg-yellow-100 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300")
-                            }
-                          >
-                            {translateOfferStatus(offer.status)}
-                          </span>
-                        </div>
 
-                        {/* Price breakdown */}
-                        <div className="space-y-2 px-4 py-3 text-sm">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-muted-foreground">
-                              {t.adminRequests.cost}
-                            </span>
-                            <PriceDisplay
-                              amount={Number(offer.cost)}
-                              currency={(offer as any).currency}
-                              size="sm"
-                              className="font-semibold"
-                            />
-                          </div>
-
-                          {offer.headoverPercentage != null &&
-                            offer.headoverAmount != null && (
-                              <div className="flex items-center justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  {t.adminRequests.headoverAmount}{" "}
-                                  <span dir="ltr" className="inline">
-                                    ({offer.headoverPercentage}%)
-                                  </span>
-                                </span>
-                                <span
-                                  className="font-medium text-orange-600 dark:text-orange-400"
-                                  dir="ltr"
-                                >
-                                  +${Number(offer.headoverAmount).toFixed(2)}
-                                </span>
-                              </div>
-                            )}
-
-                          {offer.finalPrice != null && (
-                            <div className="flex items-center justify-between gap-4 border-t border-border pt-2">
-                              <span className="font-semibold text-foreground">
-                                {t.adminRequests.finalPrice}
+                          {/* Price breakdown */}
+                          <div className="space-y-2 px-4 py-3 text-sm">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-muted-foreground">
+                                {t.adminRequests.cost}
                               </span>
                               <PriceDisplay
-                                amount={Number(offer.finalPrice)}
+                                amount={Number(offer.cost)}
                                 currency={(offer as any).currency}
-                                size="md"
-                                className="text-base font-bold text-primary"
+                                size="sm"
+                                className="font-semibold"
                               />
+                            </div>
+
+                            {offer.headoverPercentage != null &&
+                              offer.headoverAmount != null && (
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-muted-foreground">
+                                    {t.adminRequests.headoverAmount}{" "}
+                                    <span dir="ltr" className="inline">
+                                      ({offer.headoverPercentage}%)
+                                    </span>
+                                  </span>
+                                  <span
+                                    className="font-medium text-orange-600 dark:text-orange-400"
+                                    dir="ltr"
+                                  >
+                                    +${Number(offer.headoverAmount).toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+
+                            {offer.finalPrice != null && (
+                              <div className="flex items-center justify-between gap-4 border-t border-border pt-2">
+                                <span className="font-semibold text-foreground">
+                                  {t.adminRequests.finalPrice}
+                                </span>
+                                <PriceDisplay
+                                  amount={Number(offer.finalPrice)}
+                                  currency={(offer as any).currency}
+                                  size="md"
+                                  className="text-base font-bold text-primary"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Comment + date footer */}
+                          {(offer.comment || offer.createdAt) && (
+                            <div className="flex flex-wrap items-start justify-between gap-2 border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+                              {offer.comment && (
+                                <p className="flex-1 italic">{offer.comment}</p>
+                              )}
+                              {offer.createdAt && (
+                                <time
+                                  className="ms-auto shrink-0 whitespace-nowrap"
+                                  dir="ltr"
+                                >
+                                  {new Date(
+                                    offer.createdAt,
+                                  ).toLocaleDateString()}
+                                </time>
+                              )}
                             </div>
                           )}
                         </div>
-
-                        {/* Comment + date footer */}
-                        {(offer.comment || offer.createdAt) && (
-                          <div className="flex flex-wrap items-start justify-between gap-2 border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
-                            {offer.comment && (
-                              <p className="flex-1 italic">{offer.comment}</p>
-                            )}
-                            {offer.createdAt && (
-                              <time
-                                className="ms-auto shrink-0 whitespace-nowrap"
-                                dir="ltr"
-                              >
-                                {new Date(
-                                  offer.createdAt,
-                                ).toLocaleDateString()}
-                              </time>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             {/* Activity Log */}
             {selectedRequest.activityHistory &&
@@ -966,15 +975,15 @@ export function AdminRequestsTab() {
                               </div>
                             )}
 
-                            {/* Company info and cost */}
+                            {/* Driver info and cost */}
                             <div className="flex flex-wrap gap-3 mt-2">
-                              {activity.companyName && (
+                              {activity.driverName && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">
-                                    {t.adminRequests.company}{" "}
+                                    {t.adminRequests.driver}{" "}
                                   </span>
                                   <span className="text-foreground font-medium">
-                                    {activity.companyName}
+                                    {activity.driverName}
                                   </span>
                                 </div>
                               )}
@@ -989,13 +998,13 @@ export function AdminRequestsTab() {
                                     </span>
                                   </div>
                                 )}
-                              {activity.companyRate && (
+                              {activity.driverRate && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">
                                     {t.adminRequests.rate}{" "}
                                   </span>
                                   <span className="text-foreground">
-                                    {activity.companyRate} ⭐
+                                    {activity.driverRate} ⭐
                                   </span>
                                 </div>
                               )}
@@ -1007,86 +1016,23 @@ export function AdminRequestsTab() {
                 </div>
               )}
 
-            {/* Selected Company */}
-            {selectedRequest.selectedCompany && (
+            {/* Selected Driver */}
+            {selectedRequest.selectedDriver && (
               <div className="mb-6 pb-6 border-b border-border">
                 <h3 className="font-semibold text-foreground mb-3">
-                  {t.adminRequests.selectedCompany}
+                  {t.adminRequests.selectedDriver}
                 </h3>
                 <div className="p-4 bg-muted/50 rounded-lg border border-border">
                   <p className="font-medium text-foreground">
-                    {selectedRequest.selectedCompany.name}
+                    {selectedRequest.selectedDriver.name}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {t.adminRequests.rate}{" "}
-                    {selectedRequest.selectedCompany.rate}
+                    {t.adminRequests.rate} {selectedRequest.selectedDriver.rate}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {t.adminRequests.cost} $
-                    {selectedRequest.selectedCompany.cost}
+                    {selectedRequest.selectedDriver.cost}
                   </p>
-                </div>
-              </div>
-            )}
-
-            {/* Warehouse Assignments */}
-            {(selectedRequest.sourceWarehouse ||
-              selectedRequest.destinationWarehouse) && (
-              <div className="mb-6 pb-6 border-b border-border">
-                <h3 className="font-semibold text-foreground mb-3">
-                  {t.adminRequests.warehouseAssignments}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedRequest.sourceWarehouse && (
-                    <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm">
-                      <p className="font-medium text-foreground mb-1">
-                        {t.adminRequests.sourceWarehouse}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {selectedRequest.sourceWarehouse.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedRequest.sourceWarehouse.city},{" "}
-                        {selectedRequest.sourceWarehouse.country}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedRequest.sourceWarehouse.address}
-                      </p>
-                      {selectedRequest.sourceWarehouse.assignedAt && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t.adminRequests.assigned}{" "}
-                          {new Date(
-                            selectedRequest.sourceWarehouse.assignedAt,
-                          ).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {selectedRequest.destinationWarehouse && (
-                    <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm">
-                      <p className="font-medium text-foreground mb-1">
-                        {t.adminRequests.destinationWarehouse}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {selectedRequest.destinationWarehouse.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedRequest.destinationWarehouse.city},{" "}
-                        {selectedRequest.destinationWarehouse.country}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedRequest.destinationWarehouse.address}
-                      </p>
-                      {selectedRequest.destinationWarehouse.assignedAt && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t.adminRequests.assigned}{" "}
-                          {new Date(
-                            selectedRequest.destinationWarehouse.assignedAt,
-                          ).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -1135,20 +1081,20 @@ export function AdminRequestsTab() {
               </div>
             )}
 
-            {/* Rejected By Companies */}
-            {selectedRequest.rejectedByCompanies &&
-              selectedRequest.rejectedByCompanies.length > 0 && (
+            {/* Rejected By Drivers */}
+            {selectedRequest.rejectedByDrivers &&
+              selectedRequest.rejectedByDrivers.length > 0 && (
                 <div className="mb-6 pb-6 border-b border-border">
                   <h3 className="font-semibold text-foreground mb-3">
                     Rejected By
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedRequest.rejectedByCompanies.map((companyId) => (
+                    {selectedRequest.rejectedByDrivers.map((driverId) => (
                       <span
-                        key={companyId}
+                        key={driverId}
                         className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-sm border border-red-300 dark:border-red-800"
                       >
-                        {companyId}
+                        {driverId}
                       </span>
                     ))}
                   </div>

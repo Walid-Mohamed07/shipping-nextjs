@@ -1,7 +1,7 @@
 {
   "name": "ShipHub - Global Shipping Platform",
   "short_name": "ShipHub",
-  "description": "Fast, secure, and reliable global shipping solutions. Manage logistics, track shipments in real time, and optimize warehouse operations.",
+  "description": "Fast, secure, and reliable global shipping solutions. Manage logistics and track shipments in real time.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

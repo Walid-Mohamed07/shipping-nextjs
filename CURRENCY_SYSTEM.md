@@ -7,7 +7,7 @@ This document describes the currency conversion system implementation that suppo
 The system provides:
 - **Real-time currency conversion** for displaying prices across the platform
 - **Price locking** when a client accepts an offer to prevent exchange rate fluctuations affecting payment
-- **Multi-currency support** for all user roles (Client, Company, Admin, Operator)
+- **Multi-currency support** for all user roles (Client, Driver, Admin, Operator)
 - **Country-based default currency** for client users
 
 ## Architecture
@@ -17,7 +17,7 @@ The system provides:
 │                         PRICE FLOW                               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  1. Company creates offer          2. Client views offer         │
+│  1. Driver creates offer          2. Client views offer         │
 │  ┌──────────────────────┐         ┌──────────────────────┐       │
 │  │ price: 100           │   →     │ Convert to user's    │       │
 │  │ currency: USD        │         │ preferred currency   │       │

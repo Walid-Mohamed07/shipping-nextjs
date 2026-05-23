@@ -269,11 +269,11 @@ export function broadcastToAdmins(type: RealTimeEventType, payload: any, request
 }
 
 /**
- * Helper to broadcast to all companies
+ * Helper to broadcast to all drivers
  */
-export function broadcastToCompanies(type: RealTimeEventType, payload: any, requestId?: string) {
+export function broadcastToDrivers(type: RealTimeEventType, payload: any, requestId?: string) {
   broadcastEvent(type, payload, {
-    targetRoles: ["company"],
+    targetRoles: ["driver"],
     requestId,
   });
 }

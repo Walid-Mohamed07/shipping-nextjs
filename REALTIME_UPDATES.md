@@ -26,23 +26,23 @@ ShipHub uses **Server-Sent Events (SSE)** to provide real-time updates across th
 
 4. **useLiveData Hook** (`app/hooks/useLiveData.ts`)
    - Custom hook for fetching data with automatic real-time refresh
-   - Convenience hooks: `useLiveRequest`, `useLiveRequests`, `useLiveCompanyRequests`
+   - Convenience hooks: `useLiveRequest`, `useLiveRequests`, `useLiveDriverRequests`
 
 ## Event Types
 
 | Event Type | Description | Target Roles |
 |------------|-------------|--------------|
-| `REQUEST_CREATED` | New shipping request created | admin, operator, company |
-| `REQUEST_UPDATED` | Request details updated | admin, operator, company, client (owner) |
+| `REQUEST_CREATED` | New shipping request created | admin, operator, driver |
+| `REQUEST_UPDATED` | Request details updated | admin, operator, driver, client (owner) |
 | `REQUEST_DELETED` | Request deleted | admin, operator |
-| `OFFER_SUBMITTED` | Company submitted an offer | admin, operator, client (owner) |
-| `OFFER_ACCEPTED` | Client accepted an offer | admin, operator, company (accepted) |
-| `OFFER_REJECTED` | Offer was rejected | company (rejected) |
-| `OFFER_UPDATED` | Company updated their offer | admin, operator, client (owner) |
+| `OFFER_SUBMITTED` | Driver submitted an offer | admin, operator, client (owner) |
+| `OFFER_ACCEPTED` | Client accepted an offer | admin, operator, driver (accepted) |
+| `OFFER_REJECTED` | Offer was rejected | driver (rejected) |
+| `OFFER_UPDATED` | Driver updated their offer | admin, operator, client (owner) |
 | `STATUS_CHANGED` | Request status changed | all relevant parties |
-| `DELIVERY_STATUS_CHANGED` | Delivery progress updated | admin, operator, company, client (owner) |
-| `WAREHOUSE_ASSIGNED` | Warehouse assigned to request | admin, operator, company, client |
-| `DRIVER_ASSIGNED` | Driver assigned to request | admin, operator, company, driver |
+| `DELIVERY_STATUS_CHANGED` | Delivery progress updated | admin, operator, driver, client (owner) |
+| `WAREHOUSE_ASSIGNED` | Warehouse assigned to request | admin, operator, driver, client |
+| `DRIVER_ASSIGNED` | Driver assigned to request | admin, operator, driver, driver |
 | `MESSAGE_RECEIVED` | New message received | recipient |
 | `MESSAGE_SENT` | Message sent | sender |
 | `TRACKING_UPDATED` | Live tracking update | client (owner), admin |
@@ -96,7 +96,7 @@ function NotificationHandler() {
     (event) => {
       if (event.type === "OFFER_SUBMITTED") {
         toast.info("New offer received!", {
-          description: `${event.payload.companyName} submitted $${event.payload.cost}`,
+          description: `${event.payload.driverName} submitted $${event.payload.cost}`,
         });
       }
     }
@@ -135,7 +135,7 @@ function MyComponent() {
 import { 
   broadcastEvent, 
   broadcastToAdmins, 
-  broadcastToCompanies,
+  broadcastToDrivers,
   broadcastToUserAndAdmins 
 } from "@/lib/eventBroadcaster";
 
@@ -148,14 +148,14 @@ export async function POST(request: NextRequest) {
     requestId: newRequest._id.toString(),
     userId: userId,
   }, {
-    targetRoles: ["admin", "operator", "company"],
+    targetRoles: ["admin", "operator", "driver"],
     requestId: newRequest._id.toString(),
   });
   
   // Broadcast to specific user and all admins
   broadcastToUserAndAdmins(userId, "OFFER_SUBMITTED", {
     requestId,
-    companyName: "Company Inc",
+    driverName: "Driver Inc",
     cost: 500,
   }, requestId);
   

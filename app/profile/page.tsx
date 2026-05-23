@@ -129,7 +129,7 @@ export default function ProfilePage() {
 
         const totalSpent = requests.reduce((sum: number, r: any) => {
           const cost = Number(
-            r.selectedCompany?.cost || r.cost /* || r.primaryCost */ || 0, // TEMPORARILY HIDDEN - primaryCost
+            r.selectedDriver?.cost || r.cost /* || r.primaryCost */ || 0, // TEMPORARILY HIDDEN - primaryCost
           );
           return sum + cost;
         }, 0);

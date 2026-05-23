@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
     // Allow payment when status is "Action needed" and an offer has been selected
     const canPay =
       (request.requestStatus === "Action needed" ||
-        request.requestStatus === "Assigned to Company") &&
-      request.selectedCompany;
+        request.requestStatus === "Assigned to Driver") &&
+      request.selectedDriver;
 
     if (!canPay) {
       return NextResponse.json(
@@ -86,9 +86,9 @@ export async function POST(req: NextRequest) {
 
     // Get the amount to pay
     // IMPORTANT: Use locked price if available (to prevent exchange rate fluctuation issues)
-    // Priority: lockedPrice > selectedCompany.finalPrice > selectedCompany.cost
+    // Priority: lockedPrice > selectedDriver.finalPrice > selectedDriver.cost
     const pricing = request.pricing as any;
-    const selectedCompany = request.selectedCompany as any;
+    const selectedDriver = request.selectedDriver as any;
 
     let totalAmount: number;
     let paymentCurrency: string;
@@ -103,11 +103,11 @@ export async function POST(req: NextRequest) {
         paymentCurrency,
       );
     } else {
-      // Fallback to selected company price (for backwards compatibility)
-      totalAmount = selectedCompany.finalPrice || selectedCompany.cost || 0;
-      paymentCurrency = selectedCompany.currency || "EGP";
+      // Fallback to selected driver price (for backwards compatibility)
+      totalAmount = selectedDriver.finalPrice || selectedDriver.cost || 0;
+      paymentCurrency = selectedDriver.currency || "EGP";
       console.log(
-        "[Payment] Using selectedCompany price (no locked price):",
+        "[Payment] Using selectedDriver price (no locked price):",
         totalAmount,
         paymentCurrency,
       );
@@ -210,8 +210,8 @@ export async function POST(req: NextRequest) {
       request.paymentId = payment._id;
       request.paidAmount = totalAmount;
       request.paidAt = new Date();
-      // Change status to "Assigned to Company" after successful payment
-      request.requestStatus = "Assigned to Company";
+      // Change status to "Assigned to Driver" after successful payment
+      request.requestStatus = "Assigned to Driver";
       await request.save();
 
       return NextResponse.json({

@@ -42,7 +42,7 @@ import bcryptjs from "bcryptjs";
  *                 enum: [active, inactive, suspended]
  *               role:
  *                 type: string
- *                 enum: [client, admin, driver, operator, company, warehouse_manager]
+ *                 enum: [client, admin, driver, operator]
  *               locations:
  *                 type: array
  *                 items:
@@ -62,9 +62,9 @@ export async function GET(request: NextRequest) {
 
     const users = await User.find({})
       .select(
-        "fullName email username status role profilePicture birthDate mobile createdAt company",
+        "fullName email username status role profilePicture birthDate mobile createdAt driver",
       )
-      .populate("company", "name email phoneNumber address rate")
+      .populate("driver", "name email phoneNumber address rate")
       .lean();
 
     return NextResponse.json(users, { status: 200 });
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       profilePicture,
       status,
       role,
-      company,
+      driver,
     } = body;
 
     if (!fullName || !email || !username) {
@@ -140,11 +140,11 @@ export async function POST(request: NextRequest) {
       mobile: mobile || "",
       status: status || "active",
       role: role || "client",
-      company: company || undefined,
+      driver: driver || undefined,
     });
 
-    // Populate company data before returning
-    await newUser.populate("company", "name email phoneNumber address rate");
+    // Populate driver data before returning
+    await newUser.populate("driver", "name email phoneNumber address rate");
 
     return NextResponse.json(
       {
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
           status: newUser.status,
           birthDate: newUser.birthDate,
           createdAt: newUser.createdAt,
-          company: newUser.company,
+          driver: newUser.driver,
         },
       },
       { status: 201 },
@@ -178,7 +178,7 @@ export async function PUT(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const { id, fullName, email, username, mobile, birthDate, profilePicture, status, role, company, newPassword } = body;
+    const { id, fullName, email, username, mobile, birthDate, profilePicture, status, role, driver, newPassword } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -236,7 +236,7 @@ export async function PUT(request: NextRequest) {
       profilePicture: profilePicture || "",
       status: status || "active",
       role: role || "client",
-      company: company || undefined,
+      driver: driver || undefined,
     };
 
     // If new password is provided, hash it
@@ -249,7 +249,7 @@ export async function PUT(request: NextRequest) {
       id,
       updateData,
       { returnDocument: "after" },
-    ).populate("company", "name email phoneNumber address rate");
+    ).populate("driver", "name email phoneNumber address rate");
 
     return NextResponse.json(
       {
@@ -265,7 +265,7 @@ export async function PUT(request: NextRequest) {
           status: updatedUser.status,
           birthDate: updatedUser.birthDate,
           createdAt: updatedUser.createdAt,
-          company: updatedUser.company,
+          driver: updatedUser.driver,
         },
       },
       { status: 200 },

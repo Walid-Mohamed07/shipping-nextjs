@@ -4,7 +4,7 @@ import { Request, Settings, User } from "@/lib/models";
 import { ActivityActions } from "@/lib/activityLogger";
 import {
   broadcastEvent,
-  broadcastToCompanies,
+  broadcastToDrivers,
   broadcastToAdmins,
 } from "@/lib/eventBroadcaster";
 import { getCurrentUser, isUserAuthorizedForRequest } from "@/lib/auth-helpers";
@@ -19,7 +19,7 @@ import {
  * @swagger
  * /api/requests/{id}/submit-offer:
  *   post:
- *     summary: Accept a company's offer for a request
+ *     summary: Accept a driver's offer for a request
  *     tags: [Requests]
  *     parameters:
  *       - in: path
@@ -103,15 +103,15 @@ export async function POST(
       );
     }
 
-    // Find the selected offer to get company name, id, and cost
+    // Find the selected offer to get driver name, id, and cost
     // The offerId is the offer's _id from the frontend
     console.log("[Submit-offer] Looking for offer with _id:", offerId);
     console.log(
       "[Submit-offer] Available offers:",
       currentRequest.costOffers?.map((o: any) => ({
         offerId: o._id?.toString(),
-        companyId: o.company?.id,
-        companyName: o.company?.name,
+        driverId: o.driver?.id,
+        driverName: o.driver?.name,
       })),
     );
 
@@ -130,9 +130,9 @@ export async function POST(
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
 
-    const companyName = selectedOffer?.company?.name || "Unknown Company";
-    const companyId = selectedOffer?.company?.id;
-    const companyRate = selectedOffer?.company?.rate || "";
+    const driverName = selectedOffer?.driver?.name || "Unknown Driver";
+    const driverId = selectedOffer?.driver?.id;
+    const driverRate = selectedOffer?.driver?.rate || "";
     const cost =
       typeof selectedOffer?.cost === "number" && !isNaN(selectedOffer.cost)
         ? selectedOffer.cost
@@ -207,9 +207,9 @@ export async function POST(
     );
 
     console.log(
-      "[Submit-offer] Setting assignedCompany to:",
-      companyId,
-      "from offer company.id",
+      "[Submit-offer] Setting assignedDriver to:",
+      driverId,
+      "from offer driver.id",
       "baseCost:",
       cost,
       "headoverPercentage:",
@@ -225,8 +225,8 @@ export async function POST(
     );
 
     // Mark the accepted offer but keep status as "Action needed" until payment is completed
-    // Set selectedCompany with full details including cost and finalPrice for UI display
-    // Status will change to "Assigned to Company" only after successful payment
+    // Set selectedDriver with full details including cost and finalPrice for UI display
+    // Status will change to "Assigned to Driver" only after successful payment
 
     // First, unset all offers' selected field, then set only the chosen one
     await Request.updateOne(
@@ -238,12 +238,12 @@ export async function POST(
       currentRequest._id,
       {
         $set: {
-          // Keep requestStatus as "Action needed" - will change to "Assigned to Company" after payment
-          assignedCompany: companyId,
-          selectedCompany: {
-            id: companyId,
-            name: companyName,
-            rate: companyRate,
+          // Keep requestStatus as "Action needed" - will change to "Assigned to Driver" after payment
+          assignedDriver: driverId,
+          selectedDriver: {
+            id: driverId,
+            name: driverName,
+            rate: driverRate,
             cost: cost,
             finalPrice: finalPrice,
             headoverPercentage: headoverPercentage,
@@ -265,13 +265,13 @@ export async function POST(
           activityHistory: {
             action: "offer_selected",
             timestamp: new Date(),
-            description: `Client selected offer from ${companyName} for ${!isNaN(lockedPriceData.lockedPrice) ? formatAmount(lockedPriceData.lockedPrice, clientCurrency) : formatAmount(finalPrice, offerCurrency)} - awaiting payment`,
-            companyName,
-            companyRate,
+            description: `Client selected offer from ${driverName} for ${!isNaN(lockedPriceData.lockedPrice) ? formatAmount(lockedPriceData.lockedPrice, clientCurrency) : formatAmount(finalPrice, offerCurrency)} - awaiting payment`,
+            driverName,
+            driverRate,
             cost: finalPrice,
             details: {
               offerId,
-              companyId,
+              driverId,
               baseCost: cost,
               headoverPercentage,
               // Currency locking details
@@ -299,32 +299,32 @@ export async function POST(
       {
         requestId: id,
         offerId,
-        companyId,
-        companyName,
+        driverId,
+        driverName,
         cost,
         pricing: lockedPriceData,
       },
       {
         requestId: id,
-        targetRoles: ["admin", "operator", "company"],
+        targetRoles: ["admin", "operator", "driver"],
       },
     );
 
-    // Notify the company whose offer was accepted
+    // Notify the driver whose offer was accepted
     broadcastEvent(
       "OFFER_ACCEPTED",
       {
         requestId: id,
         offerId,
-        companyId,
-        companyName,
+        driverId,
+        driverName,
         cost,
         pricing: lockedPriceData,
         message: "Your offer has been accepted!",
       },
       {
         requestId: id,
-        targetUsers: [companyId],
+        targetUsers: [driverId],
       },
     );
 

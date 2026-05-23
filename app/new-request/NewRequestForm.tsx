@@ -52,7 +52,6 @@ import {
   Package,
   Plus,
   Trash2,
-  Warehouse,
   Wrench,
   BoxSelect,
   X,
@@ -66,13 +65,10 @@ import {
   MAX_WORKERS,
   type TransportVehicleType,
 } from "@/constants/transportVehicles";
-import { Warehouse as WarehouseType } from "@/types";
 import { getDistanceKm } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { AddressData } from "@/app/components/LocationMapPicker";
-
-const NEARBY_RADIUS_KM = 50;
 
 export default function NewRequestForm() {
   const { user } = useAuth();

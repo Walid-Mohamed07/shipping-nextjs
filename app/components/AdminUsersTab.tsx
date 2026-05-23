@@ -31,7 +31,7 @@ export function AdminUsersTab() {
       client: t.adminUsers.clientRole,
       admin: t.adminUsers.adminRole,
       operator: t.adminUsers.operatorRole,
-      company: t.adminUsers.companyRole,
+      driver: t.adminUsers.driverRole,
       driver: t.adminUsers.driverRole,
     };
     return labels[role] || role.charAt(0).toUpperCase() + role.slice(1);
@@ -64,13 +64,13 @@ export function AdminUsersTab() {
     mobile: "",
     birthDate: "",
     status: "active" as "active" | "inactive" | "suspended",
-    role: "client" as "client" | "admin" | "operator" | "company" | "driver",
-    assignedCompanyId: "" as string,
+    role: "client" as "client" | "admin" | "operator" | "driver" | "driver",
+    assignedDriverId: "" as string,
     password: "",
     confirmPassword: "",
   });
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<
     string | null
@@ -88,25 +88,25 @@ export function AdminUsersTab() {
     fetchUsers();
   }, []);
 
-  // Fetch companies when form is shown or role changes to "company"
+  // Fetch drivers when form is shown or role changes to "driver"
   useEffect(() => {
-    if (showForm && formData.role === "company") {
-      const fetchCompanies = async () => {
-        setLoadingCompanies(true);
+    if (showForm && formData.role === "driver") {
+      const fetchDrivers = async () => {
+        setLoadingDrivers(true);
         try {
-          const res = await fetch("/api/admin/companies");
-          if (!res.ok) throw new Error("Failed to fetch companies");
+          const res = await fetch("/api/admin/drivers");
+          if (!res.ok) throw new Error("Failed to fetch drivers");
           const data = await res.json();
-          setCompanies(Array.isArray(data) ? data : data.companies || []);
+          setDrivers(Array.isArray(data) ? data : data.drivers || []);
         } catch (error) {
-          console.error("Failed to fetch companies:", error);
-          setCompanies([]);
+          console.error("Failed to fetch drivers:", error);
+          setDrivers([]);
           toast.error(getErrorMessage(error));
         } finally {
-          setLoadingCompanies(false);
+          setLoadingDrivers(false);
         }
       };
-      fetchCompanies();
+      fetchDrivers();
     }
   }, [showForm, formData.role]);
 
@@ -248,7 +248,7 @@ export function AdminUsersTab() {
         const updatePayload: any = {
           id: editingId,
           ...formData,
-          company: formData.assignedCompanyId || undefined,
+          driver: formData.assignedDriverId || undefined,
           profilePicture: profilePictureUrl,
         };
 
@@ -273,7 +273,7 @@ export function AdminUsersTab() {
         const responseData = await response.json();
         const updatedUser = responseData.user;
 
-        // Update local state with response data (company is already populated)
+        // Update local state with response data (driver is already populated)
         setUsers(
           users.map((u) =>
             (u._id as string) === editingId || u.id === editingId
@@ -289,7 +289,7 @@ export function AdminUsersTab() {
         // Create new user via API
         const createPayload: any = {
           ...formData,
-          company: formData.assignedCompanyId || undefined,
+          driver: formData.assignedDriverId || undefined,
           profilePicture: profilePictureUrl,
         };
         delete createPayload.confirmPassword; // Don't send confirm password to API
@@ -323,7 +323,7 @@ export function AdminUsersTab() {
           role: data.user.role,
           password: "",
           profilePicture: data.user.profilePicture || "",
-          company: data.user.company || undefined,
+          driver: data.user.driver || undefined,
           createdAt: data.user.createdAt,
           updatedAt: data.user.createdAt,
         };
@@ -362,10 +362,10 @@ export function AdminUsersTab() {
 
   const handleEdit = (user: User) => {
     console.log("Editing user:", user);
-    const companyId =
-      typeof user.company === "string"
-        ? user.company
-        : (user.company as any)?._id || "";
+    const driverId =
+      typeof user.driver === "string"
+        ? user.driver
+        : (user.driver as any)?._id || "";
     setFormData({
       fullName: user.fullName,
       username: user.username,
@@ -374,7 +374,7 @@ export function AdminUsersTab() {
       birthDate: user.birthDate || "",
       status: user.status,
       role: typeof user.role === "string" ? user.role : (user.role as any).name,
-      assignedCompanyId: companyId,
+      assignedDriverId: driverId,
       password: "",
       confirmPassword: "",
     });
@@ -400,7 +400,7 @@ export function AdminUsersTab() {
       birthDate: "",
       status: "active",
       role: "client",
-      assignedCompanyId: "",
+      assignedDriverId: "",
       password: "",
       confirmPassword: "",
     });
@@ -692,7 +692,7 @@ export function AdminUsersTab() {
                     <option value="client">{t.adminUsers.clientRole}</option>
                     <option value="admin">{t.adminUsers.adminRole}</option>
                     <option value="operator">{t.adminUsers.operatorRole}</option>
-                    <option value="company">{t.adminUsers.companyRole}</option>
+                    <option value="driver">{t.adminUsers.driverRole}</option>
                     <option value="driver">{t.adminUsers.driverRole}</option>
                   </select>
                 </div>
@@ -724,38 +724,38 @@ export function AdminUsersTab() {
               </div>
             </div>
 
-            {/* Company Assignment Section - Only show for company role */}
-            {formData.role === "company" && (
+            {/* Driver Assignment Section - Only show for driver role */}
+            {formData.role === "driver" && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="text-lg font-semibold text-foreground">
-                  {t.adminUsers.companyAssignment}
+                  {t.adminUsers.driverAssignment}
                 </h3>
-                {loadingCompanies ? (
+                {loadingDrivers ? (
                   <div className="flex items-center justify-center py-8 border border-border rounded-md bg-muted">
                     <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mr-2" />
                     <span className="text-muted-foreground">
-                      {t.adminUsers.loadingCompanies}
+                      {t.adminUsers.loadingDrivers}
                     </span>
                   </div>
-                ) : companies.length > 0 ? (
+                ) : drivers.length > 0 ? (
                   <div className="space-y-3 max-h-96 overflow-y-auto border border-border rounded-md p-4">
-                    {companies.map((company: any) => (
+                    {drivers.map((driver: any) => (
                       <label
-                        key={company._id || company.id}
+                        key={driver._id || driver.id}
                         className="flex items-start p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                       >
                         <input
                           type="radio"
-                          name="company"
-                          value={company._id || company.id}
+                          name="driver"
+                          value={driver._id || driver.id}
                           checked={
-                            formData.assignedCompanyId ===
-                            (company._id || company.id)
+                            formData.assignedDriverId ===
+                            (driver._id || driver.id)
                           }
                           onChange={(e) =>
                             setFormData({
                               ...formData,
-                              assignedCompanyId: e.target.value,
+                              assignedDriverId: e.target.value,
                             })
                           }
                           className="mt-1 cursor-pointer"
@@ -763,15 +763,15 @@ export function AdminUsersTab() {
                         />
                         <div className="ml-3 flex-1">
                           <p className="font-medium text-foreground">
-                            {company.name}
+                            {driver.name}
                           </p>
                           <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                            {company.email && <p>📧 {company.email}</p>}
-                            {company.phoneNumber && (
-                              <p>📱 {company.phoneNumber}</p>
+                            {driver.email && <p>📧 {driver.email}</p>}
+                            {driver.phoneNumber && (
+                              <p>📱 {driver.phoneNumber}</p>
                             )}
-                            {company.address && <p>📍 {company.address}</p>}
-                            {company.rate && <p>⭐ Rating: {company.rate}</p>}
+                            {driver.address && <p>📍 {driver.address}</p>}
+                            {driver.rate && <p>⭐ Rating: {driver.rate}</p>}
                           </div>
                         </div>
                       </label>
@@ -779,7 +779,7 @@ export function AdminUsersTab() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-20 border border-border rounded-md bg-muted text-muted-foreground text-sm">
-                    {t.adminUsers.noCompanies}
+                    {t.adminUsers.noDrivers}
                   </div>
                 )}
               </div>

@@ -126,19 +126,19 @@ const filtered = await Model.find({
 - `/api/requests/manage`
 - `/api/admin/orders`
 - `/api/admin/requests`
-- `/api/company/requests`
-- `/api/company/ongoing`
-- `/api/company/accept-offer`
+- `/api/driver/requests`
+- `/api/driver/ongoing`
+- `/api/driver/accept-offer`
 
 ### Priority 3 (Medium)
 
 - `/api/admin/vehicles`
 - `/api/admin/vehicles-rules`
 - `/api/admin/users`
-- `/api/admin/companies`
+- `/api/admin/drivers`
 - `/api/admin/assignments`
 - `/api/admin/audit-logs`
-- `/api/company/warehouses`
+- `/api/driver/warehouses`
 - `/api/user/addresses`
 - `/api/messages`
 - `/api/messages/[id]`
@@ -146,8 +146,8 @@ const filtered = await Model.find({
 ### Priority 4 (Lower)
 
 - `/api/driver/orders`
-- `/api/company/profile`
-- `/api/company/assign-warehouse`
+- `/api/driver/profile`
+- `/api/driver/assign-warehouse`
 - `/api/reverse-geocode`
 - `/api/upload/media`
 
@@ -220,7 +220,7 @@ const filtered = await Model.find({
 - [ ] Update warehouse routes
 - [ ] Update request routes
 - [ ] Update admin routes
-- [ ] Update company routes
+- [ ] Update driver routes
 - [ ] Update messaging routes
 - [ ] Update vehicle routes
 - [ ] Update user routes

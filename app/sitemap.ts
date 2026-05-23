@@ -29,22 +29,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
     {
-      url: `${baseUrl}/company/requests`,
+      url: `${baseUrl}/driver/requests`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/company/ongoing`,
+      url: `${baseUrl}/driver/ongoing`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/company/warehouses`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.6,
     },
     {
       url: `${baseUrl}/driver/assignments`,

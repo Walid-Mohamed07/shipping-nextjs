@@ -1,49 +1,53 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRealTime, RealTimeEventType, RealTimeEvent } from "@/app/context/RealTimeContext";
+import {
+  useRealTime,
+  RealTimeEventType,
+  RealTimeEvent,
+} from "@/app/context/RealTimeContext";
 
 interface UseLiveDataOptions<T> {
   /**
    * The API endpoint to fetch data from
    */
   endpoint: string;
-  
+
   /**
    * Event types that should trigger a data refresh
    */
   eventTypes?: RealTimeEventType[];
-  
+
   /**
    * If provided, only refresh when events match this request ID
    */
   requestId?: string;
-  
+
   /**
    * Optional transform function for the fetched data
    */
   transform?: (data: any) => T;
-  
+
   /**
    * Disable automatic fetching on mount
    */
   skipInitialFetch?: boolean;
-  
+
   /**
    * Debounce refresh calls (in milliseconds)
    */
   debounceMs?: number;
-  
+
   /**
    * Dependencies that should trigger a refetch when changed
    */
   dependencies?: any[];
-  
+
   /**
    * Callback when data is updated
    */
   onUpdate?: (data: T) => void;
-  
+
   /**
    * Callback when an event is received (before refresh)
    */
@@ -61,14 +65,16 @@ interface UseLiveDataResult<T> {
 
 /**
  * Hook for fetching data that automatically refreshes on real-time events
- * 
+ *
  * @example
  * const { data: requests, isLoading, refresh } = useLiveData<Request[]>({
  *   endpoint: `/api/requests?userId=${userId}`,
  *   eventTypes: ['REQUEST_CREATED', 'REQUEST_UPDATED', 'OFFER_SUBMITTED'],
  * });
  */
-export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDataResult<T> {
+export function useLiveData<T = any>(
+  options: UseLiveDataOptions<T>,
+): UseLiveDataResult<T> {
   const {
     endpoint,
     eventTypes = [],
@@ -85,7 +91,7 @@ export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDat
   const [isLoading, setIsLoading] = useState(!skipInitialFetch);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  
+
   const { subscribe, subscribeToRequest, isConnected } = useRealTime();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
@@ -135,7 +141,8 @@ export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDat
       }
     } catch (err) {
       if (isMountedRef.current) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to fetch data";
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch data";
         setError(errorMessage);
         console.error("[useLiveData] Fetch error:", errorMessage);
       }
@@ -162,10 +169,13 @@ export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDat
   }, [fetchData, debounceMs]);
 
   // Handle real-time events
-  const handleEvent = useCallback((event: RealTimeEvent) => {
-    onEvent?.(event);
-    refresh();
-  }, [onEvent, refresh]);
+  const handleEvent = useCallback(
+    (event: RealTimeEvent) => {
+      onEvent?.(event);
+      refresh();
+    },
+    [onEvent, refresh],
+  );
 
   // Subscribe to events
   useEffect(() => {
@@ -186,7 +196,13 @@ export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDat
     return () => {
       unsubscribers.forEach((unsub) => unsub());
     };
-  }, [eventTypes.join(","), requestId, subscribe, subscribeToRequest, handleEvent]);
+  }, [
+    eventTypes.join(","),
+    requestId,
+    subscribe,
+    subscribeToRequest,
+    handleEvent,
+  ]);
 
   // Initial fetch
   useEffect(() => {
@@ -216,7 +232,7 @@ export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDat
 
 /**
  * Hook for subscribing to real-time events without data fetching
- * 
+ *
  * @example
  * useLiveEvent(['REQUEST_UPDATED'], (event) => {
  *   console.log('Request updated:', event.payload);
@@ -225,7 +241,7 @@ export function useLiveData<T = any>(options: UseLiveDataOptions<T>): UseLiveDat
 export function useLiveEvent(
   eventTypes: RealTimeEventType | RealTimeEventType[],
   callback: (event: RealTimeEvent) => void,
-  requestId?: string
+  requestId?: string,
 ) {
   const { subscribe, subscribeToRequest } = useRealTime();
 
@@ -246,12 +262,18 @@ export function useLiveEvent(
     return () => {
       unsubscribers.forEach((unsub) => unsub());
     };
-  }, [Array.isArray(eventTypes) ? eventTypes.join(",") : eventTypes, requestId, callback, subscribe, subscribeToRequest]);
+  }, [
+    Array.isArray(eventTypes) ? eventTypes.join(",") : eventTypes,
+    requestId,
+    callback,
+    subscribe,
+    subscribeToRequest,
+  ]);
 }
 
 /**
  * Hook for auto-refreshing a request's data
- * 
+ *
  * @example
  * const { data: request, isLoading } = useLiveRequest(requestId);
  */
@@ -267,7 +289,6 @@ export function useLiveRequest(requestId: string | undefined) {
       "OFFER_UPDATED",
       "STATUS_CHANGED",
       "ASSIGNMENT_UPDATED",
-      "WAREHOUSE_ASSIGNED",
       "DRIVER_ASSIGNED",
       "DELIVERY_STATUS_CHANGED",
       "TRACKING_UPDATED",
@@ -279,13 +300,18 @@ export function useLiveRequest(requestId: string | undefined) {
 
 /**
  * Hook for auto-refreshing a list of requests
- * 
+ *
  * @example
  * const { data: requests, isLoading } = useLiveRequests(userId);
  */
-export function useLiveRequests(userId: string | undefined, additionalParams?: string) {
+export function useLiveRequests(
+  userId: string | undefined,
+  additionalParams?: string,
+) {
   const baseEndpoint = userId ? `/api/requests?userId=${userId}` : "";
-  const endpoint = additionalParams ? `${baseEndpoint}&${additionalParams}` : baseEndpoint;
+  const endpoint = additionalParams
+    ? `${baseEndpoint}&${additionalParams}`
+    : baseEndpoint;
 
   return useLiveData({
     endpoint,
@@ -303,11 +329,11 @@ export function useLiveRequests(userId: string | undefined, additionalParams?: s
 }
 
 /**
- * Hook for auto-refreshing company requests
+ * Hook for auto-refreshing driver requests
  */
-export function useLiveCompanyRequests(companyId: string | undefined) {
+export function useLiveDriverRequests(driverId: string | undefined) {
   return useLiveData({
-    endpoint: companyId ? `/api/company/requests?companyId=${companyId}` : "",
+    endpoint: driverId ? `/api/driver/requests?driverId=${driverId}` : "",
     eventTypes: [
       "REQUEST_CREATED",
       "REQUEST_UPDATED",
@@ -317,17 +343,20 @@ export function useLiveCompanyRequests(companyId: string | undefined) {
       "STATUS_CHANGED",
     ],
     transform: (data) => data.requests || data,
-    skipInitialFetch: !companyId,
+    skipInitialFetch: !driverId,
   });
 }
 
 /**
  * Hook for messages with live updates
  */
-export function useLiveMessages(userId: string | undefined, conversationId?: string) {
-  const endpoint = conversationId 
+export function useLiveMessages(
+  userId: string | undefined,
+  conversationId?: string,
+) {
+  const endpoint = conversationId
     ? `/api/messages?conversationId=${conversationId}`
-    : userId 
+    : userId
       ? `/api/messages?userId=${userId}`
       : "";
 
