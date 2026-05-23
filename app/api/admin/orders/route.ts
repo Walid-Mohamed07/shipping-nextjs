@@ -52,44 +52,57 @@ export async function PUT(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const { orderId, requestStatus, deliveryStatus } = body;
-
-    const updateData: any = {};
-    if (requestStatus) updateData.requestStatus = requestStatus;
-    if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
-    updateData.updatedAt = new Date();
+    const { requestStatus, deliveryStatus } = body;
+    const orderId = body.orderId || body.requestId;
     const adminId = "admin-001"; // In real app, get from auth context
 
-    if (requestStatus) {
+    if (!orderId) {
+      return NextResponse.json({ error: "Order ID required" }, { status: 400 });
+    }
+
+    const currentOrder = await Request.findById(orderId);
+    if (!currentOrder) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    const now = new Date();
+
+    if (requestStatus && requestStatus !== currentOrder.requestStatus) {
       currentOrder.requestStatus = requestStatus;
       currentOrder.requestStatusHistory =
         currentOrder.requestStatusHistory || [];
       currentOrder.requestStatusHistory.push({
         status: requestStatus,
-        changedAt: now,
-        changedBy: adminId,
+        timestamp: now,
         role: "admin",
-        note: null,
+        reason: null,
       });
+      currentOrder.orderFlow = currentOrder.orderFlow || [];
+      currentOrder.orderFlow.push(requestStatus);
+      currentOrder.orderCompletedStatuses =
+        currentOrder.orderCompletedStatuses || [];
+      currentOrder.orderCompletedStatuses.push(requestStatus);
     }
 
-    if (deliveryStatus) {
+    if (deliveryStatus && deliveryStatus !== currentOrder.deliveryStatus) {
       currentOrder.deliveryStatus = deliveryStatus;
       currentOrder.deliveryStatusHistory =
         currentOrder.deliveryStatusHistory || [];
       currentOrder.deliveryStatusHistory.push({
         status: deliveryStatus,
-        changedAt: now,
-        changedBy: adminId,
+        timestamp: now,
         role: "admin",
-        note: null,
+        reason: null,
       });
+      currentOrder.deliveryFlow = currentOrder.deliveryFlow || [];
+      currentOrder.deliveryFlow.push(deliveryStatus);
+      currentOrder.deliveryCompletedStatuses =
+        currentOrder.deliveryCompletedStatuses || [];
+      currentOrder.deliveryCompletedStatuses.push(deliveryStatus);
     }
 
     currentOrder.updatedAt = now;
-    requestsData.requests[orderIndex] = currentOrder;
-
-    fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
+    await currentOrder.save();
 
     return NextResponse.json(
       { message: "Order updated successfully", order: currentOrder },
@@ -97,9 +110,6 @@ export async function PUT(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error updating order:", error);
-    return NextResponse.json(
-      { error: "Failed to update order" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }

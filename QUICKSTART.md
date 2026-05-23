@@ -6,29 +6,12 @@
 
 ```bash
 # The dependencies are already installed via pnpm add
-# Next, seed your database with existing JSON data
-npm run seed
-```
-
-Expected output:
-
-```
-✓ Seeded X users
-✓ Seeded X warehouses
-✓ Seeded X vehicles
-...
-✅ Database seeding completed successfully!
-```
-
-### 2. Start Development
-
-```bash
 npm run dev
 ```
 
 Open: `http://localhost:3000`
 
-### 3. Access Swagger API Documentation & Testing
+### 2. Access Swagger API Documentation & Testing
 
 ```
 http://localhost:3000/swagger
@@ -45,7 +28,8 @@ You can now test all API endpoints directly!
 1. **Database Layer**
    - MongoDB connection with pooling
    - 9 Mongoose models with proper schemas
-   - Data seeding from JSON files
+
+- MongoDB-backed data access
 
 2. **Updated API Routes**
    - `/api/auth/login` ✅
@@ -62,7 +46,6 @@ You can now test all API endpoints directly!
 4. **Utilities**
    - Database connection manager
    - Error handling helpers
-   - Data seeding script
 
 ---
 
@@ -70,7 +53,6 @@ You can now test all API endpoints directly!
 
 ```
 ✅ lib/db.ts                   - MongoDB connection
-✅ lib/seed.ts                 - Database migration
 ✅ lib/swagger.ts              - Swagger config
 ✅ lib/apiHelpers.ts           - Helper functions
 ✅ lib/models/User.ts          - User schema
@@ -180,13 +162,9 @@ Visit: `http://localhost:3000/swagger`
 
 **Solution**: Verify `.env` file has correct credentials:
 
-### Issue: "Seed command fails"
+### Issue: "Expected demo data is missing"
 
-**Solution**: Clear collections and retry:
-
-```bash
-npm run seed
-```
+**Solution**: Add the required records directly in MongoDB for your environment.
 
 ### Issue: Models not updating in routes
 
@@ -324,7 +302,7 @@ Total estimated time: 2.5-5 hours for all routes
 
 ## 📋 Your Next Actions
 
-1. ✅ Run `npm run seed`
+1. ✅ Verify MongoDB data is available
 2. ✅ Run `npm run dev`
 3. ✅ Open `http://localhost:3000/swagger`
 4. ✅ Test the updated endpoints

@@ -1,50 +1,118 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { connectDB, handleError } from "@/lib/db";
+import { Driver, Request } from "@/lib/models";
+
+function isMongoId(id: string) {
+  return /^[0-9a-fA-F]{24}$/.test(id);
+}
+
+async function findRequestById(id: string) {
+  const publicIdRequest = await Request.findOne({ publicId: id })
+    .populate("user", "fullName email mobile profilePicture role")
+    .exec();
+
+  if (publicIdRequest || !isMongoId(id)) {
+    return publicIdRequest;
+  }
+
+  return Request.findById(id)
+    .populate("user", "fullName email mobile profilePicture role")
+    .exec();
+}
+
+async function findDriver(driverId?: string) {
+  if (!driverId) return null;
+
+  const conditions: any[] = [{ userId: driverId }, { email: driverId }];
+  if (isMongoId(driverId)) {
+    conditions.unshift({ _id: driverId });
+  }
+
+  return Driver.findOne({ $or: conditions }).lean();
+}
+
+function serializeStatusHistory(history: any[] = []) {
+  return history.map((entry: any) => ({
+    ...entry,
+    changedAt: entry.changedAt || entry.timestamp,
+    changedBy: entry.changedBy || null,
+    note: entry.note ?? entry.reason ?? null,
+  }));
+}
+
+function serializeCostOffer(offer: any) {
+  const driverId = offer.driverId || offer.driver?.id;
+  return {
+    ...offer,
+    driverId,
+    driver: offer.driver,
+    selected: offer.selected || false,
+  };
+}
+
+function serializeRequest(foundRequest: any) {
+  const requestObject = foundRequest.toObject
+    ? foundRequest.toObject()
+    : foundRequest;
+  const id = requestObject._id?.toString() || requestObject.id;
+
+  return {
+    ...requestObject,
+    id,
+    _id: id,
+    estimatedCost: requestObject.estimatedCost || requestObject.cost,
+    requestStatusHistory: serializeStatusHistory(
+      requestObject.requestStatusHistory,
+    ),
+    deliveryStatusHistory: serializeStatusHistory(
+      requestObject.deliveryStatusHistory,
+    ),
+    costOffers: (requestObject.costOffers || []).map(serializeCostOffer),
+  };
+}
+
+function buildDriverSnapshot(driverId: string | undefined, driver: any) {
+  if (driver) {
+    return {
+      id: driver._id?.toString() || driver.id || driver.userId || driverId,
+      name: driver.name,
+      phoneNumber: driver.phoneNumber,
+      email: driver.email,
+      address: driver.address,
+      rate: String(driver.rate ?? ""),
+    };
+  }
+
+  return {
+    id: driverId,
+    name: "Unknown Driver",
+    phoneNumber: "",
+    email: "",
+    address: "",
+    rate: "",
+  };
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await connectDB();
     const { id } = await params;
-    const requestId = id;
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
-    const driversPath = path.join(process.cwd(), "data", "drivers.json");
-    const driversData = JSON.parse(fs.readFileSync(driversPath, "utf-8"));
 
-    const foundRequest = requestsData.requests.find(
-      (r: any) => r.id === requestId,
-    );
+    const foundRequest = await findRequestById(id);
     if (!foundRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    // Enrich cost offers with driver data
-    const enrichedRequest = {
-      ...foundRequest,
-      costOffers: (foundRequest.costOffers || []).map((offer: any) => {
-        const driver = driversData.drivers.find(
-          (c: any) => c.id === (offer.driverId || offer.driver?.id),
-        );
-        return {
-          cost: offer.cost,
-          driverId: offer.driverId || offer.driver?.id,
-          driver: driver,
-          comment: offer.comment,
-          selected: offer.selected || false,
-        };
-      }),
-    };
-
-    return NextResponse.json({ request: enrichedRequest }, { status: 200 });
+    return NextResponse.json(
+      { request: serializeRequest(foundRequest) },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error fetching request:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch request" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }
 
@@ -53,52 +121,65 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await connectDB();
     const { id } = await params;
-    const requestId = id;
     const body = await request.json();
 
-    const requestsPath = path.join(process.cwd(), "data", "requests.json");
-    const requestsData = JSON.parse(fs.readFileSync(requestsPath, "utf-8"));
-
-    const requestIndex = requestsData.requests.findIndex(
-      (r: any) => r.id === requestId,
-    );
-    if (requestIndex === -1) {
+    const currentRequest = await findRequestById(id);
+    if (!currentRequest) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    const currentRequest = requestsData.requests[requestIndex];
-    const now = new Date().toISOString();
+    const now = new Date();
     const operatorId = "operator-001"; // In real app, get from auth context
 
-    // Update cost offers
     if (body.costOffers && Array.isArray(body.costOffers)) {
       currentRequest.costOffers = currentRequest.costOffers || [];
-      body.costOffers.forEach((newOffer: any) => {
+      for (const newOffer of body.costOffers) {
+        const driverId = newOffer.driverId || newOffer.driver?.id;
+        const driver = await findDriver(driverId);
+        const driverSnapshot =
+          newOffer.driver || buildDriverSnapshot(driverId, driver);
+
         const existingOfferIndex = currentRequest.costOffers.findIndex(
-          (o: any) => o.driverId === newOffer.driverId,
+          (offer: any) =>
+            offer.driver?.id === driverSnapshot.id ||
+            offer.driverId === driverSnapshot.id,
         );
+        const offerData = {
+          cost: Number(newOffer.cost),
+          currency: newOffer.currency || "USD",
+          driver: driverSnapshot,
+          comment: newOffer.comment,
+          selected: newOffer.selected || false,
+          status: newOffer.status || "pending",
+          headoverPercentage: newOffer.headoverPercentage,
+          headoverAmount: newOffer.headoverAmount,
+          finalPrice: newOffer.finalPrice,
+          createdAt: newOffer.createdAt || now,
+          offeredAt: newOffer.offeredAt || now,
+        };
+
         if (existingOfferIndex >= 0) {
-          currentRequest.costOffers[existingOfferIndex] = {
-            ...currentRequest.costOffers[existingOfferIndex],
-            ...newOffer,
+          (currentRequest.costOffers as any)[existingOfferIndex] = {
+            ...(currentRequest.costOffers[existingOfferIndex].toObject?.() ||
+              currentRequest.costOffers[existingOfferIndex]),
+            ...offerData,
           };
         } else {
-          currentRequest.costOffers.push(newOffer);
+          (currentRequest.costOffers as any).push(offerData);
         }
-      });
+      }
 
-      // Auto-set status to "Action needed" when cost offers are added
       if (currentRequest.requestStatus === "Accepted") {
         currentRequest.requestStatus = "Action needed";
         currentRequest.requestStatusHistory =
           currentRequest.requestStatusHistory || [];
         currentRequest.requestStatusHistory.push({
           status: "Action needed",
-          changedAt: now,
-          changedBy: operatorId,
+          timestamp: now,
           role: "operator",
-          note: `Cost offers set by operator with ${currentRequest.costOffers.length} offer(s)`,
+          reason: `Cost offers set by operator with ${currentRequest.costOffers.length} offer(s)`,
         });
         currentRequest.orderFlow = currentRequest.orderFlow || [];
         currentRequest.orderFlow.push("Action needed");
@@ -115,10 +196,9 @@ export async function PUT(
         currentRequest.requestStatusHistory || [];
       currentRequest.requestStatusHistory.push({
         status: body.requestStatus,
-        changedAt: now,
-        changedBy: operatorId,
+        timestamp: now,
         role: "operator",
-        note: body.note || null,
+        reason: body.note || null,
       });
       currentRequest.orderFlow = currentRequest.orderFlow || [];
       currentRequest.orderFlow.push(body.requestStatus);
@@ -137,10 +217,9 @@ export async function PUT(
         currentRequest.deliveryStatusHistory || [];
       currentRequest.deliveryStatusHistory.push({
         status: body.deliveryStatus,
-        changedAt: now,
-        changedBy: operatorId,
+        timestamp: now,
         role: "operator",
-        note: null,
+        reason: null,
       });
       currentRequest.deliveryFlow = currentRequest.deliveryFlow || [];
       currentRequest.deliveryFlow.push(body.deliveryStatus);
@@ -150,21 +229,21 @@ export async function PUT(
     }
 
     currentRequest.updatedAt = now;
-
-    fs.writeFileSync(requestsPath, JSON.stringify(requestsData, null, 2));
+    await currentRequest.save();
+    await currentRequest.populate(
+      "user",
+      "fullName email mobile profilePicture role",
+    );
 
     return NextResponse.json(
       {
         success: true,
-        request: currentRequest,
+        request: serializeRequest(currentRequest),
       },
       { status: 200 },
     );
   } catch (error) {
     console.error("Error updating request:", error);
-    return NextResponse.json(
-      { error: "Failed to update request" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }

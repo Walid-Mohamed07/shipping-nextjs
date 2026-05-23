@@ -440,7 +440,6 @@ For each route update:
 ## Next Steps
 
 1. Use these templates to update remaining routes
-2. Run the seed command: `npm run seed`
-3. Test all endpoints via Swagger UI
-4. Verify no breaking changes
-5. Deploy when all tests pass
+2. Test all endpoints via Swagger UI
+3. Verify no breaking changes
+4. Deploy when all tests pass

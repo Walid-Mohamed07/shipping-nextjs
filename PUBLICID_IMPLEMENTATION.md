@@ -127,12 +127,6 @@ Updated links to use `publicId`:
 6. **`app/components/OperatorCostOffersTab.tsx`**
    - Display: `{selectedRequest.publicId || selectedRequest.id}`
 
-### Seed Data
-
-- **`data/requests.json`** - Added `publicId` to all 12 seed requests
-
----
-
 ## URL Changes
 
 ### Before

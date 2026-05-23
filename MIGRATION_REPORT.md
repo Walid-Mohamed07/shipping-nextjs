@@ -185,7 +185,6 @@ The console warnings about `UNSAFE_componentWillReceiveProps` are from `swagger-
 
 - ✅ `lib/db.ts` - MongoDB connection
 - ✅ `lib/models/` - 9 Mongoose schemas
-- ✅ `lib/seed.ts` - Database seeding script
 - ✅ `lib/apiHelpers.ts` - Error handling utilities
 - ✅ `app/swagger/page.tsx` - Swagger UI page
 - ✅ `ROUTE_MIGRATION_STATUS.md` - Status tracking
@@ -215,7 +214,7 @@ The console warnings about `UNSAFE_componentWillReceiveProps` are from `swagger-
 ### ✅ Developer Experience
 
 - Live Swagger UI for testing
-- Console messages showing seed progress
+- MongoDB-backed API responses for debugging
 - Structured logging for debugging
 - Type-safe MongoDB queries
 
@@ -257,7 +256,7 @@ Solution: Check .env file has valid MongoDB URL
 **Issue:** "Collection not found"
 
 ```
-Solution: Run `npm run seed` to populate database
+Solution: Add the required records directly in MongoDB or through the admin screens
 ```
 
 **Issue:** "Swagger shows no endpoints"

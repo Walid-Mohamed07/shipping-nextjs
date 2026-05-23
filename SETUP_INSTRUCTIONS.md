@@ -27,7 +27,6 @@
 ### 3. **API Helpers & Utilities**
 
 - ✅ `/lib/apiHelpers.ts` - Error handling utilities
-- ✅ `/lib/seed.ts` - Database seeding script
 - ✅ `/lib/swagger.ts` - Swagger configuration
 
 ### 4. **API Routes Updated (with Swagger docs)**
@@ -58,20 +57,9 @@
 
 Make sure your `.env` has MongoDB credentials:
 
-### Step 2: Seed the Database
+### Step 2: Start the App
 
-Migrate your existing JSON data to MongoDB:
-
-```bash
-npm run seed
-```
-
-This will:
-
-- Connect to MongoDB
-- Clear existing collections
-- Import all data from `/data/` folder
-- Show progress for each collection
+Data is now served from MongoDB. Add or manage records directly through the app and API routes.
 
 ### Step 3: Start Development Server
 
@@ -342,12 +330,9 @@ const items = await Model.find()
 - ✅ Check internet connection
 - ✅ Verify IP allowlist in MongoDB Atlas
 
-### Seed Script Fails
+### Expected Demo Data Is Missing
 
-```bash
-# Clear all data and retry
-npm run seed
-```
+Add the required records directly in MongoDB or through the admin screens.
 
 ### Models Not Found
 
@@ -368,7 +353,6 @@ npm run build
 ## Migration Checklist
 
 - [ ] Verify MongoDB credentials in `.env`
-- [ ] Run `npm run seed` successfully
 - [ ] Start dev server: `npm run dev`
 - [ ] Open Swagger UI: `http://localhost:3000/swagger`
 - [ ] Test updated routes (login, signup, warehouses, requests, messages)
@@ -410,7 +394,6 @@ npm run build
 ```
 lib/
 ├── db.ts                    # MongoDB connection
-├── seed.ts                 # Data migration script
 ├── swagger.ts              # Swagger configuration
 ├── apiHelpers.ts           # Error handling utilities
 └── models/
@@ -442,13 +425,6 @@ app/
 └── swagger/
     └── page.tsx                    ✅ New UI page
 
-data/
-├── users.json
-├── warehouse.json
-├── vehicles.json
-├── requests.json
-└── ... (keep for reference)
-
 MONGODB_MIGRATION.md                ✅ New guide
 API_ROUTES_PATTERNS.md             ✅ New templates
 SETUP_INSTRUCTIONS.md              ✅ This file
@@ -461,7 +437,6 @@ SETUP_INSTRUCTIONS.md              ✅ This file
 ```bash
 # Development
 npm run dev                 # Start dev server
-npm run seed              # Seed database
 npm run build             # Build project
 npm start                 # Start production server
 npm run lint              # Run linter

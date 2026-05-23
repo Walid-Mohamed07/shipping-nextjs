@@ -8,7 +8,17 @@ const vehicleSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['Truck', 'Van', 'Pickup', 'Box Truck', 'Cargo Van'],
+      enum: [
+        'Truck',
+        'Van',
+        'Pickup',
+        'Box Truck',
+        'Cargo Van',
+        'Semi Truck',
+        'Motorcycle',
+        'Bike',
+        'Car',
+      ],
       required: true,
     },
     model: String,
@@ -20,7 +30,7 @@ const vehicleSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['available', 'In Use', 'maintenance', 'retired'],
+      enum: ['available', 'In Use', 'maintenance', 'retired', 'in_use', 'inactive'],
       default: 'available',
     },
     country: {

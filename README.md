@@ -55,6 +55,7 @@
 ## Features
 
 ### For Clients
+
 - Create shipping requests with detailed item information
 - Upload media files for items (images, documents)
 - Track shipment status in real-time
@@ -64,6 +65,7 @@
 - Real-time notifications for offer updates
 
 ### For Drivers
+
 - Browse available shipping requests
 - Submit competitive cost offers with comments
 - Manage warehouse inventory
@@ -73,6 +75,7 @@
 - View driver performance metrics
 
 ### For Administrators
+
 - Complete dashboard with multiple management tabs
 - User management (CRUD operations)
 - Driver management and approval
@@ -85,12 +88,14 @@
 - Override assignments capability
 
 ### For Drivers
+
 - View assigned orders
 - Access shipment details and routes
 - Update delivery status
 - View vehicle assignments
 
 ### General Features
+
 - 🔔 Real-time notifications via SSE
 - 💬 In-app messaging system
 - 🗺️ Interactive map-based location picker
@@ -105,37 +110,40 @@
 ## Technology Stack
 
 ### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Next.js | 16.1.6 | React framework with App Router |
-| React | 19.2.0 | UI library |
-| TypeScript | 5.x | Type safety |
-| Tailwind CSS | 4.1.9 | Styling |
-| Radix UI | Latest | Accessible UI primitives |
-| Lucide React | 0.454.0 | Icons |
-| React Hook Form | 7.60.0 | Form management |
-| Zod | 3.25.76 | Schema validation |
-| React Leaflet | 5.0.0 | Interactive maps |
-| Recharts | 2.15.4 | Data visualization |
-| Sonner | 1.7.4 | Toast notifications |
-| date-fns | 4.1.0 | Date utilities |
+
+| Technology      | Version | Purpose                         |
+| --------------- | ------- | ------------------------------- |
+| Next.js         | 16.1.6  | React framework with App Router |
+| React           | 19.2.0  | UI library                      |
+| TypeScript      | 5.x     | Type safety                     |
+| Tailwind CSS    | 4.1.9   | Styling                         |
+| Radix UI        | Latest  | Accessible UI primitives        |
+| Lucide React    | 0.454.0 | Icons                           |
+| React Hook Form | 7.60.0  | Form management                 |
+| Zod             | 3.25.76 | Schema validation               |
+| React Leaflet   | 5.0.0   | Interactive maps                |
+| Recharts        | 2.15.4  | Data visualization              |
+| Sonner          | 1.7.4   | Toast notifications             |
+| date-fns        | 4.1.0   | Date utilities                  |
 
 ### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| MongoDB | Latest | Database |
-| Mongoose | 9.2.1 | ODM |
-| JWT | 9.0.3 | Authentication |
-| bcryptjs | 3.0.3 | Password hashing |
-| Swagger | 6.2.8 | API documentation |
+
+| Technology | Version | Purpose           |
+| ---------- | ------- | ----------------- |
+| MongoDB    | Latest  | Database          |
+| Mongoose   | 9.2.1   | ODM               |
+| JWT        | 9.0.3   | Authentication    |
+| bcryptjs   | 3.0.3   | Password hashing  |
+| Swagger    | 6.2.8   | API documentation |
 
 ### Development
-| Technology | Purpose |
-|------------|---------|
-| pnpm | Package manager |
-| ESLint | Code linting |
-| PostCSS | CSS processing |
-| Turbopack | Development bundler |
+
+| Technology | Purpose             |
+| ---------- | ------------------- |
+| pnpm       | Package manager     |
+| ESLint     | Code linting        |
+| PostCSS    | CSS processing      |
+| Turbopack  | Development bundler |
 
 ---
 
@@ -321,19 +329,6 @@ shipping-nextjs/
 │   ├── categories.ts            # Item categories
 │   └── countries.ts             # Country list
 │
-├── data/                        # Seed data (JSON)
-│   ├── assignments.json
-│   ├── audit-logs.json
-│   ├── drivers.json
-│   ├── locations.json
-│   ├── messages.json
-│   ├── requests.json
-│   ├── users.json
-│   ├── vehicle-rule.json
-│   ├── vehicle-rules.json
-│   ├── vehicles.json
-│   └── warehouse.json
-│
 ├── lib/                         # Utility libraries
 │   ├── db.ts                    # MongoDB connection
 │   ├── swagger.ts               # Swagger configuration
@@ -342,7 +337,6 @@ shipping-nextjs/
 │   ├── activityLogger.ts        # Activity logging
 │   ├── eventBroadcaster.ts      # SSE broadcaster
 │   ├── publicIdGenerator.ts     # Public ID generation
-│   ├── seed.ts                  # Database seeding
 │   ├── api-service.ts           # API service layer
 │   ├── useToast.ts              # Toast hook
 │   ├── utils.ts                 # Utility functions
@@ -398,12 +392,14 @@ shipping-nextjs/
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone <repository-url>
 cd shipping-nextjs
 ```
 
 2. **Install dependencies**
+
 ```bash
 pnpm install
 # or
@@ -411,26 +407,25 @@ npm install
 ```
 
 3. **Configure environment variables**
+
 ```bash
 cp .env.example .env.local
 ```
 
-4. **Seed the database** (optional - for demo data)
-```bash
-npm run seed
-```
+4. **Start the development server**
 
-5. **Start the development server**
 ```bash
 npm run dev
 ```
 
 6. **Open the application**
+
 ```
 http://localhost:3000
 ```
 
 7. **Access Swagger API documentation**
+
 ```
 http://localhost:3000/swagger
 ```
@@ -456,12 +451,12 @@ NEXT_PUBLIC_MAPBOX_TOKEN=your-mapbox-token
 VERCEL_ANALYTICS_ID=your-analytics-id
 ```
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MONGODB_URI` | Yes | MongoDB connection string |
-| `DB_NAME` | No | Database name (default: `shiphub`) |
-| `JWT_SECRET` | Yes | Secret key for JWT signing |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | No | Mapbox API token for maps |
+| Variable                   | Required | Description                        |
+| -------------------------- | -------- | ---------------------------------- |
+| `MONGODB_URI`              | Yes      | MongoDB connection string          |
+| `DB_NAME`                  | No       | Database name (default: `shiphub`) |
+| `JWT_SECRET`               | Yes      | Secret key for JWT signing         |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | No       | Mapbox API token for maps          |
 
 ---
 
@@ -470,69 +465,75 @@ VERCEL_ANALYTICS_ID=your-analytics-id
 ShipHub implements a comprehensive role-based access control (RBAC) system with 6 distinct user roles:
 
 ### 1. Client (`client`)
+
 End-users who create and manage shipping requests.
 
-| Permission | Description |
-|------------|-------------|
-| Create requests | Create new shipping requests |
-| View own requests | View requests they created |
-| Accept offers | Accept cost offers from drivers |
-| Track shipments | View real-time tracking |
-| Manage addresses | Save and edit delivery addresses |
-| Send messages | Communicate with drivers |
+| Permission        | Description                      |
+| ----------------- | -------------------------------- |
+| Create requests   | Create new shipping requests     |
+| View own requests | View requests they created       |
+| Accept offers     | Accept cost offers from drivers  |
+| Track shipments   | View real-time tracking          |
+| Manage addresses  | Save and edit delivery addresses |
+| Send messages     | Communicate with drivers         |
 
 ### 2. Driver (`driver`)
+
 Shipping drivers that fulfill requests.
 
-| Permission | Description |
-|------------|-------------|
-| View requests | Browse available shipping requests |
-| Submit offers | Provide cost estimates |
-| Manage warehouses | CRUD operations on warehouses |
-| Assign warehouses | Assign source/destination warehouses |
-| Update delivery status | Progress updates |
-| View ongoing shipments | Track assigned shipments |
+| Permission             | Description                          |
+| ---------------------- | ------------------------------------ |
+| View requests          | Browse available shipping requests   |
+| Submit offers          | Provide cost estimates               |
+| Manage warehouses      | CRUD operations on warehouses        |
+| Assign warehouses      | Assign source/destination warehouses |
+| Update delivery status | Progress updates                     |
+| View ongoing shipments | Track assigned shipments             |
 
 ### 3. Admin (`admin`)
+
 Full system administrators.
 
-| Permission | Description |
-|------------|-------------|
-| Manage users | Create, edit, delete users |
-| Manage drivers | Approve, edit drivers |
-| Manage vehicles | Fleet management |
-| View all requests | Access all system requests |
-| Assign orders | Assign requests to drivers |
-| View audit logs | System activity monitoring |
-| Override assignments | Emergency reassignments |
+| Permission           | Description                |
+| -------------------- | -------------------------- |
+| Manage users         | Create, edit, delete users |
+| Manage drivers       | Approve, edit drivers      |
+| Manage vehicles      | Fleet management           |
+| View all requests    | Access all system requests |
+| Assign orders        | Assign requests to drivers |
+| View audit logs      | System activity monitoring |
+| Override assignments | Emergency reassignments    |
 
 ### 4. Operator (`operator`)
+
 System operators with limited admin access.
 
-| Permission | Description |
-|------------|-------------|
-| View all requests | Access all requests |
+| Permission         | Description                |
+| ------------------ | -------------------------- |
+| View all requests  | Access all requests        |
 | Manage assignments | Assign orders to resources |
-| View metrics | Performance dashboards |
-| Send messages | System communications |
+| View metrics       | Performance dashboards     |
+| Send messages      | System communications      |
 
 ### 5. Driver (`driver`)
+
 Delivery personnel.
 
-| Permission | Description |
-|------------|-------------|
-| View assigned orders | Orders assigned to them |
+| Permission             | Description             |
+| ---------------------- | ----------------------- |
+| View assigned orders   | Orders assigned to them |
 | Update delivery status | Mark pickups/deliveries |
-| View vehicle details | Assigned vehicle info |
+| View vehicle details   | Assigned vehicle info   |
 
 ### 6. Warehouse Manager (`warehouse_manager`)
+
 Warehouse operations managers.
 
-| Permission | Description |
-|------------|-------------|
-| Manage warehouse | Update warehouse details |
-| View inventory | Stock levels |
-| Process shipments | Incoming/outgoing |
+| Permission        | Description              |
+| ----------------- | ------------------------ |
+| Manage warehouse  | Update warehouse details |
+| View inventory    | Stock levels             |
+| Process shipments | Incoming/outgoing        |
 
 ---
 
@@ -540,74 +541,75 @@ Warehouse operations managers.
 
 ### Authentication Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | User login |
-| POST | `/api/auth/signup` | User registration |
+| Method | Endpoint           | Description       |
+| ------ | ------------------ | ----------------- |
+| POST   | `/api/auth/login`  | User login        |
+| POST   | `/api/auth/signup` | User registration |
 
 ### Request Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/requests` | List all requests (filtered) |
-| POST | `/api/requests` | Create new request |
-| GET | `/api/requests/[id]` | Get request by ID/publicId |
-| PUT | `/api/requests/[id]` | Update request |
-| DELETE | `/api/requests/[id]` | Delete request |
-| POST | `/api/requests/[id]/submit-offer` | Submit/accept offer |
-| PUT | `/api/requests/manage` | Manage request status |
+| Method | Endpoint                          | Description                  |
+| ------ | --------------------------------- | ---------------------------- |
+| GET    | `/api/requests`                   | List all requests (filtered) |
+| POST   | `/api/requests`                   | Create new request           |
+| GET    | `/api/requests/[id]`              | Get request by ID/publicId   |
+| PUT    | `/api/requests/[id]`              | Update request               |
+| DELETE | `/api/requests/[id]`              | Delete request               |
+| POST   | `/api/requests/[id]/submit-offer` | Submit/accept offer          |
+| PUT    | `/api/requests/manage`            | Manage request status        |
 
 ### Driver Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/driver/requests` | Get available requests |
-| POST | `/api/driver/requests` | Submit offer / reject |
-| GET | `/api/driver/ongoing` | Get ongoing shipments |
-| GET | `/api/driver/ongoing/[id]` | Get specific ongoing |
-| POST | `/api/driver/accept-offer` | Accept client's selection |
-| POST | `/api/driver/assign-warehouse` | Assign warehouses |
-| PUT | `/api/driver/delivery-status` | Update delivery status |
-| GET | `/api/driver/warehouses` | List driver warehouses |
-| POST | `/api/driver/warehouses` | Add warehouse |
-| GET | `/api/driver/profile` | Get driver profile |
+| Method | Endpoint                       | Description               |
+| ------ | ------------------------------ | ------------------------- |
+| GET    | `/api/driver/requests`         | Get available requests    |
+| POST   | `/api/driver/requests`         | Submit offer / reject     |
+| GET    | `/api/driver/ongoing`          | Get ongoing shipments     |
+| GET    | `/api/driver/ongoing/[id]`     | Get specific ongoing      |
+| POST   | `/api/driver/accept-offer`     | Accept client's selection |
+| POST   | `/api/driver/assign-warehouse` | Assign warehouses         |
+| PUT    | `/api/driver/delivery-status`  | Update delivery status    |
+| GET    | `/api/driver/warehouses`       | List driver warehouses    |
+| POST   | `/api/driver/warehouses`       | Add warehouse             |
+| GET    | `/api/driver/profile`          | Get driver profile        |
 
 ### Admin Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/users` | List all users |
-| POST | `/api/admin/users` | Create user |
-| PUT | `/api/admin/users` | Update user |
-| DELETE | `/api/admin/users` | Delete user |
-| GET | `/api/admin/drivers` | List drivers |
-| POST | `/api/admin/drivers` | Create driver |
-| GET | `/api/admin/vehicles` | List vehicles |
-| POST | `/api/admin/vehicles` | Add vehicle |
-| GET | `/api/admin/vehicle-rules` | List vehicle rules |
-| GET | `/api/admin/orders` | List orders |
-| POST | `/api/admin/assign` | Assign order |
-| GET | `/api/admin/audit-logs` | Get audit logs |
-| GET | `/api/admin/metrics` | Performance metrics |
-| GET | `/api/admin/requests` | All requests |
-| PUT | `/api/admin/requests` | Update any request |
+| Method | Endpoint                   | Description         |
+| ------ | -------------------------- | ------------------- |
+| GET    | `/api/admin/users`         | List all users      |
+| POST   | `/api/admin/users`         | Create user         |
+| PUT    | `/api/admin/users`         | Update user         |
+| DELETE | `/api/admin/users`         | Delete user         |
+| GET    | `/api/admin/drivers`       | List drivers        |
+| POST   | `/api/admin/drivers`       | Create driver       |
+| GET    | `/api/admin/vehicles`      | List vehicles       |
+| POST   | `/api/admin/vehicles`      | Add vehicle         |
+| GET    | `/api/admin/vehicle-rules` | List vehicle rules  |
+| GET    | `/api/admin/orders`        | List orders         |
+| POST   | `/api/admin/assign`        | Assign order        |
+| GET    | `/api/admin/audit-logs`    | Get audit logs      |
+| GET    | `/api/admin/metrics`       | Performance metrics |
+| GET    | `/api/admin/requests`      | All requests        |
+| PUT    | `/api/admin/requests`      | Update any request  |
 
 ### Other Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/warehouses` | List all warehouses |
-| GET | `/api/messages` | User messages |
-| POST | `/api/messages` | Send message |
-| GET | `/api/driver/orders` | Driver's orders |
-| POST | `/api/upload/media` | File upload |
-| GET | `/api/realtime/events` | SSE connection |
-| GET | `/api/nominatim-search` | Geocoding search |
-| GET | `/api/reverse-geocode` | Reverse geocoding |
+| Method | Endpoint                | Description         |
+| ------ | ----------------------- | ------------------- |
+| GET    | `/api/warehouses`       | List all warehouses |
+| GET    | `/api/messages`         | User messages       |
+| POST   | `/api/messages`         | Send message        |
+| GET    | `/api/driver/orders`    | Driver's orders     |
+| POST   | `/api/upload/media`     | File upload         |
+| GET    | `/api/realtime/events`  | SSE connection      |
+| GET    | `/api/nominatim-search` | Geocoding search    |
+| GET    | `/api/reverse-geocode`  | Reverse geocoding   |
 
 ### Interactive Documentation
 
 Access the full Swagger UI documentation at:
+
 ```
 http://localhost:3000/swagger
 ```
@@ -617,6 +619,7 @@ http://localhost:3000/swagger
 ## Database Schema
 
 ### User Model
+
 ```typescript
 {
   email: string;           // Unique, required
@@ -640,6 +643,7 @@ http://localhost:3000/swagger
 ```
 
 ### Request Model
+
 ```typescript
 {
   publicId: string;        // Format: REQ-XXXXXX (unique)
@@ -694,6 +698,7 @@ http://localhost:3000/swagger
 ```
 
 ### Driver Model
+
 ```typescript
 {
   userId?: string;
@@ -709,6 +714,7 @@ http://localhost:3000/swagger
 ```
 
 ### Warehouse Model
+
 ```typescript
 {
   name: string;           // Required
@@ -730,6 +736,7 @@ http://localhost:3000/swagger
 ```
 
 ### Vehicle Model
+
 ```typescript
 {
   name: string;           // Required
@@ -745,6 +752,7 @@ http://localhost:3000/swagger
 ```
 
 ### Message Model
+
 ```typescript
 {
   senderId?: string;
@@ -766,6 +774,7 @@ http://localhost:3000/swagger
 ```
 
 ### Additional Models
+
 - **Assignment**: Order-to-driver-vehicle assignments
 - **AuditLog**: System activity logging
 - **VehicleRule**: Vehicle allocation rules
@@ -800,20 +809,20 @@ ShipHub uses Server-Sent Events (SSE) for real-time updates across the applicati
 
 ### Event Types
 
-| Event | Description | Target Roles |
-|-------|-------------|--------------|
-| `REQUEST_CREATED` | New request created | admin, operator, driver |
-| `REQUEST_UPDATED` | Request modified | admin, operator, driver, owner |
-| `REQUEST_DELETED` | Request removed | admin, operator |
-| `OFFER_SUBMITTED` | Driver submitted offer | admin, operator, owner |
-| `OFFER_ACCEPTED` | Client accepted offer | admin, operator, driver |
-| `OFFER_UPDATED` | Offer modified | admin, operator, owner |
-| `STATUS_CHANGED` | Request status change | all relevant parties |
-| `DELIVERY_STATUS_CHANGED` | Delivery progress | admin, operator, driver, owner |
-| `WAREHOUSE_ASSIGNED` | Warehouse assigned | admin, operator, driver, owner |
-| `DRIVER_ASSIGNED` | Driver assigned | admin, operator, driver, driver |
-| `MESSAGE_RECEIVED` | New message | recipient |
-| `TRACKING_UPDATED` | Live tracking | owner, admin |
+| Event                     | Description            | Target Roles                    |
+| ------------------------- | ---------------------- | ------------------------------- |
+| `REQUEST_CREATED`         | New request created    | admin, operator, driver         |
+| `REQUEST_UPDATED`         | Request modified       | admin, operator, driver, owner  |
+| `REQUEST_DELETED`         | Request removed        | admin, operator                 |
+| `OFFER_SUBMITTED`         | Driver submitted offer | admin, operator, owner          |
+| `OFFER_ACCEPTED`          | Client accepted offer  | admin, operator, driver         |
+| `OFFER_UPDATED`           | Offer modified         | admin, operator, owner          |
+| `STATUS_CHANGED`          | Request status change  | all relevant parties            |
+| `DELIVERY_STATUS_CHANGED` | Delivery progress      | admin, operator, driver, owner  |
+| `WAREHOUSE_ASSIGNED`      | Warehouse assigned     | admin, operator, driver, owner  |
+| `DRIVER_ASSIGNED`         | Driver assigned        | admin, operator, driver, driver |
+| `MESSAGE_RECEIVED`        | New message            | recipient                       |
+| `TRACKING_UPDATED`        | Live tracking          | owner, admin                    |
 
 ### Usage
 
@@ -826,7 +835,7 @@ const { data: request, isLoading, isConnected } = useLiveRequest(requestId);
 // List with auto-refresh
 const { data: requests, refresh } = useLiveData({
   endpoint: `/api/requests?userId=${userId}`,
-  eventTypes: ['REQUEST_CREATED', 'REQUEST_UPDATED'],
+  eventTypes: ["REQUEST_CREATED", "REQUEST_UPDATED"],
   debounceMs: 500,
 });
 ```
@@ -889,55 +898,55 @@ export async function GET(request: NextRequest) {
 
 ### Core Components
 
-| Component | Description |
-|-----------|-------------|
-| `Header` | Navigation with role-based menu items |
-| `Footer` | Page footer with links |
-| `AuthGuard` | Route protection wrapper |
+| Component   | Description                           |
+| ----------- | ------------------------------------- |
+| `Header`    | Navigation with role-based menu items |
+| `Footer`    | Page footer with links                |
+| `AuthGuard` | Route protection wrapper              |
 
 ### Admin Dashboard Tabs
 
-| Component | Description |
-|-----------|-------------|
-| `AdminOrdersTab` | Order management |
-| `AdminAssignmentTab` | Resource assignment |
-| `AdminUsersTab` | User management |
-| `AdminDriversTab` | Driver management |
-| `AdminDriversTab` | Driver management |
-| `AdminVehicleManagementTab` | Fleet management |
-| `AdminVehicleRulesTab` | Allocation rules |
+| Component                     | Description          |
+| ----------------------------- | -------------------- |
+| `AdminOrdersTab`              | Order management     |
+| `AdminAssignmentTab`          | Resource assignment  |
+| `AdminUsersTab`               | User management      |
+| `AdminDriversTab`             | Driver management    |
+| `AdminDriversTab`             | Driver management    |
+| `AdminVehicleManagementTab`   | Fleet management     |
+| `AdminVehicleRulesTab`        | Allocation rules     |
 | `AdminWarehouseManagementTab` | Warehouse operations |
-| `AdminRequestsTab` | Request oversight |
-| `AdminAuditLogsTab` | Activity logs |
-| `AdminPerformanceMetricsTab` | Analytics dashboard |
-| `AdminShipmentsMapTab` | Geographic view |
-| `AdminOverrideAssignmentsTab` | Emergency controls |
+| `AdminRequestsTab`            | Request oversight    |
+| `AdminAuditLogsTab`           | Activity logs        |
+| `AdminPerformanceMetricsTab`  | Analytics dashboard  |
+| `AdminShipmentsMapTab`        | Geographic view      |
+| `AdminOverrideAssignmentsTab` | Emergency controls   |
 
 ### Form Components
 
-| Component | Description |
-|-----------|-------------|
-| `AddressForm` | Address input with autocomplete |
+| Component           | Description                        |
+| ------------------- | ---------------------------------- |
+| `AddressForm`       | Address input with autocomplete    |
 | `LocationMapPicker` | Interactive map location selection |
-| `NewRequestForm` | Multi-step request creation |
+| `NewRequestForm`    | Multi-step request creation        |
 
 ### Map Components
 
-| Component | Description |
-|-----------|-------------|
-| `LiveTrackingMap` | Real-time shipment tracking |
+| Component           | Description                    |
+| ------------------- | ------------------------------ |
+| `LiveTrackingMap`   | Real-time shipment tracking    |
 | `LocationMapPicker` | Interactive location selection |
 
 ### Skeleton Loaders
 
-| Component | Description |
-|-----------|-------------|
-| `TableSkeleton` | Loading state for tables |
-| `CardSkeleton` | Loading state for cards |
-| `FormSkeleton` | Loading state for forms |
+| Component             | Description                     |
+| --------------------- | ------------------------------- |
+| `TableSkeleton`       | Loading state for tables        |
+| `CardSkeleton`        | Loading state for cards         |
+| `FormSkeleton`        | Loading state for forms         |
 | `RequestCardSkeleton` | Loading state for request cards |
-| `MapSkeleton` | Loading state for maps |
-| `ListSkeleton` | Loading state for lists |
+| `MapSkeleton`         | Loading state for maps          |
+| `ListSkeleton`        | Loading state for lists         |
 
 ---
 
@@ -948,13 +957,14 @@ export async function GET(request: NextRequest) {
 Fetch data with automatic real-time refresh.
 
 ```typescript
-const { data, isLoading, error, refresh, isConnected, lastUpdated } = useLiveData({
-  endpoint: '/api/requests',
-  eventTypes: ['REQUEST_CREATED', 'REQUEST_UPDATED'],
-  requestId: 'optional-filter',
-  transform: (data) => data.requests,
-  debounceMs: 300,
-});
+const { data, isLoading, error, refresh, isConnected, lastUpdated } =
+  useLiveData({
+    endpoint: "/api/requests",
+    eventTypes: ["REQUEST_CREATED", "REQUEST_UPDATED"],
+    requestId: "optional-filter",
+    transform: (data) => data.requests,
+    debounceMs: 300,
+  });
 ```
 
 ### `useLiveRequest`
@@ -978,7 +988,7 @@ const { data: requests, isLoading } = useLiveRequests(userId);
 Route protection with role checking.
 
 ```typescript
-const { isAuthorized, isLoading } = useProtectedRoute(['admin', 'driver']);
+const { isAuthorized, isLoading } = useProtectedRoute(["admin", "driver"]);
 ```
 
 ### `useAuth`
@@ -1011,26 +1021,27 @@ ShipHub tracks all significant request events for audit purposes.
 
 ### Logged Events
 
-| Action | Description |
-|--------|-------------|
-| `request_created` | New request created |
-| `request_updated` | Request details modified |
-| `offer_submitted` | Driver submitted offer |
-| `offer_updated` | Driver modified offer |
-| `offer_accepted` | Client accepted offer |
-| `offer_rejected` | Offer was rejected |
-| `request_rejected_by_driver` | Driver declined request |
-| `status_changed` | Request status updated |
-| `delivery_status_changed` | Delivery progress updated |
-| `warehouse_assigned` | Warehouse assigned |
+| Action                       | Description               |
+| ---------------------------- | ------------------------- |
+| `request_created`            | New request created       |
+| `request_updated`            | Request details modified  |
+| `offer_submitted`            | Driver submitted offer    |
+| `offer_updated`              | Driver modified offer     |
+| `offer_accepted`             | Client accepted offer     |
+| `offer_rejected`             | Offer was rejected        |
+| `request_rejected_by_driver` | Driver declined request   |
+| `status_changed`             | Request status updated    |
+| `delivery_status_changed`    | Delivery progress updated |
+| `warehouse_assigned`         | Warehouse assigned        |
 
 ### Usage
 
 ```typescript
 import { addActivityLog, ActivityActions } from "@/lib/activityLogger";
 
-await addActivityLog(requestId, 
-  ActivityActions.OFFER_SUBMITTED(driverId, driverName, 150, "Fast delivery")
+await addActivityLog(
+  requestId,
+  ActivityActions.OFFER_SUBMITTED(driverId, driverName, 150, "Fast delivery"),
 );
 ```
 
@@ -1057,20 +1068,20 @@ await addActivityLog(requestId,
 ```typescript
 return new Response(JSON.stringify(data), {
   headers: {
-    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
   },
 });
 ```
 
 ### Cache Duration Guidelines
 
-| Data Type | Duration | Example |
-|-----------|----------|---------|
-| Live tracking | No cache | `/api/tracking` |
-| Messages | 1 minute | `/api/messages` |
-| User requests | 5 minutes | `/api/my-requests` |
-| User profile | 1 hour | `/api/user/profile` |
-| Lookup data | 24 hours | `/api/categories` |
+| Data Type     | Duration  | Example             |
+| ------------- | --------- | ------------------- |
+| Live tracking | No cache  | `/api/tracking`     |
+| Messages      | 1 minute  | `/api/messages`     |
+| User requests | 5 minutes | `/api/my-requests`  |
+| User profile  | 1 hour    | `/api/user/profile` |
+| Lookup data   | 24 hours  | `/api/categories`   |
 
 ### ISR (Incremental Static Regeneration)
 
@@ -1086,7 +1097,7 @@ export const revalidate = 3600;
 
 ## Demo Accounts
 
-After running `npm run seed`, these accounts are available:
+Demo accounts should be created directly in MongoDB for the environment you are using:
 
 ### Client
 
@@ -1127,13 +1138,12 @@ Password: driver_password_123
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server with Turbopack |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run seed` | Seed database with demo data |
+| Script          | Description                             |
+| --------------- | --------------------------------------- |
+| `npm run dev`   | Start development server with Turbopack |
+| `npm run build` | Build for production                    |
+| `npm run start` | Start production server                 |
+| `npm run lint`  | Run ESLint                              |
 
 ---
 
@@ -1190,6 +1200,7 @@ Requests use a public reference number format instead of exposing MongoDB Object
 - **Auto-generated**: On request creation
 
 This provides:
+
 - User-friendly reference numbers
 - Security (no MongoDB ID exposure)
 - Easy communication in support tickets

@@ -10,21 +10,7 @@ This guide explains how to migrate all API routes from JSON file storage to Mong
 
 Your `.env` file already contains the MongoDB credentials:
 
-### 2. Seed Initial Data
-
-To migrate your existing JSON data to MongoDB:
-
-```bash
-npx tsx lib/seed.ts
-```
-
-This will:
-
-- Connect to MongoDB
-- Clear existing collections
-- Import all data from JSON files into MongoDB
-
-### 3. Update API Routes - Pattern
+### 2. Update API Routes - Pattern
 
 #### Before (Using JSON Files):
 
@@ -215,7 +201,7 @@ const filtered = await Model.find({
 - [ ] Install dependencies
 - [ ] Create database connection utility
 - [ ] Create Mongoose models
-- [ ] Seed database with existing JSON data
+- [ ] Verify required MongoDB records exist
 - [ ] Update auth routes
 - [ ] Update warehouse routes
 - [ ] Update request routes
