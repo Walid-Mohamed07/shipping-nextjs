@@ -19,7 +19,7 @@
   - VehicleRule.ts
   - Request.ts
   - Message.ts
-  - Company.ts
+  - Driver.ts
   - Assignment.ts
   - AuditLog.ts
   - index.ts (exports all models)
@@ -27,7 +27,6 @@
 ### 3. **API Helpers & Utilities**
 
 - ✅ `/lib/apiHelpers.ts` - Error handling utilities
-- ✅ `/lib/seed.ts` - Database seeding script
 - ✅ `/lib/swagger.ts` - Swagger configuration
 
 ### 4. **API Routes Updated (with Swagger docs)**
@@ -58,20 +57,9 @@
 
 Make sure your `.env` has MongoDB credentials:
 
-### Step 2: Seed the Database
+### Step 2: Start the App
 
-Migrate your existing JSON data to MongoDB:
-
-```bash
-npm run seed
-```
-
-This will:
-
-- Connect to MongoDB
-- Clear existing collections
-- Import all data from `/data/` folder
-- Show progress for each collection
+Data is now served from MongoDB. Add or manage records directly through the app and API routes.
 
 ### Step 3: Start Development Server
 
@@ -101,7 +89,7 @@ Use the templates in `API_ROUTES_PATTERNS.md` to update these routes:
 /api/admin/vehicles
 /api/admin/vehicle-rules
 /api/admin/users
-/api/admin/companies
+/api/admin/drivers
 /api/admin/assignments
 /api/admin/audit-logs
 /api/requests/[id]
@@ -109,15 +97,15 @@ Use the templates in `API_ROUTES_PATTERNS.md` to update these routes:
 /api/requests/manage
 ```
 
-### Company Routes:
+### Driver Routes:
 
 ```
-/api/company/warehouses
-/api/company/profile
-/api/company/requests
-/api/company/ongoing
-/api/company/accept-offer
-/api/company/assign-warehouse
+/api/driver/warehouses
+/api/driver/profile
+/api/driver/requests
+/api/driver/ongoing
+/api/driver/accept-offer
+/api/driver/assign-warehouse
 ```
 
 ### User Routes:
@@ -175,7 +163,7 @@ All models are defined in `/lib/models/` with proper TypeScript types and valida
   fullName: string
   username: string (unique, required)
   mobile: string
-  role: 'client' | 'admin' | 'driver' | 'operator' | 'company'
+  role: 'client' | 'admin' | 'driver' | 'operator' | 'driver'
   status: 'active' | 'inactive' | 'suspended'
   locations: [{
     country: string
@@ -314,7 +302,7 @@ requestSchema.index({ userId: 1, createdAt: -1 });
 2. **Populate Relations**: For relationships between models:
 
 ```typescript
-const user = await User.findById(id).populate("company");
+const user = await User.findById(id).populate("driver");
 ```
 
 3. **Lean Queries**: When you don't need all features:
@@ -342,12 +330,9 @@ const items = await Model.find()
 - ✅ Check internet connection
 - ✅ Verify IP allowlist in MongoDB Atlas
 
-### Seed Script Fails
+### Expected Demo Data Is Missing
 
-```bash
-# Clear all data and retry
-npm run seed
-```
+Add the required records directly in MongoDB or through the admin screens.
 
 ### Models Not Found
 
@@ -368,7 +353,6 @@ npm run build
 ## Migration Checklist
 
 - [ ] Verify MongoDB credentials in `.env`
-- [ ] Run `npm run seed` successfully
 - [ ] Start dev server: `npm run dev`
 - [ ] Open Swagger UI: `http://localhost:3000/swagger`
 - [ ] Test updated routes (login, signup, warehouses, requests, messages)
@@ -410,7 +394,6 @@ npm run build
 ```
 lib/
 ├── db.ts                    # MongoDB connection
-├── seed.ts                 # Data migration script
 ├── swagger.ts              # Swagger configuration
 ├── apiHelpers.ts           # Error handling utilities
 └── models/
@@ -420,7 +403,7 @@ lib/
     ├── VehicleRule.ts
     ├── Request.ts
     ├── Message.ts
-    ├── Company.ts
+    ├── Driver.ts
     ├── Assignment.ts
     ├── AuditLog.ts
     └── index.ts
@@ -435,19 +418,12 @@ app/
 │   ├── messages/route.ts          ✅ Updated
 │   ├── api-docs/route.ts          ✅ Updated
 │   ├── admin/                     # Todo: Update
-│   ├── company/                   # Todo: Update
+│   ├── driver/                   # Todo: Update
 │   ├── driver/                    # Todo: Update
 │   ├── user/                      # Todo: Update
 │   └── ...
 └── swagger/
     └── page.tsx                    ✅ New UI page
-
-data/
-├── users.json
-├── warehouse.json
-├── vehicles.json
-├── requests.json
-└── ... (keep for reference)
 
 MONGODB_MIGRATION.md                ✅ New guide
 API_ROUTES_PATTERNS.md             ✅ New templates
@@ -461,7 +437,6 @@ SETUP_INSTRUCTIONS.md              ✅ This file
 ```bash
 # Development
 npm run dev                 # Start dev server
-npm run seed              # Seed database
 npm run build             # Build project
 npm start                 # Start production server
 npm run lint              # Run linter

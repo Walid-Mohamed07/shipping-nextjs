@@ -291,17 +291,17 @@ export async function GET() {
 - `/api/admin/vehicles` → VehicleController
 - `/api/admin/vehicle-rules` → VehicleRuleController
 - `/api/admin/users` → AdminUserController
-- `/api/admin/companies` → CompanyController
+- `/api/admin/drivers` → DriverController
 - `/api/admin/assignments` → AssignmentController
 - `/api/admin/audit-logs` → AuditLogController
 
-#### Priority 2: Company Features
-- `/api/company/warehouses` → CompanyWarehouseController
-- `/api/company/profile` → CompanyProfileController
-- `/api/company/requests` → CompanyRequestController
-- `/api/company/ongoing` → OngoingDeliveriesController
-- `/api/company/accept-offer` → OfferController
-- `/api/company/assign-warehouse` → WarehouseAssignmentController
+#### Priority 2: Driver Features
+- `/api/driver/warehouses` → DriverWarehouseController
+- `/api/driver/profile` → DriverProfileController
+- `/api/driver/requests` → DriverRequestController
+- `/api/driver/ongoing` → OngoingDeliveriesController
+- `/api/driver/accept-offer` → OfferController
+- `/api/driver/assign-warehouse` → WarehouseAssignmentController
 
 #### Priority 3: User Features
 - `/api/user/addresses` → AddressController
@@ -440,7 +440,6 @@ For each route update:
 ## Next Steps
 
 1. Use these templates to update remaining routes
-2. Run the seed command: `npm run seed`
-3. Test all endpoints via Swagger UI
-4. Verify no breaking changes
-5. Deploy when all tests pass
+2. Test all endpoints via Swagger UI
+3. Verify no breaking changes
+4. Deploy when all tests pass

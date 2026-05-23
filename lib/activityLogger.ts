@@ -4,9 +4,10 @@ export interface ActivityLogEntry {
   action: string;
   timestamp?: Date;
   description?: string;
-  companyName?: string;
-  companyRate?: string;
+  driverName?: string;
+  driverRate?: string;
   cost?: number;
+  currency?: string;
   details?: Record<string, any>;
 }
 
@@ -26,9 +27,10 @@ export async function addActivityLog(
             action: activity.action,
             timestamp: activity.timestamp || new Date(),
             description: activity.description,
-            companyName: activity.companyName,
-            companyRate: activity.companyRate,
+            driverName: activity.driverName,
+            driverRate: activity.driverRate,
             cost: activity.cost,
+            currency: activity.currency,
             details: activity.details,
           },
         },
@@ -61,68 +63,63 @@ export const ActivityActions = {
 
   // Offer management
   OFFER_SUBMITTED: (
-    companyId: string,
-    companyName: string,
+    driverId: string,
+    driverName: string,
     cost: number,
     comment?: string,
+    currency?: string,
   ) => ({
     action: "offer_submitted",
-    description: `${companyName} submitted an offer of $${cost}`,
-    companyName,
+    description: `${driverName} submitted an offer of ${cost} ${currency || "USD"}`,
+    driverName,
     cost,
-    details: { companyId, comment },
+    currency: currency || "USD",
+    details: { driverId, comment },
   }),
 
   OFFER_UPDATED: (
-    companyId: string,
-    companyName: string,
+    driverId: string,
+    driverName: string,
     cost: number,
     comment?: string,
+    currency?: string,
   ) => ({
     action: "offer_updated",
-    description: `${companyName} updated their offer to $${cost}`,
-    companyName,
+    description: `${driverName} updated their offer to ${cost} ${currency || "USD"}`,
+    driverName,
     cost,
-    details: { companyId, comment },
+    currency: currency || "USD",
+    details: { driverId, comment },
   }),
 
   OFFER_ACCEPTED: (
-    companyId: string,
-    companyName: string,
+    driverId: string,
+    driverName: string,
     cost: number,
     rate?: string,
+    currency?: string,
   ) => ({
     action: "offer_accepted",
-    description: `Client accepted offer from ${companyName} for $${cost}`,
-    companyName,
+    description: `Client accepted offer from ${driverName} for ${cost} ${currency || "USD"}`,
+    driverName,
     cost,
-    companyRate: rate,
-    details: { companyId },
+    currency: currency || "USD",
+    driverRate: rate,
+    details: { driverId },
   }),
 
-  OFFER_REJECTED: (companyId: string, companyName: string) => ({
+  OFFER_REJECTED: (driverId: string, driverName: string) => ({
     action: "offer_rejected",
-    description: `Client rejected offer from ${companyName}`,
-    companyName,
-    details: { companyId },
+    description: `Client rejected offer from ${driverName}`,
+    driverName,
+    details: { driverId },
   }),
 
-  REQUEST_REJECTED_BY_COMPANY: (companyId: string, companyName: string) => ({
-    action: "request_rejected_by_company",
-    description: `${companyName} rejected this request`,
-    companyName,
-    details: { companyId },
-  }),
-
-  // Warehouse management
-  WAREHOUSE_ASSIGNED: (
-    warehouseId: string,
-    warehouseName: string,
-    type: "source" | "destination",
-  ) => ({
-    action: "warehouse_assigned",
-    description: `Warehouse "${warehouseName}" assigned as ${type} location`,
-    details: { warehouseId, type },
+  REQUEST_REJECTED_BY_DRIVER: (driverId: string, driverName: string) => ({
+    action: "request_rejected_by_driver",
+    description: `${driverName} rejected this request`,
+    driverName,
+    details: { driverId },
   }),
 
   // Status changes
@@ -132,9 +129,15 @@ export const ActivityActions = {
     details: { oldStatus, newStatus },
   }),
 
-  DELIVERY_STATUS_CHANGED: (oldStatus: string, newStatus: string) => ({
+  DELIVERY_STATUS_CHANGED: (
+    oldStatus: string,
+    newStatus: string,
+    note?: string,
+  ) => ({
     action: "delivery_status_changed",
-    description: `Delivery status changed from "${oldStatus}" to "${newStatus}"`,
-    details: { oldStatus, newStatus },
+    description: note
+      ? `Delivery status changed from "${oldStatus}" to "${newStatus}". Note: ${note}`
+      : `Delivery status changed from "${oldStatus}" to "${newStatus}"`,
+    details: { oldStatus, newStatus, note },
   }),
 };

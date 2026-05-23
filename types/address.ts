@@ -22,7 +22,6 @@ export interface Address {
   addressType: AddressType;
   deliveryInstructions: string;
   primary?: boolean;
-  warehouseId?: string;
   pickupMode?: string;
   coordinates?: Coordinates;
 }

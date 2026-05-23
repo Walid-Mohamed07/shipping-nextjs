@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, RefreshCw, Check, X } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Assignment {
   id: string;
@@ -27,6 +28,7 @@ interface Vehicle {
 }
 
 export function AdminOverrideAssignmentsTab() {
+  const { t } = useTranslation();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [filteredAssignments, setFilteredAssignments] = useState<Assignment[]>(
     [],
@@ -89,7 +91,7 @@ export function AdminOverrideAssignmentsTab() {
       setAssignments(assignmentData);
       setError("");
     } catch (err) {
-      setError("Failed to load assignments");
+      setError(t.adminOverride.failedLoad);
     } finally {
       setLoading(false);
     }
@@ -97,7 +99,7 @@ export function AdminOverrideAssignmentsTab() {
 
   const handleOverride = async () => {
     if (!overridingId || !overrideData.driverId || !overrideData.vehicleId) {
-      setError("Please select driver and vehicle");
+      setError(t.adminOverride.selectDriverAndVehicle);
       return;
     }
 
@@ -136,7 +138,7 @@ export function AdminOverrideAssignmentsTab() {
         setError("");
       }
     } catch (err) {
-      setError("Failed to override assignment");
+      setError(t.adminOverride.failedOverride);
     }
   };
 
@@ -159,10 +161,10 @@ export function AdminOverrideAssignmentsTab() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground">
-          Override Assignments
+          {t.adminOverride.title}
         </h2>
         <p className="text-muted-foreground mt-1">
-          Change driver and vehicle assignments for active shipments
+          {t.adminOverride.subtitle}
         </p>
       </div>
 
@@ -174,27 +176,27 @@ export function AdminOverrideAssignmentsTab() {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground">Loading assignments...</p>
+        <p className="text-muted-foreground">{t.adminOverride.loading}</p>
       ) : assignments.length === 0 ? (
-        <p className="text-muted-foreground">No active assignments</p>
+        <p className="text-muted-foreground">{t.adminOverride.noActiveAssignments}</p>
       ) : (
         <>
           {/* Sort Controls */}
           <Card className="p-4 bg-slate-50 dark:bg-slate-900/50">
             <div className="flex items-center gap-4">
               <label className="text-xs font-medium text-muted-foreground min-w-max">
-                Sort By:
+                {t.adminOverride.sortBy}
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="px-2 py-2 border border-border rounded text-sm bg-background"
               >
-                <option value="date">Date (Newest)</option>
-                <option value="status">Status (A-Z)</option>
+                <option value="date">{t.adminOverride.dateNewest}</option>
+                <option value="status">{t.adminOverride.statusAZ}</option>
               </select>
               <span className="text-xs text-muted-foreground ml-auto">
-                {filteredAssignments.length} assignments
+                {filteredAssignments.length} {t.adminOverride.assignments}
               </span>
             </div>
           </Card>
@@ -206,7 +208,7 @@ export function AdminOverrideAssignmentsTab() {
                 {overridingId === assignment.id ? (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-foreground">
-                      Override Assignment {assignment.id}
+                      {t.adminOverride.overrideTitle} {assignment.id}
                     </h3>
 
                     <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
@@ -217,7 +219,7 @@ export function AdminOverrideAssignmentsTab() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <label className="block text-sm font-medium mb-2">
-                            Assign Driver
+                            {t.adminOverride.assignDriver}
                           </label>
                           <select
                             value={overrideData.driverId}
@@ -229,12 +231,12 @@ export function AdminOverrideAssignmentsTab() {
                             }
                             className="w-full px-3 py-2 border border-border rounded-md bg-background"
                           >
-                            <option value="">Select driver...</option>
+                              <option value="">{t.adminOverride.selectDriver}</option>
                             {drivers.map((driver) => (
                               <option key={driver.id} value={driver.id}>
                                 {driver.name}{" "}
                                 {driver.id === assignment.driverId
-                                  ? "(current)"
+                                  ? `(${t.adminOverride.current})`
                                   : ""}
                               </option>
                             ))}
@@ -243,7 +245,7 @@ export function AdminOverrideAssignmentsTab() {
 
                         <div>
                           <label className="block text-sm font-medium mb-2">
-                            Assign Vehicle
+                            {t.adminOverride.assignVehicle}
                           </label>
                           <select
                             value={overrideData.vehicleId}
@@ -255,12 +257,12 @@ export function AdminOverrideAssignmentsTab() {
                             }
                             className="w-full px-3 py-2 border border-border rounded-md bg-background"
                           >
-                            <option value="">Select vehicle...</option>
+                              <option value="">{t.adminOverride.selectVehicle}</option>
                             {vehicles.map((vehicle) => (
                               <option key={vehicle.id} value={vehicle.id}>
                                 {vehicle.name}{" "}
                                 {vehicle.id === assignment.vehicleId
-                                  ? "(current)"
+                                  ? `(${t.adminOverride.current})`
                                   : ""}
                               </option>
                             ))}
@@ -274,7 +276,7 @@ export function AdminOverrideAssignmentsTab() {
                           className="gap-2 bg-orange-600 hover:bg-orange-700"
                         >
                           <RefreshCw className="w-4 h-4" />
-                          Confirm Override
+                          {t.adminOverride.confirmOverride}
                         </Button>
                         <Button
                           onClick={() => setOverridingId(null)}
@@ -282,7 +284,7 @@ export function AdminOverrideAssignmentsTab() {
                           className="gap-2 bg-transparent"
                         >
                           <X className="w-4 h-4" />
-                          Cancel
+                          {t.adminOverride.cancel}
                         </Button>
                       </div>
                     </div>
@@ -301,25 +303,25 @@ export function AdminOverrideAssignmentsTab() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <p className="text-muted-foreground">Order</p>
+                        <p className="text-muted-foreground">{t.adminOverride.orderLabel}</p>
                           <p className="font-medium text-foreground">
                             {assignment.requestId}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Driver</p>
+                          <p className="text-muted-foreground">{t.adminOverride.driverLabel}</p>
                           <p className="font-medium text-foreground">
                             {assignment.driverName}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Vehicle</p>
+                          <p className="text-muted-foreground">{t.adminOverride.vehicleLabel}</p>
                           <p className="font-medium text-foreground">
                             {assignment.vehicleName}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Assigned At</p>
+                          <p className="text-muted-foreground">{t.adminOverride.assignedAtLabel}</p>
                           <p className="font-medium text-foreground">
                             {new Date(
                               assignment.assignedAt,
@@ -329,13 +331,13 @@ export function AdminOverrideAssignmentsTab() {
                       </div>
                     </div>
 
-                    <Button
+                      <Button
                       onClick={() => startOverride(assignment)}
                       variant="outline"
                       className="gap-2 bg-transparent text-orange-600 hover:text-orange-700 border-orange-200"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      Override
+                      {t.adminOverride.overrideBtn}
                     </Button>
                   </div>
                 )}
@@ -351,7 +353,7 @@ export function AdminOverrideAssignmentsTab() {
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
-                Previous
+                {t.common.previous}
               </Button>
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -380,7 +382,7 @@ export function AdminOverrideAssignmentsTab() {
                 }
                 disabled={currentPage === totalPages}
               >
-                Next
+                {t.common.next}
               </Button>
             </div>
           )}

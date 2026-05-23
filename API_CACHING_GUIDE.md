@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 | ------------- | ---------------- | ------------------------------------------- |
 | Live tracking | `no-cache`       | `/api/request/[id]/tracking`                |
 | Messages      | `s-maxage=60`    | `/api/messages`, `/api/inbox`               |
-| User requests | `s-maxage=300`   | `/api/my-requests`, `/api/company/requests` |
+| User requests | `s-maxage=300`   | `/api/my-requests`, `/api/driver/requests` |
 | User profile  | `s-maxage=3600`  | `/api/user/profile`                         |
 | Lookup data   | `s-maxage=86400` | `/api/categories`, `/api/countries`         |
 

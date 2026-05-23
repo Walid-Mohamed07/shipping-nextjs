@@ -39,8 +39,6 @@ const userSchema = new mongoose.Schema(
         "admin",
         "driver",
         "operator",
-        "company",
-        "warehouse_manager",
       ],
       default: "client",
     },
@@ -49,10 +47,36 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "inactive", "suspended"],
       default: "active",
     },
-    company: {
+    // User's country (used for default currency determination for clients)
+    country: {
+      type: String,
+    },
+    // User's preferred currency for displaying prices
+    preferredCurrency: {
+      type: String,
+      default: "USD",
+    },
+    driver: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
+      ref: "Driver",
       default: null,
+    },
+    // OTP Verification fields
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    mobileVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailOTP: {
+      code: String,
+      expiresAt: Date,
+    },
+    mobileOTP: {
+      code: String,
+      expiresAt: Date,
     },
   },
   { timestamps: true },

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Vehicle {
   id: string;
@@ -17,6 +18,7 @@ interface Vehicle {
 }
 
 export function AdminVehicleManagementTab() {
+  const { t } = useTranslation();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -165,10 +167,10 @@ export function AdminVehicleManagementTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-foreground">Vehicles</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t.adminVehicles.title}</h2>
         <Button onClick={() => setShowForm(true)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add Vehicle
+          {t.adminVehicles.addVehicle}
         </Button>
       </div>
 
@@ -182,11 +184,11 @@ export function AdminVehicleManagementTab() {
       {showForm && (
         <Card className="p-6 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
           <h3 className="text-lg font-semibold mb-4">
-            {editingId ? "Edit Vehicle" : "Add New Vehicle"}
+          {editingId ? t.adminVehicles.vehicleName : t.adminVehicles.addVehicle}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
+              <label className="block text-sm font-medium mb-1">{t.adminVehicles.vehicleName}</label>
               <input
                 type="text"
                 value={formData.name}
@@ -194,11 +196,11 @@ export function AdminVehicleManagementTab() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                placeholder="Vehicle name"
+                placeholder={t.adminVehicles.vehicleName}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Type</label>
+              <label className="block text-sm font-medium mb-1">{t.adminVehicles.vehicleType}</label>
               <select
                 value={formData.type}
                 onChange={(e) =>
@@ -206,7 +208,7 @@ export function AdminVehicleManagementTab() {
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
               >
-                <option value="">Select type</option>
+                <option value="">{t.common.selectOption}</option>
                 {vehicleTypes.map((type) => (
                   <option key={type} value={type}>
                     {type}
@@ -215,7 +217,7 @@ export function AdminVehicleManagementTab() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Capacity</label>
+              <label className="block text-sm font-medium mb-1">{t.adminVehicles.capacity}</label>
               <input
                 type="text"
                 value={formData.capacity}
@@ -223,12 +225,12 @@ export function AdminVehicleManagementTab() {
                   setFormData({ ...formData, capacity: e.target.value })
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                placeholder="e.g., 5000 kg"
+                placeholder={t.adminVehicles.capacityPlaceholder}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                License Plate
+                {t.adminVehicles.licensePlate}
               </label>
               <input
                 type="text"
@@ -237,11 +239,11 @@ export function AdminVehicleManagementTab() {
                   setFormData({ ...formData, licensePlate: e.target.value })
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                placeholder="e.g., ABC-1234"
+                placeholder={t.adminVehicles.licensePlatePlaceholder}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Location</label>
+              <label className="block text-sm font-medium mb-1">{t.adminVehicles.location}</label>
               <select
                 value={formData.location}
                 onChange={(e) =>
@@ -249,7 +251,7 @@ export function AdminVehicleManagementTab() {
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
               >
-                <option value="">Select location</option>
+                <option value="">{t.common.selectOption}</option>
                 {countries.map((country) => (
                   <option key={country} value={country}>
                     {country}
@@ -258,7 +260,7 @@ export function AdminVehicleManagementTab() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
+              <label className="block text-sm font-medium mb-1">{t.adminVehicles.vehicleStatus}</label>
               <select
                 value={formData.status}
                 onChange={(e) =>
@@ -280,7 +282,7 @@ export function AdminVehicleManagementTab() {
               className="gap-2"
             >
               <Check className="w-4 h-4" />
-              {editingId ? "Update" : "Add"}
+              {editingId ? t.adminVehicles.update : t.adminVehicles.create}
             </Button>
             <Button
               onClick={resetForm}
@@ -288,16 +290,16 @@ export function AdminVehicleManagementTab() {
               className="gap-2 bg-transparent"
             >
               <X className="w-4 h-4" />
-              Cancel
+              {t.common.cancel}
             </Button>
           </div>
         </Card>
       )}
 
       {loading ? (
-        <p className="text-muted-foreground">Loading vehicles...</p>
+        <p className="text-muted-foreground">{t.common.loading}</p>
       ) : vehicles.length === 0 ? (
-        <p className="text-muted-foreground">No vehicles found</p>
+        <p className="text-muted-foreground">{t.adminVehicles.searchPlaceholder}</p>
       ) : (
         <div className="grid gap-4">
           {vehicles.map((vehicle) => (
@@ -309,18 +311,18 @@ export function AdminVehicleManagementTab() {
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground mt-2">
                     <div>
-                      <span className="font-medium">Type:</span> {vehicle.type}
+                      <span className="font-medium">{t.adminVehicles.vehicleType}:</span> {vehicle.type}
                     </div>
                     <div>
-                      <span className="font-medium">Capacity:</span>{" "}
+                      <span className="font-medium">{t.adminVehicles.capacity}:</span>{" "}
                       {vehicle.capacity}
                     </div>
                     <div>
-                      <span className="font-medium">Plate:</span>{" "}
+                      <span className="font-medium">{t.adminVehicles.licensePlate}:</span>{" "}
                       {vehicle.licensePlate}
                     </div>
                     <div>
-                      <span className="font-medium">Location:</span>{" "}
+                      <span className="font-medium">{t.adminVehicles.location}:</span>{" "}
                       {vehicle.location}
                     </div>
                   </div>
@@ -346,7 +348,7 @@ export function AdminVehicleManagementTab() {
                     className="gap-1 bg-transparent"
                   >
                     <Edit2 className="w-4 h-4" />
-                    Edit
+                    {t.adminVehicles.update}
                   </Button>
                   <Button
                     size="sm"
@@ -355,7 +357,7 @@ export function AdminVehicleManagementTab() {
                     className="gap-1"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    {t.common.delete}
                   </Button>
                 </div>
               </div>

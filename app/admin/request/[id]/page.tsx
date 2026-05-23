@@ -7,14 +7,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 interface CostOffer {
   cost: number;
-  companyId: string;
+  driverId: string;
   comment: string;
 }
 
-interface Company {
+interface Driver {
   id: string;
   name: string;
   phoneNumber: string;
@@ -33,6 +36,7 @@ interface StatusHistory {
 
 interface RequestDetail {
   id: string;
+  publicId?: string;
   user: {
     id: string;
     fullName: string;
@@ -60,24 +64,27 @@ export default function RequestDetailPage() {
   const requestId = params.id as string;
 
   const [request, setRequest] = useState<RequestDetail | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [newOffer, setNewOffer] = useState({
-    companyId: "",
+    driverId: "",
     cost: "",
     comment: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedDeliveryStatus, setSelectedDeliveryStatus] = useState("");
   const [selectedRequestStatus, setSelectedRequestStatus] = useState("");
+  const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch request details
-        const [reqResponse, companiesResponse] = await Promise.all([
+        const [reqResponse, driversResponse] = await Promise.all([
           fetch(`/api/admin/requests/${requestId}`),
-          fetch("/api/admin/companies"),
+          fetch("/api/admin/drivers"),
         ]);
 
         if (reqResponse.ok) {
@@ -87,9 +94,9 @@ export default function RequestDetailPage() {
           setSelectedDeliveryStatus(reqData.request.deliveryStatus);
         }
 
-        if (companiesResponse.ok) {
-          const companiesData = await companiesResponse.json();
-          setCompanies(companiesData.companies);
+        if (driversResponse.ok) {
+          const driversData = await driversResponse.json();
+          setDrivers(driversData.drivers);
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -102,8 +109,8 @@ export default function RequestDetailPage() {
   }, [requestId]);
 
   const handleAddCostOffer = async () => {
-    if (!newOffer.companyId || !newOffer.cost) {
-      alert("Please fill in company and cost");
+    if (!newOffer.driverId || !newOffer.cost) {
+      alert(t.admin.fillDriverAndCost);
       return;
     }
 
@@ -116,7 +123,7 @@ export default function RequestDetailPage() {
           costOffers: [
             {
               cost: parseFloat(newOffer.cost),
-              companyId: newOffer.companyId,
+              driverId: newOffer.driverId,
               comment: newOffer.comment,
             },
           ],
@@ -126,7 +133,7 @@ export default function RequestDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setRequest(data.request);
-        setNewOffer({ companyId: "", cost: "", comment: "" });
+        setNewOffer({ driverId: "", cost: "", comment: "" });
       }
     } catch (error) {
       console.error("Failed to add cost offer:", error);
@@ -169,7 +176,7 @@ export default function RequestDetailPage() {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-screen">
-          Loading...
+          {t.common.loading}
         </div>
       </div>
     );
@@ -179,7 +186,7 @@ export default function RequestDetailPage() {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-screen">
-          Request not found
+          {t.admin.requestNotFound}
         </div>
       </div>
     );
@@ -198,10 +205,10 @@ export default function RequestDetailPage() {
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            {t.common.back}
           </Button>
           <h1 className="text-3xl font-bold text-foreground">
-            Request Details
+            {t.admin.requestDetails}
           </h1>
         </div>
 
@@ -210,28 +217,33 @@ export default function RequestDetailPage() {
           <div className="col-span-2 space-y-6">
             {/* Client Info */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Client Information</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.clientInfo}
+              </h2>
               <div className="space-y-2">
                 <p>
-                  <span className="font-medium">Name:</span>{" "}
+                  <span className="font-medium">{t.admin.nameLabel}:</span>{" "}
                   {request.user?.fullName}
                 </p>
                 <p>
-                  <span className="font-medium">Email:</span>{" "}
+                  <span className="font-medium">{t.admin.emailLabel}:</span>{" "}
                   {request.user?.email}
                 </p>
                 <p>
-                  <span className="font-medium">Request ID:</span> {request.id}
+                  <span className="font-medium">{t.admin.requestId}:</span>{" "}
+                  {request.publicId || request.id}
                 </p>
               </div>
             </Card>
 
             {/* Route Information */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Route Information</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.routeInfo}
+              </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="font-medium text-sm mb-2">From</p>
+                  <p className="font-medium text-sm mb-2">{t.common.from}</p>
                   <div className="text-sm space-y-1">
                     <p>{request.source?.fullName}</p>
                     <p>
@@ -244,7 +256,7 @@ export default function RequestDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="font-medium text-sm mb-2">To</p>
+                  <p className="font-medium text-sm mb-2">{t.common.to}</p>
                   <div className="text-sm space-y-1">
                     <p>{request.destination?.fullName}</p>
                     <p>
@@ -264,60 +276,115 @@ export default function RequestDetailPage() {
             {/* Item Details */}
             {firstItem && (
               <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Item Details</h2>
+                <h2 className="text-lg font-semibold mb-4">
+                  {t.admin.itemDetails}
+                </h2>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <p>
-                    <span className="font-medium">Item:</span> {firstItem.item}
+                    <span className="font-medium">{t.admin.itemLabel}:</span>{" "}
+                    {firstItem.item}
                   </p>
                   <p>
-                    <span className="font-medium">Category:</span>{" "}
-                    {firstItem.category}
+                    <span className="font-medium">
+                      {t.admin.categoryLabel}:
+                    </span>{" "}
+                    {getCategoryLabel(firstItem.category)}
                   </p>
                   <p>
-                    <span className="font-medium">Dimensions:</span>{" "}
-                    {firstItem.dimensions}
-                  </p>
-                  <p>
-                    <span className="font-medium">Weight:</span>{" "}
+                    <span className="font-medium">{t.admin.weightLabel}:</span>{" "}
                     {firstItem.weight} kg
                   </p>
                   <p>
-                    <span className="font-medium">Quantity:</span>{" "}
+                    <span className="font-medium">
+                      {t.admin.quantityLabel}:
+                    </span>{" "}
                     {firstItem.quantity}
                   </p>
                   <p>
-                    <span className="font-medium">Type:</span>{" "}
-                    {request.deliveryType}
+                    <span className="font-medium">{t.admin.typeLabel}:</span>{" "}
+                    {request.deliveryType === "Scheduled"
+                      ? `📅 ${request.deliveryType}`
+                      : request.deliveryType === "Urgent"
+                        ? `⚡ ${request.deliveryType}`
+                        : request.deliveryType}
                   </p>
+                  {request.deliveryType === "Scheduled" &&
+                    request.scheduledDate && (
+                      <p>
+                        <span className="font-medium">Scheduled Date:</span>{" "}
+                        {new Date(request.scheduledDate).toLocaleString(
+                          undefined,
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </p>
+                    )}
+                  {request.receiptFloorNumber && (
+                    <p>
+                      <span className="font-medium">
+                        {t.newRequest.receiptFloorNumber}:
+                      </span>{" "}
+                      {request.receiptFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.receiptFloorNumber}
+                      {request.needsWinchPickup && (
+                        <span className="text-amber-600 ml-1">
+                          ({t.newRequest.needsWinchPickup})
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {request.deliveryFloorNumber && (
+                    <p>
+                      <span className="font-medium">
+                        {t.newRequest.deliveryFloorNumber}:
+                      </span>{" "}
+                      {request.deliveryFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.deliveryFloorNumber}
+                      {request.needsWinchDropoff && (
+                        <span className="text-amber-600 ml-1">
+                          ({t.newRequest.needsWinchDropoff})
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
               </Card>
             )}
 
             {/* Cost Offers */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Cost Offers</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.costOffersTitle}
+              </h2>
 
               {/* Add New Offer */}
               {request.requestStatus === "Pending" && (
                 <div className="space-y-3 mb-6 p-4 bg-muted rounded">
-                  <h3 className="font-medium">Add New Cost Offer</h3>
+                  <h3 className="font-medium">{t.admin.addCostOffer}</h3>
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium mb-1 block">
-                        Company
+                        {t.admin.driverLabel}
                       </label>
                       <select
-                        value={newOffer.companyId}
+                        value={newOffer.driverId}
                         onChange={(e) =>
                           setNewOffer({
                             ...newOffer,
-                            companyId: e.target.value,
+                            driverId: e.target.value,
                           })
                         }
                         className="w-full px-3 py-2 border border-input rounded-md"
                       >
-                        <option value="">Select a company</option>
-                        {companies.map((c) => (
+                        <option value="">{t.admin.selectDriver}</option>
+                        {drivers.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.rate}%)
                           </option>
@@ -326,7 +393,7 @@ export default function RequestDetailPage() {
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1 block">
-                        Cost
+                        {t.admin.costLabel}
                       </label>
                       <Input
                         type="number"
@@ -334,20 +401,20 @@ export default function RequestDetailPage() {
                         onChange={(e) =>
                           setNewOffer({ ...newOffer, cost: e.target.value })
                         }
-                        placeholder="Enter cost"
+                        placeholder={t.admin.enterCost}
                         step="0.01"
                       />
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1 block">
-                        Comment
+                        {t.common.optional}
                       </label>
                       <Input
                         value={newOffer.comment}
                         onChange={(e) =>
                           setNewOffer({ ...newOffer, comment: e.target.value })
                         }
-                        placeholder="Optional comment"
+                        placeholder={t.admin.optionalComment}
                       />
                     </div>
                     <Button
@@ -355,7 +422,7 @@ export default function RequestDetailPage() {
                       disabled={submitting}
                       className="w-full"
                     >
-                      {submitting ? "Adding..." : "Add Cost Offer"}
+                      {submitting ? t.admin.adding : t.admin.addCostOfferBtn}
                     </Button>
                   </div>
                 </div>
@@ -365,8 +432,8 @@ export default function RequestDetailPage() {
               {request.costOffers && request.costOffers.length > 0 ? (
                 <div className="space-y-2">
                   {request.costOffers.map((offer, idx) => {
-                    const company = companies.find(
-                      (c) => c.id === offer.companyId,
+                    const driver = drivers.find(
+                      (c) => c.id === offer.driverId,
                     );
                     return (
                       <div
@@ -375,12 +442,14 @@ export default function RequestDetailPage() {
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium">{company?.name}</p>
+                            <p className="font-medium">{driver?.name}</p>
                             <p className="text-sm text-muted-foreground">
                               {offer.comment}
                             </p>
                           </div>
-                          <p className="font-semibold">${offer.cost}</p>
+                          <p className="font-semibold">
+                            {formatPrice(offer.cost, "USD")}
+                          </p>
                         </div>
                       </div>
                     );
@@ -388,35 +457,41 @@ export default function RequestDetailPage() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No cost offers yet
+                  {t.admin.noCostOffers}
                 </p>
               )}
             </Card>
 
             {/* History */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Status History</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t.admin.statusHistory}
+              </h2>
               <div className="space-y-3">
                 <div>
-                  <h3 className="font-medium mb-2">Request Status</h3>
+                  <h3 className="font-medium mb-2">
+                    {t.admin.requestStatusLabel}
+                  </h3>
                   <div className="space-y-1 text-sm">
                     {request.requestStatusHistory?.map((h, idx) => (
                       <p key={idx} className="text-muted-foreground">
                         <span className="font-medium">{h.status}</span> -{" "}
-                        {new Date(h.changedAt).toLocaleString()} by{" "}
-                        {h.changedBy || "system"}
+                        {new Date(h.changedAt).toLocaleString()} {t.common.by}{" "}
+                        {h.changedBy || t.common.system}
                       </p>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Delivery Status</h3>
+                  <h3 className="font-medium mb-2">
+                    {t.admin.deliveryStatusLabel}
+                  </h3>
                   <div className="space-y-1 text-sm">
                     {request.deliveryStatusHistory?.map((h, idx) => (
                       <p key={idx} className="text-muted-foreground">
                         <span className="font-medium">{h.status}</span> -{" "}
-                        {new Date(h.changedAt).toLocaleString()} by{" "}
-                        {h.changedBy || "system"}
+                        {new Date(h.changedAt).toLocaleString()} {t.common.by}{" "}
+                        {h.changedBy || t.common.system}
                       </p>
                     ))}
                   </div>
@@ -429,12 +504,12 @@ export default function RequestDetailPage() {
           <div className="space-y-4">
             {/* Status Controls */}
             <Card className="p-4">
-              <h3 className="font-semibold mb-4">Actions</h3>
+              <h3 className="font-semibold mb-4">{t.admin.actionsPanel}</h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Request Status
+                    {t.admin.requestStatusLabel}
                   </label>
                   <select
                     value={selectedRequestStatus}
@@ -454,7 +529,7 @@ export default function RequestDetailPage() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Delivery Status
+                    {t.admin.deliveryStatusLabel}
                   </label>
                   <select
                     value={selectedDeliveryStatus}
@@ -476,23 +551,29 @@ export default function RequestDetailPage() {
 
             {/* Summary Card */}
             <Card className="p-4">
-              <h3 className="font-semibold mb-3">Summary</h3>
+              <h3 className="font-semibold mb-3">{t.admin.summary}</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Created</p>
+                  <p className="text-muted-foreground">
+                    {t.admin.createdLabel}
+                  </p>
                   <p className="font-medium">
                     {new Date(request.createdAt).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Last Updated</p>
+                  <p className="text-muted-foreground">{t.admin.lastUpdated}</p>
                   <p className="font-medium">
                     {new Date(request.updatedAt).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Estimated Cost</p>
-                  <p className="font-medium">${request.estimatedCost}</p>
+                  <p className="text-muted-foreground">
+                    {t.admin.estimatedCost}
+                  </p>
+                  <p className="font-medium">
+                    {formatPrice(Number(request.estimatedCost) || 0, "USD")}
+                  </p>
                 </div>
               </div>
             </Card>

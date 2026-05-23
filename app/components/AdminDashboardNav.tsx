@@ -11,66 +11,79 @@ import {
   BarChart3,
   Lock,
   Building2,
-  ArrowLeft,
+  ArrowRight,
+  Settings,
+  DollarSign,
+  Tag,
 } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: UserRole[];
 }
 
 const allNavItems: NavItem[] = [
-  // Common items (shared by both admin and operator)
   {
-    label: "Requests",
+    labelKey: "requests",
     href: "/admin/dashboard/requests",
     icon: Package,
     roles: ["admin", "operator"],
   },
   {
-    label: "Users",
+    labelKey: "users",
     href: "/admin/dashboard/users",
     icon: Users,
     roles: ["admin"],
   },
   {
-    label: "Drivers",
+    labelKey: "drivers",
     href: "/admin/dashboard/drivers",
     icon: Truck,
     roles: ["admin"],
   },
   {
-    label: "Companies",
-    href: "/admin/dashboard/companies",
-    icon: Building2,
-    roles: ["admin"],
-  },
-  // Operator-only items
-  {
-    label: "Cost Offers",
+    labelKey: "costOffers",
     href: "/admin/dashboard/cost-offers",
     icon: BarChart3,
-    roles: ["company"],
+    roles: ["driver"],
   },
-  // Admin-only items
   {
-    label: "Override",
+    labelKey: "override",
     href: "/admin/dashboard/override",
     icon: Lock,
     roles: ["admin"],
   },
   {
-    label: "Metrics",
+    labelKey: "metrics",
     href: "/admin/dashboard/metrics",
     icon: BarChart3,
     roles: ["admin", "operator"],
   },
   {
-    label: "Audit",
+    labelKey: "audit",
     href: "/admin/dashboard/audit",
     icon: LayoutDashboard,
+    roles: ["admin"],
+  },
+  {
+    labelKey: "categories",
+    href: "/admin/dashboard/categories",
+    icon: Tag,
+    roles: ["admin"],
+  },
+  {
+    labelKey: "costCriteria",
+    href: "/admin/dashboard/cost-criteria",
+    icon: DollarSign,
+    roles: ["admin"],
+  },
+  {
+    labelKey: "settings",
+    href: "/admin/dashboard/settings",
+    icon: Settings,
     roles: ["admin"],
   },
 ];
@@ -93,21 +106,36 @@ export function AdminDashboardNav({
   showBackButton = false,
   isSticky = false,
 }: AdminDashboardNavProps) {
+  const { t, isRtl } = useTranslation();
   const navItems = getNavItemsByRole(userRole);
+
+  const navLabels: Record<string, string> = {
+    requests: t.admin.requests,
+    users: t.admin.users,
+    drivers: t.admin.drivers,
+    costOffers: t.admin.costOffers,
+    override: t.admin.override,
+    metrics: t.admin.metrics,
+    audit: t.admin.audit,
+    categories: t.admin.categories,
+    costCriteria: t.admin.costCriteria,
+    settings: t.admin.settings || "Settings",
+  };
 
   return (
     <aside
-      className={`w-64 bg-white border-r border-border min-h-[calc(100vh-64px)] p-6 ${
+      className={`w-64 bg-white dark:bg-slate-950 border-e border-border min-h-[calc(100vh-64px)] p-6 ${
         isSticky ? "sticky top-16 h-[calc(100vh-64px)] overflow-y-auto" : ""
       }`}
+      dir={isRtl ? "rtl" : "ltr"}
     >
       {showBackButton && (
         <Link
           href="/admin/dashboard"
           className="flex items-center gap-2 mb-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
+          <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+          {t.admin.backToDashboard}
         </Link>
       )}
 
@@ -125,11 +153,11 @@ export function AdminDashboardNav({
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
                   ? "bg-primary text-primary-foreground"
-                  : "hover:bg-accent text-foreground hover:text-foreground"
+                  : "text-foreground hover:bg-primary/10 hover:text-primary"
               }`}
             >
               <Icon className="w-5 h-5" />
-              <span>{item.label}</span>
+              <span>{navLabels[item.labelKey] ?? item.labelKey}</span>
             </Link>
           );
         })}

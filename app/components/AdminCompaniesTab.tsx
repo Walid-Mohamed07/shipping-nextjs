@@ -6,13 +6,15 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Edit2, Plus, Search } from "lucide-react";
-import { Company } from "@/types";
+import { Driver } from "@/types";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
-export function AdminCompaniesTab() {
+export function AdminDriversTab() {
   const toast = useToast();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
+  const { t } = useTranslation();
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -26,43 +28,45 @@ export function AdminCompaniesTab() {
     email: "",
     phoneNumber: "",
     address: "",
-    rate: "4.50",
+    rate: 4.5,
+    logo: "",
+    logoFile: null as File | null,
   });
 
   useEffect(() => {
-    fetchCompanies();
+    fetchDrivers();
   }, []);
 
   useEffect(() => {
-    let filtered = companies.filter(
-      (company) =>
+    let filtered = drivers.filter(
+      (driver) =>
         searchQuery === "" ||
-        company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        company.email.toLowerCase().includes(searchQuery.toLowerCase()),
+        driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        driver.email.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     filtered.sort((a, b) => {
       if (sortBy === "name") {
         return a.name.localeCompare(b.name);
       } else if (sortBy === "rating") {
-        return parseFloat(b.rate) - parseFloat(a.rate);
+        return b.rate - a.rate;
       } else if (sortBy === "date") {
         return 0;
       }
       return 0;
     });
 
-    setFilteredCompanies(filtered);
+    setFilteredDrivers(filtered);
     setCurrentPage(1);
-  }, [companies, searchQuery, sortBy]);
+  }, [drivers, searchQuery, sortBy]);
 
-  const fetchCompanies = async () => {
+  const fetchDrivers = async () => {
     try {
-      const res = await fetch("/api/admin/companies");
+      const res = await fetch("/api/admin/drivers");
       const data = await res.json();
-      setCompanies(data);
+      setDrivers(data);
     } catch (error) {
-      console.error("Failed to fetch companies:", error);
+      console.error("Failed to fetch drivers:", error);
       toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
@@ -73,58 +77,93 @@ export function AdminCompaniesTab() {
     e.preventDefault();
 
     try {
-      const method = editingId ? "PUT" : "POST";
-      const body = editingId ? { id: editingId, ...formData } : formData;
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("phoneNumber", formData.phoneNumber);
+      formDataToSend.append("rate", formData.rate.toString());
+      formDataToSend.append("address", formData.address);
+      formDataToSend.append("category", formData.category);
 
-      const res = await fetch("/api/admin/companies", {
+      // Handle logo file
+      if (formData.logoFile) {
+        formDataToSend.append("logo", formData.logoFile);
+      }
+
+      // If updating and logo exists, pass existing path for cleanup
+      if (editingId && formData.logo && !formData.logoFile) {
+        formDataToSend.append("existingLogo", formData.logo);
+      } else if (editingId && formData.logo) {
+        formDataToSend.append("existingLogo", formData.logo);
+      }
+
+      if (editingId) {
+        formDataToSend.append("id", editingId);
+      }
+
+      const method = editingId ? "PUT" : "POST";
+
+      const res = await fetch("/api/admin/drivers", {
         method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: formDataToSend,
       });
 
       if (res.ok) {
-        fetchCompanies();
+        fetchDrivers();
         resetForm();
-        toast.create(editingId ? "Company updated successfully" : "Company created successfully");
+        toast.create(
+          editingId
+            ? t.adminDrivers.driverUpdated
+            : t.adminDrivers.driverCreated,
+        );
       } else {
-        toast.error("Failed to save company");
+        toast.error(t.adminDrivers.failedSave);
       }
     } catch (error) {
-      console.error("Failed to save company:", error);
+      console.error("Failed to save driver:", error);
       toast.error(getErrorMessage(error));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure?")) return;
+    if (!confirm(t.adminDrivers.confirmDelete)) return;
 
     try {
-      const res = await fetch(`/api/admin/companies?id=${id}`, {
+      const res = await fetch(`/api/admin/drivers?id=${id}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
-        fetchCompanies();
-        toast.delete("Company deleted successfully");
+        fetchDrivers();
+        toast.delete(t.adminDrivers.driverDeleted);
       } else {
-        toast.error("Failed to delete company");
+        toast.error(t.adminDrivers.failedDelete);
       }
     } catch (error) {
-      console.error("Failed to delete company:", error);
+      console.error("Failed to delete driver:", error);
       toast.error(getErrorMessage(error));
     }
   };
 
-  const handleEdit = (company: Company) => {
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, logoFile: file });
+    }
+  };
+
+  const handleEdit = (driver: Driver) => {
     setFormData({
-      name: company.name,
-      email: company.email,
-      phoneNumber: company.phoneNumber,
-      address: company.address,
-      rate: company.rate,
-      category: company.category || "",
+      name: driver.name,
+      email: driver.email,
+      phoneNumber: driver.phoneNumber,
+      address: driver.address,
+      rate: driver.rate,
+      category: driver.category || "",
+      logo: driver.logo || "",
+      logoFile: null,
     });
-    setEditingId(company.id);
+    setEditingId(driver._id);
     setShowForm(true);
   };
 
@@ -135,17 +174,20 @@ export function AdminCompaniesTab() {
       phoneNumber: "",
       address: "",
       category: "",
-      rate: "4.50",
+      rate: 4.5,
+      logo: "",
+      logoFile: null,
     });
     setEditingId(null);
     setShowForm(false);
   };
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  if (loading)
+    return <div className="text-center py-8">{t.common.loading}</div>;
 
-  const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredDrivers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedCompanies = filteredCompanies.slice(
+  const paginatedDrivers = filteredDrivers.slice(
     startIndex,
     startIndex + itemsPerPage,
   );
@@ -154,24 +196,27 @@ export function AdminCompaniesTab() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">Shipping Companies</h2>
+          <h2 className="text-xl font-semibold">{t.adminDrivers.title}</h2>
           <p className="text-sm text-muted-foreground">
-            {filteredCompanies.length} companies
+            {filteredDrivers.length} drivers
           </p>
         </div>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add Company
+          {t.adminDrivers.addDriver}
         </Button>
       </div>
 
       {showForm && (
         <Card className="p-6 border-primary/50">
+          <h3 className="text-lg font-semibold mb-4">
+            {editingId ? "Edit Driver" : "Create Driver"}
+          </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Company Name
+                  {t.adminDrivers.driverName}
                 </label>
                 <input
                   type="text"
@@ -186,7 +231,9 @@ export function AdminCompaniesTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1">
+                  {t.common.email}
+                </label>
                 <input
                   type="email"
                   required
@@ -195,12 +242,14 @@ export function AdminCompaniesTab() {
                     setFormData({ ...formData, email: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
-                  placeholder="info@company.com"
+                  placeholder="info@driver.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
+                <label className="block text-sm font-medium mb-1">
+                  {t.common.phone}
+                </label>
                 <input
                   type="tel"
                   required
@@ -214,7 +263,9 @@ export function AdminCompaniesTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Rating</label>
+                <label className="block text-sm font-medium mb-1">
+                  {t.adminDrivers.rating}
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -222,10 +273,43 @@ export function AdminCompaniesTab() {
                   max="5"
                   value={formData.rate}
                   onChange={(e) =>
-                    setFormData({ ...formData, rate: e.target.value })
+                    setFormData({
+                      ...formData,
+                      rate: parseFloat(e.target.value) || 0,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">
+                  Driver Logo{" "}
+                  <span className="text-xs text-muted-foreground">
+                    (Optional)
+                  </span>
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                    className="flex-1 px-3 py-2 border border-border rounded bg-background text-foreground text-sm"
+                  />
+                  {(formData.logoFile || formData.logo) && (
+                    <div className="w-12 h-12 rounded border border-border overflow-hidden bg-slate-50 dark:bg-slate-900 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={
+                          formData.logoFile
+                            ? URL.createObjectURL(formData.logoFile)
+                            : formData.logo
+                        }
+                        alt="Logo preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="md:col-span-2">
@@ -247,7 +331,9 @@ export function AdminCompaniesTab() {
 
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">
-                {editingId ? "Update" : "Create"} Company
+                {editingId
+                  ? t.adminDrivers.updateDriver
+                  : t.adminDrivers.createDriver}
               </Button>
               <Button
                 type="button"
@@ -255,7 +341,7 @@ export function AdminCompaniesTab() {
                 onClick={resetForm}
                 className="flex-1 bg-transparent"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </form>
@@ -269,7 +355,7 @@ export function AdminCompaniesTab() {
             <Search className="w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by company name or email..."
+              placeholder={t.adminDrivers.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent outline-none text-sm"
@@ -278,48 +364,65 @@ export function AdminCompaniesTab() {
 
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
-              Sort By
+              {t.adminDrivers.sortBy}
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
             >
-              <option value="name">Name (A-Z)</option>
-              <option value="rating">Rating (High to Low)</option>
+              <option value="name">{t.adminDrivers.nameAZ}</option>
+              <option value="rating">{t.adminDrivers.ratingHighLow}</option>
             </select>
           </div>
         </div>
       </Card>
 
-      {/* Companies Grid */}
+      {/* Drivers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {paginatedCompanies.length === 0 ? (
+        {paginatedDrivers.length === 0 ? (
           <div className="col-span-full text-center py-8 text-muted-foreground">
-            No companies found matching your search
+            {t.adminDrivers.noDriversMatch}
           </div>
         ) : (
-          paginatedCompanies.map((company) => (
-            <Card key={company.id} className="p-4">
-              <div className="mb-4">
-                <h3 className="font-semibold text-lg">{company.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  ⭐ {company.rate} rating
-                </p>
+          paginatedDrivers.map((driver) => (
+            <Card key={driver._id} className="p-4">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{driver.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    ⭐ {driver.rate} {t.adminDrivers.ratingLabel}
+                  </p>
+                </div>
+                {driver.logo && (
+                  <div className="w-12 h-12 rounded border border-border overflow-hidden bg-slate-50 dark:bg-slate-900 flex-shrink-0">
+                    <img
+                      src={driver.logo}
+                      alt={driver.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 text-sm mb-4">
                 <p>
-                  <span className="text-muted-foreground">Email:</span>{" "}
-                  {company.email}
+                  <span className="text-muted-foreground">
+                    {t.common.email}:
+                  </span>{" "}
+                  {driver.email}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Phone:</span>{" "}
-                  {company.phoneNumber}
+                  <span className="text-muted-foreground">
+                    {t.common.phone}:
+                  </span>{" "}
+                  {driver.phoneNumber}
                 </p>
                 <p>
-                  <span className="text-muted-foreground">Address:</span>{" "}
-                  {company.address}
+                  <span className="text-muted-foreground">
+                    {t.common.address}:
+                  </span>{" "}
+                  {driver.address}
                 </p>
               </div>
 
@@ -327,20 +430,20 @@ export function AdminCompaniesTab() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleEdit(company)}
+                  onClick={() => handleEdit(driver)}
                   className="flex-1 gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
-                  Edit
+                  {t.common.edit}
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleDelete(company.id)}
+                  onClick={() => handleDelete(driver._id)}
                   className="flex-1 gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t.common.delete}
                 </Button>
               </div>
             </Card>
@@ -366,7 +469,7 @@ export function AdminCompaniesTab() {
               }
               return (
                 <Button
-                  key={pageNum}
+                  key={`page-${pageNum}`}
                   variant={currentPage === pageNum ? "default" : "outline"}
                   size="sm"
                   onClick={() => setCurrentPage(pageNum)}

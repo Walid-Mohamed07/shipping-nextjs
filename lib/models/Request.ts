@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generatePublicId } from "../publicIdGenerator";
 
 // Define ActivityHistory sub-schema
 const activityHistorySchema = new mongoose.Schema(
@@ -6,9 +7,10 @@ const activityHistorySchema = new mongoose.Schema(
     timestamp: { type: Date, default: Date.now },
     action: { type: String, required: true },
     description: String,
-    companyName: String,
-    companyRate: String,
+    driverName: String,
+    driverRate: String,
     cost: Number,
+    currency: String,
     details: mongoose.Schema.Types.Mixed,
   },
   { _id: false },
@@ -16,6 +18,14 @@ const activityHistorySchema = new mongoose.Schema(
 
 const requestSchema = new mongoose.Schema(
   {
+    publicId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: generatePublicId,
+      trim: true,
+      uppercase: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -50,7 +60,6 @@ const requestSchema = new mongoose.Schema(
       addressType: String,
       deliveryInstructions: String,
       primary: Boolean,
-      warehouseId: String,
       pickupMode: String,
       coordinates: {
         latitude: Number,
@@ -72,7 +81,6 @@ const requestSchema = new mongoose.Schema(
       addressType: String,
       deliveryInstructions: String,
       primary: Boolean,
-      warehouseId: String,
       pickupMode: String,
       coordinates: {
         latitude: Number,
@@ -85,7 +93,6 @@ const requestSchema = new mongoose.Schema(
         name: String,
         category: String,
         weight: String,
-        dimensions: String,
         quantity: Number,
         note: String,
         media: [
@@ -94,24 +101,46 @@ const requestSchema = new mongoose.Schema(
             existing: Boolean,
           },
         ],
-        services: {
-          canBeAssembledDisassembled: Boolean,
-          assemblyDisassemblyHandler: String,
-          packaging: Boolean,
-          assemblyDisassembly: Boolean,
-        },
       },
     ],
-    primaryCost: String,
+    // primaryCost: String, // TEMPORARILY HIDDEN - primaryCost
     cost: String,
     startTime: Date,
+    collectionAvailableDays: {
+      type: [String],
+      enum: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "All Week",
+      ],
+      default: [],
+    },
+    deliveryAvailableDays: {
+      type: [String],
+      enum: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "All Week",
+      ],
+      default: [],
+    },
     requestStatus: {
       type: String,
       enum: [
         "Pending",
         "Accepted",
         "Rejected",
-        "Assigned to Company",
+        "Assigned to Driver",
         "In Progress",
         "Completed",
         "Cancelled",
@@ -124,9 +153,7 @@ const requestSchema = new mongoose.Schema(
       enum: [
         "Pending",
         "Picked Up Source",
-        "Warehouse Source Received",
         "In Transit",
-        "Warehouse Destination Received",
         "Shipment Deliver",
         "Delivered",
         "Failed",
@@ -134,31 +161,8 @@ const requestSchema = new mongoose.Schema(
       default: "Pending",
     },
     deliveryType: String,
+    scheduledDate: Date,
     comment: String,
-    sourceWarehouse: {
-      id: String,
-      name: String,
-      address: String,
-      city: String,
-      country: String,
-      coordinates: {
-        latitude: Number,
-        longitude: Number,
-      },
-      assignedAt: Date,
-    },
-    destinationWarehouse: {
-      id: String,
-      name: String,
-      address: String,
-      city: String,
-      country: String,
-      coordinates: {
-        latitude: Number,
-        longitude: Number,
-      },
-      assignedAt: Date,
-    },
     sourcePickupMode: {
       type: String,
       enum: ["Delegate", "Self"],
@@ -166,6 +170,17 @@ const requestSchema = new mongoose.Schema(
     destinationPickupMode: {
       type: String,
       enum: ["Delegate", "Self"],
+    },
+    // Floor number and winch fields
+    receiptFloorNumber: String,
+    needsWinchPickup: {
+      type: Boolean,
+      default: false,
+    },
+    deliveryFloorNumber: String,
+    needsWinchDropoff: {
+      type: Boolean,
+      default: false,
     },
     requestStatusHistory: [
       {
@@ -186,7 +201,8 @@ const requestSchema = new mongoose.Schema(
     costOffers: [
       {
         cost: Number,
-        company: {
+        currency: { type: String, default: "USD" }, // Currency of the offer
+        driver: {
           id: String,
           name: String,
           phoneNumber: String,
@@ -200,25 +216,77 @@ const requestSchema = new mongoose.Schema(
           type: String,
           enum: ["pending", "accepted", "rejected"],
         },
+        headoverPercentage: Number,
+        headoverAmount: Number,
+        finalPrice: Number,
         createdAt: Date,
         offeredAt: Date,
       },
     ],
     activityHistory: [activityHistorySchema],
-    assignedCompanyId: String,
-    selectedCompany: {
+    assignedDriver: String,
+    selectedDriver: {
       id: String,
       name: String,
       rate: String,
       cost: Number,
+      finalPrice: Number,
+      headoverPercentage: Number,
+      // Currency fields
+      currency: { type: String, default: "USD" },
     },
-    assignedWarehouseId: String,
-    assignedWarehouse: mongoose.Schema.Types.Mixed,
+    // Currency locking fields - populated when client accepts offer
+    pricing: {
+      // Base price in the offer's original currency
+      basePrice: Number,
+      baseCurrency: { type: String, default: "USD" },
+      // Client's preferred currency
+      clientCurrency: String,
+      // Exchange rate at the moment of acceptance
+      exchangeRateAtAcceptance: Number,
+      // Locked price in client's currency (basePrice * exchangeRateAtAcceptance)
+      lockedPrice: Number,
+      // When the price was locked
+      lockedAt: Date,
+      // Final amount to pay (lockedPrice with any additional fees)
+      finalLockedPrice: Number,
+    },
     deliveryFlow: [String],
     deliveryCompletedStatuses: [String],
     orderFlow: [String],
     orderCompletedStatuses: [String],
-    rejectedByCompanies: [String],
+    rejectedByDrivers: [String],
+    // Workers count (0-6)
+    workersCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 6,
+    },
+    // Transport vehicle type preference
+    transportVehicle: {
+      id: String,
+      nameEn: String,
+      nameAr: String,
+      dimensions: {
+        length: Number,
+        width: Number,
+        height: Number,
+      },
+      maxWeight: Number,
+    },
+    // Payment related fields
+    paymentStatus: {
+      type: String,
+      enum: ["unpaid", "pending", "paid", "refunded", "failed", "ABANDONED"],
+      default: "unpaid",
+    },
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+    },
+    paidAmount: Number,
+    paidAt: Date,
   },
   { timestamps: true },
 );

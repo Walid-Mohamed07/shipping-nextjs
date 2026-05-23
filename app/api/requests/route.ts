@@ -3,6 +3,11 @@ import { connectDB } from "@/lib/db";
 import { Request, User } from "@/lib/models";
 import { handleError, handleValidationError } from "@/lib/apiHelpers";
 import { ActivityActions, addActivityLog } from "@/lib/activityLogger";
+import {
+  broadcastEvent,
+  broadcastToDrivers,
+  broadcastToAdmins,
+} from "@/lib/eventBroadcaster";
 
 type LegacyRequest = any;
 
@@ -23,15 +28,10 @@ function normalizeItems(req: LegacyRequest) {
         item: it.item ?? it.name ?? "-",
         name: it.name ?? it.item ?? "-",
         category: it.category ?? "",
-        dimensions: it.dimensions ?? "",
         weight: it.weight ?? "",
         quantity: Number(it.quantity ?? 1) || 1,
         note: it.note || undefined,
         media: normalizedMedia.slice(0, 4),
-        services: it.services || {
-          assemblyDisassembly: false,
-          packaging: false,
-        },
       };
     });
   }
@@ -54,12 +54,10 @@ function normalizeItems(req: LegacyRequest) {
         item: req.item ?? "-",
         name: req.item ?? "-",
         category: req.category ?? "",
-        dimensions: req.dimensions ?? "",
         weight: req.weight ?? "",
         quantity: Number(req.quantity ?? 1) || 1,
         note: req.note || undefined,
         media: media.slice(0, 4),
-        services: { assemblyDisassembly: false, packaging: false },
       },
     ];
   }
@@ -67,11 +65,14 @@ function normalizeItems(req: LegacyRequest) {
   return [];
 }
 
-function normalizeDeliveryType(value: any): "Normal" | "Urgent" | undefined {
+function normalizeDeliveryType(
+  value: any,
+): "Normal" | "Urgent" | "Scheduled" | undefined {
   const v = String(value || "")
     .toLowerCase()
     .trim();
   if (v === "urgent" || v === "fast") return "Urgent";
+  if (v === "scheduled") return "Scheduled";
   if (v === "normal") return "Normal";
   return undefined;
 }
@@ -82,18 +83,25 @@ function normalizeRequest(req: any) {
   const items = normalizeItems(req);
   const deliveryType = normalizeDeliveryType(req.deliveryType);
   const startTime = req.startTime;
+  const collectionAvailableDays =
+    req.collectionAvailableDays || req.availableDays || [];
+  const deliveryAvailableDays = req.deliveryAvailableDays || [];
   const primaryCost = req.primaryCost ?? req.estimatedCost;
   const cost = req.cost ?? primaryCost;
   const requestStatus = req.requestStatus ?? req.orderStatus;
 
   return {
     id: req._id || req.id,
+    publicId: req.publicId,
     user: req.user,
     source,
     destination,
     deliveryType,
+    scheduledDate: req.scheduledDate,
     startTime,
-    primaryCost,
+    collectionAvailableDays,
+    deliveryAvailableDays,
+    // primaryCost, // TEMPORARILY HIDDEN - primaryCost
     cost,
     requestStatus,
     orderStatus: requestStatus,
@@ -104,7 +112,22 @@ function normalizeRequest(req: any) {
     updatedAt: req.updatedAt,
     costOffers: req.costOffers,
     activityHistory: req.activityHistory,
-    selectedCompany: req.selectedCompany,
+    selectedDriver: req.selectedDriver,
+    sourcePickupMode: req.sourcePickupMode,
+    destinationPickupMode: req.destinationPickupMode,
+    // Floor number and winch fields
+    receiptFloorNumber: req.receiptFloorNumber,
+    needsWinchPickup: req.needsWinchPickup,
+    deliveryFloorNumber: req.deliveryFloorNumber,
+    needsWinchDropoff: req.needsWinchDropoff,
+    // Payment fields
+    paymentStatus: req.paymentStatus,
+    paymentId: req.paymentId,
+    paidAmount: req.paidAmount,
+    paidAt: req.paidAt,
+    // Vehicle & workers
+    transportVehicle: req.transportVehicle,
+    workersCount: req.workersCount,
   };
 }
 
@@ -198,29 +221,48 @@ export async function POST(request: NextRequest) {
       destination,
       items,
       deliveryType,
+      scheduledDate,
       startTime,
+      collectionAvailableDays,
+      deliveryAvailableDays,
+      availableDays, // backward compatibility
       cost,
-      primaryCost,
-      estimatedCost,
+      // primaryCost, // TEMPORARILY HIDDEN - primaryCost
+      // estimatedCost, // TEMPORARILY HIDDEN - primaryCost
       orderStatus,
       requestStatus,
       deliveryStatus,
       comment,
+      workersCount,
+      transportVehicle,
+      receiptFloorNumber,
+      needsWinchPickup,
+      deliveryFloorNumber,
+      needsWinchDropoff,
     } = body;
 
     const sourceAddr = source;
     const destAddr = destination;
     const finalStartTime = startTime;
-    const finalPrimaryCost = primaryCost ?? estimatedCost;
-    const finalCost = cost ?? finalPrimaryCost;
+    // Support both new field names and legacy availableDays
+    const finalCollectionDays = collectionAvailableDays || availableDays || [];
+    const finalDeliveryDays = deliveryAvailableDays || [];
+    // TEMPORARILY HIDDEN - primaryCost: Don't accept primaryCost from frontend
+    // const finalPrimaryCost = primaryCost ?? estimatedCost;
+    const finalCost = cost; // TEMPORARILY HIDDEN - primaryCost
     const finalStatus = requestStatus ?? orderStatus;
 
     const normalizedDeliveryType = normalizeDeliveryType(deliveryType);
     if (!normalizedDeliveryType) {
-      return handleValidationError("deliveryType is required (normal | fast)");
+      return handleValidationError(
+        "deliveryType is required (Normal | Urgent | Scheduled)",
+      );
     }
-    if (!finalStartTime) {
-      return handleValidationError("startTime is required");
+    // Validate scheduledDate when deliveryType is Scheduled
+    if (normalizedDeliveryType === "Scheduled" && !scheduledDate) {
+      return handleValidationError(
+        "scheduledDate is required for Scheduled delivery",
+      );
     }
     if (!Array.isArray(items) || items.length === 0) {
       return handleValidationError("At least one item is required");
@@ -246,32 +288,62 @@ export async function POST(request: NextRequest) {
         name: item.name ?? item.item ?? "-",
         category: item.category || "",
         weight: item.weight || "",
-        dimensions: item.dimensions || "",
         quantity: Number(item.quantity ?? 1) || 1,
         note: item.note || undefined,
         media: Array.isArray(item.media) ? item.media.slice(0, 4) : [],
-        services: item.services || {
-          canBeAssembledDisassembled: false,
-          assemblyDisassemblyHandler: undefined,
-          packaging: false,
-        },
       })),
       deliveryType: normalizedDeliveryType,
+      scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
       startTime: finalStartTime,
-      primaryCost: finalPrimaryCost,
+      collectionAvailableDays: finalCollectionDays,
+      deliveryAvailableDays: finalDeliveryDays,
+      // primaryCost: finalPrimaryCost, // TEMPORARILY HIDDEN - primaryCost
       cost: finalCost,
       requestStatus: finalStatus || "Pending",
       deliveryStatus: deliveryStatus || "Pending",
       comment: comment || "",
       sourcePickupMode,
       destinationPickupMode,
+      receiptFloorNumber: receiptFloorNumber || undefined,
+      needsWinchPickup: !!needsWinchPickup,
+      deliveryFloorNumber: deliveryFloorNumber || undefined,
+      needsWinchDropoff: !!needsWinchDropoff,
+      workersCount:
+        typeof workersCount === "number"
+          ? Math.min(6, Math.max(0, workersCount))
+          : 0,
+      transportVehicle: transportVehicle
+        ? {
+            id: transportVehicle.id,
+            nameEn: transportVehicle.nameEn,
+            nameAr: transportVehicle.nameAr,
+            dimensions: transportVehicle.dimensions,
+            maxWeight: transportVehicle.maxWeight,
+          }
+        : undefined,
     });
 
     // Add activity log for request creation
-    await addActivityLog(newRequest._id, ActivityActions.REQUEST_CREATED(user));
+    await addActivityLog(
+      newRequest._id.toString(),
+      ActivityActions.REQUEST_CREATED(user),
+    );
+
+    // Broadcast real-time event for new request
+    const normalizedRequest = normalizeRequest(newRequest);
+    broadcastEvent("REQUEST_CREATED", normalizedRequest, {
+      requestId: newRequest._id.toString(),
+      userId: user,
+      targetRoles: ["admin", "operator", "driver"],
+    });
+    broadcastToAdmins(
+      "REQUEST_CREATED",
+      normalizedRequest,
+      newRequest._id.toString(),
+    );
 
     return NextResponse.json(
-      { success: true, request: normalizeRequest(newRequest) },
+      { success: true, request: normalizedRequest },
       { status: 201 },
     );
   } catch (error) {

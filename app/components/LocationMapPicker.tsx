@@ -78,12 +78,7 @@ interface GeocodingResult {
 async function searchPlaceByName(query: string): Promise<{ lat: number; lng: number; displayName: string }[]> {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`,
-      {
-        headers: {
-          'User-Agent': 'ShipHub-App',
-        },
-      }
+      `/api/nominatim-search?q=${encodeURIComponent(query)}`
     );
     
     if (!response.ok) {

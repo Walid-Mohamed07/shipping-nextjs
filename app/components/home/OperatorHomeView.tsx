@@ -1,43 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Package, Truck, TrendingUp, BarChart3 } from "lucide-react";
+import { Package, BarChart3 } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export function OperatorHomeView() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const operatorCards = [
     {
       icon: Package,
-      title: "Active Orders",
-      description: "View and manage active orders",
+      titleKey: "cardRequestsTitle" as const,
+      descKey: "cardRequestsDesc" as const,
       color: "bg-blue-100 dark:bg-blue-900/20",
       iconColor: "text-blue-600",
-      onClick: () => router.push("/admin/dashboard/orders"),
-    },
-    {
-      icon: Truck,
-      title: "Assignments",
-      description: "Assign orders to drivers",
-      color: "bg-green-100 dark:bg-green-900/20",
-      iconColor: "text-green-600",
-      onClick: () => router.push("/admin/dashboard/assignment"),
-    },
-    {
-      icon: TrendingUp,
-      title: "Performance",
-      description: "Track delivery performance metrics",
-      color: "bg-purple-100 dark:bg-purple-900/20",
-      iconColor: "text-purple-600",
       onClick: () => router.push("/admin/dashboard/requests"),
     },
     {
       icon: BarChart3,
-      title: "Analytics",
-      description: "View detailed performance analytics",
-      color: "bg-orange-100 dark:bg-orange-900/20",
-      iconColor: "text-orange-600",
-      onClick: () => router.push("/admin/dashboard"),
+      titleKey: "cardMetricsTitle" as const,
+      descKey: "cardMetricsDesc" as const,
+      color: "bg-green-100 dark:bg-green-900/20",
+      iconColor: "text-green-600",
+      onClick: () => router.push("/admin/dashboard/metrics"),
     },
   ];
 
@@ -45,13 +31,13 @@ export function OperatorHomeView() {
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
       <div>
         <h1 className="text-4xl font-bold text-foreground mb-2">
-          Operator Dashboard
+          {t.homeOperator.title}
         </h1>
         <p className="text-muted-foreground mb-12">
-          Manage orders and assignments
+          {t.homeOperator.subtitle}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {operatorCards.map((card, index) => {
             const Icon = card.icon;
             return (
@@ -66,10 +52,10 @@ export function OperatorHomeView() {
                   <Icon className={`w-6 h-6 ${card.iconColor}`} />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {card.title}
+                  {t.homeOperator[card.titleKey]}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {card.description}
+                  {t.homeOperator[card.descKey]}
                 </p>
               </div>
             );

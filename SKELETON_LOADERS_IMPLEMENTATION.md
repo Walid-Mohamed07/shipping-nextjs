@@ -46,7 +46,7 @@ All skeleton loader components are organized in a dedicated loader folder for ea
   - `detailed`: Image + content layout
   - `full`: Complete card with all sections
 - Grid layout with responsive columns
-- Used in: Request cards, warehouse listings, company listings
+- Used in: Request cards, warehouse listings, driver listings
 
 #### 4. **FormSkeleton**
 
@@ -68,7 +68,7 @@ All skeleton loader components are organized in a dedicated loader folder for ea
 - Specialized for request/shipment cards
 - Shows from/to locations, details grid, action buttons
 - Grid layout matching actual request cards
-- Used in: Company requests, my requests, driver orders
+- Used in: Driver requests, my requests, driver orders
 
 #### 6. **MapSkeleton**
 
@@ -91,7 +91,7 @@ All skeleton loader components are organized in a dedicated loader folder for ea
   - `simple`: Basic line skeleton
   - `avatar`: Avatar + text layout
   - `detailed`: Full item layout with actions
-- Used in: User lists, company lists, driver lists
+- Used in: User lists, driver lists, driver lists
 
 ### Styling
 
@@ -133,7 +133,7 @@ This application uses **client-side rendering (`"use client"`)** for interactive
 Set cache headers on API routes:
 
 ```typescript
-// /api/company/requests
+// /api/driver/requests
 export async function GET(request: Request) {
   const response = new Response(JSON.stringify(data), {
     headers: {
@@ -173,8 +173,8 @@ useQuery({
 - ✅ Updated loaders in all main pages:
   - ✅ Admin Dashboard
   - ✅ Driver Orders
-  - ✅ Company Warehouses
-  - ✅ Company Requests
+  - ✅ Driver Warehouses
+  - ✅ Driver Requests
   - ✅ My Requests
 
 ### API-Level Caching (Recommended)

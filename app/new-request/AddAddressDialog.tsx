@@ -5,11 +5,12 @@ import dynamic from "next/dynamic";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { countries } from "@/constants/countries";
+import { countries, countryPhoneCodes } from "@/constants/countries";
 import { Address } from "@/types";
 import { MapPinned, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import type { AddressData } from "@/app/components/LocationMapPicker";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 // Formatting utility functions
 const formatters = {
@@ -24,16 +25,33 @@ const formatters = {
   },
   // Trim whitespace
   trim: (str: string) => str.trim(),
-  // Format phone number - remove all non-digits, then format as international
+  // Format phone number - clean and normalize (used on save/blur only)
   formatPhone: (str: string) => {
     if (!str) return "";
-    const cleaned = str.replace(/\D/g, "");
-    // Keep cleaned version or format with + if it starts with country code
-    if (cleaned.startsWith("2")) {
-      // Egyptian numbers
-      return `+20${cleaned.slice(cleaned.length - 9)}`;
+    // Remove all non-digit characters except + at the start
+    let cleaned = str.replace(/[^\d+]/g, "");
+    // Ensure only one + at the start
+    if (cleaned.includes("+")) {
+      const plusCount = (cleaned.match(/\+/g) || []).length;
+      if (plusCount > 1 || (plusCount === 1 && !cleaned.startsWith("+"))) {
+        cleaned = cleaned.replace(/\+/g, "");
+        cleaned = "+" + cleaned;
+      }
     }
-    return cleaned.length > 0 ? `+${cleaned}` : "";
+    // If no + prefix and looks like a local number, add country code
+    if (!cleaned.startsWith("+") && cleaned.length >= 9) {
+      // Default to international format
+      cleaned = "+" + cleaned;
+    }
+    return cleaned;
+  },
+  // Validate phone number - must start with + and have 10-15 digits
+  validatePhone: (str: string) => {
+    if (!str) return false;
+    const cleaned = str.replace(/[^\d+]/g, "");
+    // Must have at least 10 digits total (including country code)
+    const digitsOnly = cleaned.replace(/\D/g, "");
+    return digitsOnly.length >= 9 && digitsOnly.length <= 15;
   },
   // Uppercase postal code and trim
   formatPostalCode: (str: string) => {
@@ -49,6 +67,23 @@ const formatters = {
       .split(/\s+/)
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ");
+  },
+  // Sanitize inputs - remove dangerous characters (preserves spaces for typing)
+  sanitize: (str: string) => {
+    if (!str) return "";
+    // Remove potentially dangerous characters while allowing common ones
+    return str.replace(/[<>{}[\]\\]/g, "");
+  },
+  // Validate name - only letters, spaces, hyphens, apostrophes
+  validateName: (str: string) => {
+    if (!str) return false;
+    const nameRegex = /^[a-zA-Z\u0600-\u06FF\s'\-\.]+$/;
+    return nameRegex.test(str.trim()) && str.trim().length >= 2;
+  },
+  // Validate street address
+  validateStreet: (str: string) => {
+    if (!str) return false;
+    return str.trim().length >= 3;
   },
 };
 
@@ -67,6 +102,7 @@ interface AddAddressDialogProps {
   type: "source" | "destination";
   userName: string;
   userId?: string;
+  editAddress?: Address | null; // Address to edit (if editing mode)
 }
 
 export default function AddAddressDialog({
@@ -76,13 +112,18 @@ export default function AddAddressDialog({
   type,
   userName,
   userId,
+  editAddress,
 }: AddAddressDialogProps) {
+  const { t } = useTranslation();
+  const isEditMode = !!editAddress;
   // Initial form state factory function to get fresh state
   const getInitialFormState = () => ({
     country: "",
     countryCode: "",
     fullName: userName || "",
     mobile: "",
+    phoneCode: "",
+    mobileNumber: "",
     street: "",
     building: "",
     city: "",
@@ -93,7 +134,6 @@ export default function AddAddressDialog({
     addressType: "Home",
     deliveryInstructions: "",
     primary: false,
-    warehouseId: "",
     pickupMode: "Self",
     coordinates: undefined as
       | { latitude: number; longitude: number }
@@ -108,6 +148,12 @@ export default function AddAddressDialog({
   }>({});
   const [showMap, setShowMap] = useState(false);
   const [mapEditable, setMapEditable] = useState(true);
+  // Track which fields user has manually edited (to prevent map overwrites)
+  const [userEditedFields, setUserEditedFields] = useState<Set<string>>(
+    new Set(),
+  );
+  // Unique key for map to force remount and prevent container reuse
+  const [mapKey, setMapKey] = useState(Date.now());
 
   // Reset form completely when dialog closes or type changes
   useEffect(() => {
@@ -120,10 +166,53 @@ export default function AddAddressDialog({
         setValidationErrors({});
         setLoading(false);
         setMapEditable(true);
+        setUserEditedFields(new Set()); // Reset edited fields tracking
+        setMapKey(Date.now()); // Reset map key to force fresh mount next time
       }, 200); // Small delay to avoid visual glitch
       return () => clearTimeout(timeout);
+    } else if (open && editAddress) {
+      // If in edit mode, populate the form with existing address data
+      // Split mobile into phoneCode and mobileNumber
+      let phoneCode = "";
+      let mobileNumber = "";
+      if (editAddress.mobile) {
+        const match = editAddress.mobile.match(/^(\+\d{1,4})(\d+)$/);
+        if (match) {
+          phoneCode = match[1];
+          mobileNumber = match[2];
+        } else {
+          mobileNumber = editAddress.mobile.replace(/[^\d]/g, "");
+        }
+      }
+
+      setForm({
+        country: editAddress.country || "",
+        countryCode: editAddress.countryCode || "",
+        fullName: editAddress.fullName || userName || "",
+        mobile: editAddress.mobile || "",
+        phoneCode: phoneCode,
+        mobileNumber: mobileNumber,
+        street: editAddress.street || "",
+        building: editAddress.building || "",
+        city: editAddress.city || "",
+        district: editAddress.district || "",
+        governorate: editAddress.governorate || "",
+        postalCode: editAddress.postalCode || "",
+        landmark: editAddress.landmark || "",
+        addressType: editAddress.addressType || "Home",
+        deliveryInstructions: editAddress.deliveryInstructions || "",
+        primary: editAddress.primary || false,
+        pickupMode: editAddress.pickupMode || "Self",
+        coordinates: editAddress.coordinates,
+      });
+      if (
+        editAddress.coordinates?.latitude &&
+        editAddress.coordinates?.longitude
+      ) {
+        setShowMap(true);
+      }
     }
-  }, [open]);
+  }, [open, editAddress, userName]);
 
   // Update fullName when userName changes (but preserve other fields)
   useEffect(() => {
@@ -146,12 +235,34 @@ export default function AddAddressDialog({
           ? { ...prev.coordinates, [name]: num }
           : { latitude: 0, longitude: 0, [name]: num },
       }));
+    } else if (name === "country") {
+      // When country changes, update phone code
+      const countryCode = countryPhoneCodes[value] || "";
+      setForm((prev) => ({
+        ...prev,
+        country: value,
+        countryCode: value,
+        phoneCode: countryCode,
+      }));
     } else {
       let formattedValue = value;
       // Apply formatting based on field type
       if (inputType !== "checkbox") {
-        if (name === "mobile") {
-          formattedValue = formatters.formatPhone(value);
+        if (name === "phoneCode") {
+          // For phone code, only allow + and digits, ensure + at start
+          const cleaned = value.replace(/[^\d+]/g, "");
+          if (cleaned === "" || cleaned === "+") {
+            formattedValue = cleaned;
+          } else {
+            // Remove all + and add one at the start
+            const digits = cleaned.replace(/\+/g, "");
+            formattedValue = "+" + digits;
+          }
+          // Mark phoneCode as manually edited
+          setUserEditedFields((prev) => new Set(prev).add("phoneCode"));
+        } else if (name === "mobileNumber") {
+          // For mobile number, only allow digits
+          formattedValue = value.replace(/[^\d]/g, "");
         } else if (name === "postalCode") {
           formattedValue = formatters.formatPostalCode(value);
         } else if (
@@ -165,9 +276,12 @@ export default function AddAddressDialog({
             "fullName",
           ].includes(name)
         ) {
-          formattedValue = formatters.formatAddress(value);
+          // Sanitize and format text fields
+          formattedValue = formatters.sanitize(value);
+          // Mark this field as manually edited by user
+          setUserEditedFields((prev) => new Set(prev).add(name));
         } else if (name === "deliveryInstructions") {
-          formattedValue = formatters.trim(value);
+          formattedValue = formatters.sanitize(value);
         }
       }
       setForm((prev) => ({
@@ -177,50 +291,103 @@ export default function AddAddressDialog({
     }
   };
 
+  // Handle mobile blur to format the number properly
+  const handleMobileBlur = () => {
+    // Combine phoneCode and mobileNumber into mobile field
+    if (form.phoneCode && form.mobileNumber) {
+      const combined = form.phoneCode + form.mobileNumber;
+      setForm((prev) => ({ ...prev, mobile: combined }));
+    } else if (form.mobileNumber) {
+      // If no phone code but has number, add a default +
+      const combined = "+" + form.mobileNumber;
+      setForm((prev) => ({ ...prev, mobile: combined }));
+    }
+  };
+
   const handleSave = async () => {
     // Reset validation errors
     setValidationErrors({});
     const errors: { [key: string]: boolean } = {};
 
+    // Validate userId is available
+    if (!userId) {
+      setError(t.address.errUserIdMissing);
+      toast.error(t.address.errUserIdMissing);
+      return;
+    }
+
+    // For edit mode, validate that addressId is available
+    if (isEditMode && !editAddress?.id) {
+      setError(t.address.errAddressIdMissing);
+      toast.error(t.address.errAddressIdMissing);
+      return;
+    }
+
     // Validate required fields
     if (!form.country) {
       errors.country = true;
-      toast.error("Country is required");
+      toast.error(t.address.errCountryRequired);
     }
-    if (!form.street || !form.street.trim()) {
+
+    // Validate full name
+    if (!form.fullName || !formatters.validateName(form.fullName)) {
+      errors.fullName = true;
+      toast.error(t.address.errFullNameRequired);
+    }
+
+    // Validate street address
+    if (!form.street || !formatters.validateStreet(form.street)) {
       errors.street = true;
-      toast.error("Street is required");
+      toast.error(t.address.errStreetRequired);
     }
+
+    // Validate postal code
     if (!form.postalCode || !form.postalCode.trim()) {
       errors.postalCode = true;
-      toast.error("Postal code is required");
+      toast.error(t.address.errPostalRequired);
     }
-    if (!form.mobile || !form.mobile.trim()) {
+
+    // Validate mobile number
+    if (!form.mobileNumber || form.mobileNumber.length < 8) {
       errors.mobile = true;
-      toast.error("Mobile number is required");
+      toast.error(t.address.errMobileLength);
+    }
+
+    if (!form.phoneCode) {
+      errors.phoneCode = true;
+      toast.error(t.address.errPhoneCodeRequired);
+    }
+
+    // Validate city
+    if (!form.city || form.city.trim().length < 2) {
+      errors.city = true;
+      toast.error(t.address.errCityRequired);
     }
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      setError("Please fill in all required fields");
+      setError(t.address.errRequiredFields);
       return;
     }
 
     setLoading(true);
     setError("");
     try {
+      // Combine phoneCode and mobileNumber before saving
+      const combinedMobile = form.phoneCode + form.mobileNumber;
+
       // Clean and format all fields before saving
       const addressToSave = {
         ...form,
-        fullName: formatters.capitalizeWords(form.fullName),
-        street: formatters.formatAddress(form.street),
-        city: formatters.formatAddress(form.city),
-        building: formatters.formatAddress(form.building),
-        district: formatters.formatAddress(form.district),
-        governorate: formatters.formatAddress(form.governorate),
-        postalCode: formatters.formatPostalCode(form.postalCode),
-        mobile: formatters.formatPhone(form.mobile),
-        landmark: formatters.formatAddress(form.landmark),
+        fullName: formatters.capitalizeWords(form.fullName.trim()),
+        street: formatters.formatAddress(form.street.trim()),
+        city: formatters.formatAddress(form.city.trim()),
+        building: formatters.formatAddress(form.building.trim()),
+        district: formatters.formatAddress(form.district.trim()),
+        governorate: formatters.formatAddress(form.governorate.trim()),
+        postalCode: formatters.formatPostalCode(form.postalCode.trim()),
+        mobile: combinedMobile,
+        landmark: formatters.formatAddress(form.landmark.trim()),
         deliveryInstructions: formatters.trim(form.deliveryInstructions),
         coordinates:
           form.coordinates?.latitude != null &&
@@ -228,19 +395,33 @@ export default function AddAddressDialog({
             ? form.coordinates
             : undefined,
       };
-      const response = await fetch("/api/user/addresses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, ...addressToSave }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to save address");
-      }
-      const resData = await response.json();
-      const savedAddress =
-        resData.addresses?.[resData.addresses.length - 1] ?? addressToSave;
 
-      toast.success("Address saved successfully!");
+      // Use PUT for updates, POST for new addresses
+      const method = isEditMode ? "PUT" : "POST";
+      const requestBody = isEditMode
+        ? { userId, addressId: editAddress?.id, ...addressToSave }
+        : { userId, ...addressToSave };
+
+      const response = await fetch("/api/user/addresses", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+      const resData = await response.json();
+
+      if (!response.ok) {
+        const errorMsg =
+          resData.error ||
+          `Failed to ${isEditMode ? "update" : "save"} address`;
+        throw new Error(errorMsg);
+      }
+      const savedAddress = isEditMode
+        ? resData.address
+        : (resData.addresses?.[resData.addresses.length - 1] ?? addressToSave);
+
+      toast.success(
+        isEditMode ? t.address.addressUpdated : t.address.addressSavedOk,
+      );
 
       // Call parent's onSave callback and wait for it to complete
       await Promise.resolve(onSave(savedAddress as Address));
@@ -269,7 +450,12 @@ export default function AddAddressDialog({
           style={{ maxHeight: "90vh", overflowY: "scroll" }}
         >
           <Dialog.Title className="text-lg font-bold mb-4">
-            Add New Address ({type === "source" ? "Source" : "Destination"})
+            {isEditMode ? t.address.editAddressTitle : t.address.addNewAddress}{" "}
+            (
+            {type === "source"
+              ? t.address.sourceType
+              : t.address.destinationType}
+            )
           </Dialog.Title>
           {error && (
             <div className="mb-2 text-red-600 dark:text-red-400 text-sm">
@@ -280,7 +466,7 @@ export default function AddAddressDialog({
           {/* Location capture - store lat/long for map display */}
           <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30">
             <p className="text-sm font-medium text-foreground mb-2">
-              Set location (stored for map display)
+              {t.address.setLocation}
             </p>
             {!showMap ? (
               <div className="flex flex-wrap gap-2">
@@ -301,16 +487,16 @@ export default function AddAddressDialog({
                           }));
                           setShowMap(true);
                         },
-                        () => setError("Could not get location"),
+                        () => setError(t.address.couldNotGetLocation),
                       );
                     } else {
-                      setError("Geolocation not supported");
+                      setError(t.address.geolocationNotSupported);
                     }
                   }}
                   className="gap-2 cursor-pointer"
                 >
                   <Navigation className="w-4 h-4" />
-                  Use my location
+                  {t.address.useMyLocation}
                 </Button>
                 <Button
                   type="button"
@@ -319,16 +505,18 @@ export default function AddAddressDialog({
                   onClick={() => {
                     setShowMap(true);
                     setMapEditable(true);
+                    setMapKey(Date.now()); // Generate new key for fresh map instance
                   }}
                   className="gap-2 cursor-pointer"
                 >
                   <MapPinned className="w-4 h-4" />
-                  Pick on map
+                  {t.address.pickOnMap}
                 </Button>
               </div>
             ) : (
               <div className="space-y-2">
                 <LocationMapPicker
+                  key={`map-${type}-${mapKey}`}
                   position={
                     form.coordinates
                       ? {
@@ -349,24 +537,36 @@ export default function AddAddressDialog({
                     }
                   }}
                   onAddressData={(addressData: AddressData) => {
+                    // Only update fields that user hasn't manually edited
                     setForm((prev) => ({
                       ...prev,
-                      street: formatters.formatAddress(
-                        addressData.street ?? prev.street,
-                      ),
-                      city: formatters.formatAddress(
-                        addressData.city ?? prev.city,
-                      ),
-                      district: formatters.formatAddress(
-                        addressData.district ?? prev.district,
-                      ),
-                      governorate: formatters.formatAddress(
-                        addressData.governorate ?? prev.governorate,
-                      ),
-                      country: addressData.country ?? prev.country,
-                      postalCode: formatters.formatPostalCode(
-                        addressData.postalCode ?? prev.postalCode,
-                      ),
+                      street:
+                        !userEditedFields.has("street") && addressData.street
+                          ? addressData.street
+                          : prev.street,
+                      city:
+                        !userEditedFields.has("city") && addressData.city
+                          ? addressData.city
+                          : prev.city,
+                      district:
+                        !userEditedFields.has("district") &&
+                        addressData.district
+                          ? addressData.district
+                          : prev.district,
+                      governorate:
+                        !userEditedFields.has("governorate") &&
+                        addressData.governorate
+                          ? addressData.governorate
+                          : prev.governorate,
+                      country: addressData.country || prev.country,
+                      postalCode: addressData.postalCode || prev.postalCode,
+                      // Only update phoneCode if user hasn't manually selected/edited it
+                      phoneCode:
+                        !userEditedFields.has("phoneCode") &&
+                        addressData.country &&
+                        countryPhoneCodes[addressData.country]
+                          ? countryPhoneCodes[addressData.country]
+                          : prev.phoneCode,
                     }));
                   }}
                   editable={mapEditable}
@@ -375,193 +575,320 @@ export default function AddAddressDialog({
                   showUseMyLocation
                 />
                 {form.coordinates && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowMap(false);
-                      setForm((f) => ({ ...f, coordinates: undefined }));
-                    }}
-                    className="text-muted-foreground cursor-pointer"
-                  >
-                    Hide map
-                  </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    {userEditedFields.size > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setUserEditedFields(new Set());
+                          toast.success(t.address.allowMapUpdatesHint);
+                        }}
+                        className="text-blue-600 border-blue-300 hover:bg-blue-50 cursor-pointer"
+                      >
+                        {t.address.allowMapUpdates}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowMap(false);
+                        setForm((f) => ({ ...f, coordinates: undefined }));
+                      }}
+                      className="text-muted-foreground cursor-pointer"
+                    >
+                      {t.address.hideMap}
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 mb-4">
-            {/* Country Select */}
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Country
-            </label>
-            <select
-              name="country"
-              value={form.country}
-              onChange={handleChange}
-              required
-              className={`block w-full rounded border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary bg-background ${
-                validationErrors.country ? "border-red-500" : "border-border"
-              }`}
-            >
-              <option value="" disabled>
-                Select country
-              </option>
-              {countries.map((country) => (
-                <option
-                  key={country}
-                  value={country}
-                  className="bg-background text-foreground"
-                >
-                  {country}
-                </option>
-              ))}
-            </select>
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              City
-            </label>
-            <Input
-              name="city"
-              placeholder="e.g., Cairo, Dubai, Riyadh"
-              value={form.city}
-              onChange={handleChange}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Street
-            </label>
-            <Input
-              name="street"
-              placeholder="e.g., 123 Main St."
-              value={form.street}
-              onChange={handleChange}
-              required
-              className={validationErrors.street ? "border-red-500" : ""}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Building
-            </label>
-            <Input
-              name="building"
-              placeholder="e.g., Building 5, Apt 12"
-              value={form.building}
-              onChange={handleChange}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              District
-            </label>
-            <Input
-              name="district"
-              placeholder="e.g., Maadi, Jumeirah"
-              value={form.district}
-              onChange={handleChange}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Governorate
-            </label>
-            <Input
-              name="governorate"
-              placeholder="e.g., Cairo Governorate"
-              value={form.governorate}
-              onChange={handleChange}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Postal Code
-            </label>
-            <Input
-              name="postalCode"
-              placeholder="e.g., 12345"
-              value={form.postalCode}
-              onChange={handleChange}
-              required
-              className={validationErrors.postalCode ? "border-red-500" : ""}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Mobile
-            </label>
-            <Input
-              name="mobile"
-              placeholder="e.g., +201234567890"
-              value={form.mobile}
-              onChange={handleChange}
-              required
-              className={validationErrors.mobile ? "border-red-500" : ""}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Landmark
-            </label>
-            <Input
-              name="landmark"
-              placeholder="e.g., Near City Mall"
-              value={form.landmark}
-              onChange={handleChange}
-            />
-
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Delivery Instructions
-            </label>
-            <Input
-              name="deliveryInstructions"
-              placeholder="e.g., Leave at reception, call on arrival"
-              value={form.deliveryInstructions}
-              onChange={handleChange}
-            />
-
-            {/* Address Type Radio */}
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Address Type
-            </label>
-            <div className="flex gap-4 mb-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="addressType"
-                  value="Home"
-                  checked={form.addressType === "Home"}
-                  onChange={handleChange}
-                />
-                <span>
-                  Home{" "}
-                  <span className="text-xs text-muted-foreground">
-                    (7am-9pm, all days)
-                  </span>
-                </span>
+          <div className="space-y-4 mb-4">
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t.address.fullName} <span className="text-red-500">*</span>
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="addressType"
-                  value="Office"
-                  checked={form.addressType === "Office"}
-                  onChange={handleChange}
-                />
-                <span>
-                  Office{" "}
-                  <span className="text-xs text-muted-foreground">
-                    (9am-6pm, Weekdays)
-                  </span>
-                </span>
-              </label>
+              <Input
+                name="fullName"
+                placeholder={t.address.fullNamePlaceholder}
+                value={form.fullName}
+                onChange={handleChange}
+                required
+                className={validationErrors.fullName ? "border-red-500" : ""}
+              />
             </div>
 
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="primary"
-                checked={form.primary}
+            {/* Country Select */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t.address.country} <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+                required
+                className={`block w-full rounded border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary bg-background ${
+                  validationErrors.country ? "border-red-500" : "border-border"
+                }`}
+              >
+                <option value="" disabled>
+                  {t.address.selectCountry}
+                </option>
+                {countries.map((country) => (
+                  <option
+                    key={country}
+                    value={country}
+                    className="bg-background text-foreground"
+                  >
+                    {country}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* City and Street - Grid Layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  {t.address.city} <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  name="city"
+                  placeholder={t.address.cityPlaceholder}
+                  value={form.city}
+                  onChange={handleChange}
+                  required
+                  className={validationErrors.city ? "border-red-500" : ""}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  {t.address.postalCode} <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  name="postalCode"
+                  placeholder={t.address.postalCodePlaceholder}
+                  value={form.postalCode}
+                  onChange={handleChange}
+                  required
+                  className={
+                    validationErrors.postalCode ? "border-red-500" : ""
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Street Address */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t.address.streetAddress}{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <Input
+                name="street"
+                placeholder={t.address.streetPlaceholder}
+                value={form.street}
+                onChange={handleChange}
+                required
+                className={validationErrors.street ? "border-red-500" : ""}
+              />
+            </div>
+
+            {/* Building and District - Grid Layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  {t.address.buildingApt}
+                </label>
+                <Input
+                  name="building"
+                  placeholder={t.address.buildingPlaceholder}
+                  value={form.building}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  {t.address.district}
+                </label>
+                <Input
+                  name="district"
+                  placeholder={t.address.districtPlaceholder}
+                  value={form.district}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* Governorate */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t.address.governorateState}
+              </label>
+              <Input
+                name="governorate"
+                placeholder={t.address.governoratePlaceholder}
+                value={form.governorate}
                 onChange={handleChange}
               />
-              <span>Set as Primary</span>
-            </label>
+            </div>
+
+            {/* Mobile Number */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t.address.mobileNumber} <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                {/* Country Code Dropdown */}
+                <div className="w-36">
+                  <select
+                    name="phoneCodeSelect"
+                    value={form.phoneCode}
+                    onChange={(e) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        phoneCode: e.target.value,
+                      }));
+                      // Mark phoneCode as manually edited when selected from dropdown
+                      setUserEditedFields((prev) =>
+                        new Set(prev).add("phoneCode"),
+                      );
+                    }}
+                    className={`block w-full h-10 rounded border px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary bg-background cursor-pointer ${
+                      validationErrors.phoneCode
+                        ? "border-red-500"
+                        : "border-border"
+                    }`}
+                  >
+                    <option value="">{t.address.selectCode}</option>
+                    {countries.map((country) => (
+                      <option
+                        key={country}
+                        value={countryPhoneCodes[country] || ""}
+                      >
+                        {countryPhoneCodes[country]} - {country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Phone Number Input */}
+                <div className="flex-1">
+                  <Input
+                    name="mobileNumber"
+                    type="tel"
+                    placeholder={t.address.phonePlaceholder}
+                    value={form.mobileNumber}
+                    onChange={handleChange}
+                    onBlur={handleMobileBlur}
+                    required
+                    className={`h-10 ${validationErrors.mobile ? "border-red-500" : ""}`}
+                  />
+                </div>
+              </div>
+              {(!form.phoneCode || !form.mobileNumber) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t.address.selectCodeAndEnter}
+                </p>
+              )}
+            </div>
+
+            {/* Landmark */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t.address.landmark}
+              </label>
+              <Input
+                name="landmark"
+                placeholder={t.address.landmarkPlaceholder}
+                value={form.landmark}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Delivery Instructions */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t.address.deliveryInstructions}
+              </label>
+              <Input
+                name="deliveryInstructions"
+                placeholder={t.address.deliveryInstructionsPlaceholder}
+                value={form.deliveryInstructions}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Address Type Radio */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                {t.address.addressType}
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="addressType"
+                    value="Home"
+                    checked={form.addressType === "Home"}
+                    onChange={handleChange}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-sm">
+                    {t.address.home}{" "}
+                    <span className="text-xs text-muted-foreground">
+                      {t.address.homeHours}
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="addressType"
+                    value="Office"
+                    checked={form.addressType === "Office"}
+                    onChange={handleChange}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-sm">
+                    {t.address.office}{" "}
+                    <span className="text-xs text-muted-foreground">
+                      {t.address.officeHours}
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Primary Checkbox */}
+            <div className="border-t border-border pt-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="primary"
+                  checked={form.primary}
+                  onChange={handleChange}
+                  className="cursor-pointer"
+                />
+                <span className="text-sm font-medium">
+                  {t.address.setAsPrimaryAddress}
+                </span>
+              </label>
+              {form.primary && (
+                <p className="text-xs text-muted-foreground mt-2 ml-6">
+                  {t.address.primaryDefault}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 mt-4">
             <Button
@@ -570,10 +897,14 @@ export default function AddAddressDialog({
               variant="outline"
               disabled={loading}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="button" onClick={handleSave} disabled={loading}>
-              {loading ? "Saving..." : "Save Address"}
+              {loading
+                ? t.address.saving
+                : isEditMode
+                  ? t.address.updateAddress
+                  : t.address.saveAddress}
             </Button>
           </div>
         </Dialog.Content>

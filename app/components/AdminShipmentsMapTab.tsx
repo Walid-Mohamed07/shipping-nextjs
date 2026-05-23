@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, MapPin, Package, Truck } from "lucide-react";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface Shipment {
   id: string;
@@ -32,6 +33,7 @@ const countryCoords: Record<string, [number, number]> = {
 };
 
 export function AdminShipmentsMapTab() {
+  const { t } = useTranslation();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,10 +93,10 @@ export function AdminShipmentsMapTab() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-4">
-          Live Shipment Map
+          {t.adminMap.title}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Real-time tracking of all active deliveries
+          {t.adminMap.subtitle}
         </p>
       </div>
 
@@ -106,9 +108,9 @@ export function AdminShipmentsMapTab() {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground">Loading shipments...</p>
+        <p className="text-muted-foreground">{t.adminMap.loading}</p>
       ) : shipments.length === 0 ? (
-        <p className="text-muted-foreground">No active shipments</p>
+        <p className="text-muted-foreground">{t.adminMap.noShipments}</p>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map Section */}
@@ -245,15 +247,15 @@ export function AdminShipmentsMapTab() {
               <div className="absolute bottom-4 left-4 flex gap-4 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-foreground">Origin</span>
+                  <span className="text-foreground">{t.adminMap.origin}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-primary" />
-                  <span className="text-foreground">Current</span>
+                  <span className="text-foreground">{t.adminMap.current}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="text-foreground">Destination</span>
+                  <span className="text-foreground">{t.adminMap.destination}</span>
                 </div>
               </div>
             </div>
@@ -262,7 +264,7 @@ export function AdminShipmentsMapTab() {
           {/* Shipments List */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">
-              Active Shipments
+              {t.adminMap.activeShipments}
             </h3>
             {shipments.map((shipment) => (
               <Card key={shipment.id} className="p-4">

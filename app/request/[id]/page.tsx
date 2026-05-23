@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { LiveTrackingMap } from "@/app/components/LiveTrackingMap";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -17,7 +16,6 @@ import {
   AlertCircle,
   ArrowLeft,
   Banknote,
-  Warehouse,
   Navigation,
   MapPinned,
   Truck,
@@ -26,6 +24,10 @@ import {
   BoxSelect,
   ChevronDown,
   X,
+  CreditCard,
+  Loader2,
+  XCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   Accordion,
@@ -36,17 +38,28 @@ import {
 import {
   Request,
   Address,
-  Warehouse as WarehouseType,
   RequestDeliveryStatus,
 } from "@/types";
-import { getDistanceKm } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
+import { useRealTime } from "@/app/context/RealTimeContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { OfferPrice, LockedPriceDisplay } from "@/app/components/PriceDisplay";
 
 // Dynamically import map components to avoid SSR issues
 const LocationMapPicker = dynamic(
   () =>
     import("@/app/components/LocationMapPicker").then((mod) => ({
       default: mod.LocationMapPicker,
+    })),
+  { ssr: false },
+);
+
+const RequestRouteMap = dynamic(
+  () =>
+    import("@/app/components/RequestRouteMap").then((mod) => ({
+      default: mod.RequestRouteMap,
     })),
   { ssr: false },
 );
@@ -68,104 +81,306 @@ const formatLocation = (loc: Address) => {
 const statusSteps = [
   { name: RequestDeliveryStatus.PENDING, icon: Clock },
   { name: RequestDeliveryStatus.PICKED_UP_SOURCE, icon: MapPin },
-  { name: RequestDeliveryStatus.WAREHOUSE_SOURCE_RECEIVED, icon: Warehouse },
   { name: RequestDeliveryStatus.IN_TRANSIT, icon: Truck },
-  {
-    name: RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED,
-    icon: Warehouse,
-  },
   { name: RequestDeliveryStatus.SHIPMENT_DELIVER, icon: Package },
   { name: RequestDeliveryStatus.DELIVERED, icon: CheckCircle2 },
 ];
 
-const NEARBY_RADIUS_KM = 50;
-
 export default function RequestDetailsPage() {
+  const { t, isRtl, locale } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
+  const { formatPrice, convert } = useCurrency();
+  const { user, isLoading: authLoading } = useProtectedRoute();
+  const { subscribe, subscribeToRequest } = useRealTime();
+  const params = useParams();
+  const requestId = params.id as string;
+
+  // Regular data fetching (not live)
   const [request, setRequest] = useState<Request | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [requestLoading, setRequestLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState("");
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  const [nearbyWarehouses, setNearbyWarehouses] = useState<
-    (WarehouseType & { distanceKm: number })[]
-  >([]);
-  const [locationChecked, setLocationChecked] = useState(false);
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmingOffer, setConfirmingOffer] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const { user, isLoading: authLoading } = useProtectedRoute();
-  const params = useParams();
-  const requestId = params.id as string;
+  const [headoverPercentage, setHeadoverPercentage] = useState(0);
+  const [hasShownPaymentNotification, setHasShownPaymentNotification] =
+    useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<{
+    id: string;
+    status: string;
+    amount: number;
+    paymentMethod: string;
+    breakdown?: {
+      walletDeduction?: number;
+      cardAmount?: number;
+    };
+    kashierPaymentUrl?: string;
+    paidAt?: string;
+    createdAt?: string;
+  } | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [lastPaymentCheck, setLastPaymentCheck] = useState<Date | null>(null);
 
-  const findNearbyWarehouses = () => {
-    setShowLocationPrompt(true);
-  };
+  const isClientRole = !["admin", "operator", "driver", "driver"].includes(
+    user?.role || "",
+  );
 
-  const handleLocationConfirm = () => {
-    setShowLocationPrompt(false);
-    setLocationError("");
-    setLocationLoading(true);
-    setLocationChecked(true);
+  const isLoading = authLoading || requestLoading;
 
-    if (!navigator.geolocation) {
-      setLocationError("Location is not supported by your browser.");
-      setLocationLoading(false);
+  // Fetch request data on mount
+  const fetchRequest = useCallback(async () => {
+    if (!requestId) return;
+
+    setRequestLoading(true);
+    try {
+      const response = await fetch(`/api/requests/${requestId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch request");
+      }
+      const data = await response.json();
+      setRequest(data.request || data);
+      if (typeof data.headoverPercentage === "number") {
+        setHeadoverPercentage(data.headoverPercentage);
+      }
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load request");
+    } finally {
+      setRequestLoading(false);
+    }
+  }, [requestId]);
+
+  useEffect(() => {
+    fetchRequest();
+  }, [fetchRequest]);
+
+  // Manual refresh function
+  const refreshRequest = useCallback(() => {
+    fetchRequest();
+  }, [fetchRequest]);
+
+  // Fetch payment info for the request
+  const fetchPaymentInfo = useCallback(async () => {
+    if (!requestId) return;
+
+    setPaymentLoading(true);
+    try {
+      const response = await fetch(`/api/pay?requestId=${requestId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentInfo(data.payment);
+      } else if (response.status !== 404) {
+        console.error("Failed to fetch payment info");
+      }
+    } catch (err) {
+      console.error("Error fetching payment:", err);
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, [requestId]);
+
+  // Fetch payment info when request has payment data
+  useEffect(() => {
+    if (request?.paymentStatus && request.paymentStatus !== "unpaid") {
+      fetchPaymentInfo();
+    }
+  }, [request?.paymentStatus, fetchPaymentInfo]);
+
+  // Auto-check payment status by querying Kashier directly
+  const checkPaymentStatus = useCallback(async () => {
+    if (!paymentInfo?.id) return;
+
+    // Only check if payment is pending or processing
+    if (
+      paymentInfo.status !== "pending" &&
+      paymentInfo.status !== "processing"
+    ) {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setUserLocation({ lat, lng });
-        try {
-          const res = await fetch("/api/warehouses");
-          const data = await res.json();
-          const warehouses: WarehouseType[] = data.warehouses || [];
-          const withCoords = warehouses.filter(
-            (w) =>
-              w.latitude != null &&
-              w.longitude != null &&
-              w.status === "active",
-          );
-          const withDistance = withCoords
-            .map((w) => ({
-              ...w,
-              distanceKm: getDistanceKm(lat, lng, w.latitude!, w.longitude!),
-            }))
-            .filter((w) => w.distanceKm <= NEARBY_RADIUS_KM)
-            .sort((a, b) => a.distanceKm - b.distanceKm);
-          setNearbyWarehouses(withDistance);
-        } catch {
-          const errorMsg = "Failed to load warehouses.";
-          setLocationError(errorMsg);
-          toast.error(errorMsg);
-        } finally {
-          setLocationLoading(false);
-        }
-      },
-      (err) => {
-        const errorMsg =
-          err.code === 1
-            ? "Location permission was denied."
-            : "Could not get your location. Please try again.";
-        setLocationError(errorMsg);
-        toast.error(errorMsg);
-        setLocationLoading(false);
-      },
+    console.log(
+      "[Auto-Check] Querying Kashier for real-time payment status...",
     );
+    setIsCheckingPayment(true);
+    setLastPaymentCheck(new Date());
+
+    try {
+      const response = await fetch(`/api/pay/status/${paymentInfo.id}`);
+
+      if (response.ok) {
+        const data = await response.json();
+
+        console.log(
+          "[Auto-Check] Kashier status:",
+          data.kashierStatus,
+          "Updated:",
+          data.updated,
+        );
+
+        if (data.updated) {
+          // Status was updated! Refresh UI
+          toast.success(
+            data.status === "completed"
+              ? "Payment confirmed! Your request has been submitted."
+              : `Payment status updated: ${data.status}`,
+          );
+
+          // Refresh request and payment data
+          await Promise.all([fetchRequest(), fetchPaymentInfo()]);
+        }
+      } else {
+        console.error("[Auto-Check] Failed to check payment status");
+      }
+    } catch (err) {
+      console.error("[Auto-Check] Error:", err);
+    } finally {
+      setIsCheckingPayment(false);
+    }
+  }, [paymentInfo?.id, paymentInfo?.status, fetchRequest, fetchPaymentInfo]);
+
+  // Auto-check payment on mount and poll every 5 seconds if payment is pending
+  // REPLACED WITH WEBHOOK: Listen for real-time payment status updates from webhook
+  useEffect(() => {
+    if (!requestId) return;
+
+    console.log(
+      "[Real-Time] Subscribing to payment events for request:",
+      requestId,
+    );
+
+    // Subscribe to payment completion events
+    const unsubscribeCompleted = subscribe("PAYMENT_COMPLETED", (event) => {
+      console.log("[Real-Time] Received PAYMENT_COMPLETED event:", event);
+
+      if (event.payload.requestId === requestId) {
+        toast.success("Payment confirmed! Your request has been submitted.");
+
+        // Refresh request and payment data
+        fetchRequest();
+        fetchPaymentInfo();
+      }
+    });
+
+    // Subscribe to payment failure events
+    const unsubscribeFailed = subscribe("PAYMENT_FAILED", (event) => {
+      console.log("[Real-Time] Received PAYMENT_FAILED event:", event);
+
+      if (event.payload.requestId === requestId) {
+        toast.error(
+          event.payload.message || "Payment failed. Please try again.",
+        );
+
+        // Refresh request and payment data
+        fetchRequest();
+        fetchPaymentInfo();
+      }
+    });
+
+    // Also subscribe to specific request updates
+    const unsubscribeRequest = subscribeToRequest(requestId, (event) => {
+      console.log("[Real-Time] Received request event:", event.type);
+
+      if (
+        event.type === "PAYMENT_COMPLETED" ||
+        event.type === "PAYMENT_FAILED"
+      ) {
+        // Already handled above
+        return;
+      }
+
+      // Handle other request updates
+      if (event.type === "REQUEST_UPDATED" || event.type === "STATUS_CHANGED") {
+        fetchRequest();
+      }
+    });
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      console.log("[Real-Time] Unsubscribing from payment events");
+      unsubscribeCompleted();
+      unsubscribeFailed();
+      unsubscribeRequest();
+    };
+  }, [
+    requestId,
+    subscribe,
+    subscribeToRequest,
+    fetchRequest,
+    fetchPaymentInfo,
+  ]);
+
+  // Handle manual payment verification (when webhook fails)
+  const handleVerifyPayment = async () => {
+    if (!paymentInfo?.id && !requestId) return;
+
+    setPaymentLoading(true);
+    try {
+      const response = await fetch("/api/pay/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId: paymentInfo?.id,
+          requestId: requestId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || "Payment verification checked");
+
+        // If Kashier dashboard shows PAID, offer to mark as paid
+        if (data.kashierDashboardUrl) {
+          const confirmMark = window.confirm(
+            "Check Kashier dashboard to confirm payment. If payment shows as PAID, click OK to mark it as completed in our system.",
+          );
+
+          if (confirmMark) {
+            await handleMarkAsPaid();
+          }
+        }
+      } else {
+        toast.error(data.error || "Failed to verify payment");
+      }
+    } catch (err) {
+      toast.error("Failed to verify payment");
+      console.error("Verify payment error:", err);
+    } finally {
+      setPaymentLoading(false);
+    }
   };
 
-  const handleLocationDecline = () => {
-    setShowLocationPrompt(false);
+  // Mark payment as paid manually (after verification)
+  const handleMarkAsPaid = async () => {
+    if (!paymentInfo?.id) return;
+
+    try {
+      const response = await fetch("/api/pay/verify", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId: paymentInfo.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Payment marked as completed!");
+        // Refresh request and payment info
+        fetchRequest();
+        fetchPaymentInfo();
+      } else {
+        toast.error(data.error || "Failed to mark payment as paid");
+      }
+    } catch (err) {
+      toast.error("Failed to mark payment as paid");
+      console.error("Mark as paid error:", err);
+    }
   };
 
   const handleSelectOffer = (offerId: string) => {
@@ -175,21 +390,23 @@ export default function RequestDetailsPage() {
         ...request,
         costOffers: request.costOffers.map((offer) => ({
           ...offer,
-          selected: offer.company.id === offerId,
+          selected: offer._id === offerId,
         })),
       };
       setRequest(updatedRequest);
       setSelectedOfferId(offerId);
-      toast.success("Offer selected!");
+      toast.success(t.userRequestDetail.offerSelected);
     }
   };
 
   const handleSubmitOffer = async () => {
     const selectedOffer = request?.costOffers?.find((o) => o.selected);
     if (!selectedOffer) {
-      toast.error("Please select an offer first");
+      toast.error(t.userRequestDetail.pleaseSelectOffer);
       return;
     }
+
+    console.log("selected Offer: ", selectedOffer);
 
     setConfirmingOffer(selectedOffer);
     setShowConfirmDialog(true);
@@ -197,6 +414,8 @@ export default function RequestDetailsPage() {
 
   const handleConfirmSubmit = async () => {
     if (!confirmingOffer || !request) return;
+
+    console.log("confirming Offer: ", confirmingOffer);
 
     setIsSubmitting(true);
     try {
@@ -206,7 +425,7 @@ export default function RequestDetailsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          offerId: confirmingOffer.company.id,
+          offerId: confirmingOffer._id, // Use the offer's _id to match the specific offer
         }),
       });
 
@@ -216,7 +435,7 @@ export default function RequestDetailsPage() {
 
       const data = await response.json();
 
-      toast.success("Offer submitted successfully!");
+      toast.success(t.userRequestDetail.offerSubmitted);
       setShowConfirmDialog(false);
       setConfirmingOffer(null);
 
@@ -225,11 +444,8 @@ export default function RequestDetailsPage() {
         setRequest(data.request);
       }
 
-      // Optionally redirect after a short delay to show the updated state
-      setTimeout(() => {
-        // Refresh the page data or stay on page to show updates
-        window.location.reload();
-      }, 2000);
+      // Refresh will happen automatically via real-time updates
+      // No need to reload the page
     } catch (err) {
       const errorMsg =
         err instanceof Error ? err.message : "Failed to submit offer";
@@ -239,34 +455,24 @@ export default function RequestDetailsPage() {
     }
   };
 
+  // Data fetching is handled by fetchRequest above
+  // Authorization check for non-owners viewing the request
   useEffect(() => {
-    if (authLoading || !user || !user._id) {
-      return;
+    if (authLoading || !user || !request) return;
+
+    const userId = user._id || user.id;
+    const isAdminRole = ["admin", "operator", "driver"].includes(user.role);
+    const reqUser = request.user;
+    const requestUserId =
+      typeof reqUser === "string"
+        ? reqUser
+        : String((reqUser as any)?._id || (reqUser as any)?.id || "");
+
+    if (!isAdminRole && requestUserId !== String(userId)) {
+      setError(t.userRequestDetail.unauthorized);
+      toast.error(t.userRequestDetail.unauthorized);
     }
-
-    const fetchRequest = async () => {
-      try {
-        const response = await fetch(`/api/requests/${requestId}`);
-        if (!response.ok) throw new Error("Request not found");
-        const data = await response.json();
-
-        if (data.request.user._id !== user._id) {
-          throw new Error("Unauthorized");
-        }
-
-        setRequest(data.request);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch request";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRequest();
-  }, [user?._id, requestId]);
+  }, [authLoading, user, request]);
 
   // Handle ESC key to close image zoom modal
   useEffect(() => {
@@ -280,16 +486,39 @@ export default function RequestDetailsPage() {
     return () => window.removeEventListener("keydown", handleEscKey);
   }, [showImageZoom]);
 
+  // Show payment success notification when payment is completed
+  useEffect(() => {
+    if (
+      request?.paymentStatus === "paid" &&
+      !hasShownPaymentNotification &&
+      request?.requestStatus === "Assigned to Driver"
+    ) {
+      toast.success(
+        t.userRequestDetail?.paymentSuccessNotification ||
+          "Payment completed successfully! Your shipment is now being processed.",
+        {
+          duration: 6000,
+        },
+      );
+      setHasShownPaymentNotification(true);
+    }
+  }, [
+    request?.paymentStatus,
+    request?.requestStatus,
+    hasShownPaymentNotification,
+    t,
+  ]);
+
+  // test
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case RequestDeliveryStatus.PENDING:
         return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-800";
       case RequestDeliveryStatus.PICKED_UP_SOURCE:
-      case RequestDeliveryStatus.WAREHOUSE_SOURCE_RECEIVED:
         return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border border-blue-300 dark:border-blue-800";
       case RequestDeliveryStatus.IN_TRANSIT:
         return "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-800";
-      case RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED:
       case RequestDeliveryStatus.SHIPMENT_DELIVER:
         return "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border border-purple-300 dark:border-purple-800";
       case RequestDeliveryStatus.DELIVERED:
@@ -323,6 +552,74 @@ export default function RequestDetailsPage() {
     }
   };
 
+  const getTranslatedDeliveryStatus = (status: string): string => {
+    const statuses = (t.userRequestDetail as any).deliveryStatuses as Record<
+      string,
+      string
+    >;
+    return statuses?.[status] ?? status;
+  };
+
+  const getTranslatedRequestStatus = (status: string): string => {
+    const statuses = (t.userRequestDetail as any).requestStatuses as Record<
+      string,
+      string
+    >;
+    return statuses?.[status] ?? status;
+  };
+
+  // Translates any status value — checks request statuses first, then delivery statuses
+  const getTranslatedAnyStatus = (status: string): string => {
+    const req = (t.userRequestDetail as any).requestStatuses as Record<
+      string,
+      string
+    >;
+    if (req?.[status]) return req[status];
+    const del = (t.userRequestDetail as any).deliveryStatuses as Record<
+      string,
+      string
+    >;
+    return del?.[status] ?? status;
+  };
+
+  const getTranslatedActivityAction = (action: string): string => {
+    const actions = (t.userRequestDetail as any).activityActions as Record<
+      string,
+      string
+    >;
+    return (
+      actions?.[action] ??
+      action
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    );
+  };
+
+  const getTranslatedActivityDescription = (activity: any): string => {
+    const descs = (t.userRequestDetail as any).activityDescriptions as Record<
+      string,
+      string
+    >;
+    const template = descs?.[activity.action];
+    if (!template) return activity.description || "";
+    return template
+      .replace("{driverName}", activity.driverName || "")
+      .replace(
+        "{cost}",
+        activity.cost != null ? Number(activity.cost).toFixed(2) : "",
+      )
+      .replace("{currency}", activity.currency || "USD")
+      .replace(
+        "{oldStatus}",
+        getTranslatedAnyStatus(activity.details?.oldStatus || ""),
+      )
+      .replace(
+        "{newStatus}",
+        getTranslatedAnyStatus(activity.details?.newStatus || ""),
+      );
+  };
+
   if (!user) {
     return null;
   }
@@ -348,15 +645,15 @@ export default function RequestDetailsPage() {
             <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div>
               <h2 className="font-semibold text-red-800 dark:text-red-400 mb-2">
-                Error
+                {t.userRequestDetail.errorTitle}
               </h2>
               <p className="text-red-700 dark:text-red-400">
-                {error || "Request not found"}
+                {error || t.userRequestDetail.requestNotFound}
               </p>
               <Link href="/my-requests" className="mt-4 inline-block">
                 <Button className="cursor-pointer" variant="outline" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Requests
+                  {t.userRequestDetail.backToRequests}
                 </Button>
               </Link>
             </div>
@@ -376,7 +673,7 @@ export default function RequestDetailsPage() {
             className="gap-2 bg-transparent cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Requests
+            {t.userRequestDetail.backToRequests}
           </Button>
         </Link>
 
@@ -386,76 +683,287 @@ export default function RequestDetailsPage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {request.id}
+                  {request.publicId}
                 </h1>
               </div>
               <div className="flex gap-2">
                 <span
                   className={`px-4 py-2 w-max rounded-full text-sm font-semibold ${getOrderStatusBadgeColor(request.requestStatus)}`}
                 >
-                  Order: {request.requestStatus}
+                  {t.userRequestDetail.orderStatus}{" "}
+                  {getTranslatedRequestStatus(request.requestStatus)}
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Live Tracking Map - Only show when In Transit or later */}
-          {(request.deliveryStatus === RequestDeliveryStatus.IN_TRANSIT ||
-            request.deliveryStatus ===
-              RequestDeliveryStatus.WAREHOUSE_DESTINATION_RECEIVED ||
-            request.deliveryStatus ===
-              RequestDeliveryStatus.SHIPMENT_DELIVER) &&
-            request.source &&
-            request.destination && (
-              <LiveTrackingMap
-                from={request.source.country}
-                to={request.destination.country}
-                isInTransit={true}
-              />
-            )}
-
-          {/* Location permission dialog - ask before sharing */}
-          {showLocationPrompt && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6">
-                <div className="flex gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <MapPinned className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground text-lg">
-                      Share your location?
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      ShipHub would like to use your location to find warehouses
-                      within {NEARBY_RADIUS_KM} km of you. Your location is
-                      never stored or shared.
-                    </p>
+            {/* Proceed to Checkout - Show when offer confirmed (Action needed status) and not paid/pending */}
+            {request.requestStatus === "Action needed" &&
+              request.selectedDriver &&
+              request.paymentStatus === "unpaid" && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-linear-to-r from-primary/10 to-primary/5 rounded-lg p-6">
+                    <div className="text-center sm:text-left">
+                      <h3 className="font-semibold text-lg text-foreground mb-1">
+                        {t.userRequestDetail?.readyForPayment ||
+                          "Ready for Payment"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {t.userRequestDetail?.payToStartDesc ||
+                          "Complete your payment to start your shipment"}
+                      </p>
+                      <p className="text-2xl font-bold text-primary mt-2">
+                        $
+                        {(
+                          request.selectedDriver.finalPrice ||
+                          request.selectedDriver.cost
+                        ).toFixed(2)}
+                      </p>
+                    </div>
+                    <Link href={`/checkout?requestId=${requestId}`}>
+                      <Button size="lg" className="cursor-pointer gap-2 px-8">
+                        <CreditCard className="w-5 h-5" />
+                        {t.userRequestDetail?.proceedToCheckout ||
+                          "Proceed to Checkout"}
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleLocationConfirm}
-                    className="flex-1 cursor-pointer"
-                  >
-                    Allow
-                  </Button>
-                  <Button
-                    onClick={handleLocationDecline}
-                    variant="outline"
-                    className="flex-1 bg-transparent cursor-pointer"
-                  >
-                    Not now
-                  </Button>
+              )}
+
+            {/* Payment Status Section - Webhook-based updates */}
+            {/* Payment Pending - Waiting for webhook */}
+            {request.paymentStatus === "pending" && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                      {isCheckingPayment ? (
+                        <Loader2 className="w-5 h-5 text-yellow-600 dark:text-yellow-400 animate-spin" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-yellow-800 dark:text-yellow-400">
+                        {t.userRequestDetail?.paymentPending ||
+                          "Payment Pending"}
+                      </p>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-500">
+                        {isCheckingPayment
+                          ? "Checking payment status with Kashier..."
+                          : "Waiting for payment confirmation from Kashier..."}
+                      </p>
+                      <p className="text-xs text-yellow-600 dark:text-yellow-600 mt-1">
+                        Status will update automatically when payment is
+                        confirmed
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-yellow-200 dark:border-yellow-800">
+                    {paymentInfo?.kashierPaymentUrl ? (
+                      <a
+                        href={paymentInfo.kashierPaymentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" className="cursor-pointer gap-2">
+                          <CreditCard className="w-4 h-4" />
+                          {t.userRequestDetail?.continuePayment ||
+                            "Continue Payment"}
+                        </Button>
+                      </a>
+                    ) : (
+                      <Link href={`/checkout?requestId=${requestId}`}>
+                        <Button size="sm" className="cursor-pointer gap-2">
+                          <CreditCard className="w-4 h-4" />
+                          {t.userRequestDetail?.continuePayment ||
+                            "Continue Payment"}
+                        </Button>
+                      </Link>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        checkPaymentStatus();
+                      }}
+                      disabled={isCheckingPayment}
+                      className="cursor-pointer"
+                    >
+                      <RefreshCw
+                        className={`w-4 h-4 mr-2 ${isCheckingPayment ? "animate-spin" : ""}`}
+                      />
+                      {t.userRequestDetail?.refresh || "Check Status Manually"}
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-3">
+                    💡{" "}
+                    {t.userRequestDetail?.paymentPendingHint ||
+                      'If you haven\'t completed payment yet, click "Continue Payment". If you already paid, click "Check Status Manually".'}
+                  </p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Payment Processing */}
+            {(paymentInfo?.status === "processing" ||
+              paymentInfo?.status === "pending") &&
+              request.paymentStatus !== "paid" &&
+              request.paymentStatus !== "failed" && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-800 dark:text-blue-400">
+                        {t.userRequestDetail?.paymentProcessing ||
+                          "Processing Payment"}
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-500">
+                        {t.userRequestDetail?.paymentProcessingDesc ||
+                          "We are verifying your payment with the payment provider."}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        fetchRequest();
+                        fetchPaymentInfo();
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+            {/* Payment Failed */}
+            {request.paymentStatus === "failed" && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-800 dark:text-red-400">
+                      {t.userRequestDetail?.paymentFailed || "Payment Failed"}
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-500">
+                      {t.userRequestDetail?.paymentFailedDesc ||
+                        "Your payment could not be processed. Please try again."}
+                    </p>
+                  </div>
+                  <Link href={`/checkout?requestId=${requestId}`}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="cursor-pointer gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      {t.userRequestDetail?.retryPayment || "Retry Payment"}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Completed - Enhanced with details */}
+            {request.paymentStatus === "paid" && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-green-800 dark:text-green-400">
+                        {t.userRequestDetail?.paymentCompleted ||
+                          "Payment Completed"}
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-500">
+                        {t.userRequestDetail?.paidAmount || "Paid"}: $
+                        {request.paidAmount?.toFixed(2) ||
+                          request.selectedDriver?.cost.toFixed(2)}
+                        {request.paidAt &&
+                          ` • ${new Date(request.paidAt).toLocaleDateString(locale)}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payment Details */}
+                  {paymentInfo && (
+                    <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 grid grid-cols-2 gap-3 text-sm">
+                      {paymentInfo.paymentMethod && (
+                        <div>
+                          <p className="text-green-600 dark:text-green-500 text-xs">
+                            {t.userRequestDetail?.paymentMethod ||
+                              "Payment Method"}
+                          </p>
+                          <p className="font-medium text-green-800 dark:text-green-400">
+                            {paymentInfo.paymentMethod === "card"
+                              ? t.userRequestDetail?.cardPayment ||
+                                "Card Payment"
+                              : paymentInfo.paymentMethod === "wallet"
+                                ? t.userRequestDetail?.walletPayment ||
+                                  "Wallet Payment"
+                                : t.userRequestDetail?.mixedPayment ||
+                                  "Card + Wallet"}
+                          </p>
+                        </div>
+                      )}
+                      {paymentInfo.breakdown?.walletDeduction &&
+                        paymentInfo.breakdown.walletDeduction > 0 && (
+                          <div>
+                            <p className="text-green-600 dark:text-green-500 text-xs">
+                              {t.userRequestDetail?.walletPayment ||
+                                "Wallet Payment"}
+                            </p>
+                            <p className="font-medium text-green-800 dark:text-green-400">
+                              $
+                              {paymentInfo.breakdown.walletDeduction.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                      {paymentInfo.breakdown?.cardAmount &&
+                        paymentInfo.breakdown.cardAmount > 0 && (
+                          <div>
+                            <p className="text-green-600 dark:text-green-500 text-xs">
+                              {t.userRequestDetail?.cardPayment ||
+                                "Card Payment"}
+                            </p>
+                            <p className="font-medium text-green-800 dark:text-green-400">
+                              ${paymentInfo.breakdown.cardAmount.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                      {paymentInfo.id && (
+                        <div className="col-span-2">
+                          <p className="text-green-600 dark:text-green-500 text-xs">
+                            {t.userRequestDetail?.transactionId ||
+                              "Transaction ID"}
+                          </p>
+                          <p className="font-medium text-green-800 dark:text-green-400 font-mono text-xs">
+                            {paymentInfo.id}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Status Timeline - Redesigned */}
           <div className="bg-card rounded-lg border border-border p-8">
             <h2 className="text-xl font-semibold text-foreground mb-8">
-              Shipment Progress
+              {t.userRequestDetail.shipmentProgress}
             </h2>
 
             {/* Timeline Container */}
@@ -467,9 +975,10 @@ export default function RequestDetailsPage() {
 
                 {/* Progress Bar Fill */}
                 <div
-                  className="absolute top-6 left-0 h-1 bg-primary rounded-full transition-all duration-500"
+                  className="absolute top-6 h-1 bg-primary rounded-full transition-all duration-500"
                   style={{
                     width: `${(getCurrentStatusIndex(request.deliveryStatus) / (statusSteps.length - 1)) * 100}%`,
+                    ...(isRtl ? { right: 0 } : { left: 0 }),
                   }}
                 />
 
@@ -506,7 +1015,7 @@ export default function RequestDetailsPage() {
                                 : "text-muted-foreground"
                           }`}
                         >
-                          {step.name}
+                          {getTranslatedDeliveryStatus(step.name)}
                         </span>
                       </div>
                     );
@@ -557,14 +1066,14 @@ export default function RequestDetailsPage() {
                                 : "text-muted-foreground"
                           }`}
                         >
-                          {step.name}
+                          {getTranslatedDeliveryStatus(step.name)}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1">
                           {isCurrent
-                            ? "Current step"
+                            ? t.userRequestDetail.currentStep
                             : isCompleted
-                              ? "Completed"
-                              : "Pending"}
+                              ? t.userRequestDetail.completed
+                              : t.userRequestDetail.pending}
                         </p>
                       </div>
                     </div>
@@ -575,17 +1084,47 @@ export default function RequestDetailsPage() {
 
             {/* Status Summary Card */}
             <div className="mt-8 pt-6 border-t border-border">
+              {/* Accepted offer price banner */}
+              {request.selectedDriver &&
+                request.requestStatus === "Assigned to Driver" && (
+                  <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 mb-4">
+                    <div>
+                      <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                        {t.userRequestDetail.acceptedOffer}
+                      </p>
+                      <p className="text-xl font-bold text-green-800 dark:text-green-200">
+                        {
+                          convert(
+                            Number(
+                              request.selectedDriver.finalPrice ??
+                                request.selectedDriver.cost,
+                            ),
+                            (request.selectedDriver as any).currency || "USD",
+                          ).formatted
+                        }
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-green-700 dark:text-green-300">
+                      <span className="text-yellow-500">★</span>
+                      <span className="font-semibold">
+                        {request.selectedDriver.rate}
+                      </span>
+                    </div>
+                  </div>
+                )}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-primary/5 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Current Delivery Status
+                    {t.userRequestDetail.currentDeliveryStatus}
                   </p>
                   <p className="text-sm font-semibold text-foreground">
-                    {request.deliveryStatus}
+                    {getTranslatedDeliveryStatus(request.deliveryStatus)}
                   </p>
                 </div>
                 <div className="bg-primary/5 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Progress</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {t.userRequestDetail.progress}
+                  </p>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-muted rounded-full h-2">
                       <div
@@ -607,7 +1146,7 @@ export default function RequestDetailsPage() {
                 </div>
                 <div className="bg-primary/5 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Steps Remaining
+                    {t.userRequestDetail.stepsRemaining}
                   </p>
                   <p className="text-sm font-semibold text-foreground">
                     {Math.max(
@@ -616,7 +1155,7 @@ export default function RequestDetailsPage() {
                         1 -
                         getCurrentStatusIndex(request.deliveryStatus),
                     )}{" "}
-                    of {statusSteps.length - 1}
+                    {t.userRequestDetail.of} {statusSteps.length - 1}
                   </p>
                 </div>
               </div>
@@ -630,10 +1169,10 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <div className="mb-4">
                   <h2 className="text-xl font-bold text-foreground mb-1">
-                    Shipping Offers
+                    {t.userRequestDetail.shippingOffers}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Choose your preferred shipping company
+                    {t.userRequestDetail.chooseDriver}
                   </p>
                 </div>
 
@@ -641,8 +1180,10 @@ export default function RequestDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {request.costOffers.map((offer, idx) => (
                       <div
-                        key={offer.company.id}
-                        onClick={() => handleSelectOffer(offer.company.id)}
+                        key={offer._id || idx}
+                        onClick={() =>
+                          offer._id && handleSelectOffer(offer._id)
+                        }
                         className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
                           offer.selected
                             ? "border-primary bg-primary/5 shadow-md"
@@ -654,7 +1195,7 @@ export default function RequestDetailsPage() {
                           <div className="absolute -top-2 -right-2">
                             <div className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-sm">
                               <CheckCircle2 className="w-3 h-3" />
-                              Selected
+                              {t.userRequestDetail.selected}
                             </div>
                           </div>
                         )}
@@ -662,21 +1203,24 @@ export default function RequestDetailsPage() {
                         {/* Option Label */}
                         <div className="mb-3">
                           <h3 className="text-base font-bold text-foreground mb-1">
-                            Option {idx + 1}
+                            {t.userRequestDetail.option} {idx + 1}
                           </h3>
                           <div className="flex items-center gap-1">
                             <span className="text-yellow-500 text-sm">★</span>
                             <span className="text-sm font-semibold text-foreground">
-                              {offer.company.rate}
+                              {offer.driver.rate}
                             </span>
                           </div>
                         </div>
 
                         {/* Cost */}
                         <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
-                          <p className="text-2xl font-bold text-foreground">
-                            ${offer.cost.toFixed(2)}
-                          </p>
+                          <OfferPrice
+                            cost={offer.cost}
+                            currency={(offer as any).currency}
+                            finalPrice={offer.finalPrice}
+                            className="text-2xl font-bold text-foreground"
+                          />
                         </div>
 
                         {/* Delivery Reason */}
@@ -694,7 +1238,9 @@ export default function RequestDetailsPage() {
                               : "text-muted-foreground"
                           }`}
                         >
-                          {offer.selected ? "✓ Your Choice" : "Click to select"}
+                          {offer.selected
+                            ? t.userRequestDetail.yourChoice
+                            : t.userRequestDetail.clickToSelect}
                         </div>
                       </div>
                     ))}
@@ -707,7 +1253,7 @@ export default function RequestDetailsPage() {
                     onClick={handleSubmitOffer}
                     className="w-full bg-primary text-primary-foreground cursor-pointer"
                   >
-                    Submit Selected Offer
+                    {t.userRequestDetail.submitSelectedOffer}
                   </Button>
                 </div>
               </div>
@@ -715,7 +1261,7 @@ export default function RequestDetailsPage() {
 
           {/* Confirmation Dialog */}
           {showConfirmDialog && confirmingOffer && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 h-full">
               <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6">
                 <div className="flex gap-3 mb-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -723,10 +1269,10 @@ export default function RequestDetailsPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground text-lg">
-                      Confirm Selection
+                      {t.userRequestDetail.confirmSelection}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Are you sure you want to select this shipping company?
+                      {t.userRequestDetail.confirmOfferQuestion}
                     </p>
                   </div>
                 </div>
@@ -736,14 +1282,19 @@ export default function RequestDetailsPage() {
                   <div className="flex items-center gap-1 mb-2">
                     <span className="text-yellow-500">★</span>
                     <span className="font-semibold text-foreground">
-                      {confirmingOffer.company.rate}
+                      {confirmingOffer.driver.rate}
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-primary mb-2">
-                    ${confirmingOffer.cost.toFixed(2)}
+                    {
+                      convert(
+                        confirmingOffer.finalPrice ?? confirmingOffer.cost,
+                        (confirmingOffer as any).currency || "USD",
+                      ).formatted
+                    }
                   </p>
                   {confirmingOffer.comment && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {confirmingOffer.comment}
                     </p>
                   )}
@@ -759,187 +1310,184 @@ export default function RequestDetailsPage() {
                     className="flex-1 bg-transparent cursor-pointer"
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t.common.cancel}
                   </Button>
                   <Button
                     onClick={handleConfirmSubmit}
                     className="flex-1 bg-primary text-primary-foreground cursor-pointer"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Submitting..." : "Yes, Confirm"}
+                    {isSubmitting
+                      ? t.userRequestDetail.submitting
+                      : t.userRequestDetail.yesConfirm}
                   </Button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Details Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Route Details */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" />
-                Route Details
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">From</p>
-                  <p className="text-lg font-medium text-foreground">
-                    {request.source
-                      ? formatLocation(request.source)
-                      : request.from
-                        ? formatLocation(request.from)
-                        : "-"}
-                  </p>
-                </div>
-                <div className="border-l-2 border-primary h-8" />
-                <div>
-                  <p className="text-sm text-muted-foreground">To</p>
-                  <p className="text-lg font-medium text-foreground">
-                    {request.destination
-                      ? formatLocation(request.destination)
-                      : request.to
-                        ? formatLocation(request.to)
-                        : "-"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Package Details - All Items */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" />
-                Shipment Items ({request.items?.length || 0})
-              </h3>
-
-              <div className="max-h-52 overflow-y-auto pr-2 space-y-4   p-2 rounded-md">
-                {request.items && request.items.length > 0 ? (
-                  request.items.map((item, idx) => (
-                    <div
-                      key={item._id || `item-${idx}`}
-                      className="border border-border rounded-lg p-4 bg-white dark:bg-gray-900"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="font-semibold text-foreground flex items-center gap-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">
-                              {idx + 1}
-                            </span>
-                            {item.name || item.item}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {item.category}
-                          </p>
-                        </div>
-                        {item.quantity > 1 && (
-                          <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
-                            ×{item.quantity}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Dimensions
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {item.dimensions}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Weight
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {item.weight} kg
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Quantity
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {item.quantity}
-                          </p>
-                        </div>
-                      </div>
-                      {item.note && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground">Note</p>
-                          <p className="text-sm text-foreground italic">
-                            {item.note}
-                          </p>
-                        </div>
-                      )}
-                      {item.media && item.media.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Media ({item.media.length})
-                          </p>
-                          <div className="flex gap-2 flex-wrap">
-                            {item.media.map((mediaItem, mIdx) => {
-                              const url =
-                                typeof mediaItem === "string"
-                                  ? mediaItem
-                                  : mediaItem.url;
-                              return (
-                                <img
-                                  key={mIdx}
-                                  src={url}
-                                  alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
-                                  className="w-16 h-16 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                                  onClick={() => {
-                                    setSelectedImageUrl(url);
-                                    setShowImageZoom(true);
-                                  }}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {item.services &&
-                        (item.services.canBeAssembledDisassembled ||
-                          item.services.assemblyDisassembly ||
-                          item.services.packaging) && (
-                          <div className="mt-3 pt-3 border-t border-border">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Services
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {(item.services.canBeAssembledDisassembled ||
-                                item.services.assemblyDisassembly) && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                  <Wrench className="w-3 h-3" />
-                                  Assembly &amp; Disassembly
-                                  {item.services.assemblyDisassemblyHandler && (
-                                    <span className="ml-1 text-[10px]">
-                                      (
-                                      {item.services
-                                        .assemblyDisassemblyHandler === "self"
-                                        ? "Self"
-                                        : "Company"}
-                                      )
-                                    </span>
-                                  )}
-                                </span>
-                              )}
-                              {item.services.packaging && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                                  <BoxSelect className="w-3 h-3" />
-                                  Packaging
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
+          {/* Route Map / Addresses Section */}
+          {(() => {
+            const src = request.source || request.from;
+            const dst = request.destination || request.to;
+            if (
+              src?.coordinates?.latitude &&
+              src?.coordinates?.longitude &&
+              dst?.coordinates?.latitude &&
+              dst?.coordinates?.longitude
+            ) {
+              return (
+                <RequestRouteMap
+                  sourceCoords={src.coordinates}
+                  destinationCoords={dst.coordinates}
+                  sourceLabel={formatLocation(src)}
+                  destinationLabel={formatLocation(dst)}
+                  translations={{
+                    routeMap: t.userRequestDetail.routeMap || "Route Map",
+                    distance: t.userRequestDetail.distance || "Distance",
+                    estimatedTime:
+                      t.userRequestDetail.estimatedTime || "Est. Travel Time",
+                    source: t.userRequestDetail.from || "From",
+                    destination: t.userRequestDetail.to || "To",
+                    loadingRoute:
+                      t.userRequestDetail.loadingRoute || "Loading route...",
+                    straightLineEstimate:
+                      t.userRequestDetail.straightLineEstimate ||
+                      "Straight-line estimate",
+                    km: t.userRequestDetail.km || "km",
+                  }}
+                />
+              );
+            }
+            // Fallback when no coordinates — show compact addresses card
+            return (
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  {t.userRequestDetail.routeDetails}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-2">
+                    <span className="mt-1 inline-block w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        {t.userRequestDetail.from}
+                      </p>
+                      <p className="text-sm font-medium text-foreground leading-tight">
+                        {src ? formatLocation(src) : "-"}
+                      </p>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">No items</p>
-                )}
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-1 inline-block w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        {t.userRequestDetail.to}
+                      </p>
+                      <p className="text-sm font-medium text-foreground leading-tight">
+                        {dst ? formatLocation(dst) : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
+            );
+          })()}
+
+          {/* Package Details - All Items */}
+          <div className="bg-card rounded-lg border border-border p-6">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              {t.userRequestDetail.shipmentItems} ({request.items?.length || 0})
+            </h3>
+
+            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-3 p-2 rounded-md">
+              {request.items && request.items.length > 0 ? (
+                request.items.map((item, idx) => (
+                  <div
+                    key={item._id || `item-${idx}`}
+                    className="border border-border rounded-lg p-3 bg-white dark:bg-gray-900"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground flex items-center gap-2">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary">
+                            {idx + 1}
+                          </span>
+                          {item.name || item.item}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {getCategoryLabel(item.category)}
+                        </p>
+                      </div>
+                      {item.quantity > 1 && (
+                        <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+                          ×{item.quantity}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.weight}
+                        </p>
+                        <p className="font-medium text-foreground">
+                          {item.weight} kg
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.quantity}
+                        </p>
+                        <p className="font-medium text-foreground">
+                          {item.quantity}
+                        </p>
+                      </div>
+                    </div>
+                    {item.note && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.note}
+                        </p>
+                        <p className="text-sm text-foreground italic">
+                          {item.note}
+                        </p>
+                      </div>
+                    )}
+                    {item.media && item.media.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {t.userRequestDetail.media} ({item.media.length})
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          {item.media.map((mediaItem, mIdx) => {
+                            const url =
+                              typeof mediaItem === "string"
+                                ? mediaItem
+                                : mediaItem.url;
+                            return (
+                              <img
+                                key={mIdx}
+                                src={url}
+                                alt={`Item ${idx + 1} - Media ${mIdx + 1}`}
+                                className="w-14 h-14 rounded-lg object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => {
+                                  setSelectedImageUrl(url);
+                                  setShowImageZoom(true);
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground">
+                  {t.userRequestDetail.noItems}
+                </p>
+              )}
             </div>
           </div>
 
@@ -949,11 +1497,11 @@ export default function RequestDetailsPage() {
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
-                  Requested Date
+                  {t.userRequestDetail.requestedDate}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {request.createdAt
-                    ? new Date(request.createdAt).toLocaleDateString("en-US", {
+                    ? new Date(request.createdAt).toLocaleDateString(locale, {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -962,7 +1510,7 @@ export default function RequestDetailsPage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {request.createdAt
-                    ? new Date(request.createdAt).toLocaleTimeString("en-US", {
+                    ? new Date(request.createdAt).toLocaleTimeString(locale, {
                         hour: "2-digit",
                         minute: "2-digit",
                       })
@@ -971,94 +1519,207 @@ export default function RequestDetailsPage() {
               </div>
 
               <div className="bg-card rounded-lg border border-border p-6">
-                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-primary" />
-                  When to Start (ETA)
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-green-600 dark:text-green-400 min-w-min" />
+                  {t.userRequestDetail.collectionAvailableDays}
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  {request.startTime
-                    ? new Date(request.startTime).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "-"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {request.startTime
-                    ? new Date(request.startTime).toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "-"}
-                </p>
+                {request.collectionAvailableDays &&
+                request.collectionAvailableDays.length > 0 ? (
+                  request.collectionAvailableDays.includes("All Week") ? (
+                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+                      {t.common.allWeek}
+                    </span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {request.collectionAvailableDays.map((day: string) => (
+                        <span
+                          key={day}
+                          className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                        >
+                          {day}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t.userRequestDetail.noSpecificDays}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-card rounded-lg border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 min-w-min" />
+                  {t.userRequestDetail.deliveryAvailableDays}
+                </h3>
+                {request.deliveryAvailableDays &&
+                request.deliveryAvailableDays.length > 0 ? (
+                  request.deliveryAvailableDays.includes("All Week") ? (
+                    <span className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      {t.common.allWeek}
+                    </span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {request.deliveryAvailableDays.map((day: string) => (
+                        <span
+                          key={day}
+                          className="inline-flex items-center text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                        >
+                          {day}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t.userRequestDetail.noSpecificDays}
+                  </p>
+                )}
               </div>
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-primary" />
-                  Delivery Type
+                  <Truck className="w-5 h-5 text-primary min-w-min" />
+                  {t.userRequestDetail.deliveryType}
                 </h3>
                 <p className="text-base font-medium w-max text-foreground capitalize">
                   {request.deliveryType === "Urgent"
-                    ? "🔥 Urgent Delivery"
-                    : "Normal Delivery"}
+                    ? t.userRequestDetail.urgentDelivery
+                    : request.deliveryType === "Scheduled"
+                      ? t.userRequestDetail.scheduledDelivery
+                      : t.userRequestDetail.normalDelivery}
                 </p>
                 {request.deliveryType === "Urgent" && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    +25% surcharge applied
+                    {t.userRequestDetail.urgentSurcharge}
                   </p>
                 )}
+                {request.deliveryType === "Scheduled" &&
+                  request.scheduledDate && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t.userRequestDetail.scheduledFor.replace(
+                        "{date}",
+                        new Date(request.scheduledDate).toLocaleString(locale, {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }),
+                      )}
+                    </p>
+                  )}
               </div>
+
+              {/* Workers Count */}
+              {request.workersCount != null && request.workersCount > 0 && (
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                    👷 {t.userRequestDetail.workersRequested}
+                  </h3>
+                  <p className="text-base font-medium text-foreground">
+                    {request.workersCount}{" "}
+                    {request.workersCount === 1
+                      ? t.userRequestDetail.worker
+                      : t.userRequestDetail.workers}
+                  </p>
+                </div>
+              )}
+
+              {/* Transport Vehicle */}
+              {request.transportVehicle && (
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-primary min-w-min" />
+                    {t.userRequestDetail.transportVehicle}
+                  </h3>
+                  <p className="text-base font-bold text-foreground">
+                    {request.transportVehicle.nameAr}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {request.transportVehicle.nameEn}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {request.transportVehicle.dimensions.length}m ×{" "}
+                    {request.transportVehicle.dimensions.width}m ×{" "}
+                    {request.transportVehicle.dimensions.height}m —{" "}
+                    {t.userRequestDetail.maxLoad}:{" "}
+                    {request.transportVehicle.maxWeight}{" "}
+                    {t.userRequestDetail.kg}
+                  </p>
+                </div>
+              )}
 
               <div className="bg-card rounded-lg border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Banknote className="w-5 h-5 text-primary" />
-                  {request.selectedCompany ? "Cost" : "Primary Cost"}
+                  <Banknote className="w-5 h-5 text-primary min-w-min" />
+                  {t.userRequestDetail.cost}
                 </h3>
-                {request.selectedCompany ? (
-                  <>
-                    <p className="text-xl font-bold text-primary">
-                      ${Number(request.selectedCompany.cost).toFixed(2)}
+                {/* Always show primary/estimated cost */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={`text-base font-medium ${request.selectedDriver && request.requestStatus === "Assigned to Driver" ? "line-through text-muted-foreground" : "text-foreground"}`}
+                    >
+                      {
+                        // request.primaryCost && Number(request.primaryCost) > 0
+                        //   ? convert(Number(request.primaryCost), "USD").formatted
+                        //   :
+                        request.cost && Number(request.cost) > 0
+                          ? convert(Number(request.cost), "USD").formatted
+                          : t.userRequestDetail.notCalculated
+                      }
                     </p>
-                    {request.primaryCost && (
-                      <p className="text-xs text-muted-foreground mt-2 line-through">
-                        Primary: ${Number(request.primaryCost).toFixed(2)}
-                      </p>
+                    {/* <span className="text-xs text-muted-foreground">
+                      {t.userRequestDetail.estimated}
+                    </span> */}
+                  </div>
+                  {/* Show accepted offer price when available */}
+                  {request.selectedDriver &&
+                    request.requestStatus === "Assigned to Driver" && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-xl font-bold text-primary">
+                          {
+                            convert(
+                              Number(
+                                request.selectedDriver.finalPrice ??
+                                  request.selectedDriver.cost,
+                              ),
+                              (request.selectedDriver as any).currency ||
+                                "USD",
+                            ).formatted
+                          }
+                        </p>
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          {t.userRequestDetail.acceptedOffer}
+                        </span>
+                      </div>
                     )}
-                  </>
-                ) : (
-                  <p className="text-base font-medium text-foreground">
-                    {request.primaryCost
-                      ? `$${Number(request.primaryCost).toFixed(2)}`
-                      : request.cost
-                        ? `$${Number(request.cost).toFixed(2)}`
-                        : "-"}
-                  </p>
-                )}
+                </div>
               </div>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-6">
+            <div className="bg-card rounded-lg border border-border p-6 h-fit">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                Activity Log
+                <Clock className="w-5 h-5 text-primary min-w-min" />
+                {t.userRequestDetail.activityLog}
               </h3>
 
               {/* Last updated time */}
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                <span>Updated:</span>
+                <span>{t.userRequestDetail.updated}</span>
                 <span className="font-medium text-foreground">
                   {request.updatedAt
                     ? `${new Date(request.updatedAt).toLocaleDateString(
-                        "en-US",
+                        locale,
                         {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
                         },
-                      )} at ${new Date(request.updatedAt).toLocaleTimeString(
-                        "en-US",
+                      )} ${new Date(request.updatedAt).toLocaleTimeString(
+                        locale,
                         {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -1069,36 +1730,46 @@ export default function RequestDetailsPage() {
               </div>
 
               {/* Selected offer info */}
-              {request.selectedCompany && (
-                <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Accepted Offer
-                      </p>
-                      <p className="text-sm font-semibold text-primary">
-                        ${Number(request.selectedCompany.cost).toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
-                      <span className="text-yellow-500 text-sm">★</span>
-                      <span className="text-sm font-bold text-foreground">
-                        {request.selectedCompany.rate}
-                      </span>
+              {request.selectedDriver &&
+                request.requestStatus === "Assigned to Driver" && (
+                  <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t.userRequestDetail.acceptedOfferLabel}
+                        </p>
+                        <p className="text-sm font-semibold text-primary">
+                          {
+                            convert(
+                              Number(
+                                request.selectedDriver.finalPrice ??
+                                  request.selectedDriver.cost,
+                              ),
+                              (request.selectedDriver as any).currency ||
+                                "USD",
+                            ).formatted
+                          }
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-background rounded-full px-2 py-1">
+                        <span className="text-yellow-500 text-sm">★</span>
+                        <span className="text-sm font-bold text-foreground">
+                          {request.selectedDriver.rate}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Activity entries */}
               {request.activityHistory && request.activityHistory.length > 0 ? (
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                <div className="space-y-3 h-48 max-h-48 overflow-y-auto pr-1">
                   {[...request.activityHistory]
                     .reverse()
                     .map((activity, index) => (
                       <div
                         key={index}
-                        className="flex gap-3 text-sm border-l-2 border-primary pl-3 py-2"
+                        className={`flex gap-3 text-sm border-primary py-2 ${isRtl ? "border-r-2 pr-3" : "border-l-2 pl-3"}`}
                       >
                         <div className="flex-shrink-0 mt-0.5">
                           <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
@@ -1107,18 +1778,11 @@ export default function RequestDetailsPage() {
                           {/* Action and timestamp */}
                           <div className="flex items-baseline justify-between gap-2 flex-wrap">
                             <p className="font-medium text-foreground">
-                              {activity.action
-                                .split("_")
-                                .map(
-                                  (word) =>
-                                    word.charAt(0).toUpperCase() +
-                                    word.slice(1),
-                                )
-                                .join(" ")}
+                              {getTranslatedActivityAction(activity.action)}
                             </p>
                             <time className="text-xs text-muted-foreground whitespace-nowrap">
                               {new Date(activity.timestamp).toLocaleDateString(
-                                "en-US",
+                                locale,
                                 {
                                   month: "short",
                                   day: "numeric",
@@ -1130,45 +1794,91 @@ export default function RequestDetailsPage() {
                           </div>
 
                           {/* Description */}
-                          {activity.description && (
+                          {(activity.action || activity.description) && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {activity.description}
+                              {getTranslatedActivityDescription(
+                                isClientRole &&
+                                  activity.action === "offer_submitted"
+                                  ? {
+                                      ...activity,
+                                      driverName: "A driver",
+                                      cost:
+                                        activity.cost != null
+                                          ? activity.cost *
+                                            (1 + headoverPercentage / 100)
+                                          : activity.cost,
+                                    }
+                                  : activity,
+                              )}
                             </p>
                           )}
 
-                          {/* Company info and cost */}
+                          {/* Note display - show if present in details */}
+                          {activity.details?.note && (
+                            <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1">
+                                <span>📝</span>
+                                <span>{t.userRequestDetail.note}:</span>
+                              </p>
+                              <p className="text-sm text-amber-900 dark:text-amber-200 mt-0.5">
+                                {activity.details.note}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Driver info and cost */}
                           <div className="flex flex-wrap gap-3 mt-2">
-                            {activity.companyName && (
-                              <div className="text-xs">
-                                <span className="text-muted-foreground">
-                                  Company:{" "}
-                                </span>
-                                <span className="text-foreground font-medium">
-                                  {activity.companyName}
-                                </span>
-                              </div>
-                            )}
+                            {activity.driverName &&
+                              !(
+                                isClientRole &&
+                                activity.action === "offer_submitted"
+                              ) && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">
+                                    {t.userRequestDetail.driver}{" "}
+                                  </span>
+                                  <span className="text-foreground font-medium">
+                                    {activity.driverName}
+                                  </span>
+                                </div>
+                              )}
                             {activity.cost !== undefined &&
                               activity.cost !== null && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">
-                                    Cost:{" "}
+                                    {t.userRequestDetail.costLabel}{" "}
                                   </span>
                                   <span className="text-primary font-semibold">
-                                    ${Number(activity.cost).toFixed(2)}
+                                    {
+                                      convert(
+                                        Number(
+                                          isClientRole &&
+                                            activity.action ===
+                                              "offer_submitted"
+                                            ? activity.cost *
+                                                (1 + headoverPercentage / 100)
+                                            : activity.cost,
+                                        ),
+                                        activity.currency || "USD",
+                                      ).formatted
+                                    }
                                   </span>
                                 </div>
                               )}
-                            {activity.companyRate && (
-                              <div className="text-xs">
-                                <span className="text-muted-foreground">
-                                  Rate:{" "}
-                                </span>
-                                <span className="text-foreground">
-                                  {activity.companyRate} ⭐
-                                </span>
-                              </div>
-                            )}
+                            {activity.driverRate &&
+                              !(
+                                isClientRole &&
+                                activity.action === "offer_submitted"
+                              ) && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">
+                                    {t.userRequestDetail.rateLabel}{" "}
+                                  </span>
+                                  <span className="text-foreground">
+                                    {activity.driverRate} ⭐
+                                  </span>
+                                </div>
+                              )}
                           </div>
 
                           {/* Additional details if present */}
@@ -1191,335 +1901,72 @@ export default function RequestDetailsPage() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  No activity recorded yet.
+                  {t.userRequestDetail.noActivity}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Warehouse Locations Section - Show when warehouses are assigned */}
-          {(request.sourceWarehouse || request.destinationWarehouse) && (
+          {/* Floor Numbers & Winch */}
+          {(request.receiptFloorNumber || request.deliveryFloorNumber) && (
             <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Warehouse className="w-5 h-5 text-primary" />
-                Assigned Warehouse Locations
+                <span className="text-gray-400">🏢</span>
+                {t.newRequest.floorAndWinch}
               </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {request.receiptFloorNumber && (
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>{" "}
+                      {t.newRequest.receiptFloorNumber}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {request.receiptFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.receiptFloorNumber}
+                    </p>
+                    {request.needsWinchPickup && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchPickup}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {request.deliveryFloorNumber && (
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>{" "}
+                      {t.newRequest.deliveryFloorNumber}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {request.deliveryFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : request.deliveryFloorNumber}
+                    </p>
+                    {request.needsWinchDropoff && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchDropoff}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-              {/* Show accordion if both warehouses are assigned */}
-              {request.sourceWarehouse && request.destinationWarehouse ? (
-                <Accordion type="single" className="space-y-3">
-                  {/* Source Warehouse */}
-                  <AccordionItem
-                    value="source"
-                    className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800"
-                  >
-                    <AccordionTrigger value="source" className="bg-transparent">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-semibold text-foreground">
-                            Source Warehouse (Pickup)
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {request.sourceWarehouse.name}
-                          </p>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent
-                      value="source"
-                      className="bg-white/50 dark:bg-gray-900/50"
-                    >
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Warehouse Name
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.sourceWarehouse.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Address
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.sourceWarehouse.address}
-                          </p>
-                          {(request.sourceWarehouse.city ||
-                            request.sourceWarehouse.country) && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {[
-                                request.sourceWarehouse.city,
-                                request.sourceWarehouse.country,
-                              ]
-                                .filter(Boolean)
-                                .join(", ")}
-                            </p>
-                          )}
-                        </div>
-                        {request.sourceWarehouse.assignedAt && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">
-                              Assigned On
-                            </p>
-                            <p className="text-sm text-foreground">
-                              {new Date(
-                                request.sourceWarehouse.assignedAt,
-                              ).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        )}
-                        {request.sourceWarehouse.coordinates && (
-                          <div className="mt-3">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Location on Map
-                            </p>
-                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
-                              <LocationMapPicker
-                                position={{
-                                  lat: request.sourceWarehouse.coordinates
-                                    .latitude,
-                                  lng: request.sourceWarehouse.coordinates
-                                    .longitude,
-                                }}
-                                onPositionChange={() => {}}
-                                editable={false}
-                                showUseMyLocation={false}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  {/* Destination Warehouse */}
-                  <AccordionItem
-                    value="destination"
-                    className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
-                  >
-                    <AccordionTrigger
-                      value="destination"
-                      className="bg-transparent"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                          <MapPinned className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-semibold text-foreground">
-                            Destination Warehouse (Delivery)
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {request.destinationWarehouse.name}
-                          </p>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent
-                      value="destination"
-                      className="bg-white/50 dark:bg-gray-900/50"
-                    >
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Warehouse Name
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.destinationWarehouse.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Address
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {request.destinationWarehouse.address}
-                          </p>
-                          {(request.destinationWarehouse.city ||
-                            request.destinationWarehouse.country) && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {[
-                                request.destinationWarehouse.city,
-                                request.destinationWarehouse.country,
-                              ]
-                                .filter(Boolean)
-                                .join(", ")}
-                            </p>
-                          )}
-                        </div>
-                        {request.destinationWarehouse.assignedAt && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">
-                              Assigned On
-                            </p>
-                            <p className="text-sm text-foreground">
-                              {new Date(
-                                request.destinationWarehouse.assignedAt,
-                              ).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        )}
-                        {request.destinationWarehouse.coordinates && (
-                          <div className="mt-3">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Location on Map
-                            </p>
-                            <div className="h-64 w-full rounded-lg overflow-hidden border border-border">
-                              <LocationMapPicker
-                                position={{
-                                  lat: request.destinationWarehouse.coordinates
-                                    .latitude,
-                                  lng: request.destinationWarehouse.coordinates
-                                    .longitude,
-                                }}
-                                onPositionChange={() => {}}
-                                editable={false}
-                                showUseMyLocation={false}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              ) : (
-                /* Show single warehouse card if only one is assigned */
-                <div className="space-y-4">
-                  {request.sourceWarehouse && (
-                    <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <div className="flex items-start gap-4 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                          <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Source Warehouse (Pickup)
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Warehouse Name
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.sourceWarehouse.name}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Address
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.sourceWarehouse.address}
-                              </p>
-                              {(request.sourceWarehouse.city ||
-                                request.sourceWarehouse.country) && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {[
-                                    request.sourceWarehouse.city,
-                                    request.sourceWarehouse.country,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {request.sourceWarehouse.coordinates && (
-                        <div className="h-64 w-full rounded-lg overflow-hidden border border-blue-200 dark:border-blue-700">
-                          <LocationMapPicker
-                            position={{
-                              lat: request.sourceWarehouse.coordinates.latitude,
-                              lng: request.sourceWarehouse.coordinates
-                                .longitude,
-                            }}
-                            onPositionChange={() => {}}
-                            editable={false}
-                            showUseMyLocation={false}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {request.destinationWarehouse && (
-                    <div className="bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <div className="flex items-start gap-4 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                          <MapPinned className="w-6 h-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Destination Warehouse (Delivery)
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Warehouse Name
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.destinationWarehouse.name}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Address
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {request.destinationWarehouse.address}
-                              </p>
-                              {(request.destinationWarehouse.city ||
-                                request.destinationWarehouse.country) && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {[
-                                    request.destinationWarehouse.city,
-                                    request.destinationWarehouse.country,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {request.destinationWarehouse.coordinates && (
-                        <div className="h-64 w-full rounded-lg overflow-hidden border border-green-200 dark:border-green-700">
-                          <LocationMapPicker
-                            position={{
-                              lat: request.destinationWarehouse.coordinates
-                                .latitude,
-                              lng: request.destinationWarehouse.coordinates
-                                .longitude,
-                            }}
-                            onPositionChange={() => {}}
-                            editable={false}
-                            showUseMyLocation={false}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+          {/* Client Comments */}
+          {request.comment && (
+            <div className="bg-card rounded-lg border border-border p-6">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <span className="text-gray-400">💬</span>
+                {t.userRequestDetail.clientComment || "Client Comments"}
+              </h3>
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm text-foreground whitespace-pre-wrap">
+                  {request.comment}
+                </p>
+              </div>
             </div>
           )}
 
@@ -1530,12 +1977,12 @@ export default function RequestDetailsPage() {
                 variant="outline"
                 className="w-full bg-transparent cursor-pointer"
               >
-                Back to Requests
+                {t.userRequestDetail.backToRequests}
               </Button>
             </Link>
             <Link href="/new-request" className="flex-1">
               <Button className="w-full cursor-pointer">
-                Create New Request
+                {t.userRequestDetail.createNewRequest}
               </Button>
             </Link>
           </div>
@@ -1569,7 +2016,7 @@ export default function RequestDetailsPage() {
                   <X className="w-6 h-6" />
                 </button>
                 <p className="absolute bottom-4 left-4 right-4 text-center text-sm text-gray-300">
-                  Click outside or press ESC to close
+                  {t.userRequestDetail.clickToClose}
                 </p>
               </div>
             </div>

@@ -1,12 +1,6 @@
 import { Address } from "./address";
 
-export type UserRole =
-  | "client"
-  | "driver"
-  | "admin"
-  | "warehouse_manager"
-  | "operator"
-  | "company";
+export type UserRole = "client" | "driver" | "admin" | "operator" | "driver";
 
 export interface User {
   _id?: string;
@@ -26,7 +20,22 @@ export interface User {
   status: "active" | "inactive" | "suspended";
   role: UserRole;
   locations?: Address[];
-  company?: string | { _id: string; name: string; email: string; phoneNumber: string; address?: string; rate?: string } | null;
+  country?: string; // User's country
+  preferredCurrency?: string; // User's preferred currency for display
+  driver?:
+    | string
+    | {
+        _id: string;
+        name: string;
+        email: string;
+        phoneNumber: string;
+        address?: string;
+        rate?: string;
+      }
+    | null;
+  // OTP Verification fields
+  emailVerified?: boolean;
+  mobileVerified?: boolean;
   createdAt: string;
   updatedAt?: string;
 }

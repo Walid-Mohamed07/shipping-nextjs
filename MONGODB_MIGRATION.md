@@ -10,21 +10,7 @@ This guide explains how to migrate all API routes from JSON file storage to Mong
 
 Your `.env` file already contains the MongoDB credentials:
 
-### 2. Seed Initial Data
-
-To migrate your existing JSON data to MongoDB:
-
-```bash
-npx tsx lib/seed.ts
-```
-
-This will:
-
-- Connect to MongoDB
-- Clear existing collections
-- Import all data from JSON files into MongoDB
-
-### 3. Update API Routes - Pattern
+### 2. Update API Routes - Pattern
 
 #### Before (Using JSON Files):
 
@@ -126,19 +112,19 @@ const filtered = await Model.find({
 - `/api/requests/manage`
 - `/api/admin/orders`
 - `/api/admin/requests`
-- `/api/company/requests`
-- `/api/company/ongoing`
-- `/api/company/accept-offer`
+- `/api/driver/requests`
+- `/api/driver/ongoing`
+- `/api/driver/accept-offer`
 
 ### Priority 3 (Medium)
 
 - `/api/admin/vehicles`
 - `/api/admin/vehicles-rules`
 - `/api/admin/users`
-- `/api/admin/companies`
+- `/api/admin/drivers`
 - `/api/admin/assignments`
 - `/api/admin/audit-logs`
-- `/api/company/warehouses`
+- `/api/driver/warehouses`
 - `/api/user/addresses`
 - `/api/messages`
 - `/api/messages/[id]`
@@ -146,8 +132,8 @@ const filtered = await Model.find({
 ### Priority 4 (Lower)
 
 - `/api/driver/orders`
-- `/api/company/profile`
-- `/api/company/assign-warehouse`
+- `/api/driver/profile`
+- `/api/driver/assign-warehouse`
 - `/api/reverse-geocode`
 - `/api/upload/media`
 
@@ -215,12 +201,12 @@ const filtered = await Model.find({
 - [ ] Install dependencies
 - [ ] Create database connection utility
 - [ ] Create Mongoose models
-- [ ] Seed database with existing JSON data
+- [ ] Verify required MongoDB records exist
 - [ ] Update auth routes
 - [ ] Update warehouse routes
 - [ ] Update request routes
 - [ ] Update admin routes
-- [ ] Update company routes
+- [ ] Update driver routes
 - [ ] Update messaging routes
 - [ ] Update vehicle routes
 - [ ] Update user routes

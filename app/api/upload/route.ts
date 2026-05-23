@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { put } from "@vercel/blob";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  // Validate token exists
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error(
+      "[UPLOAD] Missing BLOB_READ_WRITE_TOKEN environment variable",
+    );
+    return NextResponse.json(
+      { error: "Upload service not configured" },
+      { status: 500 },
+    );
+  }
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
@@ -21,44 +32,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "File size must be less than 5MB" },
+        { error: "File size must be less than 10MB" },
         { status: 400 },
       );
-    }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads", folder);
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
     }
 
     // Generate unique filename
     const timestamp = Date.now();
     const ext = file.name.split(".").pop();
     const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`;
-    const filepath = join(uploadsDir, filename);
+    const blobPath = `${folder}/${filename}`;
 
-    // Write file to disk
-    await writeFile(filepath, buffer);
+    // Upload to Vercel Blob
+    const blob = await put(blobPath, file, {
+      access: "private",
+      addRandomSuffix: false,
+    });
 
-    // Return the public URL
-    const url = `/uploads/${folder}/${filename}`;
-
+    const proxyUrl = `/api/upload/serve?url=${encodeURIComponent(blob.url)}`;
+    console.log(`[UPLOAD] File uploaded: ${filename}`);
     return NextResponse.json({
-      url,
+      url: proxyUrl,
       filename,
       size: file.size,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("[UPLOAD] Error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Upload failed" },
+      {
+        error: error instanceof Error ? error.message : "Upload failed",
+      },
       { status: 500 },
     );
   }

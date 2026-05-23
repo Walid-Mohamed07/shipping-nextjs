@@ -19,14 +19,14 @@ Instead, performance optimization focuses on:
 
 Pages using `"use client"` for interactivity:
 
-- **Company Requests** (`/company/requests`) - Filters, bidding, dynamic content
+- **Driver Requests** (`/driver/requests`) - Filters, bidding, dynamic content
 - **Admin Dashboard** (`/admin/dashboard`) - Real-time statistics
 - **Driver Orders** (`/driver/orders`) - Order management
 - **My Requests** (`/my-requests`) - User shipment tracking
 - **Messages** (`/messages`, `/messages/[id]`) - Interactive messaging
-- **Company Inbox** (`/company/inbox`) - Message management
+- **Driver Inbox** (`/driver/inbox`) - Message management
 - **User Profile** (`/profile/*`) - Profile editing and management
-- **Warehouses** (`/company/warehouses`) - CRUD operations
+- **Warehouses** (`/driver/warehouses`) - CRUD operations
 - **Request Details** (`/request/[id]`) - Live tracking and interaction
 - **New Request** (`/new-request`) - Form submission
 
@@ -87,8 +87,8 @@ Use React Query (TanStack Query) for intelligent client-side caching:
 import { useQuery } from "@tanstack/react-query";
 
 const { data: requests, isLoading } = useQuery({
-  queryKey: ["company-requests"],
-  queryFn: () => fetch("/api/company/requests").then((r) => r.json()),
+  queryKey: ["driver-requests"],
+  queryFn: () => fetch("/api/driver/requests").then((r) => r.json()),
   staleTime: 5 * 60 * 1000, // 5 minutes
   cacheTime: 30 * 60 * 1000, // 30 minutes
 });

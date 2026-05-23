@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { Vehicle } from "@/types";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 interface CapacityRule {
   id: string;
@@ -19,6 +20,7 @@ interface CapacityRule {
 }
 
 export function AdminVehicleRulesTab() {
+  const { t } = useTranslation();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [rules, setRules] = useState<CapacityRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export function AdminVehicleRulesTab() {
 
   const handleAddRule = async () => {
     if (!formData.vehicleId || !formData.maxWeight || !formData.maxDimensions) {
-      alert("Please fill in all required fields");
+      alert(t.common.required);
       return;
     }
 
@@ -156,7 +158,7 @@ export function AdminVehicleRulesTab() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading vehicle rules...</div>;
+    return <div className="text-center py-8">{t.adminVehicleRules.title}</div>;
   }
 
   return (
@@ -165,15 +167,15 @@ export function AdminVehicleRulesTab() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-foreground">
-            Vehicle & Capacity Rules
+            {t.adminVehicleRules.title}
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
-            Define capacity and delivery constraints for each vehicle
+            {t.adminVehicleRules.subtitle}
           </p>
         </div>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="w-4 h-4" />
-          {showForm ? "Cancel" : "Add Rule"}
+          {showForm ? t.common.cancel : t.adminVehicleRules.addRule}
         </Button>
       </div>
 
@@ -181,14 +183,14 @@ export function AdminVehicleRulesTab() {
       {showForm && (
         <Card className="p-6 bg-card border-primary/30">
           <h3 className="font-semibold text-foreground mb-4">
-            {editingRule ? "Edit Rule" : "Create New Rule"}
+            {editingRule ? t.adminVehicleRules.create : t.adminVehicleRules.addRule}
           </h3>
 
           <div className="space-y-4">
             {/* Vehicle Selection */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Vehicle
+                {t.adminVehicleRules.vehicle}
               </label>
               <select
                 value={formData.vehicleId}
@@ -197,7 +199,7 @@ export function AdminVehicleRulesTab() {
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
               >
-                <option value="">Select a vehicle...</option>
+                <option value="">{t.common.selectOption}</option>
                 {vehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
                     {vehicle.name} - {vehicle.type} ({vehicle.country})
@@ -209,7 +211,7 @@ export function AdminVehicleRulesTab() {
             {/* Max Weight */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Max Weight (kg)
+                {t.adminVehicleRules.maxWeight}
               </label>
               <input
                 type="number"
@@ -225,7 +227,7 @@ export function AdminVehicleRulesTab() {
             {/* Max Dimensions */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Max Dimensions (L×W×H cm)
+                {t.adminVehicleRules.maxDimensions}
               </label>
               <input
                 type="text"
@@ -242,7 +244,7 @@ export function AdminVehicleRulesTab() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Min Delivery Days
+                  {t.adminVehicleRules.minDeliveryDays}
                 </label>
                 <input
                   type="number"
@@ -259,7 +261,7 @@ export function AdminVehicleRulesTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Max Delivery Days
+                  {t.adminVehicleRules.maxDeliveryDays}
                 </label>
                 <input
                   type="number"
@@ -279,7 +281,7 @@ export function AdminVehicleRulesTab() {
             {/* Allowed Categories */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-3">
-                Allowed Item Categories
+                {t.adminVehicleRules.allowedCategories}
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {categories.map((category) => (
@@ -303,7 +305,7 @@ export function AdminVehicleRulesTab() {
             <div className="flex gap-3 pt-4 border-t border-border">
               <Button onClick={handleAddRule} className="flex-1 gap-2">
                 <Check className="w-4 h-4" />
-                {editingRule ? "Update Rule" : "Create Rule"}
+                {editingRule ? t.adminVehicleRules.update : t.adminVehicleRules.create}
               </Button>
               <Button
                 onClick={resetForm}
@@ -311,7 +313,7 @@ export function AdminVehicleRulesTab() {
                 className="flex-1 gap-2 bg-transparent"
               >
                 <X className="w-4 h-4" />
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </div>
@@ -324,7 +326,7 @@ export function AdminVehicleRulesTab() {
           <Card className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
             <p className="text-muted-foreground">
-              No vehicle rules defined yet. Create one to get started.
+              {t.adminVehicleRules.noRules}
             </p>
           </Card>
         ) : (
@@ -362,7 +364,7 @@ export function AdminVehicleRulesTab() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div className="bg-primary/5 p-4 rounded border border-primary/20">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Max Weight
+                    {t.adminVehicleRules.maxWeight}
                   </p>
                   <p className="text-lg font-semibold text-foreground">
                     {rule.maxWeight} kg
@@ -370,7 +372,7 @@ export function AdminVehicleRulesTab() {
                 </div>
                 <div className="bg-primary/5 p-4 rounded border border-primary/20">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Max Dimensions
+                    {t.adminVehicleRules.maxDimensions}
                   </p>
                   <p className="text-lg font-semibold text-foreground">
                     {rule.maxDimensions} cm
@@ -381,22 +383,22 @@ export function AdminVehicleRulesTab() {
                     Delivery Range
                   </p>
                   <p className="text-lg font-semibold text-foreground">
-                    {rule.minDeliveryDays}-{rule.maxDeliveryDays} days
+                    {rule.minDeliveryDays}-{rule.maxDeliveryDays} {t.adminVehicleRules.days}
                   </p>
                 </div>
                 <div className="bg-primary/5 p-4 rounded border border-primary/20">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Allowed Categories
+                    {t.adminVehicleRules.allowedCategories}
                   </p>
                   <p className="text-sm font-semibold text-foreground">
-                    {rule.allowedCategories.length} selected
+                    {rule.allowedCategories.length} {t.adminVehicleRules.selected}
                   </p>
                 </div>
               </div>
 
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Allowed Item Categories:
+                  {t.adminVehicleRules.allowedCategories}:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {rule.allowedCategories.map((category) => (

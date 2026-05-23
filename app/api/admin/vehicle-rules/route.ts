@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { VehicleRule, Vehicle } from "@/lib/models";
 
+function serializeRule(rule: any, vehicleName?: string) {
+  const id = rule._id?.toString() || rule.id;
+  return {
+    ...rule,
+    id,
+    _id: id,
+    vehicleName: rule.vehicleName || vehicleName || "Unknown Vehicle",
+  };
+}
+
 /**
  * @swagger
  * /api/admin/vehicle-rules:
@@ -42,10 +52,22 @@ import { VehicleRule, Vehicle } from "@/lib/models";
 export async function GET() {
   try {
     await connectDB();
-    const rules = await VehicleRule.find({})
-      .populate("vehicleId", "type plateNumber")
-      .lean();
-    return NextResponse.json({ rules }, { status: 200 });
+    const [rules, vehicles] = await Promise.all([
+      VehicleRule.find({}).lean(),
+      Vehicle.find({}).select("name").lean(),
+    ]);
+    const vehicleNames = new Map(
+      vehicles.map((vehicle: any) => [vehicle._id.toString(), vehicle.name]),
+    );
+
+    return NextResponse.json(
+      {
+        rules: rules.map((rule: any) =>
+          serializeRule(rule, vehicleNames.get(rule.vehicleId)),
+        ),
+      },
+      { status: 200 },
+    );
   } catch (error) {
     return handleError(error);
   }
@@ -64,7 +86,6 @@ export async function POST(request: NextRequest) {
       maxDeliveryDays,
     } = body;
 
-    // Verify vehicle exists
     const vehicle = await Vehicle.findById(vehicleId);
     if (!vehicle) {
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
@@ -72,26 +93,26 @@ export async function POST(request: NextRequest) {
 
     const newRule = await VehicleRule.create({
       vehicleId,
+      vehicleName: vehicle.name,
       maxWeight,
       maxDimensions: maxDimensions || "N/A",
       allowedCategories: allowedCategories || [],
       minDeliveryDays: minDeliveryDays || 1,
       maxDeliveryDays: maxDeliveryDays || 7,
     });
-    data.rules.push(newRule);
-    fs.writeFileSync(rulesFilePath, JSON.stringify(data, null, 2));
 
-    return NextResponse.json({ success: true, rule: newRule }, { status: 201 });
-  } catch (error) {
     return NextResponse.json(
-      { error: "Failed to create rule" },
-      { status: 500 },
+      { success: true, rule: serializeRule(newRule.toObject()) },
+      { status: 201 },
     );
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
     const {
       id,
@@ -103,66 +124,59 @@ export async function PUT(request: NextRequest) {
       maxDeliveryDays,
     } = body;
 
-    ensureRulesFile();
-    const data = JSON.parse(fs.readFileSync(rulesFilePath, "utf-8"));
+    if (!id) {
+      return NextResponse.json({ error: "Rule ID required" }, { status: 400 });
+    }
 
-    const ruleIndex = data.rules.findIndex((r: VehicleRule) => r.id === id);
-    if (ruleIndex === -1) {
+    const vehicle = await Vehicle.findById(vehicleId).lean();
+    if (!vehicle) {
+      return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
+    }
+
+    const updatedRule = await VehicleRule.findByIdAndUpdate(
+      id,
+      {
+        vehicleId,
+        vehicleName: vehicle.name,
+        maxWeight,
+        maxDimensions,
+        allowedCategories,
+        minDeliveryDays,
+        maxDeliveryDays,
+      },
+      { new: true },
+    ).lean();
+
+    if (!updatedRule) {
       return NextResponse.json({ error: "Rule not found" }, { status: 404 });
     }
 
-    // Get vehicle name
-    const vehiclesPath = path.join(process.cwd(), "data", "vehicles.json");
-    const vehiclesData = JSON.parse(fs.readFileSync(vehiclesPath, "utf-8"));
-    const vehicle = vehiclesData.vehicles.find((v: any) => v.id === vehicleId);
-    const vehicleName = vehicle?.name || "Unknown Vehicle";
-
-    data.rules[ruleIndex] = {
-      ...data.rules[ruleIndex],
-      vehicleId,
-      vehicleName,
-      maxWeight,
-      maxDimensions,
-      allowedCategories,
-      minDeliveryDays,
-      maxDeliveryDays,
-    };
-
-    fs.writeFileSync(rulesFilePath, JSON.stringify(data, null, 2));
-
     return NextResponse.json(
-      { success: true, rule: data.rules[ruleIndex] },
+      { success: true, rule: serializeRule(updatedRule) },
       { status: 200 },
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update rule" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    await connectDB();
     const body = await request.json();
     const { ruleId } = body;
 
-    ensureRulesFile();
-    const data = JSON.parse(fs.readFileSync(rulesFilePath, "utf-8"));
+    if (!ruleId) {
+      return NextResponse.json({ error: "Rule ID required" }, { status: 400 });
+    }
 
-    const ruleIndex = data.rules.findIndex((r: VehicleRule) => r.id === ruleId);
-    if (ruleIndex === -1) {
+    const deletedRule = await VehicleRule.findByIdAndDelete(ruleId).lean();
+    if (!deletedRule) {
       return NextResponse.json({ error: "Rule not found" }, { status: 404 });
     }
 
-    data.rules.splice(ruleIndex, 1);
-    fs.writeFileSync(rulesFilePath, JSON.stringify(data, null, 2));
-
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to delete rule" },
-      { status: 500 },
-    );
+    return handleError(error);
   }
 }

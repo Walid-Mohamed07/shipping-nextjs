@@ -49,7 +49,6 @@ const options = {
             },
             deliveryInstructions: { type: "string" },
             primary: { type: "boolean" },
-            warehouseId: { type: "string" },
             pickupMode: { type: "string" },
             coordinates: {
               type: "object",
@@ -67,26 +66,13 @@ const options = {
             existing: { type: "boolean" },
           },
         },
-        ItemServices: {
-          type: "object",
-          properties: {
-            canBeAssembledDisassembled: { type: "boolean" },
-            assemblyDisassemblyHandler: {
-              type: "string",
-              enum: ["self", "company"],
-            },
-            packaging: { type: "boolean" },
-            assemblyDisassembly: { type: "boolean" },
-          },
-        },
         Item: {
           type: "object",
-          required: ["category", "dimensions", "weight", "quantity"],
+          required: ["category", "weight", "quantity"],
           properties: {
             item: { type: "string" },
             name: { type: "string" },
             category: { type: "string" },
-            dimensions: { type: "string" },
             weight: { type: "string" },
             quantity: { type: "number" },
             note: { type: "string" },
@@ -94,7 +80,6 @@ const options = {
               type: "array",
               items: { $ref: "#/components/schemas/MediaItem" },
             },
-            services: { $ref: "#/components/schemas/ItemServices" },
           },
         },
         User: {
@@ -114,14 +99,7 @@ const options = {
             criminalRecord: { type: "string" },
             role: {
               type: "string",
-              enum: [
-                "client",
-                "admin",
-                "driver",
-                "operator",
-                "company",
-                "warehouse_manager",
-              ],
+              enum: ["client", "admin", "driver", "operator"],
             },
             status: {
               type: "string",
@@ -139,7 +117,7 @@ const options = {
           type: "object",
           properties: {
             cost: { type: "number" },
-            company: {
+            driver: {
               type: "object",
               properties: {
                 id: { type: "string" },
@@ -165,30 +143,10 @@ const options = {
             timestamp: { type: "string", format: "date-time" },
             action: { type: "string" },
             description: { type: "string" },
-            companyName: { type: "string" },
-            companyRate: { type: "string" },
+            driverName: { type: "string" },
+            driverRate: { type: "string" },
             cost: { type: "number" },
             details: { type: "string" },
-          },
-        },
-        Warehouse: {
-          type: "object",
-          properties: {
-            _id: { type: "string" },
-            id: { type: "string" },
-            name: { type: "string" },
-            code: { type: "string" },
-            country: { type: "string" },
-            state: { type: "string" },
-            location: { type: "string" },
-            latitude: { type: "number" },
-            longitude: { type: "number" },
-            capacity: { type: "number" },
-            currentStock: { type: "number" },
-            manager: { type: "string" },
-            contact: { type: "string" },
-            status: { type: "string" },
-            stockType: { type: "string" },
           },
         },
         Vehicle: {
@@ -226,7 +184,7 @@ const options = {
               items: { $ref: "#/components/schemas/Item" },
             },
             estimatedCost: { type: "string" },
-            primaryCost: { type: "string" },
+            // primaryCost: { type: "string" }, // TEMPORARILY HIDDEN - primaryCost
             cost: { type: "string" },
             startTime: { type: "string", format: "date-time" },
             requestStatus: {
@@ -235,7 +193,7 @@ const options = {
                 "Pending",
                 "Accepted",
                 "Rejected",
-                "Assigned to Company",
+                "Assigned to Driver",
                 "In Progress",
                 "Completed",
                 "Cancelled",
@@ -247,9 +205,7 @@ const options = {
               enum: [
                 "Pending",
                 "Picked Up Source",
-                "Warehouse Source Received",
                 "In Transit",
-                "Warehouse Destination Received",
                 "Shipment Deliver",
                 "Delivered",
                 "Failed",
@@ -265,50 +221,14 @@ const options = {
               type: "array",
               items: { $ref: "#/components/schemas/ActivityHistory" },
             },
-            assignedCompanyId: { type: "string" },
-            selectedCompany: {
+            assignedDriverId: { type: "string" },
+            selectedDriver: {
               type: "object",
               properties: {
                 id: { type: "string" },
                 name: { type: "string" },
                 rate: { type: "string" },
                 cost: { type: "number" },
-              },
-            },
-            sourceWarehouse: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-                name: { type: "string" },
-                address: { type: "string" },
-                city: { type: "string" },
-                country: { type: "string" },
-                coordinates: {
-                  type: "object",
-                  properties: {
-                    latitude: { type: "number" },
-                    longitude: { type: "number" },
-                  },
-                },
-                assignedAt: { type: "string", format: "date-time" },
-              },
-            },
-            destinationWarehouse: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-                name: { type: "string" },
-                address: { type: "string" },
-                city: { type: "string" },
-                country: { type: "string" },
-                coordinates: {
-                  type: "object",
-                  properties: {
-                    latitude: { type: "number" },
-                    longitude: { type: "number" },
-                  },
-                },
-                assignedAt: { type: "string", format: "date-time" },
               },
             },
             sourcePickupMode: {
@@ -319,6 +239,10 @@ const options = {
               type: "string",
               enum: ["Delegate", "Self"],
             },
+            receiptFloorNumber: { type: "string" },
+            needsWinchPickup: { type: "boolean" },
+            deliveryFloorNumber: { type: "string" },
+            needsWinchDropoff: { type: "boolean" },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
           },

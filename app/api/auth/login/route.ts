@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import bcryptjs from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models";
 
@@ -37,19 +38,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    console.log("Login: User attempting to login with email:", email);
-
     const user = await User.findOne({ email });
 
-    if (!user || user.password !== password) {
-      console.log("Login: Invalid credentials for email:", email);
+    if (!user) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 },
       );
     }
 
-    console.log("Login: User authenticated:", email);
+    // Compare hashed password
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 },
+      );
+    }
 
     const primaryLocation = Array.isArray(user.locations)
       ? user.locations.find((loc: any) => loc.primary) || user.locations[0]
@@ -62,14 +68,14 @@ export async function POST(request: NextRequest) {
         email: user.email,
         username: user.username,
         fullName: user.fullName,
-        company: user.company || null,
+        driver: user.driver || null,
         role: user.role,
+        emailVerified: user.emailVerified || false,
+        mobileVerified: user.mobileVerified || false,
       },
       JWT_SECRET,
       { expiresIn: "7d" },
     );
-
-    console.log("Login: Token generated for user:", email);
 
     const response = NextResponse.json(
       {
@@ -84,9 +90,13 @@ export async function POST(request: NextRequest) {
           mobile: user.mobile,
           birthDate: user.birthDate,
           profilePicture: user.profilePicture,
-          company: user.company || null,
+          driver: user.driver || null,
           role: user.role,
           status: user.status,
+          emailVerified: user.emailVerified || false,
+          mobileVerified: user.mobileVerified || false,
+          country: user.country || null,
+          preferredCurrency: user.preferredCurrency || "USD",
         },
         token,
       },
@@ -103,8 +113,6 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
       path: "/",
     });
-
-    console.log("Login: HTTP-only cookie set for user:", email);
 
     return response;
   } catch (error) {

@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProtectedRoute } from "@/app/hooks/useProtectedRoute";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { ArrowLeft, MapPin, Trash2, Plus, Edit2 } from "lucide-react";
 import Link from "next/link";
 
 interface UserAddress {
-  _id: string;
+  id: string;
   fullName: string;
   mobile: string;
   street: string;
@@ -86,8 +86,6 @@ export default function AddressesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
@@ -123,7 +121,7 @@ export default function AddressesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {addresses.map((address) => (
               <div
-                key={address._id}
+                key={address.id}
                 className="bg-card rounded-lg border border-border p-6 hover:border-primary/50 transition"
               >
                 <div className="flex items-start justify-between mb-4">
@@ -182,8 +180,8 @@ export default function AddressesPage() {
 
                 <div className="flex gap-3 pt-4 border-t border-border">
                   <button
-                    disabled={isDeletingId === address._id}
-                    onClick={() => handleDeleteAddress(address._id)}
+                    disabled={isDeletingId === address.id}
+                    onClick={() => handleDeleteAddress(address.id)}
                     className="flex-1 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />

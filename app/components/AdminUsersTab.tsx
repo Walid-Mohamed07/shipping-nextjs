@@ -14,13 +14,37 @@ import {
   Search,
   Filter,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { type User } from "@/types";
 import ProfilePictureUpload from "@/app/components/ProfilePictureUpload";
 import { useToast, getErrorMessage } from "@/lib/useToast";
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export function AdminUsersTab() {
   const toast = useToast();
+  const { t } = useTranslation();
+
+  const getRoleLabel = (role: string): string => {
+    const labels: Record<string, string> = {
+      client: t.adminUsers.clientRole,
+      admin: t.adminUsers.adminRole,
+      operator: t.adminUsers.operatorRole,
+      driver: t.adminUsers.driverRole,
+      driver: t.adminUsers.driverRole,
+    };
+    return labels[role] || role.charAt(0).toUpperCase() + role.slice(1);
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      active: t.common.active,
+      inactive: t.common.inactive,
+      suspended: t.common.suspended,
+    };
+    return labels[status] || status.charAt(0).toUpperCase() + status.slice(1);
+  };
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,40 +64,49 @@ export function AdminUsersTab() {
     mobile: "",
     birthDate: "",
     status: "active" as "active" | "inactive" | "suspended",
-    role: "client" as "client" | "admin" | "operator" | "company" | "driver",
-    assignedCompanyId: "" as string,
+    role: "client" as "client" | "admin" | "operator" | "driver" | "driver",
+    assignedDriverId: "" as string,
+    password: "",
+    confirmPassword: "",
   });
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<
     string | null
   >(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changePasswordMode, setChangePasswordMode] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  // Fetch companies when form is shown or role changes to "company"
+  // Fetch drivers when form is shown or role changes to "driver"
   useEffect(() => {
-    if (showForm && formData.role === "company") {
-      const fetchCompanies = async () => {
-        setLoadingCompanies(true);
+    if (showForm && formData.role === "driver") {
+      const fetchDrivers = async () => {
+        setLoadingDrivers(true);
         try {
-          const res = await fetch("/api/admin/companies");
-          if (!res.ok) throw new Error("Failed to fetch companies");
+          const res = await fetch("/api/admin/drivers");
+          if (!res.ok) throw new Error("Failed to fetch drivers");
           const data = await res.json();
-          setCompanies(Array.isArray(data) ? data : data.companies || []);
+          setDrivers(Array.isArray(data) ? data : data.drivers || []);
         } catch (error) {
-          console.error("Failed to fetch companies:", error);
-          setCompanies([]);
+          console.error("Failed to fetch drivers:", error);
+          setDrivers([]);
           toast.error(getErrorMessage(error));
         } finally {
-          setLoadingCompanies(false);
+          setLoadingDrivers(false);
         }
       };
-      fetchCompanies();
+      fetchDrivers();
     }
   }, [showForm, formData.role]);
 
@@ -138,11 +171,65 @@ export function AdminUsersTab() {
     }
   };
 
+  // Password validation function
+  const validatePassword = (password: string): { valid: boolean; message: string } => {
+    if (password.length < 8) {
+      return { valid: false, message: "Password must be at least 8 characters long" };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one uppercase letter" };
+    }
+    if (!/[a-z]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one lowercase letter" };
+    }
+    if (!/[0-9]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one number" };
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      return { valid: false, message: "Password must contain at least one special character (!@#$%^&*)" };
+    }
+    return { valid: true, message: "" };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email || !formData.username) {
-      toast.error("Please fill in all required fields");
+      toast.error(t.adminUsers.fillRequired);
       return;
+    }
+
+    // For create mode, validate password
+    if (!editingId) {
+      if (!formData.password) {
+        toast.error(t.adminUsers.passwordRequired);
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error(t.adminUsers.passwordsNoMatch);
+        return;
+      }
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.valid) {
+        toast.error(passwordValidation.message);
+        return;
+      }
+    }
+
+    // For update mode with change password
+    if (editingId && changePasswordMode) {
+      if (!newPassword) {
+        toast.error(t.adminUsers.enterNewPasswordError);
+        return;
+      }
+      if (newPassword !== confirmNewPassword) {
+        toast.error(t.adminUsers.newPasswordsNoMatch);
+        return;
+      }
+      const passwordValidation = validatePassword(newPassword);
+      if (!passwordValidation.valid) {
+        toast.error(passwordValidation.message);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -158,15 +245,24 @@ export function AdminUsersTab() {
 
       if (editingId) {
         // Update existing user via API
+        const updatePayload: any = {
+          id: editingId,
+          ...formData,
+          driver: formData.assignedDriverId || undefined,
+          profilePicture: profilePictureUrl,
+        };
+
+        // Remove password fields from base formData for update (unless changing password)
+        if (changePasswordMode) {
+          updatePayload.newPassword = newPassword;
+        }
+        delete updatePayload.password;
+        delete updatePayload.confirmPassword;
+
         const response = await fetch("/api/admin/users", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: editingId,
-            ...formData,
-            company: formData.assignedCompanyId || undefined,
-            profilePicture: profilePictureUrl,
-          }),
+          body: JSON.stringify(updatePayload),
         });
 
         if (!response.ok) {
@@ -177,7 +273,7 @@ export function AdminUsersTab() {
         const responseData = await response.json();
         const updatedUser = responseData.user;
 
-        // Update local state with response data (company is already populated)
+        // Update local state with response data (driver is already populated)
         setUsers(
           users.map((u) =>
             (u._id as string) === editingId || u.id === editingId
@@ -188,17 +284,20 @@ export function AdminUsersTab() {
               : u,
           ),
         );
-        toast.update("User updated successfully");
+        toast.update(t.adminUsers.userUpdated);
       } else {
         // Create new user via API
+        const createPayload: any = {
+          ...formData,
+          driver: formData.assignedDriverId || undefined,
+          profilePicture: profilePictureUrl,
+        };
+        delete createPayload.confirmPassword; // Don't send confirm password to API
+
         const response = await fetch("/api/admin/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...formData,
-            company: formData.assignedCompanyId || undefined,
-            profilePicture: profilePictureUrl,
-          }),
+          body: JSON.stringify(createPayload),
         });
 
         if (!response.ok) {
@@ -224,12 +323,12 @@ export function AdminUsersTab() {
           role: data.user.role,
           password: "",
           profilePicture: data.user.profilePicture || "",
-          company: data.user.company || undefined,
+          driver: data.user.driver || undefined,
           createdAt: data.user.createdAt,
           updatedAt: data.user.createdAt,
         };
         setUsers([...users, newUser]);
-        toast.create("User created successfully");
+        toast.create(t.adminUsers.userCreated);
       }
 
       resetForm();
@@ -251,9 +350,9 @@ export function AdminUsersTab() {
       });
       if (response.ok) {
         setUsers(users.filter((u) => (u._id as string) === id || u.id === id));
-        toast.delete("User deleted successfully");
+        toast.delete(t.adminUsers.userDeleted);
       } else {
-        toast.error("Failed to delete user");
+        toast.error(t.adminUsers.failedDelete);
       }
     } catch (error) {
       console.error("Failed to delete user:", error);
@@ -263,10 +362,10 @@ export function AdminUsersTab() {
 
   const handleEdit = (user: User) => {
     console.log("Editing user:", user);
-    const companyId =
-      typeof user.company === "string"
-        ? user.company
-        : (user.company as any)?._id || "";
+    const driverId =
+      typeof user.driver === "string"
+        ? user.driver
+        : (user.driver as any)?._id || "";
     setFormData({
       fullName: user.fullName,
       username: user.username,
@@ -275,12 +374,21 @@ export function AdminUsersTab() {
       birthDate: user.birthDate || "",
       status: user.status,
       role: typeof user.role === "string" ? user.role : (user.role as any).name,
-      assignedCompanyId: companyId,
+      assignedDriverId: driverId,
+      password: "",
+      confirmPassword: "",
     });
     setProfilePicturePreview(user.profilePicture || null);
     setProfilePicture(null);
     setEditingId((user._id as string) || user.id!);
     setShowForm(true);
+    setChangePasswordMode(false);
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmNewPassword(false);
   };
 
   const resetForm = () => {
@@ -292,15 +400,24 @@ export function AdminUsersTab() {
       birthDate: "",
       status: "active",
       role: "client",
-      assignedCompanyId: "",
+      assignedDriverId: "",
+      password: "",
+      confirmPassword: "",
     });
     setProfilePicture(null);
     setProfilePicturePreview(null);
     setEditingId(null);
     setShowForm(false);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setChangePasswordMode(false);
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setShowNewPassword(false);
+    setShowConfirmNewPassword(false);
   };
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  if (loading) return <div className="text-center py-8">{t.common.loading}</div>;
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -314,10 +431,10 @@ export function AdminUsersTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">User Management</h2>
+        <h2 className="text-2xl font-bold">{t.adminUsers.title}</h2>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add User
+          {t.adminUsers.addUser}
         </Button>
       </div>
 
@@ -329,10 +446,10 @@ export function AdminUsersTab() {
               className={`space-y-4 ${editingId ? "opacity-60 pointer-events-none" : ""}`}
             >
               <h3 className="text-lg font-semibold text-foreground">
-                Account Information
+                {t.adminUsers.accountInfo}
                 {editingId && (
                   <span className="text-xs font-normal text-muted-foreground ml-2">
-                    (Read-only)
+                    {t.adminUsers.readOnly}
                   </span>
                 )}
               </h3>
@@ -344,7 +461,7 @@ export function AdminUsersTab() {
                     htmlFor="fullName"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Full Name *
+                    {t.adminUsers.fullName}
                   </label>
                   <Input
                     id="fullName"
@@ -365,7 +482,7 @@ export function AdminUsersTab() {
                     htmlFor="username"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Username *
+                    {t.adminUsers.username}
                   </label>
                   <Input
                     id="username"
@@ -389,7 +506,7 @@ export function AdminUsersTab() {
                     htmlFor="email"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Email Address *
+                    {t.adminUsers.emailAddress}
                   </label>
                   <Input
                     id="email"
@@ -410,7 +527,7 @@ export function AdminUsersTab() {
                     htmlFor="mobile"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Mobile Number
+                    {t.adminUsers.mobileNumber}
                   </label>
                   <Input
                     id="mobile"
@@ -432,7 +549,7 @@ export function AdminUsersTab() {
                   htmlFor="birthDate"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Birth Date
+                  {t.adminUsers.birthDate}
                 </label>
                 <Input
                   id="birthDate"
@@ -449,7 +566,7 @@ export function AdminUsersTab() {
               {/* Profile Picture - Full Width */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Profile Picture
+                  {t.adminUsers.profilePicture}
                 </label>
                 <ProfilePictureUpload
                   value={profilePicture}
@@ -460,10 +577,99 @@ export function AdminUsersTab() {
               </div>
             </div>
 
+            {/* Password Section */}
+            {!editingId && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {t.adminUsers.passwordSection}
+                </h3>
+
+                {/* Password & Confirm Password */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
+                      {t.adminUsers.passwordLabel}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder={t.adminUsers.enterPassword}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            password: e.target.value,
+                          })
+                        }
+                        className="bg-background pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {t.adminUsers.passwordHint}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
+                      {t.adminUsers.confirmPasswordLabel}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder={t.adminUsers.confirmPasswordPlaceholder}
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="bg-background pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Role and Status Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">
-                Permissions & Status
+                {t.adminUsers.permissionsStatus}
               </h3>
 
               <div className="grid grid-cols-2 gap-4">
@@ -473,7 +679,7 @@ export function AdminUsersTab() {
                     htmlFor="role"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Role *
+                    {t.adminUsers.roleLabel}
                   </label>
                   <select
                     id="role"
@@ -483,11 +689,11 @@ export function AdminUsersTab() {
                     }
                     className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
                   >
-                    <option value="client">Client</option>
-                    <option value="admin">Admin</option>
-                    <option value="operator">Operator</option>
-                    <option value="company">Company</option>
-                    <option value="driver">Driver</option>
+                    <option value="client">{t.adminUsers.clientRole}</option>
+                    <option value="admin">{t.adminUsers.adminRole}</option>
+                    <option value="operator">{t.adminUsers.operatorRole}</option>
+                    <option value="driver">{t.adminUsers.driverRole}</option>
+                    <option value="driver">{t.adminUsers.driverRole}</option>
                   </select>
                 </div>
 
@@ -497,7 +703,7 @@ export function AdminUsersTab() {
                     htmlFor="status"
                     className="block text-sm font-medium text-foreground mb-2"
                   >
-                    Status *
+                    {t.adminUsers.statusLabel}
                   </label>
                   <select
                     id="status"
@@ -510,46 +716,46 @@ export function AdminUsersTab() {
                     }
                     className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="active">{t.common.active}</option>
+                    <option value="inactive">{t.common.inactive}</option>
+                    <option value="suspended">{t.common.suspended}</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* Company Assignment Section - Only show for company role */}
-            {formData.role === "company" && (
+            {/* Driver Assignment Section - Only show for driver role */}
+            {formData.role === "driver" && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="text-lg font-semibold text-foreground">
-                  Company Assignment
+                  {t.adminUsers.driverAssignment}
                 </h3>
-                {loadingCompanies ? (
+                {loadingDrivers ? (
                   <div className="flex items-center justify-center py-8 border border-border rounded-md bg-muted">
                     <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mr-2" />
                     <span className="text-muted-foreground">
-                      Loading companies...
+                      {t.adminUsers.loadingDrivers}
                     </span>
                   </div>
-                ) : companies.length > 0 ? (
+                ) : drivers.length > 0 ? (
                   <div className="space-y-3 max-h-96 overflow-y-auto border border-border rounded-md p-4">
-                    {companies.map((company: any) => (
+                    {drivers.map((driver: any) => (
                       <label
-                        key={company._id || company.id}
+                        key={driver._id || driver.id}
                         className="flex items-start p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                       >
                         <input
                           type="radio"
-                          name="company"
-                          value={company._id || company.id}
+                          name="driver"
+                          value={driver._id || driver.id}
                           checked={
-                            formData.assignedCompanyId ===
-                            (company._id || company.id)
+                            formData.assignedDriverId ===
+                            (driver._id || driver.id)
                           }
                           onChange={(e) =>
                             setFormData({
                               ...formData,
-                              assignedCompanyId: e.target.value,
+                              assignedDriverId: e.target.value,
                             })
                           }
                           className="mt-1 cursor-pointer"
@@ -557,15 +763,15 @@ export function AdminUsersTab() {
                         />
                         <div className="ml-3 flex-1">
                           <p className="font-medium text-foreground">
-                            {company.name}
+                            {driver.name}
                           </p>
                           <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                            {company.email && <p>📧 {company.email}</p>}
-                            {company.phoneNumber && (
-                              <p>📱 {company.phoneNumber}</p>
+                            {driver.email && <p>📧 {driver.email}</p>}
+                            {driver.phoneNumber && (
+                              <p>📱 {driver.phoneNumber}</p>
                             )}
-                            {company.address && <p>📍 {company.address}</p>}
-                            {company.rate && <p>⭐ Rating: {company.rate}</p>}
+                            {driver.address && <p>📍 {driver.address}</p>}
+                            {driver.rate && <p>⭐ Rating: {driver.rate}</p>}
                           </div>
                         </div>
                       </label>
@@ -573,7 +779,120 @@ export function AdminUsersTab() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-20 border border-border rounded-md bg-muted text-muted-foreground text-sm">
-                    No companies available
+                    {t.adminUsers.noDrivers}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Change Password Section - Only show when editing */}
+            {editingId && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {t.adminUsers.passwordManagement}
+                  </h3>
+                  {!changePasswordMode && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setChangePasswordMode(true)}
+                      className="cursor-pointer"
+                    >
+                      {t.adminUsers.changePassword}
+                    </Button>
+                  )}
+                </div>
+
+                {changePasswordMode && (
+                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      {t.adminUsers.newPasswordHint}
+                    </p>
+
+                    {/* New Password & Confirm New Password */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          htmlFor="newPassword"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
+                          {t.adminUsers.newPasswordLabel}
+                        </label>
+                        <div className="relative">
+                          <Input
+                            id="newPassword"
+                            type={showNewPassword ? "text" : "password"}
+                            placeholder={t.adminUsers.enterNewPassword}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="bg-background pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {t.adminUsers.passwordHint}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="confirmNewPassword"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
+                          {t.adminUsers.confirmNewPasswordLabel}
+                        </label>
+                        <div className="relative">
+                          <Input
+                            id="confirmNewPassword"
+                            type={showConfirmNewPassword ? "text" : "password"}
+                            placeholder={t.adminUsers.confirmNewPasswordPlaceholder}
+                            value={confirmNewPassword}
+                            onChange={(e) =>
+                              setConfirmNewPassword(e.target.value)
+                            }
+                            className="bg-background pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmNewPassword(!showConfirmNewPassword)
+                            }
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showConfirmNewPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChangePasswordMode(false);
+                        setNewPassword("");
+                        setConfirmNewPassword("");
+                        setShowNewPassword(false);
+                        setShowConfirmNewPassword(false);
+                      }}
+                      className="text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      {t.adminUsers.cancelPasswordChange}
+                    </button>
                   </div>
                 )}
               </div>
@@ -589,12 +908,12 @@ export function AdminUsersTab() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {editingId ? "Updating..." : "Creating..."}
+                    {editingId ? t.adminUsers.updating : t.adminUsers.creating}
                   </>
                 ) : editingId ? (
-                  "Update User"
+                  t.adminUsers.updateUser
                 ) : (
-                  "Create User"
+                  t.adminUsers.createUser
                 )}
               </Button>
               <Button
@@ -604,7 +923,7 @@ export function AdminUsersTab() {
                 disabled={isSubmitting}
                 className="flex-1 bg-transparent cursor-pointer"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </form>
@@ -618,7 +937,7 @@ export function AdminUsersTab() {
             <Search className="w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by name, username, or email..."
+              placeholder={t.adminUsers.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent outline-none text-sm"
@@ -628,17 +947,17 @@ export function AdminUsersTab() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Status
+                {t.adminUsers.filterStatus}
               </label>
               <select
                 value={statusFilter || ""}
                 onChange={(e) => setStatusFilter(e.target.value || null)}
                 className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
               >
-                <option value="">All Statuses</option>
+                <option value="">{t.adminUsers.allStatuses}</option>
                 {statuses.map((s) => (
                   <option key={s} value={s}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                    {getStatusLabel(s)}
                   </option>
                 ))}
               </select>
@@ -646,17 +965,17 @@ export function AdminUsersTab() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Role
+                {t.adminUsers.filterRole}
               </label>
               <select
                 value={roleFilter || ""}
                 onChange={(e) => setRoleFilter(e.target.value || null)}
                 className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
               >
-                <option value="">All Roles</option>
+                <option value="">{t.adminUsers.allRoles}</option>
                 {roles.map((r) => (
                   <option key={r} value={r}>
-                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                    {getRoleLabel(r)}
                   </option>
                 ))}
               </select>
@@ -664,25 +983,25 @@ export function AdminUsersTab() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Sort By
+                {t.adminUsers.sortBy}
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="w-full px-2 py-2 border border-border rounded text-sm bg-background"
               >
-                <option value="name">Name (A-Z)</option>
-                <option value="role">Role</option>
-                <option value="date">Date Created (Newest)</option>
+                <option value="name">{t.adminUsers.nameAZ}</option>
+                <option value="role">{t.adminUsers.sortByRole}</option>
+                <option value="date">{t.adminUsers.dateCreated}</option>
               </select>
             </div>
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Results
+                {t.adminUsers.results}
               </label>
               <div className="flex items-center justify-center h-9 px-2 border border-border rounded bg-background text-sm">
-                {filteredUsers.length} total
+                {filteredUsers.length} {t.adminUsers.total}
               </div>
             </div>
           </div>
@@ -693,7 +1012,7 @@ export function AdminUsersTab() {
       <div className="space-y-2">
         {paginatedUsers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No users found matching your criteria
+            {t.adminUsers.noUsersFound}
           </div>
         ) : (
           paginatedUsers.map((user) => {
@@ -723,10 +1042,10 @@ export function AdminUsersTab() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{user.fullName}</p>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                          {user.role}
+                          {getRoleLabel(user.role)}
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
-                          {user.status}
+                          {getStatusLabel(user.status)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">

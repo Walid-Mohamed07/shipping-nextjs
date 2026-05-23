@@ -10,7 +10,7 @@ import { Request } from "@/types";
 export function OperatorCostOffersTab() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [newOffers, setNewOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,12 +24,12 @@ export function OperatorCostOffersTab() {
       try {
         const [reqRes, compRes] = await Promise.all([
           fetch("/api/requests/manage?status=Accepted"),
-          fetch("/api/admin/companies"),
+          fetch("/api/admin/drivers"),
         ]);
         const requests = await reqRes.json();
-        const companies = await compRes.json();
+        const drivers = await compRes.json();
         setRequests(requests);
-        setCompanies(companies);
+        setDrivers(drivers);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -65,7 +65,7 @@ export function OperatorCostOffersTab() {
   }, [requests, searchQuery, sortBy]);
 
   const handleAddOffer = () => {
-    setNewOffers([...newOffers, { cost: 0, company: null, comment: "" }]);
+    setNewOffers([...newOffers, { cost: 0, driver: null, comment: "" }]);
   };
 
   const handleRemoveOffer = (index: number) => {
@@ -83,7 +83,7 @@ export function OperatorCostOffersTab() {
           requestId: selectedRequest.id,
           costOffers: newOffers.map((offer) => ({
             cost: offer.cost,
-            company: companies.find((c) => c.id === offer.companyId),
+            driver: drivers.find((c) => c.id === offer.driverId),
             comment: offer.comment,
           })),
           userId: "operator-001",
@@ -158,7 +158,7 @@ export function OperatorCostOffersTab() {
       {selectedRequest ? (
         <Card className="p-6 border-primary/50 bg-primary/5">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">{selectedRequest.id}</h3>
+            <h3 className="text-lg font-semibold mb-2">{selectedRequest.publicId || selectedRequest.id}</h3>
             <p className="text-sm text-muted-foreground">
               {selectedRequest.user!.fullName} -{" "}
               {selectedRequest.source.country} →{" "}
@@ -172,19 +172,19 @@ export function OperatorCostOffersTab() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Company
+                      Driver
                     </label>
                     <select
-                      value={offer.companyId || ""}
+                      value={offer.driverId || ""}
                       onChange={(e) => {
                         const updated = [...newOffers];
-                        updated[index].companyId = e.target.value;
+                        updated[index].driverId = e.target.value;
                         setNewOffers(updated);
                       }}
                       className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                     >
-                      <option value="">Select company...</option>
-                      {companies.map((c) => (
+                      <option value="">Select driver...</option>
+                      {drivers.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}
                         </option>
@@ -259,7 +259,7 @@ export function OperatorCostOffersTab() {
               onClick={handleSubmitOffers}
               disabled={
                 newOffers.length === 0 ||
-                newOffers.some((o) => !o.companyId || o.cost === 0)
+                newOffers.some((o) => !o.driverId || o.cost === 0)
               }
               className="flex-1"
             >
@@ -350,6 +350,28 @@ export function OperatorCostOffersTab() {
                           </div>
                         </div>
                         {/* </p> */}
+                        {/* Available Days */}
+                        {req.availableDays && req.availableDays.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Available Days:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {req.availableDays.includes("All Week") ? (
+                                <span className="inline-flex items-center text-xs font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                  All Week
+                                </span>
+                              ) : (
+                                req.availableDays.map((day) => (
+                                  <span
+                                    key={day}
+                                    className="inline-flex items-center text-xs font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                  >
+                                    {day.slice(0, 3)}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {req.costOffers && req.costOffers.length > 0 && (
                         <div className="ml-4 text-right">

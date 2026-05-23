@@ -1,26 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import bcryptjs from "bcryptjs";
 import { connectDB, handleError } from "@/lib/db";
 import { User } from "@/lib/models";
+import { getCurrentUser } from "@/lib/auth-helpers";
 
 export async function PUT(req: NextRequest) {
   try {
     await connectDB();
-    const body = await req.json();
-    const { userId, name, email, mobile, birthDate, profilePicture } = body;
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    // Extract userId from authenticated JWT token
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = currentUser.id;
+    const body = await req.json();
+    const {
+      name,
+      email,
+      mobile,
+      birthDate,
+      profilePicture,
+      currentPassword,
+      newPassword,
+      country,
+      preferredCurrency,
+    } = body;
+
+    // Get user for password verification
+    const user = await User.findById(userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Build update object with only provided fields
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
-    if (mobile !== undefined) updateData.mobile = mobile;
+    // Email cannot be changed - skip email updates
+    // if (email !== undefined) updateData.email = email;
+
+    // If mobile number changed, reset mobileVerified to false
+    if (mobile !== undefined && mobile !== user.mobile) {
+      updateData.mobile = mobile;
+      updateData.mobileVerified = false;
+      updateData.mobileOTP = { code: null, expiresAt: null };
+    } else if (mobile !== undefined) {
+      updateData.mobile = mobile;
+    }
+
     if (birthDate !== undefined) updateData.birthDate = birthDate;
     if (profilePicture !== undefined)
       updateData.profilePicture = profilePicture;
+    if (country !== undefined) updateData.country = country;
+    if (preferredCurrency !== undefined)
+      updateData.preferredCurrency = preferredCurrency;
+
+    // Handle password change if provided
+    if (currentPassword && newPassword) {
+      // Verify current password
+      const isPasswordValid = await bcryptjs.compare(
+        currentPassword,
+        user.password,
+      );
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          { error: "Current password is incorrect" },
+          { status: 401 },
+        );
+      }
+
+      // Hash new password
+      const hashedPassword = await bcryptjs.hash(newPassword, 10);
+      updateData.password = hashedPassword;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
@@ -43,8 +97,10 @@ export async function PUT(req: NextRequest) {
         fullName: updatedUser.fullName,
         birthDate: updatedUser.birthDate,
         profilePicture: updatedUser.profilePicture,
-        company: updatedUser.company || null,
+        driver: updatedUser.driver || null,
         role: updatedUser.role,
+        emailVerified: updatedUser.emailVerified,
+        mobileVerified: updatedUser.mobileVerified,
       },
       JWT_SECRET,
       { expiresIn: "7d" },
@@ -61,9 +117,13 @@ export async function PUT(req: NextRequest) {
         mobile: updatedUser.mobile,
         birthDate: updatedUser.birthDate,
         profilePicture: updatedUser.profilePicture,
-        company: updatedUser.company || null,
+        driver: updatedUser.driver || null,
         role: updatedUser.role,
         status: updatedUser.status,
+        emailVerified: updatedUser.emailVerified,
+        mobileVerified: updatedUser.mobileVerified,
+        country: updatedUser.country,
+        preferredCurrency: updatedUser.preferredCurrency,
       },
     });
 
@@ -87,15 +147,17 @@ export async function PUT(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    // Extract userId from authenticated JWT token
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await User.findById(userId).lean();
+    const userId = currentUser.id;
 
+    const user = await User.findById(userId).lean();
+    9;
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

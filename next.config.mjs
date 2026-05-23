@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ['*.devtunnels.ms'],
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -23,7 +24,6 @@ const nextConfig = {
     maxInactiveAge: 60 * 1000,
     pagesBufferLength: 5,
   },
-  turbopack: {},
 }
 
 export default nextConfig

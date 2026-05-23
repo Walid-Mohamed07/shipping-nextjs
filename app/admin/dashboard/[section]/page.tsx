@@ -10,46 +10,48 @@ import { AdminShipmentsMapTab } from "@/app/components/AdminShipmentsMapTab";
 import { AdminOverrideAssignmentsTab } from "@/app/components/AdminOverrideAssignmentsTab";
 import { AdminPerformanceMetricsTab } from "@/app/components/AdminPerformanceMetricsTab";
 import { AdminAuditLogsTab } from "@/app/components/AdminAuditLogsTab";
-import { AdminCompaniesTab } from "@/app/components/AdminCompaniesTab";
-import { AdminUsersTab } from "@/app/components/AdminUsersTab";
 import { AdminDriversTab } from "@/app/components/AdminDriversTab";
+import { AdminUsersTab } from "@/app/components/AdminUsersTab";
 import { OperatorCostOffersTab } from "@/app/components/OperatorCostOffersTab";
+import { AdminCategoriesTab } from "@/app/components/AdminCategoriesTab";
+import { AdminCostCriteriaTab } from "@/app/components/AdminCostCriteriaTab";
+import { AdminSettingsTab } from "@/app/components/AdminSettingsTab";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { AdminDashboardNav } from "@/app/components/AdminDashboardNav";
-
-const sectionTitles: Record<string, string> = {
-  requests: "Requests Management",
-  assignments: "Assignments Management",
-  vehicles: "Vehicle Management",
-  "vehicle-rules": "Vehicle & Capacity Rules",
-  users: "User Management",
-  drivers: "Driver Management",
-  companies: "Company Management",
-  "cost-offers": "Cost Offers Management",
-  map: "Live Shipment Map",
-  override: "Override Assignments",
-  metrics: "Performance Metrics",
-  audit: "Audit Logs",
-};
-
-interface DashboardSectionProps {
-  params: { section: string };
-}
+import { useTranslation } from "@/app/context/LocaleContext";
 
 export default function DashboardSection({
   params,
 }: {
   params: Promise<{ section: string }>;
 }) {
-  const { section } = React.use(params); // <- unwrap params before using
+  const { section } = React.use(params);
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const sectionTitles: Record<string, string> = {
+    requests: t.admin.sectionRequests,
+    assignments: t.admin.sectionAssignments,
+    vehicles: t.admin.sectionVehicles,
+    "vehicle-rules": t.admin.sectionVehicleRules,
+    users: t.admin.sectionUsers,
+    drivers: t.admin.sectionDrivers || "Drivers",
+    "cost-offers": t.admin.sectionCostOffers,
+    map: t.admin.sectionMap,
+    override: t.admin.sectionOverride,
+    metrics: t.admin.sectionMetrics,
+    audit: t.admin.sectionAudit,
+    categories: t.admin.sectionCategories,
+    "cost-criteria": t.admin.sectionCostCriteria,
+    settings: t.admin.sectionSettings || "Settings",
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        Loading...
+        {t.common.loading}
       </div>
     );
   }
@@ -73,8 +75,6 @@ export default function DashboardSection({
         return <AdminUsersTab />;
       case "drivers":
         return <AdminDriversTab />;
-      case "companies":
-        return <AdminCompaniesTab />;
       case "cost-offers":
         return <OperatorCostOffersTab />;
       case "map":
@@ -85,8 +85,16 @@ export default function DashboardSection({
         return <AdminPerformanceMetricsTab />;
       case "audit":
         return <AdminAuditLogsTab />;
+      case "categories":
+        return <AdminCategoriesTab />;
+      case "cost-criteria":
+        return <AdminCostCriteriaTab />;
+      case "settings":
+        return <AdminSettingsTab />;
       default:
-        return <div className="text-center py-8">Section not found</div>;
+        return (
+          <div className="text-center py-8">{t.common.requestedSection}</div>
+        );
     }
   };
 
@@ -104,11 +112,9 @@ export default function DashboardSection({
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">
-              {sectionTitles[section] || "Dashboard"}
+              {sectionTitles[section] || t.admin.dashboard}
             </h1>
-            <p className="text-muted-foreground">
-              Manage and monitor your shipping operations
-            </p>
+            <p className="text-muted-foreground">{t.admin.manageOpsSubtitle}</p>
           </div>
 
           <Card className="p-6">{renderSection()}</Card>

@@ -7,8 +7,6 @@ import {
   Package,
   MapPin,
   Truck,
-  Wrench,
-  BoxSelect,
   MessageSquare,
   Clock,
   Phone,
@@ -17,7 +15,10 @@ import {
   CheckCircle2,
   ArrowLeft,
 } from "lucide-react";
-import type { Item, Address } from "@/types";
+import type { Item, Address, DayOfWeek } from "@/types";
+import type { TransportVehicleType } from "@/constants/transportVehicles";
+import { useTranslation } from "@/app/context/LocaleContext";
+import { useCategoryLabel } from "@/app/hooks/useCategoryLabel";
 
 export interface ReviewData {
   items: Item[];
@@ -25,11 +26,20 @@ export interface ReviewData {
   destinationAddress: Address | null;
   sourcePickupMode: string;
   destPickupMode: string;
-  deliveryType: "Normal" | "Urgent";
-  whenToStart: string;
+  deliveryType: "Normal" | "Urgent" | "Scheduled";
+  scheduledDate?: string;
+  collectionAvailableDays: DayOfWeek[];
+  deliveryAvailableDays: DayOfWeek[];
   mobile: string;
-  primaryCost: string;
+  primaryCost?: string; // TEMPORARILY HIDDEN - primaryCost (optional now)
   comments: string;
+  itemMediaPreviewsMap?: Record<number, string[]>; // Preview URLs from uploaded files
+  workersCount?: number;
+  selectedVehicle?: TransportVehicleType | null;
+  receiptFloorNumber?: string;
+  needsWinchPickup?: boolean;
+  deliveryFloorNumber?: string;
+  needsWinchDropoff?: boolean;
 }
 
 interface ReviewModalProps {
@@ -40,8 +50,8 @@ interface ReviewModalProps {
   isLoading: boolean;
 }
 
-const formatAddress = (addr: Address | null) => {
-  if (!addr) return "Not selected";
+const formatAddress = (addr: Address | null, notSelected: string) => {
+  if (!addr) return notSelected;
   const parts = [
     addr.street,
     addr.building,
@@ -50,7 +60,7 @@ const formatAddress = (addr: Address | null) => {
     addr.governorate,
     addr.country,
   ].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Not selected";
+  return parts.length > 0 ? parts.join(", ") : notSelected;
 };
 
 export default function ReviewModal({
@@ -60,10 +70,13 @@ export default function ReviewModal({
   data,
   isLoading,
 }: ReviewModalProps) {
+  const { t } = useTranslation();
+  const { getCategoryLabel } = useCategoryLabel();
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 h-full">
       <div className="bg-card border border-border rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-primary/5">
@@ -73,17 +86,17 @@ export default function ReviewModal({
             </div>
             <div>
               <h2 className="text-xl font-bold text-foreground">
-                Review Your Order
+                {t.newRequest.reviewOrder}
               </h2>
               <p className="text-sm text-muted-foreground">
-                Please confirm all details before submitting
+                {t.newRequest.confirmDetails}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-            aria-label="Close"
+            aria-label={t.common.close}
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -95,7 +108,7 @@ export default function ReviewModal({
           <section>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
               <Package className="w-4 h-4 text-primary" />
-              Shipment Items ({data.items.length})
+              {t.newRequest.shipmentItems} ({data.items.length})
             </h3>
             <div className="space-y-2">
               {data.items.map((item, idx) => (
@@ -106,53 +119,36 @@ export default function ReviewModal({
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                     {idx + 1}
                   </span>
+                  {/* {item.media && item.media.length > 0 && ( */}
+                  <div className="h-20 w-20 shrink-0 rounded-md overflow-hidden border border-border bg-muted/30">
+                    <img
+                      src={
+                        data.itemMediaPreviewsMap?.[idx]?.[0] ||
+                        item.media?.[0]?.url ||
+                        "/assets/images/items/ShipHub_logo.png"
+                      }
+                      alt={item.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  {/* )} */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-foreground truncate">
                         {item.name}
                       </span>
                       <Badge variant="secondary" className="text-[11px]">
-                        {item.category}
+                        {getCategoryLabel(item.category)}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {item.dimensions} · {item.weight} kg · ×{item.quantity}
+                      {item.weight} kg · ×{item.quantity}
                     </p>
                     {item.note && (
                       <p className="text-xs text-muted-foreground italic mt-0.5">
-                        Note: {item.note}
+                        {t.newRequest.noteLabel} {item.note}
                       </p>
                     )}
-                    {item.services &&
-                      (item.services.canBeAssembledDisassembled ||
-                        item.services.assemblyDisassembly ||
-                        item.services.packaging) && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {(item.services.canBeAssembledDisassembled ||
-                            item.services.assemblyDisassembly) && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              <Wrench className="w-2.5 h-2.5" />
-                              Assembly
-                              {item.services.assemblyDisassemblyHandler && (
-                                <span className="ml-0.5">
-                                  (
-                                  {item.services.assemblyDisassemblyHandler ===
-                                  "self"
-                                    ? "Self"
-                                    : "Company"}
-                                  )
-                                </span>
-                              )}
-                            </span>
-                          )}
-                          {item.services.packaging && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                              <BoxSelect className="w-2.5 h-2.5" />
-                              Packaging
-                            </span>
-                          )}
-                        </div>
-                      )}
                   </div>
                 </div>
               ))}
@@ -163,15 +159,15 @@ export default function ReviewModal({
           <section>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
               <MapPin className="w-4 h-4 text-primary" />
-              Addresses
+              {t.newRequest.addresses}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Pickup (Source)
+                  {t.newRequest.pickupSource}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {formatAddress(data.sourceAddress)}
+                  {formatAddress(data.sourceAddress, t.newRequest.notSelected)}
                 </p>
                 {data.sourceAddress?.fullName && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -184,15 +180,18 @@ export default function ReviewModal({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mode: {data.sourcePickupMode}
+                  {t.newRequest.mode}: {data.sourcePickupMode}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Delivery (Destination)
+                  {t.newRequest.deliveryDestination}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {formatAddress(data.destinationAddress)}
+                  {formatAddress(
+                    data.destinationAddress,
+                    t.newRequest.notSelected,
+                  )}
                 </p>
                 {data.destinationAddress?.fullName && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -205,7 +204,7 @@ export default function ReviewModal({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mode: {data.destPickupMode}
+                  {t.newRequest.mode}: {data.destPickupMode}
                 </p>
               </div>
             </div>
@@ -215,44 +214,40 @@ export default function ReviewModal({
           <section>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
               <Truck className="w-4 h-4 text-primary" />
-              Delivery &amp; Cost
+              {t.newRequest.deliveryCost}
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Delivery Type
+                  {t.newRequest.deliveryType}
                 </p>
                 <p className="text-sm font-medium text-foreground">
-                  {data.deliveryType === "Urgent" ? "🔥 Urgent" : "Normal"}
+                  {data.deliveryType === "Urgent"
+                    ? `⚡ ${t.newRequest.urgent}`
+                    : data.deliveryType === "Scheduled"
+                      ? `📅 ${t.newRequest.scheduledDelivery}`
+                      : t.newRequest.normal}
                 </p>
               </div>
+              {data.deliveryType === "Scheduled" && data.scheduledDate && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    {t.newRequest.scheduledFor}
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {new Date(data.scheduledDate).toLocaleString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              )}
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Cost
-                </p>
-                <p className="text-sm font-bold text-primary flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" />
-                  {data.primaryCost ? data.primaryCost : "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Start Date
-                </p>
-                <p className="text-sm font-medium text-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {data.whenToStart
-                    ? new Date(data.whenToStart).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Contact
+                  {t.newRequest.contact}
                 </p>
                 <p className="text-sm font-medium text-foreground flex items-center gap-1">
                   <Phone className="w-3 h-3" />
@@ -262,12 +257,106 @@ export default function ReviewModal({
             </div>
           </section>
 
+          {/* Floor Numbers & Winch Section */}
+          {(data.receiptFloorNumber || data.deliveryFloorNumber) && (
+            <section>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                <Package className="w-4 h-4 text-primary" />
+                {t.newRequest.floorAndWinch}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {data.receiptFloorNumber && (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>
+                      {t.newRequest.receiptFloorNumber}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.receiptFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : data.receiptFloorNumber}
+                    </p>
+                    {data.needsWinchPickup && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchPickup}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {data.deliveryFloorNumber && (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                      <span className="text-gray-400">🏢</span>
+                      {t.newRequest.deliveryFloorNumber}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.deliveryFloorNumber === "0"
+                        ? t.newRequest.groundFloor
+                        : data.deliveryFloorNumber}
+                    </p>
+                    {data.needsWinchDropoff && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium flex items-center gap-1">
+                        <span>🏗️</span> ✓ {t.newRequest.needsWinchDropoff}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Workers & Vehicle Section */}
+          {(data.workersCount && data.workersCount > 0) ||
+          data.selectedVehicle ? (
+            <section>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                <Truck className="w-4 h-4 text-primary" />
+                {t.newRequest.workersAndVehicle}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {data.workersCount && data.workersCount > 0 ? (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      {t.newRequest.addWorkers}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.workersCount}{" "}
+                      {data.workersCount === 1
+                        ? t.newRequest.worker
+                        : t.newRequest.workers}
+                    </p>
+                  </div>
+                ) : null}
+                {data.selectedVehicle ? (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      {t.newRequest.transportVehicle}
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {data.selectedVehicle.nameAr}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {data.selectedVehicle.nameEn}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {data.selectedVehicle.dimensions.length}m ×{" "}
+                      {data.selectedVehicle.dimensions.width}m ×{" "}
+                      {data.selectedVehicle.dimensions.height}m —{" "}
+                      {t.newRequest.maxLoad}: {data.selectedVehicle.maxWeight}{" "}
+                      {t.newRequest.kg}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+
           {/* Comments Section */}
           {data.comments && (
             <section>
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
                 <MessageSquare className="w-4 h-4 text-primary" />
-                Additional Notes
+                {t.newRequest.additionalNotes}
               </h3>
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-sm text-foreground whitespace-pre-wrap">
@@ -288,7 +377,7 @@ export default function ReviewModal({
             className="flex-1 cursor-pointer gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Go Back &amp; Edit
+            {t.newRequest.reviewGoBack}
           </Button>
           <Button
             type="button"
@@ -299,12 +388,12 @@ export default function ReviewModal({
             {isLoading ? (
               <>
                 <span className="animate-spin">⏳</span>
-                Submitting...
+                {t.newRequest.submitting}
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                Confirm &amp; Submit
+                {t.newRequest.reviewConfirmSubmit}
               </>
             )}
           </Button>

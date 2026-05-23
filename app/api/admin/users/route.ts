@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { User } from "@/lib/models";
+import bcryptjs from "bcryptjs";
 
 /**
  * @swagger
@@ -41,7 +42,7 @@ import { User } from "@/lib/models";
  *                 enum: [active, inactive, suspended]
  *               role:
  *                 type: string
- *                 enum: [client, admin, driver, operator, company, warehouse_manager]
+ *                 enum: [client, admin, driver, operator]
  *               locations:
  *                 type: array
  *                 items:
@@ -61,9 +62,9 @@ export async function GET(request: NextRequest) {
 
     const users = await User.find({})
       .select(
-        "fullName email username status role profilePicture birthDate mobile createdAt company",
+        "fullName email username status role profilePicture birthDate mobile createdAt driver",
       )
-      .populate("company", "name email phoneNumber address rate")
+      .populate("driver", "name email phoneNumber address rate")
       .lean();
 
     return NextResponse.json(users, { status: 200 });
@@ -86,13 +87,22 @@ export async function POST(request: NextRequest) {
       profilePicture,
       status,
       role,
-      company,
+      driver,
     } = body;
 
     if (!fullName || !email || !username) {
       return NextResponse.json(
         {
           error: "Missing required fields: fullName, email, username",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        {
+          error: "Password is required",
         },
         { status: 400 },
       );
@@ -116,22 +126,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hash the password
+    const hashedPassword = await bcryptjs.hash(password, 10);
+
     const newUser = await User.create({
       fullName,
       name: fullName,
       email,
       username,
-      password: password || "temp_password_123",
+      password: hashedPassword,
       profilePicture: profilePicture || "",
       birthDate: birthDate || null,
       mobile: mobile || "",
       status: status || "active",
       role: role || "client",
-      company: company || undefined,
+      driver: driver || undefined,
     });
 
-    // Populate company data before returning
-    await newUser.populate("company", "name email phoneNumber address rate");
+    // Populate driver data before returning
+    await newUser.populate("driver", "name email phoneNumber address rate");
 
     return NextResponse.json(
       {
@@ -147,7 +160,7 @@ export async function POST(request: NextRequest) {
           status: newUser.status,
           birthDate: newUser.birthDate,
           createdAt: newUser.createdAt,
-          company: newUser.company,
+          driver: newUser.driver,
         },
       },
       { status: 201 },
@@ -165,7 +178,7 @@ export async function PUT(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const { id, fullName, email, username, mobile, birthDate, profilePicture, status, role, company } = body;
+    const { id, fullName, email, username, mobile, birthDate, profilePicture, status, role, driver, newPassword } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -212,22 +225,31 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Prepare update object
+    const updateData: any = {
+      fullName,
+      name: fullName,
+      email,
+      username,
+      mobile: mobile || "",
+      birthDate: birthDate || null,
+      profilePicture: profilePicture || "",
+      status: status || "active",
+      role: role || "client",
+      driver: driver || undefined,
+    };
+
+    // If new password is provided, hash it
+    if (newPassword) {
+      const hashedPassword = await bcryptjs.hash(newPassword, 10);
+      updateData.password = hashedPassword;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      {
-        fullName,
-        name: fullName,
-        email,
-        username,
-        mobile: mobile || "",
-        birthDate: birthDate || null,
-        profilePicture: profilePicture || "",
-        status: status || "active",
-        role: role || "client",
-        company: company || undefined,
-      },
+      updateData,
       { returnDocument: "after" },
-    ).populate("company", "name email phoneNumber address rate");
+    ).populate("driver", "name email phoneNumber address rate");
 
     return NextResponse.json(
       {
@@ -243,7 +265,7 @@ export async function PUT(request: NextRequest) {
           status: updatedUser.status,
           birthDate: updatedUser.birthDate,
           createdAt: updatedUser.createdAt,
-          company: updatedUser.company,
+          driver: updatedUser.driver,
         },
       },
       { status: 200 },

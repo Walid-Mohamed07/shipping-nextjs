@@ -4,18 +4,22 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
+import { RealTimeProvider } from "./context/RealTimeContext";
+import { LocaleProvider } from "./context/LocaleContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 import { Footer } from "./components/Footer";
 import "./globals.css";
 import { Header } from "./components/Header";
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
-  title: "ShipHub - Global Shipping Made Easy",
+  title: "ShipHub – Global Shipping Made Easy",
   description:
-    "Fast and reliable shipping services worldwide. Streamline your logistics with our intelligent assignment and tracking system.",
-  keywords: "shipping, logistics, delivery, tracking, warehouse management",
+    "Fast and reliable shipping services worldwide. Simplify your logistics operations with our smart assignment and tracking system.",
+  keywords:
+    "shipping, logistics, delivery, tracking, freight, global shipping, supply chain",
   authors: [{ name: "ShipHub" }],
   creator: "ShipHub",
   publisher: "ShipHub",
@@ -24,8 +28,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://shiphub.app",
     siteName: "ShipHub",
-    title: "ShipHub - Global Shipping Made Easy",
-    description: "Fast and reliable shipping services worldwide",
+    title: "ShipHub – Global Shipping Made Easy",
+    description:
+      "Fast and reliable shipping services worldwide.",
     images: [
       {
         url: "/ShipHub logo icon.png",
@@ -37,8 +42,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ShipHub - Global Shipping Made Easy",
-    description: "Fast and reliable shipping services worldwide",
+    title: "ShipHub – Global Shipping Made Easy",
+    description:
+      "Fast and reliable shipping services worldwide.",
     images: ["/ShipHub logo icon.png"],
   },
   icons: {
@@ -53,13 +59,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased flex flex-col min-h-screen`}>
-        <AuthProvider>
-          <Header />
-          {children}
-          <Footer />
-        </AuthProvider>
+    <html
+      lang="ar"
+      dir="rtl"
+      suppressHydrationWarning
+      className={`${geist.variable} ${geistMono.variable}`}
+    >
+      <body className="font-sans antialiased flex flex-col min-h-screen">
+        <LocaleProvider>
+          <AuthProvider>
+            <CurrencyProvider>
+              <RealTimeProvider>
+                <Header />
+                {children}
+                <Footer />
+              </RealTimeProvider>
+            </CurrencyProvider>
+          </AuthProvider>
+        </LocaleProvider>
         <Toaster position="top-right" richColors />
         <Analytics />
       </body>

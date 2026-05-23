@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB, handleError } from "@/lib/db";
 import { Vehicle, User } from "@/lib/models";
 
+function serializeVehicle(vehicle: any) {
+  const id = vehicle._id?.toString() || vehicle.id;
+  return {
+    ...vehicle,
+    id,
+    _id: id,
+    licensePlate: vehicle.licensePlate || vehicle.plateNumber,
+    location: vehicle.location || vehicle.country,
+  };
+}
+
 /**
  * @swagger
  * /api/admin/resources:
@@ -25,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        vehicles,
+        vehicles: vehicles.map(serializeVehicle),
         drivers,
       },
       { status: 200 },

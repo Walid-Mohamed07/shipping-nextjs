@@ -5,15 +5,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/app/context/AuthContext";
+import { useTranslation } from "@/app/context/LocaleContext";
 import Link from "next/link";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,10 +39,10 @@ export function LoginForm() {
       <div className="max-w-md mx-auto">
         <div className="bg-card rounded-lg border border-border p-8 shadow-sm">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome Back
+            {t.login.welcomeBack}
           </h1>
           <p className="text-muted-foreground mb-8">
-            Sign in to your ShipHub account
+            {t.login.signInToAccount}
           </p>
 
           {error && (
@@ -49,13 +52,17 @@ export function LoginForm() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+            suppressHydrationWarning
+          >
             <div>
               <label
                 htmlFor="email"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Email Address
+                {t.login.emailAddress}
               </label>
               <Input
                 id="email"
@@ -64,6 +71,7 @@ export function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
+                suppressHydrationWarning
                 required
               />
             </div>
@@ -73,17 +81,32 @@ export function LoginForm() {
                 htmlFor="password"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Password
+                {t.login.password}
               </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  suppressHydrationWarning
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <Button
@@ -91,17 +114,17 @@ export function LoginForm() {
               disabled={isLoading}
               className="w-full cursor-pointer"
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? t.login.signingIn : t.login.signIn}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            {t.login.noAccount}{" "}
             <Link
               href="/signup"
               className="text-primary hover:underline font-medium"
             >
-              Sign up here
+              {t.login.signUpHere}
             </Link>
           </div>
         </div>
